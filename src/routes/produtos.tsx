@@ -84,11 +84,6 @@ function ProductDialog({
   const [f, setF] = useState<Omit<Product, "id">>({
     name: "", category: "", cost: 0, price: 0, stock: 0, minStock: 0, description: "",
   });
-  useState(() => { if (product) setF(product); });
-  // sync when product changes
-  if (product && f.name !== product.name && open) {
-    // simple guard: only reset when dialog newly opened with different product
-  }
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setF(product ?? { name: "", category: "", cost: 0, price: 0, stock: 0, minStock: 0, description: "" }); }}>
