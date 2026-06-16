@@ -1,29 +1,191 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { AppShell, StatCard } from "@/components/AppShell";
+import { useFinance, useStore, monthRange } from "@/lib/store";
+import { brl, pct } from "@/lib/format";
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  ShoppingCart,
+  Target,
+  ArrowDownRight,
+  ArrowUpRight,
+} from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Dashboard — LucroTrack" },
+      { name: "description", content: "Veja o lucro real do seu negócio em segundos." },
     ],
   }),
-  component: Index,
+  component: Dashboard,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Dashboard() {
+  const { state } = useStore();
+  const fin = useFinance();
+  const goalRev = state.settings.monthlyRevenueGoal;
+  const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
+
+  // Build 6-month series
+  const series = Array.from({ length: 6 }).map((_, idx) => {
+    const i = 5 - idx;
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const { start, end } = monthRange(d);
+    const orders = state.orders.filter(
+      (o) => new Date(o.date) >= start && new Date(o.date) < end && o.status !== "cancelado",
+    );
+    const rev = orders.reduce((a, o) => a + o.total, 0);
+    const cogs = orders.reduce((a, o) => a + o.items.reduce((b, it) => b + it.cost * it.qty, 0), 0);
+    const exps = state.expenses
+      .filter((e) => new Date(e.date) >= start && new Date(e.date) < end)
+      .reduce((a, e) => a + e.amount, 0);
+    return {
+      mes: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+      faturamento: rev,
+      lucro: rev - cogs - exps,
+    };
+  });
+
+  const ads = state.ads.slice(-1)[0];
+  const adsRoas = ads ? ads.revenue / Math.max(1, ads.invested) : 0;
+  const adsCpa = ads ? ads.invested / Math.max(1, ads.purchases) : 0;
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <AppShell title="Dashboard" subtitle="Saúde financeira da sua operação em tempo real">
+      {/* KPI grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
+        <StatCard label="Faturamento" value={brl(fin.revenue)} hint="este mês" icon={DollarSign} />
+        <StatCard label="Lucro Líquido" value={brl(fin.profit)} hint="este mês" icon={TrendingUp} tone="success" />
+        <StatCard label="Total Gastos" value={brl(fin.cogs + fin.adsSpend + fin.opEx)} hint="este mês" icon={TrendingDown} tone="danger" />
+        <StatCard label="Saldo em Caixa" value={brl(fin.cash)} hint="acumulado" icon={Wallet} />
+        <StatCard label="Pedidos" value={String(fin.ordersCount)} hint="este mês" icon={ShoppingCart} />
+        <StatCard label="Meta" value={pct(goalPct)} hint={brl(goalRev)} icon={Target} tone="warning" />
+      </div>
+
+      {/* Lucro real card */}
+      <div className="mt-6 grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 rounded-2xl border border-border bg-gradient-card p-6 shadow-elegant">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Lucro Real do Mês</span>
+            <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2.5 py-1">Indicador principal</span>
+          </div>
+          <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{brl(fin.profit)}</div>
+
+          <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <Row label="Faturamento Total" value={brl(fin.revenue)} positive />
+            <Row label="(-) Custos dos Produtos" value={`- ${brl(fin.cogs)}`} />
+            <Row label="(-) Facebook Ads" value={`- ${brl(fin.adsSpend)}`} />
+            <Row label="(-) Despesas Operacionais" value={`- ${brl(fin.opEx)}`} />
+            <div className="sm:col-span-2 border-t border-border pt-3 flex items-center justify-between">
+              <span className="font-semibold">(=) Lucro Líquido</span>
+              <span className="text-primary font-bold text-lg">{brl(fin.profit)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Ads card */}
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-elegant">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Facebook Ads</span>
+            <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
+          </div>
+          <div className="text-2xl font-bold">{brl(ads?.invested ?? 0)}</div>
+          <div className="text-xs text-muted-foreground">Investido no mês</div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <Mini label="ROAS" value={`${adsRoas.toFixed(2)}x`} />
+            <Mini label="CPA" value={brl(adsCpa)} />
+            <Mini label="Compras" value={String(ads?.purchases ?? 0)} />
+            <Mini label="Faturamento" value={brl(ads?.revenue ?? 0)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold">Faturamento x Lucro</div>
+            <div className="text-xs text-muted-foreground">Últimos 6 meses</div>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <span className="flex items-center gap-2"><span className="h-2 w-3 rounded-sm bg-foreground"/>Faturamento</span>
+            <span className="flex items-center gap-2"><span className="h-2 w-3 rounded-sm bg-primary"/>Lucro</span>
+          </div>
+        </div>
+        <div className="h-64 lg:h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={series} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+              <CartesianGrid stroke="oklch(0.26 0 0)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="mes" stroke="oklch(0.65 0.01 247)" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="oklch(0.65 0.01 247)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v/1000}k`} />
+              <Tooltip
+                contentStyle={{ backgroundColor: "oklch(0.18 0 0)", border: "1px solid oklch(0.26 0 0)", borderRadius: 12 }}
+                labelStyle={{ color: "oklch(0.985 0.003 247)" }}
+                formatter={(v: number) => brl(v)}
+              />
+              <Line type="monotone" dataKey="faturamento" stroke="oklch(0.985 0.003 247)" strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="lucro" stroke="oklch(0.72 0.19 148)" strokeWidth={2.5} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Recent orders */}
+      <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm font-semibold">Últimos pedidos</div>
+          <Link to="/pedidos" className="text-xs text-primary hover:underline">Ver todos</Link>
+        </div>
+        <div className="space-y-2">
+          {state.orders.slice(0, 6).map((o) => (
+            <div key={o.id} className="flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
+              <div className="min-w-0">
+                <div className="font-medium truncate">{o.customer}</div>
+                <div className="text-xs text-muted-foreground truncate">{o.items[0]?.name} · {o.district}</div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="font-semibold">{brl(o.total)}</div>
+                <div className="text-[11px] text-muted-foreground capitalize">{o.status}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function Row({ label, value, positive }: { label: string; value: string; positive?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-muted-foreground flex items-center gap-1.5">
+        {positive ? <ArrowUpRight className="h-3.5 w-3.5 text-primary" /> : <ArrowDownRight className="h-3.5 w-3.5 text-destructive" />}
+        {label}
+      </span>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function Mini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-secondary/40 border border-border p-3">
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-0.5 font-semibold">{value}</div>
     </div>
   );
 }
