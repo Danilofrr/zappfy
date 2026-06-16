@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/produtos")({
@@ -84,9 +84,12 @@ function ProductDialog({
   const [f, setF] = useState<Omit<Product, "id">>({
     name: "", category: "", cost: 0, price: 0, stock: 0, minStock: 0, description: "",
   });
+  useEffect(() => {
+    if (open) setF(product ?? { name: "", category: "", cost: 0, price: 0, stock: 0, minStock: 0, description: "" });
+  }, [open, product]);
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setF(product ?? { name: "", category: "", cost: 0, price: 0, stock: 0, minStock: 0, description: "" }); }}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild><span/></DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
