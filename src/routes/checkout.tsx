@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckoutView } from "@/components/CheckoutView";
-import { submitPublicOrder } from "@/lib/api/public-checkout.functions";
 import type { Product, Settings } from "@/lib/store";
 
 const searchSchema = z.object({
