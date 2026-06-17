@@ -79,7 +79,8 @@ function PedidosPage() {
     const produto = o.items.map((i) => `${i.qty}x ${i.name}`).join(", ");
     const enderecoCompleto = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`;
-    const tpl = state.settings.motoboyMessageTemplate || "";
+    const savedM = state.settings.motoboyMessageTemplate || "";
+    const tpl = savedM && /\p{Extended_Pictographic}/u.test(savedM) ? savedM : DEFAULT_MOTOBOY_TEMPLATE;
     return applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,
