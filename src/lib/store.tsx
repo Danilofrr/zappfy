@@ -306,6 +306,7 @@ type Ctx = {
   updateProduct: (id: string, p: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   addOrder: (o: Omit<Order, "id">) => Promise<void>;
+  updateOrder: (id: string, patch: Partial<Omit<Order, "id" | "items">>) => Promise<void>;
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   addExpense: (e: Omit<Expense, "id">) => Promise<void>;
