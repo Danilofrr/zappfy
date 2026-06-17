@@ -266,6 +266,12 @@ function PedidosPage() {
           setEditing(null);
         }}
       />
+
+      <MotoboyDialog
+        order={motoboyFor}
+        onClose={() => setMotoboyFor(null)}
+        buildText={buildMotoboyText}
+      />
     </AppShell>
   );
 }
