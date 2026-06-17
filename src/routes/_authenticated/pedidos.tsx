@@ -70,7 +70,7 @@ function applyTemplate(tpl: string, vars: Record<string, string>) {
 }
 
 function PedidosPage() {
-  const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
+  const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder, user } = useStore();
   const [editing, setEditing] = useState<Order | null>(null);
   const [motoboyFor, setMotoboyFor] = useState<Order | null>(null);
 
@@ -136,7 +136,9 @@ function PedidosPage() {
   );
 
   const checkoutLink =
-    typeof window !== "undefined" ? `${window.location.origin}/checkout` : "/checkout";
+    typeof window !== "undefined" && user
+      ? `${window.location.origin}/loja/${user.id}`
+      : "";
 
   return (
     <AppShell
