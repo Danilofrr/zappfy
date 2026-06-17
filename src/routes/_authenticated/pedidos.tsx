@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, type Order, type OrderStatus } from "@/lib/store";
+import { useStore, DEFAULT_DELIVERY_TEMPLATE, DEFAULT_MOTOBOY_TEMPLATE, type Order, type OrderStatus } from "@/lib/store";
 import { brl, fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,7 +79,8 @@ function PedidosPage() {
     const produto = o.items.map((i) => `${i.qty}x ${i.name}`).join(", ");
     const enderecoCompleto = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`;
-    const tpl = state.settings.motoboyMessageTemplate || "";
+    const savedM = state.settings.motoboyMessageTemplate || "";
+    const tpl = savedM && /\p{Extended_Pictographic}/u.test(savedM) ? savedM : DEFAULT_MOTOBOY_TEMPLATE;
     return applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,
@@ -103,7 +104,12 @@ function PedidosPage() {
     const storeName = state.settings.storeName || "nossa loja";
     const item = o.items[0]?.name ? ` (${o.items[0].name})` : "";
     const endereco = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
-    const tpl = state.settings.deliveryMessageTemplate || "";
+    const saved = state.settings.deliveryMessageTemplate || "";
+    // If the saved template has lost its emojis (e.g. stored as "?" or pure ASCII),
+    // fall back to the default so the WhatsApp message keeps emojis intact.
+    const hasEmoji = /\p{Extended_Pictographic}/u.test(saved);
+    const looksBroken = /\?\s+Seu pedido|\?\s+Ol[aá]|chamar por aqui\.\s*\?/.test(saved);
+    const tpl = !saved || looksBroken || !hasEmoji ? DEFAULT_DELIVERY_TEMPLATE : saved;
     const text = applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,

@@ -132,8 +132,8 @@ type State = {
   ads: AdEntry[];
   settings: Settings;
 };
-export const DEFAULT_MOTOBOY_TEMPLATE = `🛵 *NOVA ENTREGA*\n\n👤 *Cliente:* {cliente}\n📦 *Produto:* {produto}\n📍 *Endereço:* {endereco}\n🗺️ *Localização:* {mapa}\n📱 *Telefone:* {telefone}\n\n💰 *Pagamento:* {pagamento}\n💵 *Total:* {total}`;
-export const DEFAULT_DELIVERY_TEMPLATE = `Oba! 🚚 Seu pedido{produto} acabou de sair para entrega!\n\nOlá *{cliente}*, tudo bem? Em instantes você o receberá no endereço:\n{endereco}\n\nQualquer dúvida é só chamar por aqui. 💜\n— {loja}`;
+export const DEFAULT_MOTOBOY_TEMPLATE = `\u{1F6F5} *NOVA ENTREGA*\n\n\u{1F464} *Cliente:* {cliente}\n\u{1F4E6} *Produto:* {produto}\n\u{1F4CD} *Endere\u00e7o:* {endereco}\n\u{1F5FA}\u{FE0F} *Localiza\u00e7\u00e3o:* {mapa}\n\u{1F4F1} *Telefone:* {telefone}\n\n\u{1F4B0} *Pagamento:* {pagamento}\n\u{1F4B5} *Total:* {total}`;
+export const DEFAULT_DELIVERY_TEMPLATE = `Oba! \u{1F69A} Seu pedido{produto} acabou de sair para entrega!\n\nOl\u00e1 *{cliente}*, tudo bem? Em instantes voc\u00ea o receber\u00e1 no endere\u00e7o:\n{endereco}\n\nQualquer d\u00favida \u00e9 s\u00f3 chamar por aqui. \u{1F49C}\n\u2014 {loja}`;
 
 const emptySettings: Settings = {
   storeName: "Minha Loja",
