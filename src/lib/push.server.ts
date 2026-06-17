@@ -58,7 +58,7 @@ export async function sendPushToUser(
       try {
         const message = { data: payload as never, options: { ttl: 60 } };
         const { headers, body, method } = await buildPushPayload(message, subscription, vapid);
-        const res = await fetch(s.endpoint, { method, headers, body });
+        const res = await fetch(s.endpoint, { method, headers, body: body as BodyInit });
         if (res.ok) {
           sent++;
         } else if (res.status === 404 || res.status === 410) {
