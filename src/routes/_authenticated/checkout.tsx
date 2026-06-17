@@ -165,35 +165,46 @@ function Checkout() {
           </div>
         ) : (
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
-          <div className="p-6" style={cardStyle}>
-            <h1 className="text-2xl font-bold tracking-tight">Finalizar pedido</h1>
-            <Stepper step={step} neonColor={neonColor} />
+          <div className="space-y-3">
+            {/* Produto sempre visível no topo */}
+            <div className="p-5" style={cardStyle}>
+              <div className="text-xs uppercase tracking-wider opacity-60 mb-3">Seu pedido</div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Produto">
+                  <Select value={productId} onValueChange={setProductId}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      {products.map((p) => (
+                        <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
+                          {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Quantidade">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={product?.stock ?? 1}
+                    value={qty}
+                    onChange={(e) => setQty(Math.max(1, Math.min(product?.stock ?? 1, Number(e.target.value))))}
+                  />
+                </Field>
+              </div>
+            </div>
 
-            {step === 1 && (
-              <div className="mt-6 grid gap-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Produto">
-                    <Select value={productId} onValueChange={setProductId}>
-                      <SelectTrigger><SelectValue/></SelectTrigger>
-                      <SelectContent>
-                        {products.map((p) => (
-                          <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
-                            {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Quantidade">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={product?.stock ?? 1}
-                      value={qty}
-                      onChange={(e) => setQty(Math.max(1, Math.min(product?.stock ?? 1, Number(e.target.value))))}
-                    />
-                  </Field>
-                </div>
+            {/* Etapa 1 — Dados pessoais */}
+            <StepCard
+              n={1}
+              title="Dados pessoais"
+              state={step === 1 ? "active" : step > 1 ? "done" : "locked"}
+              neonColor={neonColor}
+              cardStyle={cardStyle}
+              summary={step > 1 ? `${form.customer} · ${form.phone}` : undefined}
+              onEdit={() => setStep(1)}
+            >
+              <div className="grid gap-4">
                 <Field label="Nome completo"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} placeholder="Seu nome"/></Field>
                 <Field label="Telefone (WhatsApp)"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="(81) 99999-9999"/></Field>
                 <div className="flex justify-end pt-2">
@@ -207,10 +218,19 @@ function Checkout() {
                   >Continuar</Button>
                 </div>
               </div>
-            )}
+            </StepCard>
 
-            {step === 2 && (
-              <div className="mt-6 grid gap-4">
+            {/* Etapa 2 — Entrega */}
+            <StepCard
+              n={2}
+              title="Entrega"
+              state={step === 2 ? "active" : step > 2 ? "done" : "locked"}
+              neonColor={neonColor}
+              cardStyle={cardStyle}
+              summary={step > 2 ? `${form.address}, ${form.district} — ${form.city}` : undefined}
+              onEdit={() => setStep(2)}
+            >
+              <div className="grid gap-4">
                 <Field label="CEP">
                   <Input
                     value={form.cep}
@@ -248,10 +268,17 @@ function Checkout() {
                   >Continuar</Button>
                 </div>
               </div>
-            )}
+            </StepCard>
 
-            {step === 3 && (
-              <div className="mt-6 grid gap-4">
+            {/* Etapa 3 — Pagamento */}
+            <StepCard
+              n={3}
+              title="Pagamento"
+              state={step === 3 ? "active" : "locked"}
+              neonColor={neonColor}
+              cardStyle={cardStyle}
+            >
+              <div className="grid gap-4">
                 <div>
                   <Label className="text-xs mb-2 block">Forma de pagamento</Label>
                   <div className="grid grid-cols-3 gap-2">
@@ -280,7 +307,7 @@ function Checkout() {
                 </div>
                 <p className="text-[11px] opacity-60 text-center">Será enviado para o WhatsApp da loja ({settings.whatsapp || "configure em Configurações"}).</p>
               </div>
-            )}
+            </StepCard>
           </div>
 
           <aside className="p-6 h-fit lg:sticky lg:top-6" style={cardStyle}>
@@ -298,6 +325,7 @@ function Checkout() {
             </div>
           </aside>
         </div>
+
         )}
       </main>
     </div>
@@ -310,30 +338,58 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Row({ label, value }: { label: string; value: string }) {
   return <div className="flex justify-between opacity-80"><span className="truncate pr-2">{label}</span><span className="opacity-100">{value}</span></div>;
 }
-function Stepper({ step, neonColor }: { step: 1 | 2 | 3; neonColor: string }) {
-  const labels = ["Você", "Entrega", "Pagamento"];
+function StepCard({
+  n, title, state, neonColor, cardStyle, summary, onEdit, children,
+}: {
+  n: 1 | 2 | 3;
+  title: string;
+  state: "active" | "done" | "locked";
+  neonColor: string;
+  cardStyle: React.CSSProperties;
+  summary?: string;
+  onEdit?: () => void;
+  children: React.ReactNode;
+}) {
+  const headerBadge = (
+    <div
+      className="h-8 w-8 grid place-items-center rounded-full text-xs font-bold shrink-0"
+      style={{
+        backgroundColor: state === "locked" ? "transparent" : neonColor,
+        color: state === "locked" ? "currentColor" : "#fff",
+        border: `1px solid ${neonColor}${state === "locked" ? "55" : ""}`,
+        boxShadow: state === "active" ? `0 0 12px ${neonColor}` : "none",
+        opacity: state === "locked" ? 0.5 : 1,
+      }}
+    >
+      {state === "done" ? "✓" : n}
+    </div>
+  );
+
+  if (state === "active") {
+    return (
+      <div className="p-5" style={cardStyle}>
+        <div className="flex items-center gap-3 mb-4">
+          {headerBadge}
+          <h2 className="font-bold">{title}</h2>
+        </div>
+        {children}
+      </div>
+    );
+  }
   return (
-    <div className="mt-4 flex items-center gap-2">
-      {labels.map((label, i) => {
-        const n = (i + 1) as 1 | 2 | 3;
-        const active = step === n;
-        const done = step > n;
-        return (
-          <div key={label} className="flex items-center gap-2 flex-1">
-            <div
-              className="h-7 w-7 grid place-items-center rounded-full text-xs font-bold"
-              style={{
-                backgroundColor: active || done ? neonColor : "transparent",
-                color: active || done ? "#fff" : "currentColor",
-                border: `1px solid ${neonColor}${active || done ? "" : "55"}`,
-                boxShadow: active ? `0 0 12px ${neonColor}` : "none",
-              }}
-            >{done ? "✓" : n}</div>
-            <span className="text-xs font-medium hidden sm:inline" style={{ opacity: active ? 1 : 0.6 }}>{label}</span>
-            {i < 2 && <div className="flex-1 h-px" style={{ backgroundColor: `${neonColor}55` }} />}
-          </div>
-        );
-      })}
+    <div
+      className="p-4 flex items-center gap-3"
+      style={{ ...cardStyle, opacity: state === "locked" ? 0.55 : 1, boxShadow: "none", border: `1px solid ${neonColor}22` }}
+    >
+      {headerBadge}
+      <div className="flex-1 min-w-0">
+        <div className="font-semibold text-sm">{title}</div>
+        {summary && <div className="text-xs opacity-70 truncate">{summary}</div>}
+      </div>
+      {state === "done" && onEdit && (
+        <button onClick={onEdit} className="text-xs font-medium" style={{ color: neonColor }}>Editar</button>
+      )}
     </div>
   );
 }
+
