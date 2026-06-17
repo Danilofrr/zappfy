@@ -42,27 +42,48 @@ const statusList: { value: OrderStatus; label: string; color: string }[] = [
 
 const statusMap = Object.fromEntries(statusList.map((s) => [s.value, s]));
 
+type MotoboyContact = { label: string; phone: string };
+
+function loadContacts(): MotoboyContact[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem("motoboyContacts");
+    if (raw) return JSON.parse(raw);
+    // migração do formato antigo (um único número)
+    const old = localStorage.getItem("motoboyPhone");
+    if (old) return [{ label: "Motoboy", phone: old }];
+    return [];
+  } catch { return []; }
+}
+
+function saveContacts(list: MotoboyContact[]) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("motoboyContacts", JSON.stringify(list));
+  }
+}
+
+function applyTemplate(tpl: string, vars: Record<string, string>) {
+  return Object.entries(vars).reduce(
+    (acc, [k, v]) => acc.replaceAll(`{${k}}`, v),
+    tpl,
+  );
+}
+
 function PedidosPage() {
   const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
   const [editing, setEditing] = useState<Order | null>(null);
+  const [motoboyFor, setMotoboyFor] = useState<Order | null>(null);
 
-  function sendToMotoboy(o: Order) {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("motoboyPhone") || "" : "";
-    const input = window.prompt(
-      "WhatsApp do motoboy ou grupo (com DDD, só números). Ex: 81999990000",
-      saved,
-    );
-    if (!input) return;
-    const phone = input.replace(/\D/g, "");
-    if (phone.length < 10) { toast.error("Número inválido"); return; }
-    if (typeof window !== "undefined") localStorage.setItem("motoboyPhone", phone);
+  function buildMotoboyText(o: Order) {
     const itemsTxt = o.items.map((i) => `• ${i.qty}x ${i.name}`).join("\n");
+    const produto = o.items.map((i) => `${i.qty}x ${i.name}`).join(", ");
     const enderecoCompleto = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`;
     const tpl = state.settings.motoboyMessageTemplate || "";
-    const text = applyTemplate(tpl, {
+    return applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,
+      produto,
       endereco: enderecoCompleto,
       mapa: mapsLink,
       itens: itemsTxt,
@@ -71,14 +92,6 @@ function PedidosPage() {
       observacoes: o.notes || "",
       loja: state.settings.storeName || "",
     });
-    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(text)}`, "_blank");
-  }
-
-  function applyTemplate(tpl: string, vars: Record<string, string>) {
-    return Object.entries(vars).reduce(
-      (acc, [k, v]) => acc.replaceAll(`{${k}}`, v),
-      tpl,
-    );
   }
 
   function notifyDelivery(o: Order) {
@@ -100,9 +113,11 @@ function PedidosPage() {
       total: brl(o.total),
       observacoes: o.notes || "",
     });
-    const msg = encodeURIComponent(text);
-    window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(text)}`, "_blank");
   }
+
+
+
 
   function handleStatusChange(o: Order, status: OrderStatus) {
     updateOrderStatus(o.id, status);
@@ -203,7 +218,7 @@ function PedidosPage() {
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => sendToMotoboy(o)}
+                        onClick={() => setMotoboyFor(o)}
                         title="Enviar endereço para o motoboy no WhatsApp"
                         className="text-muted-foreground hover:text-blue-500 p-1"
                       >
@@ -250,6 +265,12 @@ function PedidosPage() {
           toast.success("Pedido atualizado!");
           setEditing(null);
         }}
+      />
+
+      <MotoboyDialog
+        order={motoboyFor}
+        onClose={() => setMotoboyFor(null)}
+        buildText={buildMotoboyText}
       />
     </AppShell>
   );
@@ -427,5 +448,98 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <Label className="text-xs">{label}</Label>
       {children}
     </div>
+  );
+}
+
+function MotoboyDialog({
+  order, onClose, buildText,
+}: {
+  order: Order | null;
+  onClose: () => void;
+  buildText: (o: Order) => string;
+}) {
+  const [contacts, setContacts] = useState<MotoboyContact[]>([]);
+  const [newLabel, setNewLabel] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [text, setText] = useState("");
+
+  useMemo(() => {
+    if (order) {
+      setContacts(loadContacts());
+      setText(buildText(order));
+    }
+  }, [order]);
+
+  function addContact() {
+    const phone = newPhone.replace(/\D/g, "");
+    if (!newLabel.trim()) { toast.error("Dê um nome ao contato"); return; }
+    if (phone.length < 10) { toast.error("Número inválido"); return; }
+    const list = [...contacts, { label: newLabel.trim(), phone }];
+    setContacts(list); saveContacts(list);
+    setNewLabel(""); setNewPhone("");
+  }
+
+  function removeContact(i: number) {
+    const list = contacts.filter((_, idx) => idx !== i);
+    setContacts(list); saveContacts(list);
+  }
+
+  function send(phone: string) {
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(text)}`, "_blank");
+    onClose();
+  }
+
+  return (
+    <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Enviar para o motoboy</DialogTitle>
+          <DialogDescription>Escolha um contato salvo ou cadastre um novo (grupo ou número).</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <Field label="Mensagem (você pode ajustar antes de enviar)">
+            <Textarea rows={8} value={text} onChange={(e) => setText(e.target.value)} />
+          </Field>
+
+          <div>
+            <Label className="text-xs">Enviar para</Label>
+            <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+              {contacts.length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhum contato salvo ainda.</p>
+              )}
+              {contacts.map((c, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{c.label}</div>
+                    <div className="text-xs text-muted-foreground">{c.phone}</div>
+                  </div>
+                  <Button size="sm" onClick={() => send(c.phone)}>Enviar</Button>
+                  <button onClick={() => removeContact(i)} className="text-muted-foreground hover:text-destructive p-1">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-dashed border-border p-3">
+            <Label className="text-xs">Adicionar novo contato</Label>
+            <div className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-2">
+              <Input placeholder="Nome (ex: Motoboy João, Grupo Entregas)" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+              <Input placeholder="DDD + número" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} inputMode="numeric" />
+              <Button variant="outline" onClick={addContact}><Plus className="h-4 w-4" /></Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Para enviar a um grupo do WhatsApp, use o número de um administrador ou crie um contato com o link do grupo (o WhatsApp só aceita envio direto a números — para grupos, abra o grupo e cole a mensagem manualmente).
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
