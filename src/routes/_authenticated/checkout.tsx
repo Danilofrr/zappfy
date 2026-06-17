@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock } from "lucide-react";
 import { getShippingIcon } from "@/lib/shipping-icons";
+import { PaymentBadge } from "@/lib/payment-icons";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -148,20 +149,27 @@ function Checkout() {
   return (
     <div className={themeClass} style={rootStyle}>
       <header className="border-b" style={{ borderColor: `${neonColor}33`, backgroundColor: settings.checkoutHeaderBgColor || rootStyle.backgroundColor }}>
-        <div className="mx-auto max-w-3xl flex items-center gap-3 px-4 sm:px-6 h-16">
+        <div className="mx-auto max-w-3xl flex items-center gap-3 px-4 sm:px-6 py-3 min-h-16">
           {settings.checkoutLogoUrl ? (
-            <img src={settings.checkoutLogoUrl} alt={settings.storeName} className="h-10 w-10 rounded-xl object-contain" />
+            <img
+              src={settings.checkoutLogoUrl}
+              alt={settings.storeName}
+              style={{ height: settings.checkoutLogoSize || 40, width: "auto", maxWidth: "60%" }}
+              className="object-contain"
+            />
           ) : (
             <div className="grid h-9 w-9 place-items-center rounded-xl" style={{ backgroundColor: neonColor, boxShadow: `0 0 16px ${neonColor}` }}>
               <TrendingUp className="h-5 w-5 text-white"/>
             </div>
           )}
-          <div className="min-w-0">
-            <div className="font-bold truncate">{settings.storeName}</div>
-            <Link to="/" className="text-[11px] opacity-60 hover:opacity-100">Voltar ao painel</Link>
-          </div>
+          {!settings.checkoutLogoUrl && (
+            <div className="min-w-0">
+              <div className="font-bold truncate">{settings.storeName}</div>
+              <Link to="/" className="text-[11px] opacity-60 hover:opacity-100">Voltar ao painel</Link>
+            </div>
+          )}
           {settings.checkoutSecureLabel && (
-            <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold" style={{ color: neonColor }}>
+            <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold" style={{ color: settings.checkoutSecureColor || neonColor }}>
               <Lock className="h-4 w-4" />
               <span className="hidden sm:inline">{settings.checkoutSecureLabel}</span>
             </div>
@@ -365,20 +373,16 @@ function Checkout() {
           className="border-t mt-8"
           style={{
             borderColor: `${neonColor}22`,
-            backgroundColor: settings.checkoutHeaderBgColor || rootStyle.backgroundColor,
+            backgroundColor: settings.checkoutFooterBgColor || settings.checkoutHeaderBgColor || rootStyle.backgroundColor,
           }}
         >
           <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6 text-center space-y-3">
             {payments.length > 0 && (
               <div>
                 <div className="text-[11px] uppercase tracking-wider opacity-60 mb-2">Formas de pagamento aceitas</div>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-wrap justify-center items-center gap-2">
                   {payments.map((p) => (
-                    <span
-                      key={p}
-                      className="px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase"
-                      style={{ border: `1px solid ${neonColor}55`, color: neonColor }}
-                    >{p}</span>
+                    <PaymentBadge key={p} brand={p} />
                   ))}
                 </div>
               </div>
