@@ -115,11 +115,38 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const missingRouteGuardScript = `
+(function(){
+  var MATCH = /Failed to load url \\/src\\/routes\\/([^\\s)]+)/;
+  function render(file){
+    try {
+      document.body.innerHTML =
+        '<div style="font-family:ui-sans-serif,system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0b0c;color:#fafafa;padding:24px">'+
+          '<div style="max-width:560px;text-align:left;border:1px solid #27272a;border-radius:12px;padding:24px;background:#111113">'+
+            '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#f87171;margin-bottom:8px">Missing route file</div>'+
+            '<h1 style="font-size:20px;font-weight:600;margin:0 0 8px">A route file referenced by the app does not exist</h1>'+
+            '<p style="margin:0 0 12px;color:#a1a1aa;font-size:14px">The router tried to load <code style="background:#1f1f23;padding:2px 6px;border-radius:6px">src/routes/'+file+'</code> but the file was not found. Recreate the file or remove references to it, then reload.</p>'+
+            '<button onclick="location.reload()" style="margin-top:8px;background:#10b981;color:#04130d;border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer">Reload</button>'+
+          '</div>'+
+        '</div>';
+    } catch(_){}
+  }
+  function check(msg){
+    if (!msg) return;
+    var m = String(msg).match(MATCH);
+    if (m) render(m[1]);
+  }
+  window.addEventListener('error', function(e){ check(e && (e.message || (e.error && e.error.message))); }, true);
+  window.addEventListener('unhandledrejection', function(e){ check(e && e.reason && (e.reason.message || e.reason)); });
+})();
+`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: missingRouteGuardScript }} />
       </head>
       <body>
         {children}
