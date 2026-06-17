@@ -283,6 +283,7 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterCardsImageUrl: r.checkout_footer_cards_image_url ?? "",
   checkoutFooterShowCardsImage: r.checkout_footer_show_cards_image ?? true,
   checkoutFooterCardsImageHeight: Number(r.checkout_footer_cards_image_height ?? 40),
+  checkoutFooterWhatsapp: r.checkout_footer_whatsapp ?? "",
 });
 
 type Ctx = {
