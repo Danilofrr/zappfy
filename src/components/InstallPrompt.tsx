@@ -114,6 +114,7 @@ export function InstallPrompt() {
   }
 
   if (!visible) return null;
+  if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:bottom-4 sm:left-auto sm:right-4 sm:w-[360px] sm:px-0">
