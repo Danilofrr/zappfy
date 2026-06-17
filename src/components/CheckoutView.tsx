@@ -302,10 +302,10 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 <Field label="Nome completo"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} placeholder="Seu nome"/></Field>
                 <Field label="Telefone (WhatsApp)"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="(81) 99999-9999"/></Field>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field label={<>CPF <span className="opacity-60 font-normal">(opcional)</span></>}>
+                  <Field label="CPF (opcional)">
                     <Input value={form.cpf} onChange={(e) => setForm({...form, cpf: e.target.value})} placeholder="000.000.000-00" inputMode="numeric"/>
                   </Field>
-                  <Field label={<>E-mail <span className="opacity-60 font-normal">(opcional)</span></>}>
+                  <Field label="E-mail (opcional)">
                     <Input type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} placeholder="voce@email.com"/>
                   </Field>
                 </div>
