@@ -43,7 +43,34 @@ const statusList: { value: OrderStatus; label: string; color: string }[] = [
 const statusMap = Object.fromEntries(statusList.map((s) => [s.value, s]));
 
 function PedidosPage() {
-  const { state, addOrder, updateOrderStatus, deleteOrder } = useStore();
+  const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
+  const [editing, setEditing] = useState<Order | null>(null);
+
+  function sendToMotoboy(o: Order) {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("motoboyPhone") || "" : "";
+    const input = window.prompt(
+      "WhatsApp do motoboy ou grupo (com DDD, só números). Ex: 81999990000",
+      saved,
+    );
+    if (!input) return;
+    const phone = input.replace(/\D/g, "");
+    if (phone.length < 10) { toast.error("Número inválido"); return; }
+    if (typeof window !== "undefined") localStorage.setItem("motoboyPhone", phone);
+    const itemsTxt = o.items.map((i) => `• ${i.qty}x ${i.name}`).join("%0A");
+    const enderecoCompleto = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
+    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`;
+    const msg =
+      `🛵 *Nova entrega*%0A%0A` +
+      `*Cliente:* ${o.customer}%0A` +
+      `*Telefone:* ${o.phone}%0A` +
+      `*Endereço:* ${enderecoCompleto}%0A` +
+      `*Mapa:* ${mapsLink}%0A%0A` +
+      `*Itens:*%0A${itemsTxt}%0A%0A` +
+      `*Pagamento:* ${o.payment.toUpperCase()}%0A` +
+      `*Total:* ${brl(o.total)}` +
+      (o.notes ? `%0A*Obs:* ${o.notes}` : "");
+    window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+  }
 
   function notifyDelivery(o: Order) {
     const phone = (o.phone || "").replace(/\D/g, "");
