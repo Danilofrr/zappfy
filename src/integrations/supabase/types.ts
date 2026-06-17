@@ -361,7 +361,174 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      products_public: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          image_url: string | null
+          name: string | null
+          price: number | null
+          stock: number | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          name?: string | null
+          price?: number | null
+          stock?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          name?: string | null
+          price?: number | null
+          stock?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      settings_public: {
+        Row: {
+          checkout_bg_color: string | null
+          checkout_button_color: string | null
+          checkout_button_label: string | null
+          checkout_card_color: string | null
+          checkout_footer_bg_color: string | null
+          checkout_footer_brand: string | null
+          checkout_footer_cards_image_height: number | null
+          checkout_footer_cards_image_url: string | null
+          checkout_footer_cnpj: string | null
+          checkout_footer_copyright: string | null
+          checkout_footer_email: string | null
+          checkout_footer_enabled: boolean | null
+          checkout_footer_payments: string | null
+          checkout_footer_show_cards_image: boolean | null
+          checkout_footer_show_cnpj: boolean | null
+          checkout_footer_show_email: boolean | null
+          checkout_footer_show_whatsapp: boolean | null
+          checkout_footer_whatsapp: string | null
+          checkout_header_bg_color: string | null
+          checkout_logo_align: string | null
+          checkout_logo_size: number | null
+          checkout_logo_url: string | null
+          checkout_neon_color: string | null
+          checkout_secure_color: string | null
+          checkout_secure_label: string | null
+          checkout_step_button_color: string | null
+          checkout_step_button_text_color: string | null
+          checkout_step1_button_label: string | null
+          checkout_step1_title: string | null
+          checkout_step2_button_label: string | null
+          checkout_step2_title: string | null
+          checkout_step3_button_label: string | null
+          checkout_step3_title: string | null
+          checkout_text_color: string | null
+          checkout_theme: string | null
+          delivery_fee: number | null
+          delivery_label: string | null
+          shipping_options: Json | null
+          slug: string | null
+          store_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          checkout_bg_color?: string | null
+          checkout_button_color?: string | null
+          checkout_button_label?: string | null
+          checkout_card_color?: string | null
+          checkout_footer_bg_color?: string | null
+          checkout_footer_brand?: string | null
+          checkout_footer_cards_image_height?: number | null
+          checkout_footer_cards_image_url?: string | null
+          checkout_footer_cnpj?: string | null
+          checkout_footer_copyright?: string | null
+          checkout_footer_email?: string | null
+          checkout_footer_enabled?: boolean | null
+          checkout_footer_payments?: string | null
+          checkout_footer_show_cards_image?: boolean | null
+          checkout_footer_show_cnpj?: boolean | null
+          checkout_footer_show_email?: boolean | null
+          checkout_footer_show_whatsapp?: boolean | null
+          checkout_footer_whatsapp?: string | null
+          checkout_header_bg_color?: string | null
+          checkout_logo_align?: string | null
+          checkout_logo_size?: number | null
+          checkout_logo_url?: string | null
+          checkout_neon_color?: string | null
+          checkout_secure_color?: string | null
+          checkout_secure_label?: string | null
+          checkout_step_button_color?: string | null
+          checkout_step_button_text_color?: string | null
+          checkout_step1_button_label?: string | null
+          checkout_step1_title?: string | null
+          checkout_step2_button_label?: string | null
+          checkout_step2_title?: string | null
+          checkout_step3_button_label?: string | null
+          checkout_step3_title?: string | null
+          checkout_text_color?: string | null
+          checkout_theme?: string | null
+          delivery_fee?: number | null
+          delivery_label?: string | null
+          shipping_options?: Json | null
+          slug?: string | null
+          store_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          checkout_bg_color?: string | null
+          checkout_button_color?: string | null
+          checkout_button_label?: string | null
+          checkout_card_color?: string | null
+          checkout_footer_bg_color?: string | null
+          checkout_footer_brand?: string | null
+          checkout_footer_cards_image_height?: number | null
+          checkout_footer_cards_image_url?: string | null
+          checkout_footer_cnpj?: string | null
+          checkout_footer_copyright?: string | null
+          checkout_footer_email?: string | null
+          checkout_footer_enabled?: boolean | null
+          checkout_footer_payments?: string | null
+          checkout_footer_show_cards_image?: boolean | null
+          checkout_footer_show_cnpj?: boolean | null
+          checkout_footer_show_email?: boolean | null
+          checkout_footer_show_whatsapp?: boolean | null
+          checkout_footer_whatsapp?: string | null
+          checkout_header_bg_color?: string | null
+          checkout_logo_align?: string | null
+          checkout_logo_size?: number | null
+          checkout_logo_url?: string | null
+          checkout_neon_color?: string | null
+          checkout_secure_color?: string | null
+          checkout_secure_label?: string | null
+          checkout_step_button_color?: string | null
+          checkout_step_button_text_color?: string | null
+          checkout_step1_button_label?: string | null
+          checkout_step1_title?: string | null
+          checkout_step2_button_label?: string | null
+          checkout_step2_title?: string | null
+          checkout_step3_button_label?: string | null
+          checkout_step3_title?: string | null
+          checkout_text_color?: string | null
+          checkout_theme?: string | null
+          delivery_fee?: number | null
+          delivery_label?: string | null
+          shipping_options?: Json | null
+          slug?: string | null
+          store_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

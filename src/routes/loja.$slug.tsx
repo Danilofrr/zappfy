@@ -144,8 +144,8 @@ function PublicCheckout() {
       setLoading(true);
       setError(null);
       const normalized = slug.toLowerCase();
-      const { data: settingsRow, error: sErr } = await supabase
-        .from("settings")
+      const { data: settingsRow, error: sErr } = await (supabase as any)
+        .from("settings_public")
         .select("*")
         .ilike("slug", normalized)
         .maybeSingle();
@@ -155,8 +155,8 @@ function PublicCheckout() {
         setLoading(false);
         return;
       }
-      const { data: productRows, error: pErr } = await supabase
-        .from("products")
+      const { data: productRows, error: pErr } = await (supabase as any)
+        .from("products_public")
         .select("*")
         .eq("user_id", settingsRow.user_id)
         .order("created_at", { ascending: false });
