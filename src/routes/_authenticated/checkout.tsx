@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock } from "lucide-react";
 import { getShippingIcon } from "@/lib/shipping-icons";
 import { PaymentBadge } from "@/lib/payment-icons";
+import cardsImageAsset from "@/assets/cards-payment-methods.png.asset.json";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -385,7 +386,19 @@ function Checkout() {
           }}
         >
           <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6 text-center space-y-3">
-            {payments.length > 0 && (
+            {settings.checkoutFooterShowCardsImage ? (
+              <div>
+                <div className="text-[11px] uppercase tracking-wider opacity-60 mb-2">Formas de pagamento aceitas</div>
+                <div className="flex justify-center">
+                  <img
+                    src={settings.checkoutFooterCardsImageUrl || cardsImageAsset.url}
+                    alt="Bandeiras aceitas"
+                    className="max-w-full h-auto"
+                    style={{ maxHeight: 40 }}
+                  />
+                </div>
+              </div>
+            ) : payments.length > 0 ? (
               <div>
                 <div className="text-[11px] uppercase tracking-wider opacity-60 mb-2">Formas de pagamento aceitas</div>
                 <div className="flex flex-wrap justify-center items-center gap-2">
@@ -394,7 +407,7 @@ function Checkout() {
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
             {settings.checkoutFooterBrand && (
               <div className="text-sm font-bold">{settings.checkoutFooterBrand}</div>
             )}
