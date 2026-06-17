@@ -290,8 +290,7 @@ function Checkout() {
                     </div>
                   </>
                 )}
-                <div className="flex justify-between pt-2">
-                  <Button variant="outline" onClick={() => setStep(1)}>Voltar</Button>
+                <div className="flex justify-end pt-2">
                   <Button
                     onClick={() => {
                       if (!addressReady) return toast.error("Informe um CEP válido");
@@ -328,8 +327,7 @@ function Checkout() {
                   </div>
                 </div>
                 <Field label="Observações (opcional)"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} placeholder="Ex: tocar interfone, troco para R$ 200..."/></Field>
-                <div className="flex justify-between pt-2">
-                  <Button variant="outline" onClick={() => setStep(2)}>Voltar</Button>
+                <div className="flex justify-end pt-2">
                   <Button
                     onClick={submit}
                     className="font-semibold"
@@ -443,9 +441,14 @@ function StepCard({
       </div>
     );
   }
+  const isDoneClickable = state === "done" && !!onEdit;
   return (
     <div
-      className="p-4 flex items-center gap-3"
+      role={isDoneClickable ? "button" : undefined}
+      tabIndex={isDoneClickable ? 0 : undefined}
+      onClick={isDoneClickable ? onEdit : undefined}
+      onKeyDown={isDoneClickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEdit?.(); } } : undefined}
+      className={`p-4 flex items-center gap-3 ${isDoneClickable ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
       style={{ ...cardStyle, opacity: state === "locked" ? 0.55 : 1, boxShadow: "none", border: `1px solid ${neonColor}22` }}
     >
       {headerBadge}
@@ -453,8 +456,8 @@ function StepCard({
         <div className="font-semibold text-sm">{title}</div>
         {summary && <div className="text-xs opacity-70 truncate">{summary}</div>}
       </div>
-      {state === "done" && onEdit && (
-        <button onClick={onEdit} className="text-xs font-medium" style={{ color: neonColor }}>Editar</button>
+      {state === "done" && (
+        <span className="text-xs font-medium" style={{ color: neonColor }}>Editar</span>
       )}
     </div>
   );
