@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,6 +44,30 @@ const statusMap = Object.fromEntries(statusList.map((s) => [s.value, s]));
 
 function PedidosPage() {
   const { state, addOrder, updateOrderStatus, deleteOrder } = useStore();
+
+  function notifyDelivery(o: Order) {
+    const phone = (o.phone || "").replace(/\D/g, "");
+    if (!phone) {
+      toast.error("Cliente sem telefone cadastrado");
+      return;
+    }
+    const storeName = state.settings.storeName || "nossa loja";
+    const item = o.items[0]?.name ? ` (${o.items[0].name})` : "";
+    const msg =
+      `Oba! 🚚 Seu pedido${item} acabou de sair para entrega!%0A%0A` +
+      `Olá *${o.customer}*, tudo bem? Em instantes você o receberá no endereço:%0A` +
+      `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}%0A%0A` +
+      `Qualquer dúvida é só chamar por aqui. 💜%0A— ${storeName}`;
+    window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+  }
+
+  function handleStatusChange(o: Order, status: OrderStatus) {
+    updateOrderStatus(o.id, status);
+    if (status === "entrega" && o.status !== "entrega") {
+      setTimeout(() => notifyDelivery(o), 200);
+    }
+  }
+
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [open, setOpen] = useState(false);
 
@@ -114,7 +138,7 @@ function PedidosPage() {
                   <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">{fmtDate(o.date)}</td>
                   <td className="px-4 py-3 text-right font-semibold">{brl(o.total)}</td>
                   <td className="px-4 py-3">
-                    <Select value={o.status} onValueChange={(v) => updateOrderStatus(o.id, v as OrderStatus)}>
+                    <Select value={o.status} onValueChange={(v) => handleStatusChange(o, v as OrderStatus)}>
                       <SelectTrigger className={`h-8 w-[170px] border-0 ${statusMap[o.status].color}`}>
                         <SelectValue />
                       </SelectTrigger>
@@ -126,12 +150,21 @@ function PedidosPage() {
                     </Select>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => { if (confirm("Excluir este pedido?")) deleteOrder(o.id); }}
-                      className="text-muted-foreground hover:text-destructive p-1"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => notifyDelivery(o)}
+                        title="Avisar cliente no WhatsApp que o pedido saiu para entrega"
+                        className="text-muted-foreground hover:text-green-500 p-1"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => { if (confirm("Excluir este pedido?")) deleteOrder(o.id); }}
+                        className="text-muted-foreground hover:text-destructive p-1"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

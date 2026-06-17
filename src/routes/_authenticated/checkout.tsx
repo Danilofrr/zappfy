@@ -106,7 +106,7 @@ function Checkout() {
       items: [{ productId: product.id, name: product.name, qty, price: product.price, cost: product.cost }],
       total,
       payment: form.payment,
-      status: "aguardando",
+      status: "pago",
       notes: form.notes,
       date: new Date().toISOString(),
     });
