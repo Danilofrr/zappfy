@@ -176,9 +176,8 @@ function AuthPage() {
           </div>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-4">
-          Para testes rápidos, desative a confirmação de e-mail nas configurações do Supabase Auth.
-        </p>
+        </Card>
+
       </div>
     </div>
   );
