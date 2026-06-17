@@ -21,6 +21,7 @@ import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
+import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
 
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
@@ -82,6 +83,11 @@ const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicSubmitOrderRoute = ApiPublicSubmitOrderRouteImport.update({
+  id: '/api/public/submit-order',
+  path: '/api/public/submit-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
+  '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/': typeof AuthenticatedIndexRoute
+  '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/checkout/$slug'
     | '/loja/$slug'
+    | '/api/public/submit-order'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/checkout/$slug'
     | '/loja/$slug'
     | '/'
+    | '/api/public/submit-order'
   id:
     | '__root__'
     | '/_authenticated'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/checkout/$slug'
     | '/loja/$slug'
     | '/_authenticated/'
+    | '/api/public/submit-order'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -172,6 +184,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   LojaSlugRoute: typeof LojaSlugRoute
+  ApiPublicSubmitOrderRoute: typeof ApiPublicSubmitOrderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/submit-order': {
+      id: '/api/public/submit-order'
+      path: '/api/public/submit-order'
+      fullPath: '/api/public/submit-order'
+      preLoaderRoute: typeof ApiPublicSubmitOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -303,6 +323,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   LojaSlugRoute: LojaSlugRoute,
+  ApiPublicSubmitOrderRoute: ApiPublicSubmitOrderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
