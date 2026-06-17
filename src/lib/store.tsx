@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { dateOnlyToLocalDate } from "@/lib/format";
 
 export type Product = {
   id: string;
@@ -685,7 +686,7 @@ export function useFinance(range?: { start: Date; end: Date }) {
   const cogs = monthOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
   const motoboyCost = motoboyFee * monthOrders.length;
 
-  const monthExpenses = state.expenses.filter((e) => new Date(e.date) >= start && new Date(e.date) < end);
+  const monthExpenses = state.expenses.filter((e) => dateOnlyToLocalDate(e.date) >= start && dateOnlyToLocalDate(e.date) < end);
   const adsSpend = monthExpenses.filter((e) => e.category === "ads").reduce((a, e) => a + e.amount, 0);
   const opEx = monthExpenses.filter((e) => e.category !== "ads").reduce((a, e) => a + e.amount, 0);
 

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
 import { useStore, useFinance, type ExpenseCategory } from "@/lib/store";
-import { brl, fmtDate } from "@/lib/format";
+import { brl, dateInputToLocalISO, fmtBusinessDate, fmtDate, todayDateInput } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,11 +37,11 @@ function Page() {
   const [open, setOpen] = useState(false);
 
   const cashflow = useMemo(() => {
-    const items: { date: string; label: string; in: number; out: number }[] = [];
+    const items: { date: string; label: string; in: number; out: number; type: "order" | "expense" }[] = [];
     state.orders
       .filter((o) => o.status !== "cancelado" && o.status !== "aguardando")
-      .forEach((o) => items.push({ date: o.date, label: `Venda — ${o.customer}`, in: o.total, out: 0 }));
-    state.expenses.forEach((e) => items.push({ date: e.date, label: e.description, in: 0, out: e.amount }));
+      .forEach((o) => items.push({ date: o.date, label: `Venda — ${o.customer}`, in: o.total, out: 0, type: "order" }));
+    state.expenses.forEach((e) => items.push({ date: e.date, label: e.description, in: 0, out: e.amount, type: "expense" }));
     return items.sort((a, b) => +new Date(b.date) - +new Date(a.date)).slice(0, 25);
   }, [state]);
 
@@ -66,7 +66,7 @@ function Page() {
               <div key={e.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/40 px-3 py-2.5">
                 <div className="min-w-0">
                   <div className="font-medium truncate">{e.description}</div>
-                  <div className="text-xs text-muted-foreground capitalize">{catList.find((c) => c.value === e.category)?.label} · {fmtDate(e.date)}</div>
+                  <div className="text-xs text-muted-foreground capitalize">{catList.find((c) => c.value === e.category)?.label} · {fmtBusinessDate(e.date)}</div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="font-semibold text-destructive">- {brl(e.amount)}</span>
@@ -85,7 +85,7 @@ function Page() {
               <div key={i} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/40 px-3 py-2.5">
                 <div className="min-w-0">
                   <div className="font-medium truncate">{c.label}</div>
-                  <div className="text-xs text-muted-foreground">{fmtDate(c.date)}</div>
+                  <div className="text-xs text-muted-foreground">{c.type === "expense" ? fmtBusinessDate(c.date) : fmtDate(c.date)}</div>
                 </div>
                 <div className={`font-semibold shrink-0 ${c.in ? "text-primary" : "text-destructive"}`}>
                   {c.in ? `+ ${brl(c.in)}` : `- ${brl(c.out)}`}
@@ -100,9 +100,9 @@ function Page() {
 }
 
 function NewExpense({ open, setOpen, onAdd }: { open: boolean; setOpen: (v: boolean) => void; onAdd: (e: any) => void }) {
-  const [f, setF] = useState({ description: "", category: "outros" as ExpenseCategory, amount: 0, date: new Date().toISOString().slice(0, 10) });
+  const [f, setF] = useState({ description: "", category: "outros" as ExpenseCategory, amount: 0, date: todayDateInput() });
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setF({ description: "", category: "outros", amount: 0, date: new Date().toISOString().slice(0,10) }); }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setF({ description: "", category: "outros", amount: 0, date: todayDateInput() }); }}>
       <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4"/>Nova despesa</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>Nova despesa</DialogTitle></DialogHeader>
@@ -121,7 +121,7 @@ function NewExpense({ open, setOpen, onAdd }: { open: boolean; setOpen: (v: bool
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => { if (!f.description || !f.amount) { toast.error("Preencha os campos"); return; } onAdd({ ...f, date: new Date(f.date).toISOString() }); }}>Salvar</Button>
+          <Button onClick={() => { if (!f.description || !f.amount) { toast.error("Preencha os campos"); return; } onAdd({ ...f, date: dateInputToLocalISO(f.date) }); }}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

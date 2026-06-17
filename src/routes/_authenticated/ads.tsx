@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
-import { brl } from "@/lib/format";
+import { brl, dateInputToLocalISO, dateOnlyToLocalDate, fmtBusinessDate, todayDateInput } from "@/lib/format";
 import { Megaphone, Target, ShoppingBag, DollarSign, Plus, Trash2 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -26,33 +26,29 @@ function Page() {
   const cpa = totals.inv / Math.max(1, totals.p);
 
   const data = ads.map((a) => ({
-    mes: new Date(a.date).toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+    mes: dateOnlyToLocalDate(a.date).toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
     Investido: a.invested,
     Faturamento: a.revenue,
   }));
 
   const [form, setForm] = useState({
-    date: new Date().toISOString().slice(0, 10),
+    date: todayDateInput(),
     invested: "",
     purchases: "",
     revenue: "",
   });
 
-  function localDateISO(ymd: string) {
-    const [y, m, d] = ymd.split("-").map(Number);
-    return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0, 0).toISOString();
-  }
   async function save() {
     const invested = Number(form.invested);
     if (!form.date || !invested) { toast.error("Informe a data e o valor investido"); return; }
     await addAd({
-      date: localDateISO(form.date),
+      date: dateInputToLocalISO(form.date),
       invested,
       purchases: Number(form.purchases) || 0,
       revenue: Number(form.revenue) || 0,
     });
     toast.success("Gasto de Ads adicionado");
-    setForm({ date: new Date().toISOString().slice(0, 10), invested: "", purchases: "", revenue: "" });
+    setForm({ date: todayDateInput(), invested: "", purchases: "", revenue: "" });
   }
 
   return (
@@ -129,7 +125,7 @@ function Page() {
                 const c = a.invested / Math.max(1, a.purchases);
                 return (
                   <tr key={a.id} className="border-t border-border">
-                    <td className="px-4 py-3 capitalize">{new Date(a.date).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</td>
+                    <td className="px-4 py-3 capitalize">{fmtBusinessDate(a.date)}</td>
                     <td className="px-4 py-3 text-right">{brl(a.invested)}</td>
                     <td className="px-4 py-3 text-right">{a.purchases}</td>
                     <td className="px-4 py-3 text-right text-primary font-medium">{brl(a.revenue)}</td>
