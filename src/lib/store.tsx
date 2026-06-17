@@ -80,6 +80,9 @@ export type Settings = {
   checkoutLogoUrl: string;
   checkoutBgColor: string;
   checkoutTheme: "dark" | "light";
+  checkoutTextColor: string;
+  checkoutCardColor: string;
+  checkoutNeonColor: string;
 };
 
 type State = {
@@ -101,6 +104,9 @@ const emptySettings: Settings = {
   checkoutLogoUrl: "",
   checkoutBgColor: "#0a0a0a",
   checkoutTheme: "dark",
+  checkoutTextColor: "#f8fafc",
+  checkoutCardColor: "#111111",
+  checkoutNeonColor: "#a855f7",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -185,6 +191,9 @@ const toSettings = (r: any): Settings => ({
   checkoutLogoUrl: r.checkout_logo_url ?? "",
   checkoutBgColor: r.checkout_bg_color ?? "#0a0a0a",
   checkoutTheme: (r.checkout_theme as "dark" | "light") ?? "dark",
+  checkoutTextColor: r.checkout_text_color ?? "#f8fafc",
+  checkoutCardColor: r.checkout_card_color ?? "#111111",
+  checkoutNeonColor: r.checkout_neon_color ?? "#a855f7",
 });
 
 type Ctx = {
@@ -371,6 +380,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutLogoUrl !== undefined) patch.checkout_logo_url = p.checkoutLogoUrl;
       if (p.checkoutBgColor !== undefined) patch.checkout_bg_color = p.checkoutBgColor;
       if (p.checkoutTheme !== undefined) patch.checkout_theme = p.checkoutTheme;
+      if (p.checkoutTextColor !== undefined) patch.checkout_text_color = p.checkoutTextColor;
+      if (p.checkoutCardColor !== undefined) patch.checkout_card_color = p.checkoutCardColor;
+      if (p.checkoutNeonColor !== undefined) patch.checkout_neon_color = p.checkoutNeonColor;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
