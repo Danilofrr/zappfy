@@ -305,12 +305,31 @@ function Page() {
           <Field label="Linha de copyright / CNPJ">
             <Textarea value={f.checkoutFooterCopyright} onChange={(e) => setF({ ...f, checkoutFooterCopyright: e.target.value })} placeholder="© 2026 VILIES NEGOCIOS DIGITAIS CNPJ: ..." />
           </Field>
+          <Field label="CNPJ exibido no rodapé (opcional)">
+            <Input value={f.checkoutFooterCnpj} onChange={(e) => setF({ ...f, checkoutFooterCnpj: e.target.value })} placeholder="50.888.578/0001-02" />
+          </Field>
           <Field label="E-mail de suporte">
             <Input value={f.checkoutFooterEmail} onChange={(e) => setF({ ...f, checkoutFooterEmail: e.target.value })} placeholder="suporte@espartaimports.com.br" />
           </Field>
           <Field label="WhatsApp exibido no rodapé (opcional)">
             <Input value={f.checkoutFooterWhatsapp} onChange={(e) => setF({ ...f, checkoutFooterWhatsapp: e.target.value })} placeholder="(81) 99999-0000" />
           </Field>
+
+          <div className="grid gap-2 rounded-lg border border-border p-3">
+            <div className="text-sm font-medium mb-1">Exibir no rodapé</div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">CNPJ</span>
+              <Switch checked={f.checkoutFooterShowCnpj} onCheckedChange={(v) => setF({ ...f, checkoutFooterShowCnpj: v })} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">E-mail</span>
+              <Switch checked={f.checkoutFooterShowEmail} onCheckedChange={(v) => setF({ ...f, checkoutFooterShowEmail: v })} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">WhatsApp</span>
+              <Switch checked={f.checkoutFooterShowWhatsapp} onCheckedChange={(v) => setF({ ...f, checkoutFooterShowWhatsapp: v })} />
+            </div>
+          </div>
 
           <div className="flex items-center justify-between rounded-lg border border-border p-3">
             <div>
