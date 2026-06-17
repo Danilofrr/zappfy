@@ -119,7 +119,9 @@ export type Settings = {
   checkoutFooterShowWhatsapp: boolean;
   motoboyMessageTemplate: string;
   deliveryMessageTemplate: string;
+  slug: string;
 };
+
 
 type State = {
   products: Product[];
