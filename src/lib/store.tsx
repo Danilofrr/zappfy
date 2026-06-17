@@ -75,6 +75,7 @@ export type Settings = {
   pixKey: string;
   address: string;
   deliveryFee: number;
+  deliveryLabel: string;
   monthlyRevenueGoal: number;
   monthlyProfitGoal: number;
   checkoutLogoUrl: string;
@@ -83,6 +84,8 @@ export type Settings = {
   checkoutTextColor: string;
   checkoutCardColor: string;
   checkoutNeonColor: string;
+  checkoutButtonLabel: string;
+  checkoutButtonColor: string;
 };
 
 type State = {
@@ -98,7 +101,8 @@ const emptySettings: Settings = {
   whatsapp: "",
   pixKey: "",
   address: "",
-  deliveryFee: 0,
+  deliveryFee: 19.90,
+  deliveryLabel: "Entrega",
   monthlyRevenueGoal: 0,
   monthlyProfitGoal: 0,
   checkoutLogoUrl: "",
@@ -107,6 +111,8 @@ const emptySettings: Settings = {
   checkoutTextColor: "#f8fafc",
   checkoutCardColor: "#111111",
   checkoutNeonColor: "#a855f7",
+  checkoutButtonLabel: "Enviar pedido pelo WhatsApp",
+  checkoutButtonColor: "#a855f7",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -187,6 +193,7 @@ const toAd = (r: any): AdEntry => ({
 const toSettings = (r: any): Settings => ({
   storeName: r.store_name, whatsapp: r.whatsapp ?? "", pixKey: r.pix_key ?? "",
   address: r.address ?? "", deliveryFee: Number(r.delivery_fee),
+  deliveryLabel: r.delivery_label ?? "Entrega",
   monthlyRevenueGoal: Number(r.monthly_revenue_goal), monthlyProfitGoal: Number(r.monthly_profit_goal),
   checkoutLogoUrl: r.checkout_logo_url ?? "",
   checkoutBgColor: r.checkout_bg_color ?? "#0a0a0a",
@@ -194,6 +201,8 @@ const toSettings = (r: any): Settings => ({
   checkoutTextColor: r.checkout_text_color ?? "#f8fafc",
   checkoutCardColor: r.checkout_card_color ?? "#111111",
   checkoutNeonColor: r.checkout_neon_color ?? "#a855f7",
+  checkoutButtonLabel: r.checkout_button_label ?? "Enviar pedido pelo WhatsApp",
+  checkoutButtonColor: r.checkout_button_color ?? "#a855f7",
 });
 
 type Ctx = {
@@ -383,6 +392,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutTextColor !== undefined) patch.checkout_text_color = p.checkoutTextColor;
       if (p.checkoutCardColor !== undefined) patch.checkout_card_color = p.checkoutCardColor;
       if (p.checkoutNeonColor !== undefined) patch.checkout_neon_color = p.checkoutNeonColor;
+      if (p.deliveryLabel !== undefined) patch.delivery_label = p.deliveryLabel;
+      if (p.checkoutButtonLabel !== undefined) patch.checkout_button_label = p.checkoutButtonLabel;
+      if (p.checkoutButtonColor !== undefined) patch.checkout_button_color = p.checkoutButtonColor;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
