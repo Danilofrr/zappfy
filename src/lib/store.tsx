@@ -676,27 +676,27 @@ export function monthRange(date = new Date()) {
 export function useFinance(range?: { start: Date; end: Date }) {
   const { state } = useStore();
   const { start, end } = range ?? monthRange();
+  const motoboyFee = Number(state.settings.motoboyFee ?? 0);
 
   const monthOrders = state.orders.filter(
     (o) => new Date(o.date) >= start && new Date(o.date) < end && o.status !== "cancelado",
   );
   const revenue = monthOrders.reduce((a, o) => a + o.total, 0);
   const cogs = monthOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
+  const motoboyCost = motoboyFee * monthOrders.length;
 
   const monthExpenses = state.expenses.filter((e) => new Date(e.date) >= start && new Date(e.date) < end);
   const adsSpend = monthExpenses.filter((e) => e.category === "ads").reduce((a, e) => a + e.amount, 0);
   const opEx = monthExpenses.filter((e) => e.category !== "ads").reduce((a, e) => a + e.amount, 0);
 
-  const profit = revenue - cogs - adsSpend - opEx;
+  const profit = revenue - cogs - adsSpend - opEx - motoboyCost;
 
-  const allRevenue = state.orders
-    .filter((o) => o.status !== "cancelado" && o.status !== "aguardando")
-    .reduce((a, o) => a + o.total, 0);
+  const paidOrders = state.orders.filter((o) => o.status !== "cancelado" && o.status !== "aguardando");
+  const allRevenue = paidOrders.reduce((a, o) => a + o.total, 0);
   const allExpenses = state.expenses.reduce((a, e) => a + e.amount, 0);
-  const allCogs = state.orders
-    .filter((o) => o.status !== "cancelado" && o.status !== "aguardando")
-    .reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
-  const cash = allRevenue - allExpenses - allCogs;
+  const allCogs = paidOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
+  const allMotoboy = motoboyFee * paidOrders.length;
+  const cash = allRevenue - allExpenses - allCogs - allMotoboy;
 
-  return { revenue, cogs, adsSpend, opEx, profit, cash, ordersCount: monthOrders.length };
+  return { revenue, cogs, adsSpend, opEx, motoboyCost, profit, cash, ordersCount: monthOrders.length };
 }
