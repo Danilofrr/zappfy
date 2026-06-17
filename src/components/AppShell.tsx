@@ -35,16 +35,26 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Mobile top bar */}
-      <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur px-4 h-14">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-primary shadow-glow">
-            <TrendingUp className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-bold tracking-tight">LucroTrack</span>
-        </Link>
-        <button onClick={() => setOpen((v) => !v)} className="rounded-md p-2 hover:bg-secondary" aria-label="Menu">
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+      <header
+        className="lg:hidden sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className="flex items-center justify-between px-4 h-16">
+          <Link to="/" className="flex items-center gap-2 min-w-0">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow">
+              <TrendingUp className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="font-bold tracking-tight text-lg truncate">LucroTrack</span>
+          </Link>
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-card hover:bg-secondary active:scale-95 transition"
+            aria-label="Menu"
+            aria-expanded={open}
+          >
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </header>
 
       <div className="flex">
