@@ -28,12 +28,34 @@ function AuthPage() {
   const [storeName, setStoreName] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem("lt_remember_email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) navigate({ to: "/" });
     });
   }, [navigate]);
+
+  async function handleForgotPassword() {
+    if (!email) {
+      toast.error("Digite seu e-mail para recuperar a senha");
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Enviamos um link de recuperação para o seu e-mail.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao enviar recuperação");
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
