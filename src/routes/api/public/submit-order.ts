@@ -126,13 +126,14 @@ export const Route = createFileRoute("/api/public/submit-order")({
 
         // Fire-and-forget push notification to the store owner.
         try {
-          if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-            console.warn("[submit-order] SUPABASE_SERVICE_ROLE_KEY not set — skipping push notification");
+          const { getAdminClient } = await import("@/lib/admin-client.server");
+          const admin = getAdminClient();
+          if (!admin) {
+            console.warn("[submit-order] admin client unavailable — skipping push notification");
           } else {
-            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
             const { sendPushToUser } = await import("@/lib/push.server");
 
-            const { data: order, error: orderErr } = await (supabaseAdmin as any)
+            const { data: order, error: orderErr } = await (admin as any)
               .from("orders")
               .select("user_id, total, items")
               .eq("id", data)
@@ -148,7 +149,7 @@ export const Route = createFileRoute("/api/public/submit-order")({
               });
               const firstItem = Array.isArray(order.items) ? order.items[0] : null;
               const productName: string = firstItem?.name || item.name || "Produto";
-              await sendPushToUser(supabaseAdmin, order.user_id, {
+              await sendPushToUser(admin, order.user_id, {
                 title: "🔔 Nova venda realizada",
                 body: `Valor: ${totalLabel}\nProduto: ${productName}`,
                 icon: "/icon-192.png",
