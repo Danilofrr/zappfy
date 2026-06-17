@@ -110,9 +110,10 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         notes: form.notes,
         date: new Date().toISOString(),
       });
-    } catch (e) {
+    } catch (e: any) {
+      console.error("[checkout] erro ao enviar pedido:", e);
       setSubmitting(false);
-      toast.error("Não foi possível enviar seu pedido. Tente novamente.");
+      toast.error(e?.message || "Falha ao enviar pedido");
       return;
     }
 
@@ -144,8 +145,8 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full" style={{ backgroundColor: `${neonColor}26` }}>
               <CheckCircle2 className="h-8 w-8" style={{ color: neonColor }}/>
             </div>
-            <h1 className="mt-4 text-xl font-bold">Pedido enviado!</h1>
-            <p className="mt-2 text-sm opacity-70">Estamos redirecionando você para o WhatsApp da loja para confirmar...</p>
+            <h1 className="mt-4 text-xl font-bold">Pedido enviado com sucesso!</h1>
+            <p className="mt-2 text-sm opacity-70">Em breve entraremos em contato pelo WhatsApp.</p>
           </div>
         </div>
       </div>

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckoutView } from "@/components/CheckoutView";
-import { submitPublicOrder } from "@/lib/api/public-checkout.functions";
 import type { Product, Settings } from "@/lib/store";
 
 const searchSchema = z.object({
@@ -178,10 +177,19 @@ function Checkout() {
       products={products}
       settings={settings}
       onSubmit={async (order) => {
-        await submitPublicOrder({
-          data: { slug: settings.slug || (loja ?? ""), order },
+        const res = await fetch("/api/public/submit-order", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ slug: settings.slug || (loja ?? ""), order }),
         });
+        if (!res.ok) {
+          let detail: any = null;
+          try { detail = await res.json(); } catch { detail = await res.text().catch(() => null); }
+          console.error("[checkout] submit failed", res.status, detail);
+          throw new Error(detail?.error || `Erro ${res.status} ao enviar pedido`);
+        }
       }}
     />
   );
 }
+
