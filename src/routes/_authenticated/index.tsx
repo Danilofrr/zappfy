@@ -184,14 +184,14 @@ function Dashboard() {
             <span className="text-xs uppercase tracking-wider text-muted-foreground">Facebook Ads</span>
             <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
           </div>
-          <div className="text-2xl font-bold">{brl(ads?.invested ?? 0)}</div>
-          <div className="text-xs text-muted-foreground">Investido no mês</div>
+          <div className="text-2xl font-bold">{brl(adsInvested)}</div>
+          <div className="text-xs text-muted-foreground">Investido — {range.label}</div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <Mini label="ROAS" value={`${adsRoas.toFixed(2)}x`} />
             <Mini label="CPA" value={brl(adsCpa)} />
-            <Mini label="Compras" value={String(ads?.purchases ?? 0)} />
-            <Mini label="Faturamento" value={brl(ads?.revenue ?? 0)} />
+            <Mini label="Compras" value={String(adsPurchases)} />
+            <Mini label="Faturamento" value={brl(adsRevenue)} />
           </div>
         </div>
       </div>
