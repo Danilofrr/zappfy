@@ -42,6 +42,26 @@ export const submitPublicOrder = createServerFn({ method: "POST" })
     if (!settingsRow?.user_id) throw new Error("Loja não encontrada");
 
     const o = data.order;
+
+    // Re-fetch authoritative product cost/price server-side so clients can't tamper with margin.
+    const productIds = o.items.map((i) => i.productId);
+    const { data: prodRows } = await supabaseAdmin
+      .from("products")
+      .select("id, name, price, cost")
+      .in("id", productIds)
+      .eq("user_id", settingsRow.user_id);
+    const byId = new Map((prodRows ?? []).map((p: any) => [p.id, p]));
+    const items = o.items.map((i) => {
+      const p = byId.get(i.productId);
+      return {
+        productId: i.productId,
+        name: p?.name ?? i.name,
+        qty: i.qty,
+        price: p ? Number(p.price) : i.price,
+        cost: p ? Number(p.cost) : 0,
+      };
+    });
+
     const { data: inserted, error: iErr } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -51,7 +71,7 @@ export const submitPublicOrder = createServerFn({ method: "POST" })
         address: o.address ?? "",
         district: o.district ?? "",
         city: o.city ?? "",
-        items: o.items as unknown as never,
+        items: items as unknown as never,
         total: o.total,
         payment: o.payment,
         status: "aguardando",
