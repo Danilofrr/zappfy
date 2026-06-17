@@ -247,6 +247,7 @@ export type Database = {
           motoboy_message_template: string | null
           pix_key: string
           shipping_options: Json | null
+          slug: string | null
           store_name: string
           updated_at: string
           user_id: string
@@ -298,6 +299,7 @@ export type Database = {
           motoboy_message_template?: string | null
           pix_key?: string
           shipping_options?: Json | null
+          slug?: string | null
           store_name?: string
           updated_at?: string
           user_id: string
@@ -349,6 +351,7 @@ export type Database = {
           motoboy_message_template?: string | null
           pix_key?: string
           shipping_options?: Json | null
+          slug?: string | null
           store_name?: string
           updated_at?: string
           user_id?: string
