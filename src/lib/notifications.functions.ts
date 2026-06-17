@@ -62,12 +62,12 @@ export const sendTestNotification = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { sendPushToUser } = await import("@/lib/push.server");
     const result = await sendPushToUser(context.supabase, context.userId, {
-      title: "🔔 Teste de notificação",
-      body: "Notificações ativadas com sucesso.",
+      title: "Venda aprovada!",
+      body: "Valor: R$ 99,90",
       icon: "/icon-192.png",
       badge: "/icon-192.png",
       tag: "zappfy-test",
-      data: { url: "/configuracoes" },
+      data: { url: "/pedidos", sound: "/cash-register.mp3" },
     });
     return result;
   });
