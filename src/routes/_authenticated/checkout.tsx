@@ -203,20 +203,24 @@ function Checkout() {
             </div>
           </div>
 
-          <aside className="rounded-2xl border border-border bg-card p-6 card-neon h-fit lg:sticky lg:top-6">
-            <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4 text-primary"/>Resumo</div>
+          <aside className="p-6 h-fit lg:sticky lg:top-6" style={cardStyle}>
+            <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4" style={{ color: neonColor }}/>Resumo</div>
             <div className="mt-4 space-y-2 text-sm">
               <Row label={`${product?.name ?? "—"} × ${qty}`} value={brl((product?.price ?? 0) * qty)}/>
               <Row label="Entrega" value={brl(settings.deliveryFee)}/>
-              <div className="border-t border-border pt-3 flex justify-between">
+              <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
                 <span className="font-semibold">Total</span>
-                <span className="font-bold text-lg text-neon">{brl(total)}</span>
+                <span className="font-bold text-lg" style={{ color: neonColor, textShadow: `0 0 10px ${neonColor}` }}>{brl(total)}</span>
               </div>
             </div>
-            <Button onClick={submit} className="mt-5 w-full bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold shadow-glow">
+            <Button
+              onClick={submit}
+              className="mt-5 w-full font-semibold text-white"
+              style={{ backgroundColor: neonColor, boxShadow: `0 0 20px ${neonColor}99` }}
+            >
               Enviar pedido pelo WhatsApp
             </Button>
-            <p className="mt-3 text-[11px] text-muted-foreground text-center">Você será redirecionado para confirmar com a loja.</p>
+            <p className="mt-3 text-[11px] opacity-60 text-center">Será enviado para o WhatsApp da loja ({settings.whatsapp || "configure em Configurações"}).</p>
           </aside>
         </div>
         )}
@@ -229,5 +233,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
 }
 function Row({ label, value }: { label: string; value: string }) {
-  return <div className="flex justify-between text-muted-foreground"><span className="truncate pr-2">{label}</span><span className="text-foreground">{value}</span></div>;
+  return <div className="flex justify-between opacity-80"><span className="truncate pr-2">{label}</span><span className="opacity-100">{value}</span></div>;
 }
