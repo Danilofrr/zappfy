@@ -117,6 +117,8 @@ export type Settings = {
   checkoutFooterShowCnpj: boolean;
   checkoutFooterShowEmail: boolean;
   checkoutFooterShowWhatsapp: boolean;
+  motoboyMessageTemplate: string;
+  deliveryMessageTemplate: string;
 };
 
 type State = {
