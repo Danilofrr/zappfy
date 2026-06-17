@@ -104,8 +104,8 @@ function Checkout() {
 
       let settingsRow: any = null;
       if (loja) {
-        const { data, error: sErr } = await supabase
-          .from("settings")
+        const { data, error: sErr } = await (supabase as any)
+          .from("settings_public")
           .select("*")
           .ilike("slug", loja.toLowerCase())
           .maybeSingle();
@@ -116,10 +116,9 @@ function Checkout() {
         settingsRow = data;
       } else {
         // No slug provided: load the first store with a public slug (single-tenant convenience).
-        const { data, error: sErr } = await supabase
-          .from("settings")
+        const { data, error: sErr } = await (supabase as any)
+          .from("settings_public")
           .select("*")
-          .not("slug", "is", null)
           .limit(1)
           .maybeSingle();
         if (sErr) {
@@ -136,8 +135,8 @@ function Checkout() {
         return;
       }
 
-      const { data: productRows, error: pErr } = await supabase
-        .from("products")
+      const { data: productRows, error: pErr } = await (supabase as any)
+        .from("products_public")
         .select("*")
         .eq("user_id", settingsRow.user_id)
         .order("created_at", { ascending: false });
