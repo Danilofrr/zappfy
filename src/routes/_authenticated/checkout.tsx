@@ -406,10 +406,10 @@ function Checkout() {
             backgroundColor: settings.checkoutFooterBgColor || settings.checkoutHeaderBgColor || rootStyle.backgroundColor,
           }}
         >
-          <div className="mx-auto max-w-3xl px-4 sm:px-6 py-3 text-center space-y-1.5">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 py-5 text-center space-y-3">
             {settings.checkoutFooterShowCardsImage ? (
-              <div>
-                <div className="text-[11px] uppercase tracking-wider opacity-60 mb-0.5">Formas de pagamento aceitas</div>
+              <div className="space-y-2">
+                <div className="text-[11px] uppercase tracking-wider opacity-60">Formas de pagamento aceitas</div>
                 <div className="flex justify-center">
                   <img
                     src={settings.checkoutFooterCardsImageUrl || cardsImageAsset.url}
@@ -420,9 +420,9 @@ function Checkout() {
                 </div>
               </div>
             ) : payments.length > 0 ? (
-              <div>
-                <div className="text-[11px] uppercase tracking-wider opacity-60 mb-0.5">Formas de pagamento aceitas</div>
-                <div className="flex flex-wrap justify-center items-center gap-2">
+              <div className="space-y-2">
+                <div className="text-[11px] uppercase tracking-wider opacity-60">Formas de pagamento aceitas</div>
+                <div className="flex flex-wrap justify-center items-center gap-3">
                   {payments.map((p) => (
                     <PaymentBadge key={p} brand={p} />
                   ))}
