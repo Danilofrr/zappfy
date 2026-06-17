@@ -191,5 +191,13 @@ function PublicCheckout() {
     );
   }
 
-  return <CheckoutView products={products} settings={settings} />;
+  return (
+    <CheckoutView
+      products={products}
+      settings={settings}
+      onSubmit={async (order) => {
+        await submitPublicOrder({ data: { slug: slug.toLowerCase(), order } });
+      }}
+    />
+  );
 }
