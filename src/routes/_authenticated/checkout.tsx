@@ -137,40 +137,9 @@ function Checkout() {
         ) : (
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           <div className="p-6" style={cardStyle}>
-
-  const noProducts = products.length === 0;
-
-  return (
-    <div className={themeClass} style={rootStyle}>
-      <header className="border-b border-border">
-        <div className="mx-auto max-w-3xl flex items-center gap-3 px-4 sm:px-6 h-16">
-          {settings.checkoutLogoUrl ? (
-            <img src={settings.checkoutLogoUrl} alt={settings.storeName} className="h-10 w-10 rounded-xl object-cover" />
-          ) : (
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary shadow-glow">
-              <TrendingUp className="h-5 w-5 text-primary-foreground"/>
-            </div>
-          )}
-          <div>
-            <div className="font-bold">{settings.storeName}</div>
-            <div className="text-xs text-muted-foreground">Checkout rápido</div>
-          </div>
-          <Link to="/" className="ml-auto text-xs text-muted-foreground hover:text-primary">Voltar</Link>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-        {noProducts ? (
-          <div className="rounded-2xl border border-border bg-card p-10 text-center card-neon">
-            <PackageX className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h2 className="mt-4 font-bold">Nenhum produto cadastrado</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Cadastre seus produtos em Produtos para começar a vender.</p>
-          </div>
-        ) : (
-        <div className="grid lg:grid-cols-[1fr_320px] gap-6">
-          <div className="rounded-2xl border border-border bg-card p-6 card-neon">
             <h1 className="text-2xl font-bold tracking-tight">Finalizar pedido</h1>
-            <p className="text-sm text-muted-foreground mt-1">Preencha seus dados — leva menos de 1 minuto.</p>
+            <p className="text-sm opacity-70 mt-1">Preencha seus dados — leva menos de 1 minuto.</p>
+
 
             <div className="mt-6 grid gap-4">
               <div className="grid grid-cols-2 gap-3">
