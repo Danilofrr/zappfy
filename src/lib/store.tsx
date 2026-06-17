@@ -86,6 +86,7 @@ export type Settings = {
   checkoutNeonColor: string;
   checkoutButtonLabel: string;
   checkoutButtonColor: string;
+  checkoutHeaderBgColor: string;
 };
 
 type State = {
@@ -113,6 +114,7 @@ const emptySettings: Settings = {
   checkoutNeonColor: "#a855f7",
   checkoutButtonLabel: "Enviar pedido pelo WhatsApp",
   checkoutButtonColor: "#a855f7",
+  checkoutHeaderBgColor: "#0a0a0a",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -203,6 +205,7 @@ const toSettings = (r: any): Settings => ({
   checkoutNeonColor: r.checkout_neon_color ?? "#a855f7",
   checkoutButtonLabel: r.checkout_button_label ?? "Enviar pedido pelo WhatsApp",
   checkoutButtonColor: r.checkout_button_color ?? "#a855f7",
+  checkoutHeaderBgColor: r.checkout_header_bg_color ?? "#0a0a0a",
 });
 
 type Ctx = {
@@ -395,6 +398,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.deliveryLabel !== undefined) patch.delivery_label = p.deliveryLabel;
       if (p.checkoutButtonLabel !== undefined) patch.checkout_button_label = p.checkoutButtonLabel;
       if (p.checkoutButtonColor !== undefined) patch.checkout_button_color = p.checkoutButtonColor;
+      if (p.checkoutHeaderBgColor !== undefined) patch.checkout_header_bg_color = p.checkoutHeaderBgColor;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));

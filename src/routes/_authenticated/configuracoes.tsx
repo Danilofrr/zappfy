@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { RotateCcw, Moon, Sun, Image as ImageIcon, Upload, X } from "lucide-react";
+import { RotateCcw, Image as ImageIcon, Upload, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — LucroTrack" }] }),
@@ -136,7 +136,8 @@ function Page() {
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <ColorField label="Cor de fundo do checkout" value={f.checkoutBgColor} onChange={(v) => setF({ ...f, checkoutBgColor: v })} />
+            <ColorField label="Cor de fundo do header (topo)" value={f.checkoutHeaderBgColor} onChange={(v) => setF({ ...f, checkoutHeaderBgColor: v })} />
+            <ColorField label="Cor de fundo do checkout (abaixo)" value={f.checkoutBgColor} onChange={(v) => setF({ ...f, checkoutBgColor: v })} />
             <ColorField label="Cor de fundo dos cards" value={f.checkoutCardColor} onChange={(v) => setF({ ...f, checkoutCardColor: v })} />
             <ColorField label="Cor das escritas" value={f.checkoutTextColor} onChange={(v) => setF({ ...f, checkoutTextColor: v })} />
             <ColorField label="Cor do neon dos cards" value={f.checkoutNeonColor} onChange={(v) => setF({ ...f, checkoutNeonColor: v })} />
@@ -149,27 +150,6 @@ function Page() {
               onChange={(e) => setF({ ...f, checkoutButtonLabel: e.target.value })}
               placeholder="Enviar pedido pelo WhatsApp"
             />
-          </Field>
-
-          <Field label="Tema do checkout">
-            <div className="grid grid-cols-2 gap-2">
-              {(["dark", "light"] as const).map((t) => {
-                const active = f.checkoutTheme === t;
-                const Icon = t === "dark" ? Moon : Sun;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setF({ ...f, checkoutTheme: t })}
-                    className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
-                      active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" /> {t === "dark" ? "Escuro" : "Claro"}
-                  </button>
-                );
-              })}
-            </div>
           </Field>
         </Card>
 

@@ -113,7 +113,7 @@ function Checkout() {
 
   return (
     <div className={themeClass} style={rootStyle}>
-      <header className="border-b" style={{ borderColor: `${neonColor}33` }}>
+      <header className="border-b" style={{ borderColor: `${neonColor}33`, backgroundColor: settings.checkoutHeaderBgColor || rootStyle.backgroundColor }}>
         <div className="mx-auto max-w-3xl flex items-center gap-3 px-4 sm:px-6 h-16">
           {settings.checkoutLogoUrl ? (
             <img src={settings.checkoutLogoUrl} alt={settings.storeName} className="h-10 w-10 rounded-xl object-contain" />
