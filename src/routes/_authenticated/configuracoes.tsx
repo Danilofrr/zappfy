@@ -413,7 +413,7 @@ function Page() {
               onChange={(e) => setF({ ...f, motoboyMessageTemplate: e.target.value })}
             />
             <p className="text-[11px] text-muted-foreground mt-1">
-              Variáveis: <code>{"{cliente}"}</code>, <code>{"{telefone}"}</code>, <code>{"{endereco}"}</code>, <code>{"{mapa}"}</code>, <code>{"{itens}"}</code>, <code>{"{pagamento}"}</code>, <code>{"{total}"}</code>, <code>{"{observacoes}"}</code>, <code>{"{loja}"}</code>
+              Variáveis: <code>{"{cliente}"}</code>, <code>{"{produto}"}</code>, <code>{"{telefone}"}</code>, <code>{"{endereco}"}</code>, <code>{"{mapa}"}</code>, <code>{"{itens}"}</code>, <code>{"{pagamento}"}</code>, <code>{"{total}"}</code>, <code>{"{observacoes}"}</code>, <code>{"{loja}"}</code>
             </p>
           </Field>
         </Card>
