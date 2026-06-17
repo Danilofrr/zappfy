@@ -149,25 +149,33 @@ function Checkout() {
   return (
     <div className={themeClass} style={rootStyle}>
       <header className="border-b" style={{ borderColor: `${neonColor}33`, backgroundColor: settings.checkoutHeaderBgColor || rootStyle.backgroundColor }}>
-        <div className="mx-auto max-w-3xl flex items-center gap-3 px-4 sm:px-6 py-3 min-h-16">
-          {settings.checkoutLogoUrl ? (
-            <img
-              src={settings.checkoutLogoUrl}
-              alt={settings.storeName}
-              style={{ height: settings.checkoutLogoSize || 40, width: "auto", maxWidth: "60%" }}
-              className="object-contain"
-            />
-          ) : (
-            <div className="grid h-9 w-9 place-items-center rounded-xl" style={{ backgroundColor: neonColor, boxShadow: `0 0 16px ${neonColor}` }}>
-              <TrendingUp className="h-5 w-5 text-white"/>
-            </div>
-          )}
-          {!settings.checkoutLogoUrl && (
-            <div className="min-w-0">
-              <div className="font-bold truncate">{settings.storeName}</div>
-              <Link to="/" className="text-[11px] opacity-60 hover:opacity-100">Voltar ao painel</Link>
-            </div>
-          )}
+        <div className="mx-auto max-w-3xl relative flex items-center gap-3 px-4 sm:px-6 py-3 min-h-16">
+          <div
+            className={
+              settings.checkoutLogoAlign === "center"
+                ? "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3"
+                : "flex items-center gap-3"
+            }
+          >
+            {settings.checkoutLogoUrl ? (
+              <img
+                src={settings.checkoutLogoUrl}
+                alt={settings.storeName}
+                style={{ height: settings.checkoutLogoSize || 40, width: "auto", maxWidth: "60vw" }}
+                className="object-contain"
+              />
+            ) : (
+              <>
+                <div className="grid h-9 w-9 place-items-center rounded-xl" style={{ backgroundColor: neonColor, boxShadow: `0 0 16px ${neonColor}` }}>
+                  <TrendingUp className="h-5 w-5 text-white"/>
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold truncate">{settings.storeName}</div>
+                  <Link to="/" className="text-[11px] opacity-60 hover:opacity-100">Voltar ao painel</Link>
+                </div>
+              </>
+            )}
+          </div>
           {settings.checkoutSecureLabel && (
             <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold" style={{ color: settings.checkoutSecureColor || neonColor }}>
               <Lock className="h-4 w-4" />
@@ -216,7 +224,7 @@ function Checkout() {
 
             {/* Etapa 1 */}
             <StepCard
-              n={1} title="Dados pessoais"
+              n={1} title={settings.checkoutStep1Title || "Dados pessoais"}
               state={step === 1 ? "active" : step > 1 ? "done" : "locked"}
               neonColor={neonColor} cardStyle={cardStyle}
               summary={step > 1 ? `${form.customer} · ${form.phone}` : undefined}
@@ -240,7 +248,7 @@ function Checkout() {
 
             {/* Etapa 2 */}
             <StepCard
-              n={2} title="Entrega"
+              n={2} title={settings.checkoutStep2Title || "Entrega"}
               state={step === 2 ? "active" : step > 2 ? "done" : "locked"}
               neonColor={neonColor} cardStyle={cardStyle}
               summary={step > 2 && shipping ? `${shipping.label} — ${brl(shipping.price)}` : undefined}
@@ -316,7 +324,7 @@ function Checkout() {
 
             {/* Etapa 3 */}
             <StepCard
-              n={3} title="Pagamento"
+              n={3} title={settings.checkoutStep3Title || "Pagamento"}
               state={step === 3 ? "active" : "locked"}
               neonColor={neonColor} cardStyle={cardStyle}
             >
