@@ -218,7 +218,7 @@ function PedidosPage() {
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => sendToMotoboy(o)}
+                        onClick={() => setMotoboyFor(o)}
                         title="Enviar endereço para o motoboy no WhatsApp"
                         className="text-muted-foreground hover:text-blue-500 p-1"
                       >
