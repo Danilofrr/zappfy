@@ -264,6 +264,7 @@ function Checkout() {
                       <div className="grid gap-2">
                         {settings.shippingOptions.map((opt) => {
                           const active = shippingId === opt.id;
+                          const Icon = getShippingIcon(opt.icon);
                           return (
                             <button
                               key={opt.id}
@@ -276,7 +277,7 @@ function Checkout() {
                                 boxShadow: active ? `0 0 14px ${neonColor}55` : "none",
                               }}
                             >
-                              <Truck className="h-4 w-4 shrink-0" style={{ color: neonColor }}/>
+                              <Icon className="h-5 w-5 shrink-0" style={{ color: neonColor }}/>
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate">{opt.label}</div>
                               </div>
