@@ -17,7 +17,7 @@ export type CheckoutViewProps = {
   products: Product[];
   settings: Settings;
   /** Called when the order is submitted. Optional — visitors on the public link don't persist orders. */
-  onSubmit?: (order: Omit<Order, "id">) => void;
+  onSubmit?: (order: Omit<Order, "id">) => void | Promise<void>;
   /** Show "Voltar ao painel" link (owner preview). Defaults to false. */
   showBackToPanel?: boolean;
 };
