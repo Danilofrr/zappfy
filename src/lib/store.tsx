@@ -139,7 +139,7 @@ const emptySettings: Settings = {
   checkoutStepButtonColor: "#a855f7",
   checkoutStepButtonTextColor: "#ffffff",
   shippingOptions: [
-    { id: "motoboy", label: "Motoboy", price: 19.9, icon: "bike" },
+    { id: "motoboy", label: "Motoboy", price: 19.9, icon: "motorcycle" },
     { id: "pac", label: "Correios PAC", price: 24.9, icon: "truck" },
     { id: "sedex", label: "Correios SEDEX", price: 34.9, icon: "rocket" },
   ],
