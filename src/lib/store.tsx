@@ -101,6 +101,9 @@ export type Settings = {
   checkoutFooterCopyright: string;
   checkoutFooterEmail: string;
   checkoutFooterPayments: string;
+  checkoutSecureColor: string;
+  checkoutLogoSize: number;
+  checkoutFooterBgColor: string;
 };
 
 type State = {
@@ -136,7 +139,7 @@ const emptySettings: Settings = {
   checkoutStepButtonColor: "#a855f7",
   checkoutStepButtonTextColor: "#ffffff",
   shippingOptions: [
-    { id: "motoboy", label: "Motoboy", price: 19.9, icon: "bike" },
+    { id: "motoboy", label: "Motoboy", price: 19.9, icon: "motorcycle" },
     { id: "pac", label: "Correios PAC", price: 24.9, icon: "truck" },
     { id: "sedex", label: "Correios SEDEX", price: 34.9, icon: "rocket" },
   ],
@@ -145,6 +148,9 @@ const emptySettings: Settings = {
   checkoutFooterCopyright: "© 2026 VILIES NEGOCIOS DIGITAIS CNPJ: 50.888.578/0001-02",
   checkoutFooterEmail: "suporte@espartaimports.com.br",
   checkoutFooterPayments: "pix,visa,mastercard,elo,amex,hipercard",
+  checkoutSecureColor: "#a855f7",
+  checkoutLogoSize: 40,
+  checkoutFooterBgColor: "#0a0a0a",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -248,6 +254,9 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterCopyright: r.checkout_footer_copyright ?? "",
   checkoutFooterEmail: r.checkout_footer_email ?? "",
   checkoutFooterPayments: r.checkout_footer_payments ?? "",
+  checkoutSecureColor: r.checkout_secure_color ?? r.checkout_neon_color ?? "#a855f7",
+  checkoutLogoSize: Number(r.checkout_logo_size ?? 40),
+  checkoutFooterBgColor: r.checkout_footer_bg_color ?? r.checkout_header_bg_color ?? "#0a0a0a",
 });
 
 type Ctx = {
@@ -453,6 +462,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutFooterCopyright !== undefined) patch.checkout_footer_copyright = p.checkoutFooterCopyright;
       if (p.checkoutFooterEmail !== undefined) patch.checkout_footer_email = p.checkoutFooterEmail;
       if (p.checkoutFooterPayments !== undefined) patch.checkout_footer_payments = p.checkoutFooterPayments;
+      if (p.checkoutSecureColor !== undefined) patch.checkout_secure_color = p.checkoutSecureColor;
+      if (p.checkoutLogoSize !== undefined) patch.checkout_logo_size = p.checkoutLogoSize;
+      if (p.checkoutFooterBgColor !== undefined) patch.checkout_footer_bg_color = p.checkoutFooterBgColor;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));

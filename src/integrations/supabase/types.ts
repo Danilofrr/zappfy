@@ -204,14 +204,17 @@ export type Database = {
           checkout_button_color: string
           checkout_button_label: string
           checkout_card_color: string
+          checkout_footer_bg_color: string | null
           checkout_footer_brand: string | null
           checkout_footer_copyright: string | null
           checkout_footer_email: string | null
           checkout_footer_enabled: boolean | null
           checkout_footer_payments: string | null
           checkout_header_bg_color: string
+          checkout_logo_size: number | null
           checkout_logo_url: string
           checkout_neon_color: string
+          checkout_secure_color: string | null
           checkout_secure_label: string | null
           checkout_step_button_color: string | null
           checkout_step_button_text_color: string | null
@@ -238,14 +241,17 @@ export type Database = {
           checkout_button_color?: string
           checkout_button_label?: string
           checkout_card_color?: string
+          checkout_footer_bg_color?: string | null
           checkout_footer_brand?: string | null
           checkout_footer_copyright?: string | null
           checkout_footer_email?: string | null
           checkout_footer_enabled?: boolean | null
           checkout_footer_payments?: string | null
           checkout_header_bg_color?: string
+          checkout_logo_size?: number | null
           checkout_logo_url?: string
           checkout_neon_color?: string
+          checkout_secure_color?: string | null
           checkout_secure_label?: string | null
           checkout_step_button_color?: string | null
           checkout_step_button_text_color?: string | null
@@ -272,14 +278,17 @@ export type Database = {
           checkout_button_color?: string
           checkout_button_label?: string
           checkout_card_color?: string
+          checkout_footer_bg_color?: string | null
           checkout_footer_brand?: string | null
           checkout_footer_copyright?: string | null
           checkout_footer_email?: string | null
           checkout_footer_enabled?: boolean | null
           checkout_footer_payments?: string | null
           checkout_header_bg_color?: string
+          checkout_logo_size?: number | null
           checkout_logo_url?: string
           checkout_neon_color?: string
+          checkout_secure_color?: string | null
           checkout_secure_label?: string | null
           checkout_step_button_color?: string | null
           checkout_step_button_text_color?: string | null
