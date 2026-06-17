@@ -201,6 +201,8 @@ export type Database = {
         Row: {
           address: string
           checkout_bg_color: string
+          checkout_button_color: string
+          checkout_button_label: string
           checkout_card_color: string
           checkout_logo_url: string
           checkout_neon_color: string
@@ -208,6 +210,7 @@ export type Database = {
           checkout_theme: string
           created_at: string
           delivery_fee: number
+          delivery_label: string
           monthly_profit_goal: number
           monthly_revenue_goal: number
           pix_key: string
@@ -219,6 +222,8 @@ export type Database = {
         Insert: {
           address?: string
           checkout_bg_color?: string
+          checkout_button_color?: string
+          checkout_button_label?: string
           checkout_card_color?: string
           checkout_logo_url?: string
           checkout_neon_color?: string
@@ -226,6 +231,7 @@ export type Database = {
           checkout_theme?: string
           created_at?: string
           delivery_fee?: number
+          delivery_label?: string
           monthly_profit_goal?: number
           monthly_revenue_goal?: number
           pix_key?: string
@@ -237,6 +243,8 @@ export type Database = {
         Update: {
           address?: string
           checkout_bg_color?: string
+          checkout_button_color?: string
+          checkout_button_label?: string
           checkout_card_color?: string
           checkout_logo_url?: string
           checkout_neon_color?: string
@@ -244,6 +252,7 @@ export type Database = {
           checkout_theme?: string
           created_at?: string
           delivery_fee?: number
+          delivery_label?: string
           monthly_profit_goal?: number
           monthly_revenue_goal?: number
           pix_key?: string

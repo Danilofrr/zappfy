@@ -68,9 +68,14 @@ function Page() {
         </Card>
 
         <Card title="Metas e operação">
-          <Field label="Taxa de entrega padrão (R$)">
-            <Input type="number" step="0.01" value={f.deliveryFee} onChange={(e) => setF({ ...f, deliveryFee: Number(e.target.value) })} />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Nome da entrega (ex: Motoboy, Correios)">
+              <Input value={f.deliveryLabel} onChange={(e) => setF({ ...f, deliveryLabel: e.target.value })} placeholder="Entrega" />
+            </Field>
+            <Field label="Valor da entrega (R$)">
+              <Input type="number" step="0.01" value={f.deliveryFee} onChange={(e) => setF({ ...f, deliveryFee: Number(e.target.value) })} />
+            </Field>
+          </div>
           <Field label="Meta mensal de faturamento (R$)">
             <Input type="number" step="0.01" value={f.monthlyRevenueGoal} onChange={(e) => setF({ ...f, monthlyRevenueGoal: Number(e.target.value) })} />
           </Field>
@@ -131,11 +136,20 @@ function Page() {
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <ColorField label="Cor de fundo" value={f.checkoutBgColor} onChange={(v) => setF({ ...f, checkoutBgColor: v })} />
-            <ColorField label="Cor dos cards" value={f.checkoutCardColor} onChange={(v) => setF({ ...f, checkoutCardColor: v })} />
+            <ColorField label="Cor de fundo do checkout" value={f.checkoutBgColor} onChange={(v) => setF({ ...f, checkoutBgColor: v })} />
+            <ColorField label="Cor de fundo dos cards" value={f.checkoutCardColor} onChange={(v) => setF({ ...f, checkoutCardColor: v })} />
             <ColorField label="Cor das escritas" value={f.checkoutTextColor} onChange={(v) => setF({ ...f, checkoutTextColor: v })} />
-            <ColorField label="Cor do neon" value={f.checkoutNeonColor} onChange={(v) => setF({ ...f, checkoutNeonColor: v })} />
+            <ColorField label="Cor do neon dos cards" value={f.checkoutNeonColor} onChange={(v) => setF({ ...f, checkoutNeonColor: v })} />
+            <ColorField label="Cor do botão" value={f.checkoutButtonColor} onChange={(v) => setF({ ...f, checkoutButtonColor: v })} />
           </div>
+
+          <Field label="Texto do botão de envio">
+            <Input
+              value={f.checkoutButtonLabel}
+              onChange={(e) => setF({ ...f, checkoutButtonLabel: e.target.value })}
+              placeholder="Enviar pedido pelo WhatsApp"
+            />
+          </Field>
 
           <Field label="Tema do checkout">
             <div className="grid grid-cols-2 gap-2">
