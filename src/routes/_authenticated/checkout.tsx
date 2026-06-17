@@ -32,6 +32,7 @@ function Checkout() {
   const [done, setDone] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepCalculated, setCepCalculated] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const product = products.find((p) => p.id === productId);
   const total = (product?.price ?? 0) * qty + (cepCalculated ? settings.deliveryFee : 0);
