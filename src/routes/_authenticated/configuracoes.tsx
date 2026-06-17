@@ -307,6 +307,7 @@ function Page() {
           </Field>
           <Field label="E-mail de suporte">
             <Input value={f.checkoutFooterEmail} onChange={(e) => setF({ ...f, checkoutFooterEmail: e.target.value })} placeholder="suporte@espartaimports.com.br" />
+          </Field>
           <Field label="WhatsApp exibido no rodapé (opcional)">
             <Input value={f.checkoutFooterWhatsapp} onChange={(e) => setF({ ...f, checkoutFooterWhatsapp: e.target.value })} placeholder="(81) 99999-0000" />
           </Field>
