@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
 import { useFinance, useStore, monthRange } from "@/lib/store";
-import { brl, pct } from "@/lib/format";
+import { brl, dateOnlyToLocalDate, pct } from "@/lib/format";
 import { useMemo, useState } from "react";
 import {
   DollarSign,
@@ -60,8 +60,8 @@ function rangeFor(period: Period, customStart?: string, customEnd?: string): { s
     return { start: s, end: e, label: "últimos 30 dias" };
   }
   if (period === "custom" && customStart && customEnd) {
-    const s = startOfDay(new Date(customStart));
-    const e = startOfDay(new Date(customEnd)); e.setDate(e.getDate()+1);
+    const s = startOfDay(dateOnlyToLocalDate(customStart));
+    const e = startOfDay(dateOnlyToLocalDate(customEnd)); e.setDate(e.getDate()+1);
     return { start: s, end: e, label: "período personalizado" };
   }
   const m = monthRange(); return { start: m.start, end: m.end, label: "este mês" };
@@ -89,7 +89,7 @@ function Dashboard() {
     const rev = orders.reduce((a, o) => a + o.total, 0);
     const cogs = orders.reduce((a, o) => a + o.items.reduce((b, it) => b + it.cost * it.qty, 0), 0);
     const exps = state.expenses
-      .filter((e) => new Date(e.date) >= start && new Date(e.date) < end)
+      .filter((e) => dateOnlyToLocalDate(e.date) >= start && dateOnlyToLocalDate(e.date) < end)
       .reduce((a, e) => a + e.amount, 0);
     return {
       mes: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
 import { useStore, useFinance, type ExpenseCategory } from "@/lib/store";
-import { brl, fmtDate } from "@/lib/format";
+import { brl, dateInputToLocalISO, fmtBusinessDate, fmtDate, todayDateInput } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,9 +100,9 @@ function Page() {
 }
 
 function NewExpense({ open, setOpen, onAdd }: { open: boolean; setOpen: (v: boolean) => void; onAdd: (e: any) => void }) {
-  const [f, setF] = useState({ description: "", category: "outros" as ExpenseCategory, amount: 0, date: new Date().toISOString().slice(0, 10) });
+  const [f, setF] = useState({ description: "", category: "outros" as ExpenseCategory, amount: 0, date: todayDateInput() });
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setF({ description: "", category: "outros", amount: 0, date: new Date().toISOString().slice(0,10) }); }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setF({ description: "", category: "outros", amount: 0, date: todayDateInput() }); }}>
       <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4"/>Nova despesa</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>Nova despesa</DialogTitle></DialogHeader>
@@ -121,7 +121,7 @@ function NewExpense({ open, setOpen, onAdd }: { open: boolean; setOpen: (v: bool
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => { if (!f.description || !f.amount) { toast.error("Preencha os campos"); return; } onAdd({ ...f, date: new Date(f.date).toISOString() }); }}>Salvar</Button>
+          <Button onClick={() => { if (!f.description || !f.amount) { toast.error("Preencha os campos"); return; } onAdd({ ...f, date: dateInputToLocalISO(f.date) }); }}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
