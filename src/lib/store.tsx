@@ -129,6 +129,22 @@ const emptySettings: Settings = {
   checkoutButtonLabel: "Enviar pedido pelo WhatsApp",
   checkoutButtonColor: "#a855f7",
   checkoutHeaderBgColor: "#0a0a0a",
+  checkoutSecureLabel: "Checkout seguro",
+  checkoutStep1ButtonLabel: "Continuar",
+  checkoutStep2ButtonLabel: "Calcular frete",
+  checkoutStep3ButtonLabel: "Ir para pagamento",
+  checkoutStepButtonColor: "#a855f7",
+  checkoutStepButtonTextColor: "#ffffff",
+  shippingOptions: [
+    { id: "motoboy", label: "Motoboy", price: 19.9 },
+    { id: "pac", label: "Correios PAC", price: 24.9 },
+    { id: "sedex", label: "Correios SEDEX", price: 34.9 },
+  ],
+  checkoutFooterEnabled: true,
+  checkoutFooterBrand: "Esparta Imports",
+  checkoutFooterCopyright: "© 2026 VILIES NEGOCIOS DIGITAIS CNPJ: 50.888.578/0001-02",
+  checkoutFooterEmail: "suporte@espartaimports.com.br",
+  checkoutFooterPayments: "pix,visa,mastercard,elo,amex,hipercard",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
