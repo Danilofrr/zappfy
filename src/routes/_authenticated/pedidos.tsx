@@ -103,7 +103,12 @@ function PedidosPage() {
     const storeName = state.settings.storeName || "nossa loja";
     const item = o.items[0]?.name ? ` (${o.items[0].name})` : "";
     const endereco = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
-    const tpl = state.settings.deliveryMessageTemplate || "";
+    const saved = state.settings.deliveryMessageTemplate || "";
+    // If the saved template has lost its emojis (e.g. stored as "?" or pure ASCII),
+    // fall back to the default so the WhatsApp message keeps emojis intact.
+    const hasEmoji = /\p{Extended_Pictographic}/u.test(saved);
+    const looksBroken = /\?\s+Seu pedido|\?\s+Ol[aá]|chamar por aqui\.\s*\?/.test(saved);
+    const tpl = !saved || looksBroken || !hasEmoji ? DEFAULT_DELIVERY_TEMPLATE : saved;
     const text = applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,
