@@ -159,6 +159,7 @@ function Dashboard() {
             <Row label="(-) Custos dos Produtos" value={`- ${brl(fin.cogs)}`} />
             <Row label="(-) Facebook Ads" value={`- ${brl(fin.adsSpend)}`} />
             <Row label="(-) Despesas Operacionais" value={`- ${brl(fin.opEx)}`} />
+            <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${brl(fin.motoboyCost)}`} />
             <div className="sm:col-span-2 border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold">(=) Lucro Líquido</span>
               <span className="text-primary font-bold text-lg">{brl(fin.profit)}</span>
