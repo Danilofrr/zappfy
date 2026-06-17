@@ -176,7 +176,7 @@ function AuthPage() {
           </div>
         </Card>
 
-        </Card>
+
 
       </div>
     </div>
