@@ -86,6 +86,7 @@ export type Settings = {
   checkoutNeonColor: string;
   checkoutButtonLabel: string;
   checkoutButtonColor: string;
+  checkoutHeaderBgColor: string;
 };
 
 type State = {
@@ -113,6 +114,7 @@ const emptySettings: Settings = {
   checkoutNeonColor: "#a855f7",
   checkoutButtonLabel: "Enviar pedido pelo WhatsApp",
   checkoutButtonColor: "#a855f7",
+  checkoutHeaderBgColor: "#0a0a0a",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
