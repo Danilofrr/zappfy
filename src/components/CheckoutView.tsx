@@ -26,7 +26,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const [productId, setProductId] = useState(products[0]?.id ?? "");
   const [qty, setQty] = useState(1);
   const [form, setForm] = useState({
-    customer: "", phone: "", cep: "", address: "", reference: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
+    customer: "", phone: "", cpf: "", email: "", cep: "", address: "", reference: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
   });
   const [done, setDone] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
@@ -166,6 +166,8 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         `*Total:* ${brl(total)}%0A%0A` +
         `*Nome:* ${form.customer}%0A` +
         `*WhatsApp:* ${form.phone}%0A` +
+        (form.cpf ? `*CPF:* ${form.cpf}%0A` : "") +
+        (form.email ? `*E-mail:* ${form.email}%0A` : "") +
         (form.cep ? `*CEP:* ${form.cep}%0A` : "") +
         `*Endereço:* ${form.address}${form.district ? `, ${form.district}` : ""}${form.city ? ` - ${form.city}` : ""}%0A` +
         (form.reference ? `*Ponto de referência:* ${form.reference}%0A` : "") +
@@ -299,6 +301,14 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
               <div className="grid gap-4">
                 <Field label="Nome completo"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} placeholder="Seu nome"/></Field>
                 <Field label="Telefone (WhatsApp)"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="(81) 99999-9999"/></Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="CPF (opcional)">
+                    <Input value={form.cpf} onChange={(e) => setForm({...form, cpf: e.target.value})} placeholder="000.000.000-00" inputMode="numeric"/>
+                  </Field>
+                  <Field label="E-mail (opcional)">
+                    <Input type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} placeholder="voce@email.com"/>
+                  </Field>
+                </div>
                 <div className="flex justify-end pt-2">
                   <Button
                     onClick={() => {
