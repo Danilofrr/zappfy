@@ -167,6 +167,7 @@ const emptySettings: Settings = {
   checkoutFooterCardsImageUrl: "",
   checkoutFooterShowCardsImage: true,
   checkoutFooterCardsImageHeight: 40,
+  checkoutFooterWhatsapp: "",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
