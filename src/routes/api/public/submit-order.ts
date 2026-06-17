@@ -4,9 +4,12 @@ import { z } from "zod";
 const orderItemSchema = z.object({
   productId: z.string(),
   name: z.string(),
-  qty: z.number().int().positive(),
-  price: z.number().nonnegative(),
-  cost: z.number().nonnegative(),
+  qty: z.coerce.number().int().positive(),
+  price: z.coerce.number().nonnegative(),
+  cost: z.preprocess(
+    (v) => (v === null || v === undefined || v === "" ? 0 : v),
+    z.coerce.number().nonnegative(),
+  ),
 });
 
 const submitSchema = z.object({
