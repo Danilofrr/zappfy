@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -64,16 +65,20 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen grid place-items-center bg-background px-4 py-10">
+    <div className="min-h-screen grid place-items-center bg-background px-4 py-10 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         <Link to="/auth" className="flex items-center justify-center gap-2 mb-6">
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-primary shadow-glow">
             <TrendingUp className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold tracking-tight">LucroTrack</span>
+          <span className="text-xl font-bold tracking-tight text-neon">LucroTrack</span>
         </Link>
 
-        <Card className="p-6">
+        <Card className="p-6 card-neon animate-neon-pulse">
+
           <h1 className="text-xl font-semibold tracking-tight">
             {mode === "login" ? "Entrar na sua conta" : "Criar conta grátis"}
           </h1>
