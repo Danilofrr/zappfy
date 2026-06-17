@@ -300,6 +300,8 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterShowCnpj: r.checkout_footer_show_cnpj ?? true,
   checkoutFooterShowEmail: r.checkout_footer_show_email ?? true,
   checkoutFooterShowWhatsapp: r.checkout_footer_show_whatsapp ?? true,
+  motoboyMessageTemplate: r.motoboy_message_template ?? emptySettings.motoboyMessageTemplate,
+  deliveryMessageTemplate: r.delivery_message_template ?? emptySettings.deliveryMessageTemplate,
 });
 
 type Ctx = {
