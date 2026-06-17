@@ -116,6 +116,7 @@ function Page() {
                 <th className="text-right px-4 py-3">Faturamento</th>
                 <th className="text-right px-4 py-3">ROAS</th>
                 <th className="text-right px-4 py-3">CPA</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -130,6 +131,9 @@ function Page() {
                     <td className="px-4 py-3 text-right text-primary font-medium">{brl(a.revenue)}</td>
                     <td className="px-4 py-3 text-right font-semibold">{r.toFixed(2)}x</td>
                     <td className="px-4 py-3 text-right">{brl(c)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Button variant="ghost" size="icon" onClick={() => deleteAd(a.id)}><Trash2 className="h-4 w-4"/></Button>
+                    </td>
                   </tr>
                 );
               })}
