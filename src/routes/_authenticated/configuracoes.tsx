@@ -448,9 +448,19 @@ function Page() {
               value={f.deliveryMessageTemplate}
               onChange={(e) => setF({ ...f, deliveryMessageTemplate: e.target.value })}
             />
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Variáveis: <code>{"{cliente}"}</code>, <code>{"{telefone}"}</code>, <code>{"{produto}"}</code>, <code>{"{endereco}"}</code>, <code>{"{total}"}</code>, <code>{"{loja}"}</code>, <code>{"{observacoes}"}</code>
-            </p>
+            <div className="flex items-center justify-between mt-1 gap-2 flex-wrap">
+              <p className="text-[11px] text-muted-foreground">
+                Variáveis: <code>{"{cliente}"}</code>, <code>{"{telefone}"}</code>, <code>{"{produto}"}</code>, <code>{"{endereco}"}</code>, <code>{"{total}"}</code>, <code>{"{loja}"}</code>, <code>{"{observacoes}"}</code>
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setF({ ...f, deliveryMessageTemplate: DEFAULT_DELIVERY_TEMPLATE })}
+              >
+                <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restaurar padrão (com emojis)
+              </Button>
+            </div>
           </Field>
 
           <Field label="Mensagem para o motoboy / grupo">
@@ -459,9 +469,19 @@ function Page() {
               value={f.motoboyMessageTemplate}
               onChange={(e) => setF({ ...f, motoboyMessageTemplate: e.target.value })}
             />
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Variáveis: <code>{"{cliente}"}</code>, <code>{"{produto}"}</code>, <code>{"{telefone}"}</code>, <code>{"{endereco}"}</code>, <code>{"{mapa}"}</code>, <code>{"{itens}"}</code>, <code>{"{pagamento}"}</code>, <code>{"{total}"}</code>, <code>{"{observacoes}"}</code>, <code>{"{loja}"}</code>
-            </p>
+            <div className="flex items-center justify-between mt-1 gap-2 flex-wrap">
+              <p className="text-[11px] text-muted-foreground">
+                Variáveis: <code>{"{cliente}"}</code>, <code>{"{produto}"}</code>, <code>{"{telefone}"}</code>, <code>{"{endereco}"}</code>, <code>{"{mapa}"}</code>, <code>{"{itens}"}</code>, <code>{"{pagamento}"}</code>, <code>{"{total}"}</code>, <code>{"{observacoes}"}</code>, <code>{"{loja}"}</code>
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setF({ ...f, motoboyMessageTemplate: DEFAULT_MOTOBOY_TEMPLATE })}
+              >
+                <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restaurar padrão (com emojis)
+              </Button>
+            </div>
           </Field>
         </Card>
       </div>
