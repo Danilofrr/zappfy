@@ -211,11 +211,15 @@ export type Database = {
           checkout_footer_brand: string | null
           checkout_footer_cards_image_height: number | null
           checkout_footer_cards_image_url: string | null
+          checkout_footer_cnpj: string | null
           checkout_footer_copyright: string | null
           checkout_footer_email: string | null
           checkout_footer_enabled: boolean | null
           checkout_footer_payments: string | null
           checkout_footer_show_cards_image: boolean | null
+          checkout_footer_show_cnpj: boolean | null
+          checkout_footer_show_email: boolean | null
+          checkout_footer_show_whatsapp: boolean | null
           checkout_footer_whatsapp: string | null
           checkout_header_bg_color: string
           checkout_logo_align: string | null
@@ -256,11 +260,15 @@ export type Database = {
           checkout_footer_brand?: string | null
           checkout_footer_cards_image_height?: number | null
           checkout_footer_cards_image_url?: string | null
+          checkout_footer_cnpj?: string | null
           checkout_footer_copyright?: string | null
           checkout_footer_email?: string | null
           checkout_footer_enabled?: boolean | null
           checkout_footer_payments?: string | null
           checkout_footer_show_cards_image?: boolean | null
+          checkout_footer_show_cnpj?: boolean | null
+          checkout_footer_show_email?: boolean | null
+          checkout_footer_show_whatsapp?: boolean | null
           checkout_footer_whatsapp?: string | null
           checkout_header_bg_color?: string
           checkout_logo_align?: string | null
@@ -301,11 +309,15 @@ export type Database = {
           checkout_footer_brand?: string | null
           checkout_footer_cards_image_height?: number | null
           checkout_footer_cards_image_url?: string | null
+          checkout_footer_cnpj?: string | null
           checkout_footer_copyright?: string | null
           checkout_footer_email?: string | null
           checkout_footer_enabled?: boolean | null
           checkout_footer_payments?: string | null
           checkout_footer_show_cards_image?: boolean | null
+          checkout_footer_show_cnpj?: boolean | null
+          checkout_footer_show_email?: boolean | null
+          checkout_footer_show_whatsapp?: boolean | null
           checkout_footer_whatsapp?: string | null
           checkout_header_bg_color?: string
           checkout_logo_align?: string | null
