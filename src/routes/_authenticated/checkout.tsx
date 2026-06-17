@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, ShoppingBag, CheckCircle2 } from "lucide-react";
+import { TrendingUp, ShoppingBag, CheckCircle2, PackageX } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/checkout")({
 function Checkout() {
   const { state, addOrder } = useStore();
   const products = state.products;
+  const settings = state.settings;
   const [productId, setProductId] = useState(products[0]?.id ?? "");
   const [qty, setQty] = useState(1);
   const [form, setForm] = useState({
@@ -31,11 +32,24 @@ function Checkout() {
   const [done, setDone] = useState(false);
 
   const product = products.find((p) => p.id === productId);
-  const total = (product?.price ?? 0) * qty + state.settings.deliveryFee;
+  const total = (product?.price ?? 0) * qty + settings.deliveryFee;
+
+  // Apply custom checkout theme + background as inline styles on the root container.
+  const isLight = settings.checkoutTheme === "light";
+  const rootStyle: React.CSSProperties = {
+    backgroundColor: settings.checkoutBgColor || (isLight ? "#f8fafc" : "#0a0a0a"),
+    color: isLight ? "#0f172a" : "#f8fafc",
+    minHeight: "100vh",
+  };
+  const themeClass = isLight ? "light" : "dark";
 
   function submit() {
     if (!product || !form.customer || !form.phone) {
       toast.error("Preencha nome, telefone e selecione um produto");
+      return;
+    }
+    if (product.stock < qty) {
+      toast.error("Estoque insuficiente para esta quantidade");
       return;
     }
     addOrder({
@@ -63,33 +77,41 @@ function Checkout() {
 
     setDone(true);
     setTimeout(() => {
-      window.location.href = `https://wa.me/${state.settings.whatsapp}?text=${msg}`;
+      window.location.href = `https://wa.me/${settings.whatsapp}?text=${msg}`;
     }, 1200);
   }
 
   if (done) {
     return (
-      <div className="min-h-screen bg-background grid place-items-center px-4">
-        <div className="max-w-md w-full text-center rounded-2xl border border-border bg-card p-8 shadow-elegant">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/15">
-            <CheckCircle2 className="h-8 w-8 text-primary"/>
+      <div className={themeClass} style={rootStyle}>
+        <div className="min-h-screen grid place-items-center px-4">
+          <div className="max-w-md w-full text-center rounded-2xl border border-border bg-card p-8 card-neon">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/15">
+              <CheckCircle2 className="h-8 w-8 text-primary"/>
+            </div>
+            <h1 className="mt-4 text-xl font-bold">Pedido enviado!</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Estamos redirecionando você para o WhatsApp da loja para confirmar...</p>
           </div>
-          <h1 className="mt-4 text-xl font-bold">Pedido enviado!</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Estamos redirecionando você para o WhatsApp da loja para confirmar...</p>
         </div>
       </div>
     );
   }
 
+  const noProducts = products.length === 0;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className={themeClass} style={rootStyle}>
       <header className="border-b border-border">
         <div className="mx-auto max-w-3xl flex items-center gap-3 px-4 sm:px-6 h-16">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary shadow-glow">
-            <TrendingUp className="h-5 w-5 text-primary-foreground"/>
-          </div>
+          {settings.checkoutLogoUrl ? (
+            <img src={settings.checkoutLogoUrl} alt={settings.storeName} className="h-10 w-10 rounded-xl object-cover" />
+          ) : (
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary shadow-glow">
+              <TrendingUp className="h-5 w-5 text-primary-foreground"/>
+            </div>
+          )}
           <div>
-            <div className="font-bold">{state.settings.storeName}</div>
+            <div className="font-bold">{settings.storeName}</div>
             <div className="text-xs text-muted-foreground">Checkout rápido</div>
           </div>
           <Link to="/" className="ml-auto text-xs text-muted-foreground hover:text-primary">Voltar</Link>
@@ -97,8 +119,15 @@ function Checkout() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
+        {noProducts ? (
+          <div className="rounded-2xl border border-border bg-card p-10 text-center card-neon">
+            <PackageX className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h2 className="mt-4 font-bold">Nenhum produto cadastrado</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Cadastre seus produtos em Produtos para começar a vender.</p>
+          </div>
+        ) : (
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-elegant">
+          <div className="rounded-2xl border border-border bg-card p-6 card-neon">
             <h1 className="text-2xl font-bold tracking-tight">Finalizar pedido</h1>
             <p className="text-sm text-muted-foreground mt-1">Preencha seus dados — leva menos de 1 minuto.</p>
 
@@ -107,11 +136,34 @@ function Checkout() {
                 <Field label="Produto">
                   <Select value={productId} onValueChange={setProductId}>
                     <SelectTrigger><SelectValue/></SelectTrigger>
-                    <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {products.map((p) => (
+                        <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
+                          {p.name} {p.stock <= 0 ? "(sem estoque)" : `· ${p.stock} em estoque`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Quantidade"><Input type="number" min={1} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}/></Field>
+                <Field label={`Quantidade ${product ? `(máx ${product.stock})` : ""}`}>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={product?.stock ?? 1}
+                    value={qty}
+                    onChange={(e) => setQty(Math.max(1, Math.min(product?.stock ?? 1, Number(e.target.value))))}
+                  />
+                </Field>
               </div>
+
+              {product && (
+                <div className="rounded-lg border border-border bg-background/50 px-3 py-2 text-xs flex items-center justify-between">
+                  <span className="text-muted-foreground">Estoque disponível</span>
+                  <span className={product.stock <= product.minStock ? "font-semibold text-warning" : "font-semibold text-primary"}>
+                    {product.stock} unidade{product.stock === 1 ? "" : "s"}
+                  </span>
+                </div>
+              )}
 
               <Field label="Nome completo"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} placeholder="Seu nome"/></Field>
               <Field label="Telefone (WhatsApp)"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="(81) 99999-9999"/></Field>
@@ -141,14 +193,14 @@ function Checkout() {
             </div>
           </div>
 
-          <aside className="rounded-2xl border border-border bg-card p-6 shadow-elegant h-fit lg:sticky lg:top-6">
+          <aside className="rounded-2xl border border-border bg-card p-6 card-neon h-fit lg:sticky lg:top-6">
             <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4 text-primary"/>Resumo</div>
             <div className="mt-4 space-y-2 text-sm">
               <Row label={`${product?.name ?? "—"} × ${qty}`} value={brl((product?.price ?? 0) * qty)}/>
-              <Row label="Entrega" value={brl(state.settings.deliveryFee)}/>
+              <Row label="Entrega" value={brl(settings.deliveryFee)}/>
               <div className="border-t border-border pt-3 flex justify-between">
                 <span className="font-semibold">Total</span>
-                <span className="font-bold text-lg text-primary">{brl(total)}</span>
+                <span className="font-bold text-lg text-neon">{brl(total)}</span>
               </div>
             </div>
             <Button onClick={submit} className="mt-5 w-full bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold shadow-glow">
@@ -157,6 +209,7 @@ function Checkout() {
             <p className="mt-3 text-[11px] text-muted-foreground text-center">Você será redirecionado para confirmar com a loja.</p>
           </aside>
         </div>
+        )}
       </main>
     </div>
   );

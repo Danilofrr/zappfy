@@ -77,6 +77,9 @@ export type Settings = {
   deliveryFee: number;
   monthlyRevenueGoal: number;
   monthlyProfitGoal: number;
+  checkoutLogoUrl: string;
+  checkoutBgColor: string;
+  checkoutTheme: "dark" | "light";
 };
 
 type State = {
@@ -95,6 +98,9 @@ const emptySettings: Settings = {
   deliveryFee: 0,
   monthlyRevenueGoal: 0,
   monthlyProfitGoal: 0,
+  checkoutLogoUrl: "",
+  checkoutBgColor: "#0a0a0a",
+  checkoutTheme: "dark",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -176,6 +182,9 @@ const toSettings = (r: any): Settings => ({
   storeName: r.store_name, whatsapp: r.whatsapp ?? "", pixKey: r.pix_key ?? "",
   address: r.address ?? "", deliveryFee: Number(r.delivery_fee),
   monthlyRevenueGoal: Number(r.monthly_revenue_goal), monthlyProfitGoal: Number(r.monthly_profit_goal),
+  checkoutLogoUrl: r.checkout_logo_url ?? "",
+  checkoutBgColor: r.checkout_bg_color ?? "#0a0a0a",
+  checkoutTheme: (r.checkout_theme as "dark" | "light") ?? "dark",
 });
 
 type Ctx = {
@@ -253,12 +262,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         supabase.from("ads").select("*").order("date", { ascending: true }),
         supabase.from("settings").select("*").eq("user_id", userId).maybeSingle(),
       ]);
-
-      // Auto-seed on first sign-in
-      if ((products.data?.length ?? 0) === 0 && (orders.data?.length ?? 0) === 0) {
-        await seedForUser(userId);
-        return loadAll(userId);
-      }
 
       setState({
         products: (products.data ?? []).map(toProduct),
@@ -365,6 +368,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.deliveryFee !== undefined) patch.delivery_fee = p.deliveryFee;
       if (p.monthlyRevenueGoal !== undefined) patch.monthly_revenue_goal = p.monthlyRevenueGoal;
       if (p.monthlyProfitGoal !== undefined) patch.monthly_profit_goal = p.monthlyProfitGoal;
+      if (p.checkoutLogoUrl !== undefined) patch.checkout_logo_url = p.checkoutLogoUrl;
+      if (p.checkoutBgColor !== undefined) patch.checkout_bg_color = p.checkoutBgColor;
+      if (p.checkoutTheme !== undefined) patch.checkout_theme = p.checkoutTheme;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
