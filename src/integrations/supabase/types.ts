@@ -206,11 +206,14 @@ export type Database = {
           checkout_card_color: string
           checkout_footer_bg_color: string | null
           checkout_footer_brand: string | null
+          checkout_footer_cards_image_url: string | null
           checkout_footer_copyright: string | null
           checkout_footer_email: string | null
           checkout_footer_enabled: boolean | null
           checkout_footer_payments: string | null
+          checkout_footer_show_cards_image: boolean | null
           checkout_header_bg_color: string
+          checkout_logo_align: string | null
           checkout_logo_size: number | null
           checkout_logo_url: string
           checkout_neon_color: string
@@ -219,8 +222,11 @@ export type Database = {
           checkout_step_button_color: string | null
           checkout_step_button_text_color: string | null
           checkout_step1_button_label: string | null
+          checkout_step1_title: string | null
           checkout_step2_button_label: string | null
+          checkout_step2_title: string | null
           checkout_step3_button_label: string | null
+          checkout_step3_title: string | null
           checkout_text_color: string
           checkout_theme: string
           created_at: string
@@ -243,11 +249,14 @@ export type Database = {
           checkout_card_color?: string
           checkout_footer_bg_color?: string | null
           checkout_footer_brand?: string | null
+          checkout_footer_cards_image_url?: string | null
           checkout_footer_copyright?: string | null
           checkout_footer_email?: string | null
           checkout_footer_enabled?: boolean | null
           checkout_footer_payments?: string | null
+          checkout_footer_show_cards_image?: boolean | null
           checkout_header_bg_color?: string
+          checkout_logo_align?: string | null
           checkout_logo_size?: number | null
           checkout_logo_url?: string
           checkout_neon_color?: string
@@ -256,8 +265,11 @@ export type Database = {
           checkout_step_button_color?: string | null
           checkout_step_button_text_color?: string | null
           checkout_step1_button_label?: string | null
+          checkout_step1_title?: string | null
           checkout_step2_button_label?: string | null
+          checkout_step2_title?: string | null
           checkout_step3_button_label?: string | null
+          checkout_step3_title?: string | null
           checkout_text_color?: string
           checkout_theme?: string
           created_at?: string
@@ -280,11 +292,14 @@ export type Database = {
           checkout_card_color?: string
           checkout_footer_bg_color?: string | null
           checkout_footer_brand?: string | null
+          checkout_footer_cards_image_url?: string | null
           checkout_footer_copyright?: string | null
           checkout_footer_email?: string | null
           checkout_footer_enabled?: boolean | null
           checkout_footer_payments?: string | null
+          checkout_footer_show_cards_image?: boolean | null
           checkout_header_bg_color?: string
+          checkout_logo_align?: string | null
           checkout_logo_size?: number | null
           checkout_logo_url?: string
           checkout_neon_color?: string
@@ -293,8 +308,11 @@ export type Database = {
           checkout_step_button_color?: string | null
           checkout_step_button_text_color?: string | null
           checkout_step1_button_label?: string | null
+          checkout_step1_title?: string | null
           checkout_step2_button_label?: string | null
+          checkout_step2_title?: string | null
           checkout_step3_button_label?: string | null
+          checkout_step3_title?: string | null
           checkout_text_color?: string
           checkout_theme?: string
           created_at?: string
