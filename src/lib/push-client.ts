@@ -30,11 +30,30 @@ export function isLovablePreviewHost(): boolean {
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!isPushSupported()) return null;
   try {
-    return await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    setupSoundBridge();
+    return reg;
   } catch (e) {
     console.error("[push] SW registration failed", e);
     return null;
   }
+}
+
+let soundBridgeReady = false;
+export function setupSoundBridge() {
+  if (soundBridgeReady || typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+  soundBridgeReady = true;
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    const data = event.data;
+    if (!data || data.type !== "PLAY_SOUND") return;
+    try {
+      const audio = new Audio(data.url || "/cash-register.mp3");
+      audio.volume = 1;
+      audio.play().catch((err) => console.warn("[push] audio play blocked", err));
+    } catch (e) {
+      console.warn("[push] audio error", e);
+    }
+  });
 }
 
 export async function getCurrentSubscription(): Promise<PushSubscription | null> {

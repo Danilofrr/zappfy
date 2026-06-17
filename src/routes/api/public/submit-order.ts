@@ -147,15 +147,13 @@ export const Route = createFileRoute("/api/public/submit-order")({
                 style: "currency",
                 currency: "BRL",
               });
-              const firstItem = Array.isArray(order.items) ? order.items[0] : null;
-              const productName: string = firstItem?.name || item.name || "Produto";
               await sendPushToUser(admin, order.user_id, {
-                title: "🔔 Nova venda realizada",
-                body: `Valor: ${totalLabel}\nProduto: ${productName}`,
+                title: "Venda aprovada!",
+                body: `Valor: ${totalLabel}`,
                 icon: "/icon-192.png",
                 badge: "/icon-192.png",
                 tag: `order-${data}`,
-                data: { url: "/pedidos", orderId: data },
+                data: { url: "/pedidos", orderId: data, sound: "/cash-register.mp3" },
               });
             }
           }
