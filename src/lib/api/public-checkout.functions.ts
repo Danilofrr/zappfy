@@ -62,6 +62,16 @@ export const submitPublicOrder = createServerFn({ method: "POST" })
       };
     });
 
+    // Recompute total server-side (items + shipping) — never trust client total.
+    const itemsTotal = items.reduce((s, i) => s + Number(i.price) * Number(i.qty), 0);
+    const { data: settingsFull } = await supabaseAdmin
+      .from("settings")
+      .select("delivery_fee")
+      .eq("user_id", settingsRow.user_id)
+      .maybeSingle();
+    const shipping = Number(settingsFull?.delivery_fee ?? 0);
+    const serverTotal = Math.round((itemsTotal + shipping) * 100) / 100;
+
     const { data: inserted, error: iErr } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -72,7 +82,7 @@ export const submitPublicOrder = createServerFn({ method: "POST" })
         district: o.district ?? "",
         city: o.city ?? "",
         items: items as unknown as never,
-        total: o.total,
+        total: serverTotal,
         payment: o.payment,
         status: "aguardando",
         notes: o.notes ?? null,
