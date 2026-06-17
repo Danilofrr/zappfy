@@ -66,8 +66,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           )}
         >
           <div
-            className="flex h-full flex-col pt-16 lg:pt-0"
-            style={{ paddingTop: "calc(env(safe-area-inset-top) + 4rem)" }}
+            className="flex h-full flex-col pt-[calc(env(safe-area-inset-top)+4rem)] lg:pt-0"
           >
             <div className="hidden lg:flex items-center gap-2 px-5 h-16 border-b border-sidebar-border">
               <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary shadow-glow">
