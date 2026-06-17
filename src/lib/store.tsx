@@ -430,6 +430,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, [loadAll]);
 
+  // Realtime: novos pedidos do checkout público entram direto na dashboard
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`orders-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const next = toOrder(payload.new);
+          setState((s) =>
+            s.orders.some((o) => o.id === next.id) ? s : { ...s, orders: [next, ...s.orders] },
+          );
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const next = toOrder(payload.new);
+          setState((s) => ({ ...s, orders: s.orders.map((o) => (o.id === next.id ? next : o)) }));
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const id = (payload.old as any)?.id;
+          if (!id) return;
+          setState((s) => ({ ...s, orders: s.orders.filter((o) => o.id !== id) }));
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   const value: Ctx = useMemo(() => ({
     state, loading, user,
     async addProduct(p) {
