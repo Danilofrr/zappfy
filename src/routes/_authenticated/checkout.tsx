@@ -196,6 +196,21 @@ function Checkout() {
 
               <Field label="Nome completo"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} placeholder="Seu nome"/></Field>
               <Field label="Telefone (WhatsApp)"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="(81) 99999-9999"/></Field>
+              <Field label="CEP">
+                <Input
+                  value={form.cep}
+                  onChange={(e) => { setForm({...form, cep: e.target.value}); setCepCalculated(false); }}
+                  onBlur={(e) => lookupCep(e.target.value)}
+                  placeholder="00000-000"
+                  inputMode="numeric"
+                />
+                {cepLoading && <p className="text-[11px] opacity-60 mt-1">Consultando Correios...</p>}
+                {cepCalculated && !cepLoading && (
+                  <p className="text-[11px] mt-1" style={{ color: neonColor }}>
+                    ✓ Correios: {settings.deliveryLabel || "Entrega"} — {brl(settings.deliveryFee)}
+                  </p>
+                )}
+              </Field>
               <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} placeholder="Rua, número, complemento"/></Field>
               <Field label="Ponto de referência"><Input value={form.reference} onChange={(e) => setForm({...form, reference: e.target.value})} placeholder="Ex: próximo à padaria, portão azul..."/></Field>
               <div className="grid grid-cols-2 gap-3">
