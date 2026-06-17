@@ -157,12 +157,28 @@ function Page() {
             />
           </Field>
 
-          <Field label='Texto "Checkout seguro" (cabeçalho)'>
-            <Input
-              value={f.checkoutSecureLabel}
-              onChange={(e) => setF({ ...f, checkoutSecureLabel: e.target.value })}
-              placeholder="Checkout seguro"
+          <div className="grid grid-cols-2 gap-3">
+            <Field label='Texto "Checkout seguro" (cabeçalho)'>
+              <Input
+                value={f.checkoutSecureLabel}
+                onChange={(e) => setF({ ...f, checkoutSecureLabel: e.target.value })}
+                placeholder="Checkout seguro"
+              />
+            </Field>
+            <ColorField label="Cor do 'Checkout seguro'" value={f.checkoutSecureColor} onChange={(v) => setF({ ...f, checkoutSecureColor: v })} />
+          </div>
+
+          <Field label={`Tamanho da logo: ${f.checkoutLogoSize}px`}>
+            <input
+              type="range"
+              min={24}
+              max={120}
+              step={2}
+              value={f.checkoutLogoSize}
+              onChange={(e) => setF({ ...f, checkoutLogoSize: Number(e.target.value) })}
+              className="w-full"
             />
+            <p className="text-[11px] text-muted-foreground">A logo é exibida no formato original (PNG transparente fica perfeito).</p>
           </Field>
         </Card>
 
@@ -253,10 +269,11 @@ function Page() {
           <div className="flex items-center justify-between rounded-lg border border-border p-3">
             <div>
               <div className="text-sm font-medium">Mostrar rodapé</div>
-              <div className="text-[11px] text-muted-foreground">Exibe marca, CNPJ, e-mail e formas de pagamento aceitas.</div>
+              <div className="text-[11px] text-muted-foreground">Exibe marca, CNPJ, e-mail e ícones dos cartões/PIX aceitos.</div>
             </div>
             <Switch checked={f.checkoutFooterEnabled} onCheckedChange={(v) => setF({ ...f, checkoutFooterEnabled: v })} />
           </div>
+          <ColorField label="Cor de fundo do rodapé" value={f.checkoutFooterBgColor} onChange={(v) => setF({ ...f, checkoutFooterBgColor: v })} />
           <Field label="Marca (negrito)">
             <Input value={f.checkoutFooterBrand} onChange={(e) => setF({ ...f, checkoutFooterBrand: e.target.value })} placeholder="Esparta Imports" />
           </Field>
@@ -266,8 +283,9 @@ function Page() {
           <Field label="E-mail de suporte">
             <Input value={f.checkoutFooterEmail} onChange={(e) => setF({ ...f, checkoutFooterEmail: e.target.value })} placeholder="suporte@espartaimports.com.br" />
           </Field>
-          <Field label="Formas de pagamento aceitas (separe por vírgula)">
-            <Input value={f.checkoutFooterPayments} onChange={(e) => setF({ ...f, checkoutFooterPayments: e.target.value })} placeholder="pix,visa,mastercard,elo,amex" />
+          <Field label="Bandeiras aceitas (separe por vírgula)">
+            <Input value={f.checkoutFooterPayments} onChange={(e) => setF({ ...f, checkoutFooterPayments: e.target.value })} placeholder="pix,visa,mastercard,elo,amex,hipercard,boleto" />
+            <p className="text-[11px] text-muted-foreground mt-1">Disponíveis: pix, visa, mastercard, elo, amex, hipercard, boleto. Cada uma vira o ícone do cartão/PIX.</p>
           </Field>
         </Card>
 
