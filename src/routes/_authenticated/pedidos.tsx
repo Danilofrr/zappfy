@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, type Order, type OrderStatus } from "@/lib/store";
+import { useStore, DEFAULT_DELIVERY_TEMPLATE, DEFAULT_MOTOBOY_TEMPLATE, type Order, type OrderStatus } from "@/lib/store";
 import { brl, fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
