@@ -398,6 +398,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.deliveryLabel !== undefined) patch.delivery_label = p.deliveryLabel;
       if (p.checkoutButtonLabel !== undefined) patch.checkout_button_label = p.checkoutButtonLabel;
       if (p.checkoutButtonColor !== undefined) patch.checkout_button_color = p.checkoutButtonColor;
+      if (p.checkoutHeaderBgColor !== undefined) patch.checkout_header_bg_color = p.checkoutHeaderBgColor;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
