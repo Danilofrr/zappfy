@@ -27,7 +27,7 @@ function Checkout() {
   const [productId, setProductId] = useState(products[0]?.id ?? "");
   const [qty, setQty] = useState(1);
   const [form, setForm] = useState({
-    customer: "", phone: "", address: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
+    customer: "", phone: "", address: "", reference: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
   });
   const [done, setDone] = useState(false);
 
@@ -39,6 +39,7 @@ function Checkout() {
   const textColor = settings.checkoutTextColor || (isLight ? "#0f172a" : "#f8fafc");
   const cardColor = settings.checkoutCardColor || (isLight ? "#ffffff" : "#111111");
   const neonColor = settings.checkoutNeonColor || "#a855f7";
+  const buttonColor = settings.checkoutButtonColor || neonColor;
   const rootStyle: React.CSSProperties = {
     backgroundColor: settings.checkoutBgColor || (isLight ? "#f8fafc" : "#0a0a0a"),
     color: textColor,
@@ -80,6 +81,8 @@ function Checkout() {
       `*Nome:* ${form.customer}%0A` +
       `*Telefone:* ${form.phone}%0A` +
       `*Endereço:* ${form.address}, ${form.district} - ${form.city}%0A` +
+      (form.reference ? `*Ponto de referência:* ${form.reference}%0A` : "") +
+      `*${settings.deliveryLabel || "Entrega"}:* ${brl(settings.deliveryFee)}%0A` +
       `*Pagamento:* ${form.payment.toUpperCase()}%0A` +
       `*Total:* ${brl(total)}` +
       (form.notes ? `%0A*Obs:* ${form.notes}` : "");
@@ -149,13 +152,13 @@ function Checkout() {
                     <SelectContent>
                       {products.map((p) => (
                         <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
-                          {p.name} {p.stock <= 0 ? "(sem estoque)" : `· ${p.stock} em estoque`}
+                          {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label={`Quantidade ${product ? `(máx ${product.stock})` : ""}`}>
+                <Field label="Quantidade">
                   <Input
                     type="number"
                     min={1}
@@ -166,18 +169,10 @@ function Checkout() {
                 </Field>
               </div>
 
-              {product && (
-                <div className="rounded-lg border border-border bg-background/50 px-3 py-2 text-xs flex items-center justify-between">
-                  <span className="text-muted-foreground">Estoque disponível</span>
-                  <span className={product.stock <= product.minStock ? "font-semibold text-warning" : "font-semibold text-primary"}>
-                    {product.stock} unidade{product.stock === 1 ? "" : "s"}
-                  </span>
-                </div>
-              )}
-
               <Field label="Nome completo"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} placeholder="Seu nome"/></Field>
               <Field label="Telefone (WhatsApp)"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="(81) 99999-9999"/></Field>
               <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} placeholder="Rua, número, complemento"/></Field>
+              <Field label="Ponto de referência"><Input value={form.reference} onChange={(e) => setForm({...form, reference: e.target.value})} placeholder="Ex: próximo à padaria, portão azul..."/></Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})}/></Field>
                 <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})}/></Field>
@@ -207,7 +202,7 @@ function Checkout() {
             <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4" style={{ color: neonColor }}/>Resumo</div>
             <div className="mt-4 space-y-2 text-sm">
               <Row label={`${product?.name ?? "—"} × ${qty}`} value={brl((product?.price ?? 0) * qty)}/>
-              <Row label="Entrega" value={brl(settings.deliveryFee)}/>
+              <Row label={settings.deliveryLabel || "Entrega"} value={brl(settings.deliveryFee)}/>
               <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
                 <span className="font-semibold">Total</span>
                 <span className="font-bold text-lg" style={{ color: neonColor, textShadow: `0 0 10px ${neonColor}` }}>{brl(total)}</span>
@@ -216,9 +211,9 @@ function Checkout() {
             <Button
               onClick={submit}
               className="mt-5 w-full font-semibold text-white"
-              style={{ backgroundColor: neonColor, boxShadow: `0 0 20px ${neonColor}99` }}
+              style={{ backgroundColor: buttonColor, boxShadow: `0 0 20px ${buttonColor}99, 0 0 40px ${neonColor}66` }}
             >
-              Enviar pedido pelo WhatsApp
+              {settings.checkoutButtonLabel || "Enviar pedido pelo WhatsApp"}
             </Button>
             <p className="mt-3 text-[11px] opacity-60 text-center">Será enviado para o WhatsApp da loja ({settings.whatsapp || "configure em Configurações"}).</p>
           </aside>
