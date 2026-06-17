@@ -36,10 +36,19 @@ function Checkout() {
 
   // Apply custom checkout theme + background as inline styles on the root container.
   const isLight = settings.checkoutTheme === "light";
+  const textColor = settings.checkoutTextColor || (isLight ? "#0f172a" : "#f8fafc");
+  const cardColor = settings.checkoutCardColor || (isLight ? "#ffffff" : "#111111");
+  const neonColor = settings.checkoutNeonColor || "#a855f7";
   const rootStyle: React.CSSProperties = {
     backgroundColor: settings.checkoutBgColor || (isLight ? "#f8fafc" : "#0a0a0a"),
-    color: isLight ? "#0f172a" : "#f8fafc",
+    color: textColor,
     minHeight: "100vh",
+  };
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: cardColor,
+    color: textColor,
+    boxShadow: `0 0 22px ${neonColor}40, inset 0 0 0 1px ${neonColor}55`,
+    borderRadius: "1rem",
   };
   const themeClass = isLight ? "light" : "dark";
 
@@ -85,17 +94,49 @@ function Checkout() {
     return (
       <div className={themeClass} style={rootStyle}>
         <div className="min-h-screen grid place-items-center px-4">
-          <div className="max-w-md w-full text-center rounded-2xl border border-border bg-card p-8 card-neon">
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/15">
-              <CheckCircle2 className="h-8 w-8 text-primary"/>
+          <div className="max-w-md w-full text-center p-8" style={cardStyle}>
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full" style={{ backgroundColor: `${neonColor}26` }}>
+              <CheckCircle2 className="h-8 w-8" style={{ color: neonColor }}/>
             </div>
             <h1 className="mt-4 text-xl font-bold">Pedido enviado!</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Estamos redirecionando você para o WhatsApp da loja para confirmar...</p>
+            <p className="mt-2 text-sm opacity-70">Estamos redirecionando você para o WhatsApp da loja para confirmar...</p>
           </div>
         </div>
       </div>
     );
   }
+
+  const noProducts = products.length === 0;
+
+  return (
+    <div className={themeClass} style={rootStyle}>
+      <header className="border-b" style={{ borderColor: `${neonColor}33` }}>
+        <div className="mx-auto max-w-3xl flex items-center gap-3 px-4 sm:px-6 h-16">
+          {settings.checkoutLogoUrl ? (
+            <img src={settings.checkoutLogoUrl} alt={settings.storeName} className="h-10 w-10 rounded-xl object-contain" />
+          ) : (
+            <div className="grid h-9 w-9 place-items-center rounded-xl" style={{ backgroundColor: neonColor, boxShadow: `0 0 16px ${neonColor}` }}>
+              <TrendingUp className="h-5 w-5 text-white"/>
+            </div>
+          )}
+          <div>
+            <div className="font-bold">{settings.storeName}</div>
+            <div className="text-xs opacity-60">Checkout rápido</div>
+          </div>
+          <Link to="/" className="ml-auto text-xs opacity-60 hover:opacity-100">Voltar</Link>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
+        {noProducts ? (
+          <div className="p-10 text-center" style={cardStyle}>
+            <PackageX className="mx-auto h-10 w-10 opacity-50" />
+            <h2 className="mt-4 font-bold">Nenhum produto cadastrado</h2>
+            <p className="mt-1 text-sm opacity-70">Cadastre seus produtos em Produtos para começar a vender.</p>
+          </div>
+        ) : (
+        <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+          <div className="p-6" style={cardStyle}>
 
   const noProducts = products.length === 0;
 
