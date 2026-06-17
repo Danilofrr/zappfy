@@ -80,7 +80,9 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   };
   const themeClass = isLight ? "light" : "dark";
 
-  function submit() {
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit() {
     if (!product || !form.customer || !form.phone) {
       toast.error("Preencha nome, telefone e selecione um produto");
       return;
@@ -93,35 +95,45 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       toast.error("Estoque insuficiente para esta quantidade");
       return;
     }
-    onSubmit?.({
-      customer: form.customer,
-      phone: form.phone,
-      address: form.address,
-      district: form.district,
-      city: form.city,
-      items: [{ productId: product.id, name: product.name, qty, price: product.price, cost: product.cost }],
-      total,
-      payment: form.payment,
-      status: "pago",
-      notes: form.notes,
-      date: new Date().toISOString(),
-    });
-
-    const msg = `Olá, gostaria de finalizar meu pedido.%0A%0A` +
-      `*Produto:* ${product.name} (x${qty})%0A` +
-      `*Nome:* ${form.customer}%0A` +
-      `*Telefone:* ${form.phone}%0A` +
-      `*Endereço:* ${form.address}, ${form.district} - ${form.city}%0A` +
-      (form.reference ? `*Ponto de referência:* ${form.reference}%0A` : "") +
-      `*Entrega (${shipping.label}):* ${brl(shipping.price)}%0A` +
-      `*Pagamento:* ${form.payment.toUpperCase()}%0A` +
-      `*Total:* ${brl(total)}` +
-      (form.notes ? `%0A*Obs:* ${form.notes}` : "");
+    setSubmitting(true);
+    try {
+      await onSubmit?.({
+        customer: form.customer,
+        phone: form.phone,
+        address: form.address,
+        district: form.district,
+        city: form.city,
+        items: [{ productId: product.id, name: product.name, qty, price: product.price, cost: product.cost }],
+        total,
+        payment: form.payment,
+        status: "aguardando",
+        notes: form.notes,
+        date: new Date().toISOString(),
+      });
+    } catch (e) {
+      setSubmitting(false);
+      toast.error("Não foi possível enviar seu pedido. Tente novamente.");
+      return;
+    }
 
     setDone(true);
-    setTimeout(() => {
-      window.location.href = `https://wa.me/${settings.whatsapp}?text=${msg}`;
-    }, 1200);
+    setSubmitting(false);
+
+    if (settings.whatsapp) {
+      const msg = `Olá, gostaria de finalizar meu pedido.%0A%0A` +
+        `*Produto:* ${product.name} (x${qty})%0A` +
+        `*Nome:* ${form.customer}%0A` +
+        `*Telefone:* ${form.phone}%0A` +
+        `*Endereço:* ${form.address}, ${form.district} - ${form.city}%0A` +
+        (form.reference ? `*Ponto de referência:* ${form.reference}%0A` : "") +
+        `*Entrega (${shipping.label}):* ${brl(shipping.price)}%0A` +
+        `*Pagamento:* ${form.payment.toUpperCase()}%0A` +
+        `*Total:* ${brl(total)}` +
+        (form.notes ? `%0A*Obs:* ${form.notes}` : "");
+      setTimeout(() => {
+        window.location.href = `https://wa.me/${settings.whatsapp}?text=${msg}`;
+      }, 1500);
+    }
   }
 
   if (done) {
