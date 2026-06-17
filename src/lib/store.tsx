@@ -307,44 +307,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     async addProduct(p) {
       if (!user) return;
       const { data, error } = await supabase.from("products").insert({ user_id: user.id, ...fromProduct(p) }).select().single();
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, products: [toProduct(data), ...s.products] }));
     },
     async updateProduct(id, p) {
       const { data, error } = await supabase.from("products").update(fromProduct({ ...({} as any), ...p } as any)).eq("id", id).select().single();
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, products: s.products.map((x) => x.id === id ? toProduct(data) : x) }));
     },
     async deleteProduct(id) {
       const { error } = await supabase.from("products").delete().eq("id", id);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, products: s.products.filter((x) => x.id !== id) }));
     },
     async addOrder(o) {
       if (!user) return;
       const { data, error } = await supabase.from("orders").insert({ user_id: user.id, ...fromOrder(o) }).select().single();
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, orders: [toOrder(data), ...s.orders] }));
     },
     async updateOrderStatus(id, status) {
       const { data, error } = await supabase.from("orders").update({ status }).eq("id", id).select().single();
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
     },
     async deleteOrder(id) {
       const { error } = await supabase.from("orders").delete().eq("id", id);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, orders: s.orders.filter((x) => x.id !== id) }));
     },
     async addExpense(e) {
       if (!user) return;
       const { data, error } = await supabase.from("expenses").insert({ user_id: user.id, ...fromExpense(e) }).select().single();
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, expenses: [toExpense(data), ...s.expenses] }));
     },
     async deleteExpense(id) {
       const { error } = await supabase.from("expenses").delete().eq("id", id);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, expenses: s.expenses.filter((x) => x.id !== id) }));
     },
     async updateSettings(p) {
@@ -358,7 +358,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.monthlyRevenueGoal !== undefined) patch.monthly_revenue_goal = p.monthlyRevenueGoal;
       if (p.monthlyProfitGoal !== undefined) patch.monthly_profit_goal = p.monthlyProfitGoal;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
     },
     async resetSeed() {
