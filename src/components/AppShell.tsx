@@ -29,7 +29,7 @@ const nav = [
 export function AppShell({ children, title, subtitle, actions }: { children: ReactNode; title: string; subtitle?: string; actions?: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
-  const { state } = useStore();
+  const { state, signOut, user } = useStore();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
