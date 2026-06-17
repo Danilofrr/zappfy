@@ -83,11 +83,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "LucroTrack — Gestão para vendas no WhatsApp" },
       { name: "description", content: "Controle pedidos, vendas, despesas e lucro real do seu negócio." },
       { name: "author", content: "LucroTrack" },
-      { property: "og:title", content: "LucroTrack" },
+      { property: "og:title", content: "LucroTrack — Gestão para vendas no WhatsApp" },
       { property: "og:description", content: "Controle pedidos, vendas, despesas e lucro real do seu negócio." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "LucroTrack — Gestão para vendas no WhatsApp" },
+      { name: "twitter:description", content: "Controle pedidos, vendas, despesas e lucro real do seu negócio." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/187890b8-200e-4479-9aa3-36e1fd34d5d9/id-preview-535a37ef--912493e0-8d9a-4612-864a-8b23825c6a6f.lovable.app-1781664368778.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/187890b8-200e-4479-9aa3-36e1fd34d5d9/id-preview-535a37ef--912493e0-8d9a-4612-864a-8b23825c6a6f.lovable.app-1781664368778.png" },
     ],
     links: [
       {
