@@ -311,7 +311,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, products: [toProduct(data), ...s.products] }));
     },
     async updateProduct(id, p) {
-      const { data, error } = await supabase.from("products").update(fromProduct({ ...({} as any), ...p } as any)).eq("id", id).select().single();
+      const patch: any = {};
+      if (p.name !== undefined) patch.name = p.name;
+      if (p.category !== undefined) patch.category = p.category;
+      if (p.cost !== undefined) patch.cost = p.cost;
+      if (p.price !== undefined) patch.price = p.price;
+      if (p.stock !== undefined) patch.stock = p.stock;
+      if (p.minStock !== undefined) patch.min_stock = p.minStock;
+      if (p.description !== undefined) patch.description = p.description;
+      const { data, error } = await supabase.from("products").update(patch).eq("id", id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, products: s.products.map((x) => x.id === id ? toProduct(data) : x) }));
     },
