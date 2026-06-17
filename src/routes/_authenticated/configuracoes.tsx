@@ -180,6 +180,31 @@ function Page() {
             />
             <p className="text-[11px] text-muted-foreground">A logo é exibida no formato original (PNG transparente fica perfeito).</p>
           </Field>
+
+          <Field label="Posição da logo no cabeçalho">
+            <Select
+              value={f.checkoutLogoAlign}
+              onValueChange={(v) => setF({ ...f, checkoutLogoAlign: v as "left" | "center" })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="left">Esquerda</SelectItem>
+                <SelectItem value="center">Centralizada</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        </Card>
+
+        <Card title="Títulos das etapas do checkout">
+          <Field label="Título da etapa 1">
+            <Input value={f.checkoutStep1Title} onChange={(e) => setF({ ...f, checkoutStep1Title: e.target.value })} placeholder="Dados pessoais" />
+          </Field>
+          <Field label="Título da etapa 2">
+            <Input value={f.checkoutStep2Title} onChange={(e) => setF({ ...f, checkoutStep2Title: e.target.value })} placeholder="Entrega" />
+          </Field>
+          <Field label="Título da etapa 3">
+            <Input value={f.checkoutStep3Title} onChange={(e) => setF({ ...f, checkoutStep3Title: e.target.value })} placeholder="Pagamento" />
+          </Field>
         </Card>
 
         <Card title="Botões das etapas">
@@ -283,9 +308,19 @@ function Page() {
           <Field label="E-mail de suporte">
             <Input value={f.checkoutFooterEmail} onChange={(e) => setF({ ...f, checkoutFooterEmail: e.target.value })} placeholder="suporte@espartaimports.com.br" />
           </Field>
-          <Field label="Bandeiras aceitas (separe por vírgula)">
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <div className="text-sm font-medium">Usar imagem dos cartões (PNG)</div>
+              <div className="text-[11px] text-muted-foreground">Exibe uma imagem com as bandeiras já desenhadas no lugar dos ícones.</div>
+            </div>
+            <Switch checked={f.checkoutFooterShowCardsImage} onCheckedChange={(v) => setF({ ...f, checkoutFooterShowCardsImage: v })} />
+          </div>
+          <Field label="URL da imagem dos cartões (opcional — deixe em branco para usar a padrão)">
+            <Input value={f.checkoutFooterCardsImageUrl} onChange={(e) => setF({ ...f, checkoutFooterCardsImageUrl: e.target.value })} placeholder="https://..." />
+          </Field>
+          <Field label="Bandeiras (usadas quando a imagem está desativada)">
             <Input value={f.checkoutFooterPayments} onChange={(e) => setF({ ...f, checkoutFooterPayments: e.target.value })} placeholder="pix,visa,mastercard,elo,amex,hipercard,boleto" />
-            <p className="text-[11px] text-muted-foreground mt-1">Disponíveis: pix, visa, mastercard, elo, amex, hipercard, boleto. Cada uma vira o ícone do cartão/PIX.</p>
+            <p className="text-[11px] text-muted-foreground mt-1">Disponíveis: pix, visa, mastercard, elo, amex, hipercard, boleto.</p>
           </Field>
         </Card>
 
