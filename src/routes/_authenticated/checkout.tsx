@@ -242,10 +242,13 @@ function Checkout() {
             <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4" style={{ color: neonColor }}/>Resumo</div>
             <div className="mt-4 space-y-2 text-sm">
               <Row label={`${product?.name ?? "—"} × ${qty}`} value={brl((product?.price ?? 0) * qty)}/>
-              <Row label={settings.deliveryLabel || "Entrega"} value={brl(settings.deliveryFee)}/>
+              <Row
+                label={settings.deliveryLabel || "Entrega"}
+                value={cepCalculated ? brl(settings.deliveryFee) : (cepLoading ? "calculando..." : "informe o CEP")}
+              />
               <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
                 <span className="font-semibold">Total</span>
-                <span className="font-bold text-lg" style={{ color: neonColor, textShadow: `0 0 10px ${neonColor}` }}>{brl(total)}</span>
+                <span className="font-bold text-lg">{brl(total)}</span>
               </div>
             </div>
             <Button
