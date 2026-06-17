@@ -72,6 +72,13 @@ function PedidosPage() {
     window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
   }
 
+  function applyTemplate(tpl: string, vars: Record<string, string>) {
+    return Object.entries(vars).reduce(
+      (acc, [k, v]) => acc.replaceAll(`{${k}}`, v),
+      tpl,
+    );
+  }
+
   function notifyDelivery(o: Order) {
     const phone = (o.phone || "").replace(/\D/g, "");
     if (!phone) {
@@ -80,11 +87,18 @@ function PedidosPage() {
     }
     const storeName = state.settings.storeName || "nossa loja";
     const item = o.items[0]?.name ? ` (${o.items[0].name})` : "";
-    const msg =
-      `Oba! 🚚 Seu pedido${item} acabou de sair para entrega!%0A%0A` +
-      `Olá *${o.customer}*, tudo bem? Em instantes você o receberá no endereço:%0A` +
-      `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}%0A%0A` +
-      `Qualquer dúvida é só chamar por aqui. 💜%0A— ${storeName}`;
+    const endereco = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
+    const tpl = state.settings.deliveryMessageTemplate || "";
+    const text = applyTemplate(tpl, {
+      cliente: o.customer,
+      telefone: o.phone,
+      produto: item,
+      endereco,
+      loja: storeName,
+      total: brl(o.total),
+      observacoes: o.notes || "",
+    });
+    const msg = encodeURIComponent(text);
     window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
   }
 
@@ -94,6 +108,7 @@ function PedidosPage() {
       setTimeout(() => notifyDelivery(o), 200);
     }
   }
+
 
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [open, setOpen] = useState(false);
