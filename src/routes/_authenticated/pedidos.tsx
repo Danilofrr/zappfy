@@ -117,28 +117,7 @@ function PedidosPage() {
   }
 
 
-  function notifyDelivery(o: Order) {
-    const phone = (o.phone || "").replace(/\D/g, "");
-    if (!phone) {
-      toast.error("Cliente sem telefone cadastrado");
-      return;
-    }
-    const storeName = state.settings.storeName || "nossa loja";
-    const item = o.items[0]?.name ? ` (${o.items[0].name})` : "";
-    const endereco = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
-    const tpl = state.settings.deliveryMessageTemplate || "";
-    const text = applyTemplate(tpl, {
-      cliente: o.customer,
-      telefone: o.phone,
-      produto: item,
-      endereco,
-      loja: storeName,
-      total: brl(o.total),
-      observacoes: o.notes || "",
-    });
-    const msg = encodeURIComponent(text);
-    window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
-  }
+
 
   function handleStatusChange(o: Order, status: OrderStatus) {
     updateOrderStatus(o.id, status);
