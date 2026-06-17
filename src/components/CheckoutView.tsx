@@ -110,9 +110,10 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         notes: form.notes,
         date: new Date().toISOString(),
       });
-    } catch (e) {
+    } catch (e: any) {
+      console.error("[checkout] erro ao enviar pedido:", e);
       setSubmitting(false);
-      toast.error("Não foi possível enviar seu pedido. Tente novamente.");
+      toast.error(e?.message || "Falha ao enviar pedido");
       return;
     }
 
