@@ -178,6 +178,8 @@ const emptySettings: Settings = {
   checkoutFooterShowCnpj: true,
   checkoutFooterShowEmail: true,
   checkoutFooterShowWhatsapp: true,
+  motoboyMessageTemplate: `🛵 *Nova entrega*\n\n*Cliente:* {cliente}\n*Telefone:* {telefone}\n*Endereço:* {endereco}\n*Mapa:* {mapa}\n\n*Itens:*\n{itens}\n\n*Pagamento:* {pagamento}\n*Total:* {total}\n*Obs:* {observacoes}`,
+  deliveryMessageTemplate: `Oba! 🚚 Seu pedido{produto} acabou de sair para entrega!\n\nOlá *{cliente}*, tudo bem? Em instantes você o receberá no endereço:\n{endereco}\n\nQualquer dúvida é só chamar por aqui. 💜\n— {loja}`,
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
