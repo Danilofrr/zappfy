@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useStore, type PaymentMethod } from "@/lib/store";
+import { useStore, type PaymentMethod, type ShippingOption } from "@/lib/store";
 import { brl } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, ShoppingBag, CheckCircle2, PackageX } from "lucide-react";
+import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock, Truck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -31,28 +31,29 @@ function Checkout() {
   });
   const [done, setDone] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
-  const [cepCalculated, setCepCalculated] = useState(false);
+  const [addressReady, setAddressReady] = useState(false);
+  const [shippingId, setShippingId] = useState<string>("");
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const product = products.find((p) => p.id === productId);
-  const total = (product?.price ?? 0) * qty + (cepCalculated ? settings.deliveryFee : 0);
+  const shipping: ShippingOption | undefined = settings.shippingOptions.find((s) => s.id === shippingId);
+  const total = (product?.price ?? 0) * qty + (shipping?.price ?? 0);
 
   async function lookupCep(raw: string) {
     const cep = raw.replace(/\D/g, "");
-    if (cep.length !== 8) { setCepCalculated(false); return; }
+    if (cep.length !== 8) { setAddressReady(false); return; }
     setCepLoading(true);
     try {
       const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
       const data = await r.json();
-      if (data.erro) { toast.error("CEP não encontrado"); setCepCalculated(false); return; }
+      if (data.erro) { toast.error("CEP não encontrado"); setAddressReady(false); return; }
       setForm((f) => ({
         ...f,
         address: f.address || [data.logradouro, data.complemento].filter(Boolean).join(", "),
         district: f.district || data.bairro || "",
         city: f.city || (data.localidade && data.uf ? `${data.localidade}/${data.uf}` : data.localidade || ""),
       }));
-      setCepCalculated(true);
-      toast.success(`Frete calculado: ${brl(settings.deliveryFee)}`);
+      setAddressReady(true);
     } catch {
       toast.error("Erro ao consultar CEP");
     } finally {
@@ -60,12 +61,13 @@ function Checkout() {
     }
   }
 
-  // Apply custom checkout theme + background as inline styles on the root container.
   const isLight = settings.checkoutTheme === "light";
   const textColor = settings.checkoutTextColor || (isLight ? "#0f172a" : "#f8fafc");
   const cardColor = settings.checkoutCardColor || (isLight ? "#ffffff" : "#111111");
   const neonColor = settings.checkoutNeonColor || "#a855f7";
   const buttonColor = settings.checkoutButtonColor || neonColor;
+  const stepBtnBg = settings.checkoutStepButtonColor || neonColor;
+  const stepBtnText = settings.checkoutStepButtonTextColor || "#fff";
   const rootStyle: React.CSSProperties = {
     backgroundColor: settings.checkoutBgColor || (isLight ? "#f8fafc" : "#0a0a0a"),
     color: textColor,
@@ -82,6 +84,10 @@ function Checkout() {
   function submit() {
     if (!product || !form.customer || !form.phone) {
       toast.error("Preencha nome, telefone e selecione um produto");
+      return;
+    }
+    if (!shipping) {
+      toast.error("Selecione uma forma de entrega");
       return;
     }
     if (product.stock < qty) {
@@ -108,7 +114,7 @@ function Checkout() {
       `*Telefone:* ${form.phone}%0A` +
       `*Endereço:* ${form.address}, ${form.district} - ${form.city}%0A` +
       (form.reference ? `*Ponto de referência:* ${form.reference}%0A` : "") +
-      `*${settings.deliveryLabel || "Entrega"}:* ${brl(settings.deliveryFee)}%0A` +
+      `*Entrega (${shipping.label}):* ${brl(shipping.price)}%0A` +
       `*Pagamento:* ${form.payment.toUpperCase()}%0A` +
       `*Total:* ${brl(total)}` +
       (form.notes ? `%0A*Obs:* ${form.notes}` : "");
@@ -136,6 +142,7 @@ function Checkout() {
   }
 
   const noProducts = products.length === 0;
+  const payments = (settings.checkoutFooterPayments || "").split(",").map((p) => p.trim()).filter(Boolean);
 
   return (
     <div className={themeClass} style={rootStyle}>
@@ -148,11 +155,16 @@ function Checkout() {
               <TrendingUp className="h-5 w-5 text-white"/>
             </div>
           )}
-          <div>
-            <div className="font-bold">{settings.storeName}</div>
-            <div className="text-xs opacity-60">Checkout rápido</div>
+          <div className="min-w-0">
+            <div className="font-bold truncate">{settings.storeName}</div>
+            <Link to="/" className="text-[11px] opacity-60 hover:opacity-100">Voltar ao painel</Link>
           </div>
-          <Link to="/" className="ml-auto text-xs opacity-60 hover:opacity-100">Voltar</Link>
+          {settings.checkoutSecureLabel && (
+            <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold" style={{ color: neonColor }}>
+              <Lock className="h-4 w-4" />
+              <span className="hidden sm:inline">{settings.checkoutSecureLabel}</span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -166,7 +178,6 @@ function Checkout() {
         ) : (
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           <div className="space-y-3">
-            {/* Produto sempre visível no topo */}
             <div className="p-5" style={cardStyle}>
               <div className="text-xs uppercase tracking-wider opacity-60 mb-3">Seu pedido</div>
               <div className="grid grid-cols-2 gap-3">
@@ -194,13 +205,11 @@ function Checkout() {
               </div>
             </div>
 
-            {/* Etapa 1 — Dados pessoais */}
+            {/* Etapa 1 */}
             <StepCard
-              n={1}
-              title="Dados pessoais"
+              n={1} title="Dados pessoais"
               state={step === 1 ? "active" : step > 1 ? "done" : "locked"}
-              neonColor={neonColor}
-              cardStyle={cardStyle}
+              neonColor={neonColor} cardStyle={cardStyle}
               summary={step > 1 ? `${form.customer} · ${form.phone}` : undefined}
               onEdit={() => setStep(1)}
             >
@@ -214,39 +223,32 @@ function Checkout() {
                       if (!form.customer || !form.phone) return toast.error("Preencha nome e telefone");
                       setStep(2);
                     }}
-                    style={{ backgroundColor: buttonColor, color: "#fff" }}
-                  >Continuar</Button>
+                    style={{ backgroundColor: stepBtnBg, color: stepBtnText }}
+                  >{settings.checkoutStep1ButtonLabel || "Continuar"}</Button>
                 </div>
               </div>
             </StepCard>
 
-            {/* Etapa 2 — Entrega */}
+            {/* Etapa 2 */}
             <StepCard
-              n={2}
-              title="Entrega"
+              n={2} title="Entrega"
               state={step === 2 ? "active" : step > 2 ? "done" : "locked"}
-              neonColor={neonColor}
-              cardStyle={cardStyle}
-              summary={step > 2 ? `${form.address}, ${form.district} — ${form.city}` : undefined}
+              neonColor={neonColor} cardStyle={cardStyle}
+              summary={step > 2 && shipping ? `${shipping.label} — ${brl(shipping.price)}` : undefined}
               onEdit={() => setStep(2)}
             >
               <div className="grid gap-4">
                 <Field label="CEP">
                   <Input
                     value={form.cep}
-                    onChange={(e) => { setForm({...form, cep: e.target.value}); setCepCalculated(false); }}
+                    onChange={(e) => { setForm({...form, cep: e.target.value}); setAddressReady(false); setShippingId(""); }}
                     onBlur={(e) => lookupCep(e.target.value)}
                     placeholder="00000-000"
                     inputMode="numeric"
                   />
                   {cepLoading && <p className="text-[11px] opacity-60 mt-1">Consultando CEP...</p>}
-                  {cepCalculated && !cepLoading && (
-                    <p className="text-[11px] mt-1" style={{ color: neonColor }}>
-                      ✓ {settings.deliveryLabel || "Motoboy"} — {brl(settings.deliveryFee)}
-                    </p>
-                  )}
                 </Field>
-                {cepCalculated && (
+                {addressReady && (
                   <>
                     <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} placeholder="Rua, número, complemento"/></Field>
                     <Field label="Ponto de referência"><Input value={form.reference} onChange={(e) => setForm({...form, reference: e.target.value})} placeholder="Ex: próximo à padaria, portão azul..."/></Field>
@@ -254,29 +256,60 @@ function Checkout() {
                       <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})}/></Field>
                       <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})}/></Field>
                     </div>
+
+                    {/* Formas de entrega */}
+                    <div>
+                      <Label className="text-xs mb-2 block">Forma de entrega</Label>
+                      <div className="grid gap-2">
+                        {settings.shippingOptions.map((opt) => {
+                          const active = shippingId === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => setShippingId(opt.id)}
+                              className="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors"
+                              style={{
+                                border: `1px solid ${active ? neonColor : `${neonColor}33`}`,
+                                backgroundColor: active ? `${neonColor}1a` : "transparent",
+                                boxShadow: active ? `0 0 14px ${neonColor}55` : "none",
+                              }}
+                            >
+                              <Truck className="h-4 w-4 shrink-0" style={{ color: neonColor }}/>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-semibold truncate">{opt.label}</div>
+                              </div>
+                              <div className="text-sm font-bold">{brl(opt.price)}</div>
+                            </button>
+                          );
+                        })}
+                        {settings.shippingOptions.length === 0 && (
+                          <p className="text-xs opacity-60">Nenhuma forma de entrega configurada.</p>
+                        )}
+                      </div>
+                    </div>
                   </>
                 )}
                 <div className="flex justify-between pt-2">
                   <Button variant="outline" onClick={() => setStep(1)}>Voltar</Button>
                   <Button
                     onClick={() => {
-                      if (!cepCalculated) return toast.error("Informe um CEP válido");
+                      if (!addressReady) return toast.error("Informe um CEP válido");
                       if (!form.address) return toast.error("Preencha o endereço");
+                      if (!shipping) return toast.error("Selecione uma forma de entrega");
                       setStep(3);
                     }}
-                    style={{ backgroundColor: buttonColor, color: "#fff" }}
-                  >Continuar</Button>
+                    style={{ backgroundColor: stepBtnBg, color: stepBtnText }}
+                  >{settings.checkoutStep2ButtonLabel || "Continuar"}</Button>
                 </div>
               </div>
             </StepCard>
 
-            {/* Etapa 3 — Pagamento */}
+            {/* Etapa 3 */}
             <StepCard
-              n={3}
-              title="Pagamento"
+              n={3} title="Pagamento"
               state={step === 3 ? "active" : "locked"}
-              neonColor={neonColor}
-              cardStyle={cardStyle}
+              neonColor={neonColor} cardStyle={cardStyle}
             >
               <div className="grid gap-4">
                 <div>
@@ -299,13 +332,12 @@ function Checkout() {
                   <Button variant="outline" onClick={() => setStep(2)}>Voltar</Button>
                   <Button
                     onClick={submit}
-                    className="font-semibold text-white"
-                    style={{ backgroundColor: buttonColor, boxShadow: `0 0 20px ${buttonColor}99, 0 0 40px ${neonColor}66` }}
+                    className="font-semibold"
+                    style={{ backgroundColor: buttonColor, color: stepBtnText, boxShadow: `0 0 20px ${buttonColor}99` }}
                   >
-                    {settings.checkoutButtonLabel || "Enviar pedido pelo WhatsApp"}
+                    {settings.checkoutButtonLabel || settings.checkoutStep3ButtonLabel || "Enviar pedido pelo WhatsApp"}
                   </Button>
                 </div>
-                <p className="text-[11px] opacity-60 text-center">Será enviado para o WhatsApp da loja ({settings.whatsapp || "configure em Configurações"}).</p>
               </div>
             </StepCard>
           </div>
@@ -315,8 +347,8 @@ function Checkout() {
             <div className="mt-4 space-y-2 text-sm">
               <Row label={`${product?.name ?? "—"} × ${qty}`} value={brl((product?.price ?? 0) * qty)}/>
               <Row
-                label={settings.deliveryLabel || "Entrega"}
-                value={cepCalculated ? brl(settings.deliveryFee) : (cepLoading ? "calculando..." : "informe o CEP")}
+                label={shipping?.label || "Entrega"}
+                value={shipping ? brl(shipping.price) : (cepLoading ? "calculando..." : "selecione")}
               />
               <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
                 <span className="font-semibold">Total</span>
@@ -325,9 +357,44 @@ function Checkout() {
             </div>
           </aside>
         </div>
-
         )}
       </main>
+
+      {settings.checkoutFooterEnabled && (
+        <footer
+          className="border-t mt-8"
+          style={{
+            borderColor: `${neonColor}22`,
+            backgroundColor: settings.checkoutHeaderBgColor || rootStyle.backgroundColor,
+          }}
+        >
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6 text-center space-y-3">
+            {payments.length > 0 && (
+              <div>
+                <div className="text-[11px] uppercase tracking-wider opacity-60 mb-2">Formas de pagamento aceitas</div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {payments.map((p) => (
+                    <span
+                      key={p}
+                      className="px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase"
+                      style={{ border: `1px solid ${neonColor}55`, color: neonColor }}
+                    >{p}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {settings.checkoutFooterBrand && (
+              <div className="text-sm font-bold">{settings.checkoutFooterBrand}</div>
+            )}
+            {settings.checkoutFooterCopyright && (
+              <div className="text-[11px] opacity-70">{settings.checkoutFooterCopyright}</div>
+            )}
+            {settings.checkoutFooterEmail && (
+              <div className="text-[11px] opacity-70">E-mail: {settings.checkoutFooterEmail}</div>
+            )}
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
@@ -392,4 +459,3 @@ function StepCard({
     </div>
   );
 }
-

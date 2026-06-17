@@ -69,6 +69,8 @@ export type AdEntry = {
   revenue: number;
 };
 
+export type ShippingOption = { id: string; label: string; price: number };
+
 export type Settings = {
   storeName: string;
   whatsapp: string;
@@ -87,6 +89,18 @@ export type Settings = {
   checkoutButtonLabel: string;
   checkoutButtonColor: string;
   checkoutHeaderBgColor: string;
+  checkoutSecureLabel: string;
+  checkoutStep1ButtonLabel: string;
+  checkoutStep2ButtonLabel: string;
+  checkoutStep3ButtonLabel: string;
+  checkoutStepButtonColor: string;
+  checkoutStepButtonTextColor: string;
+  shippingOptions: ShippingOption[];
+  checkoutFooterEnabled: boolean;
+  checkoutFooterBrand: string;
+  checkoutFooterCopyright: string;
+  checkoutFooterEmail: string;
+  checkoutFooterPayments: string;
 };
 
 type State = {
@@ -115,6 +129,22 @@ const emptySettings: Settings = {
   checkoutButtonLabel: "Enviar pedido pelo WhatsApp",
   checkoutButtonColor: "#a855f7",
   checkoutHeaderBgColor: "#0a0a0a",
+  checkoutSecureLabel: "Checkout seguro",
+  checkoutStep1ButtonLabel: "Continuar",
+  checkoutStep2ButtonLabel: "Calcular frete",
+  checkoutStep3ButtonLabel: "Ir para pagamento",
+  checkoutStepButtonColor: "#a855f7",
+  checkoutStepButtonTextColor: "#ffffff",
+  shippingOptions: [
+    { id: "motoboy", label: "Motoboy", price: 19.9 },
+    { id: "pac", label: "Correios PAC", price: 24.9 },
+    { id: "sedex", label: "Correios SEDEX", price: 34.9 },
+  ],
+  checkoutFooterEnabled: true,
+  checkoutFooterBrand: "Esparta Imports",
+  checkoutFooterCopyright: "© 2026 VILIES NEGOCIOS DIGITAIS CNPJ: 50.888.578/0001-02",
+  checkoutFooterEmail: "suporte@espartaimports.com.br",
+  checkoutFooterPayments: "pix,visa,mastercard,elo,amex,hipercard",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -206,6 +236,18 @@ const toSettings = (r: any): Settings => ({
   checkoutButtonLabel: r.checkout_button_label ?? "Enviar pedido pelo WhatsApp",
   checkoutButtonColor: r.checkout_button_color ?? "#a855f7",
   checkoutHeaderBgColor: r.checkout_header_bg_color ?? "#0a0a0a",
+  checkoutSecureLabel: r.checkout_secure_label ?? "Checkout seguro",
+  checkoutStep1ButtonLabel: r.checkout_step1_button_label ?? "Continuar",
+  checkoutStep2ButtonLabel: r.checkout_step2_button_label ?? "Calcular frete",
+  checkoutStep3ButtonLabel: r.checkout_step3_button_label ?? "Ir para pagamento",
+  checkoutStepButtonColor: r.checkout_step_button_color ?? "#a855f7",
+  checkoutStepButtonTextColor: r.checkout_step_button_text_color ?? "#ffffff",
+  shippingOptions: Array.isArray(r.shipping_options) ? r.shipping_options as ShippingOption[] : [],
+  checkoutFooterEnabled: r.checkout_footer_enabled ?? true,
+  checkoutFooterBrand: r.checkout_footer_brand ?? "",
+  checkoutFooterCopyright: r.checkout_footer_copyright ?? "",
+  checkoutFooterEmail: r.checkout_footer_email ?? "",
+  checkoutFooterPayments: r.checkout_footer_payments ?? "",
 });
 
 type Ctx = {
@@ -399,6 +441,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutButtonLabel !== undefined) patch.checkout_button_label = p.checkoutButtonLabel;
       if (p.checkoutButtonColor !== undefined) patch.checkout_button_color = p.checkoutButtonColor;
       if (p.checkoutHeaderBgColor !== undefined) patch.checkout_header_bg_color = p.checkoutHeaderBgColor;
+      if (p.checkoutSecureLabel !== undefined) patch.checkout_secure_label = p.checkoutSecureLabel;
+      if (p.checkoutStep1ButtonLabel !== undefined) patch.checkout_step1_button_label = p.checkoutStep1ButtonLabel;
+      if (p.checkoutStep2ButtonLabel !== undefined) patch.checkout_step2_button_label = p.checkoutStep2ButtonLabel;
+      if (p.checkoutStep3ButtonLabel !== undefined) patch.checkout_step3_button_label = p.checkoutStep3ButtonLabel;
+      if (p.checkoutStepButtonColor !== undefined) patch.checkout_step_button_color = p.checkoutStepButtonColor;
+      if (p.checkoutStepButtonTextColor !== undefined) patch.checkout_step_button_text_color = p.checkoutStepButtonTextColor;
+      if (p.shippingOptions !== undefined) patch.shipping_options = p.shippingOptions as any;
+      if (p.checkoutFooterEnabled !== undefined) patch.checkout_footer_enabled = p.checkoutFooterEnabled;
+      if (p.checkoutFooterBrand !== undefined) patch.checkout_footer_brand = p.checkoutFooterBrand;
+      if (p.checkoutFooterCopyright !== undefined) patch.checkout_footer_copyright = p.checkoutFooterCopyright;
+      if (p.checkoutFooterEmail !== undefined) patch.checkout_footer_email = p.checkoutFooterEmail;
+      if (p.checkoutFooterPayments !== undefined) patch.checkout_footer_payments = p.checkoutFooterPayments;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));

@@ -6,7 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { RotateCcw, Image as ImageIcon, Upload, X } from "lucide-react";
+import { RotateCcw, Image as ImageIcon, Upload, X, Plus, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import type { ShippingOption } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — LucroTrack" }] }),
@@ -144,12 +147,101 @@ function Page() {
             <ColorField label="Cor do botão" value={f.checkoutButtonColor} onChange={(v) => setF({ ...f, checkoutButtonColor: v })} />
           </div>
 
-          <Field label="Texto do botão de envio">
+          <Field label="Texto do botão final (enviar pedido)">
             <Input
               value={f.checkoutButtonLabel}
               onChange={(e) => setF({ ...f, checkoutButtonLabel: e.target.value })}
               placeholder="Enviar pedido pelo WhatsApp"
             />
+          </Field>
+
+          <Field label='Texto "Checkout seguro" (cabeçalho)'>
+            <Input
+              value={f.checkoutSecureLabel}
+              onChange={(e) => setF({ ...f, checkoutSecureLabel: e.target.value })}
+              placeholder="Checkout seguro"
+            />
+          </Field>
+        </Card>
+
+        <Card title="Botões das etapas">
+          <div className="grid grid-cols-2 gap-3">
+            <ColorField label="Cor de fundo dos botões" value={f.checkoutStepButtonColor} onChange={(v) => setF({ ...f, checkoutStepButtonColor: v })} />
+            <ColorField label="Cor do texto dos botões" value={f.checkoutStepButtonTextColor} onChange={(v) => setF({ ...f, checkoutStepButtonTextColor: v })} />
+          </div>
+          <Field label="Texto do botão da etapa 1 (Dados pessoais)">
+            <Input value={f.checkoutStep1ButtonLabel} onChange={(e) => setF({ ...f, checkoutStep1ButtonLabel: e.target.value })} placeholder="Continuar" />
+          </Field>
+          <Field label="Texto do botão da etapa 2 (Entrega)">
+            <Input value={f.checkoutStep2ButtonLabel} onChange={(e) => setF({ ...f, checkoutStep2ButtonLabel: e.target.value })} placeholder="Calcular frete" />
+          </Field>
+          <Field label="Texto do botão da etapa 3 (Pagamento)">
+            <Input value={f.checkoutStep3ButtonLabel} onChange={(e) => setF({ ...f, checkoutStep3ButtonLabel: e.target.value })} placeholder="Ir para pagamento" />
+          </Field>
+        </Card>
+
+        <Card title="Formas de entrega (frete)">
+          <p className="text-[11px] text-muted-foreground -mt-2">Cadastre as opções que aparecem após o cliente preencher o CEP. Ex: Motoboy, Correios PAC, SEDEX.</p>
+          <div className="grid gap-2">
+            {f.shippingOptions.map((opt, idx) => (
+              <div key={idx} className="grid grid-cols-[1fr_120px_auto] gap-2 items-end">
+                <Field label={idx === 0 ? "Título" : ""}>
+                  <Input
+                    value={opt.label}
+                    onChange={(e) => {
+                      const next = [...f.shippingOptions];
+                      next[idx] = { ...next[idx], label: e.target.value };
+                      setF({ ...f, shippingOptions: next });
+                    }}
+                    placeholder="Ex: Motoboy"
+                  />
+                </Field>
+                <Field label={idx === 0 ? "Valor (R$)" : ""}>
+                  <Input
+                    type="number" step="0.01"
+                    value={opt.price}
+                    onChange={(e) => {
+                      const next = [...f.shippingOptions];
+                      next[idx] = { ...next[idx], price: Number(e.target.value) };
+                      setF({ ...f, shippingOptions: next });
+                    }}
+                  />
+                </Field>
+                <Button
+                  type="button" variant="ghost" size="icon"
+                  onClick={() => setF({ ...f, shippingOptions: f.shippingOptions.filter((_, i) => i !== idx) })}
+                ><Trash2 className="h-4 w-4" /></Button>
+              </div>
+            ))}
+          </div>
+          <Button
+            type="button" variant="outline" size="sm"
+            onClick={() => {
+              const next: ShippingOption[] = [...f.shippingOptions, { id: `opt-${Date.now()}`, label: "Novo frete", price: 0 }];
+              setF({ ...f, shippingOptions: next });
+            }}
+          ><Plus className="mr-2 h-4 w-4" />Adicionar frete</Button>
+        </Card>
+
+        <Card title="Rodapé do checkout">
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <div className="text-sm font-medium">Mostrar rodapé</div>
+              <div className="text-[11px] text-muted-foreground">Exibe marca, CNPJ, e-mail e formas de pagamento aceitas.</div>
+            </div>
+            <Switch checked={f.checkoutFooterEnabled} onCheckedChange={(v) => setF({ ...f, checkoutFooterEnabled: v })} />
+          </div>
+          <Field label="Marca (negrito)">
+            <Input value={f.checkoutFooterBrand} onChange={(e) => setF({ ...f, checkoutFooterBrand: e.target.value })} placeholder="Esparta Imports" />
+          </Field>
+          <Field label="Linha de copyright / CNPJ">
+            <Textarea value={f.checkoutFooterCopyright} onChange={(e) => setF({ ...f, checkoutFooterCopyright: e.target.value })} placeholder="© 2026 VILIES NEGOCIOS DIGITAIS CNPJ: ..." />
+          </Field>
+          <Field label="E-mail de suporte">
+            <Input value={f.checkoutFooterEmail} onChange={(e) => setF({ ...f, checkoutFooterEmail: e.target.value })} placeholder="suporte@espartaimports.com.br" />
+          </Field>
+          <Field label="Formas de pagamento aceitas (separe por vírgula)">
+            <Input value={f.checkoutFooterPayments} onChange={(e) => setF({ ...f, checkoutFooterPayments: e.target.value })} placeholder="pix,visa,mastercard,elo,amex" />
           </Field>
         </Card>
 
