@@ -28,12 +28,34 @@ function AuthPage() {
   const [storeName, setStoreName] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem("lt_remember_email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) navigate({ to: "/" });
     });
   }, [navigate]);
+
+  async function handleForgotPassword() {
+    if (!email) {
+      toast.error("Digite seu e-mail para recuperar a senha");
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Enviamos um link de recuperação para o seu e-mail.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao enviar recuperação");
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +76,8 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (rememberMe) localStorage.setItem("lt_remember_email", email);
+        else localStorage.removeItem("lt_remember_email");
         toast.success("Bem-vindo de volta!");
         navigate({ to: "/" });
       }
@@ -110,6 +134,23 @@ function AuthPage() {
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Mínimo 6 caracteres" />
             </div>
 
+            {mode === "login" && (
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-input accent-primary"
+                  />
+                  <span className="text-muted-foreground">Lembrar senha</span>
+                </label>
+                <button type="button" onClick={handleForgotPassword} className="text-primary hover:underline">
+                  Esqueceu a senha?
+                </button>
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {mode === "login" ? "Entrar" : "Criar conta"}
@@ -135,9 +176,8 @@ function AuthPage() {
           </div>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-4">
-          Para testes rápidos, desative a confirmação de e-mail nas configurações do Supabase Auth.
-        </p>
+
+
       </div>
     </div>
   );
