@@ -36,10 +36,19 @@ function Checkout() {
 
   // Apply custom checkout theme + background as inline styles on the root container.
   const isLight = settings.checkoutTheme === "light";
+  const textColor = settings.checkoutTextColor || (isLight ? "#0f172a" : "#f8fafc");
+  const cardColor = settings.checkoutCardColor || (isLight ? "#ffffff" : "#111111");
+  const neonColor = settings.checkoutNeonColor || "#a855f7";
   const rootStyle: React.CSSProperties = {
     backgroundColor: settings.checkoutBgColor || (isLight ? "#f8fafc" : "#0a0a0a"),
-    color: isLight ? "#0f172a" : "#f8fafc",
+    color: textColor,
     minHeight: "100vh",
+  };
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: cardColor,
+    color: textColor,
+    boxShadow: `0 0 22px ${neonColor}40, inset 0 0 0 1px ${neonColor}55`,
+    borderRadius: "1rem",
   };
   const themeClass = isLight ? "light" : "dark";
 
@@ -85,12 +94,12 @@ function Checkout() {
     return (
       <div className={themeClass} style={rootStyle}>
         <div className="min-h-screen grid place-items-center px-4">
-          <div className="max-w-md w-full text-center rounded-2xl border border-border bg-card p-8 card-neon">
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/15">
-              <CheckCircle2 className="h-8 w-8 text-primary"/>
+          <div className="max-w-md w-full text-center p-8" style={cardStyle}>
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full" style={{ backgroundColor: `${neonColor}26` }}>
+              <CheckCircle2 className="h-8 w-8" style={{ color: neonColor }}/>
             </div>
             <h1 className="mt-4 text-xl font-bold">Pedido enviado!</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Estamos redirecionando você para o WhatsApp da loja para confirmar...</p>
+            <p className="mt-2 text-sm opacity-70">Estamos redirecionando você para o WhatsApp da loja para confirmar...</p>
           </div>
         </div>
       </div>
@@ -101,35 +110,36 @@ function Checkout() {
 
   return (
     <div className={themeClass} style={rootStyle}>
-      <header className="border-b border-border">
+      <header className="border-b" style={{ borderColor: `${neonColor}33` }}>
         <div className="mx-auto max-w-3xl flex items-center gap-3 px-4 sm:px-6 h-16">
           {settings.checkoutLogoUrl ? (
-            <img src={settings.checkoutLogoUrl} alt={settings.storeName} className="h-10 w-10 rounded-xl object-cover" />
+            <img src={settings.checkoutLogoUrl} alt={settings.storeName} className="h-10 w-10 rounded-xl object-contain" />
           ) : (
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary shadow-glow">
-              <TrendingUp className="h-5 w-5 text-primary-foreground"/>
+            <div className="grid h-9 w-9 place-items-center rounded-xl" style={{ backgroundColor: neonColor, boxShadow: `0 0 16px ${neonColor}` }}>
+              <TrendingUp className="h-5 w-5 text-white"/>
             </div>
           )}
           <div>
             <div className="font-bold">{settings.storeName}</div>
-            <div className="text-xs text-muted-foreground">Checkout rápido</div>
+            <div className="text-xs opacity-60">Checkout rápido</div>
           </div>
-          <Link to="/" className="ml-auto text-xs text-muted-foreground hover:text-primary">Voltar</Link>
+          <Link to="/" className="ml-auto text-xs opacity-60 hover:opacity-100">Voltar</Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
         {noProducts ? (
-          <div className="rounded-2xl border border-border bg-card p-10 text-center card-neon">
-            <PackageX className="mx-auto h-10 w-10 text-muted-foreground" />
+          <div className="p-10 text-center" style={cardStyle}>
+            <PackageX className="mx-auto h-10 w-10 opacity-50" />
             <h2 className="mt-4 font-bold">Nenhum produto cadastrado</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Cadastre seus produtos em Produtos para começar a vender.</p>
+            <p className="mt-1 text-sm opacity-70">Cadastre seus produtos em Produtos para começar a vender.</p>
           </div>
         ) : (
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
-          <div className="rounded-2xl border border-border bg-card p-6 card-neon">
+          <div className="p-6" style={cardStyle}>
             <h1 className="text-2xl font-bold tracking-tight">Finalizar pedido</h1>
-            <p className="text-sm text-muted-foreground mt-1">Preencha seus dados — leva menos de 1 minuto.</p>
+            <p className="text-sm opacity-70 mt-1">Preencha seus dados — leva menos de 1 minuto.</p>
+
 
             <div className="mt-6 grid gap-4">
               <div className="grid grid-cols-2 gap-3">
@@ -193,20 +203,24 @@ function Checkout() {
             </div>
           </div>
 
-          <aside className="rounded-2xl border border-border bg-card p-6 card-neon h-fit lg:sticky lg:top-6">
-            <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4 text-primary"/>Resumo</div>
+          <aside className="p-6 h-fit lg:sticky lg:top-6" style={cardStyle}>
+            <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4" style={{ color: neonColor }}/>Resumo</div>
             <div className="mt-4 space-y-2 text-sm">
               <Row label={`${product?.name ?? "—"} × ${qty}`} value={brl((product?.price ?? 0) * qty)}/>
               <Row label="Entrega" value={brl(settings.deliveryFee)}/>
-              <div className="border-t border-border pt-3 flex justify-between">
+              <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
                 <span className="font-semibold">Total</span>
-                <span className="font-bold text-lg text-neon">{brl(total)}</span>
+                <span className="font-bold text-lg" style={{ color: neonColor, textShadow: `0 0 10px ${neonColor}` }}>{brl(total)}</span>
               </div>
             </div>
-            <Button onClick={submit} className="mt-5 w-full bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold shadow-glow">
+            <Button
+              onClick={submit}
+              className="mt-5 w-full font-semibold text-white"
+              style={{ backgroundColor: neonColor, boxShadow: `0 0 20px ${neonColor}99` }}
+            >
               Enviar pedido pelo WhatsApp
             </Button>
-            <p className="mt-3 text-[11px] text-muted-foreground text-center">Você será redirecionado para confirmar com a loja.</p>
+            <p className="mt-3 text-[11px] opacity-60 text-center">Será enviado para o WhatsApp da loja ({settings.whatsapp || "configure em Configurações"}).</p>
           </aside>
         </div>
         )}
@@ -219,5 +233,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
 }
 function Row({ label, value }: { label: string; value: string }) {
-  return <div className="flex justify-between text-muted-foreground"><span className="truncate pr-2">{label}</span><span className="text-foreground">{value}</span></div>;
+  return <div className="flex justify-between opacity-80"><span className="truncate pr-2">{label}</span><span className="opacity-100">{value}</span></div>;
 }
