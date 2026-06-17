@@ -389,12 +389,43 @@ function Page() {
         </Card>
       </div>
 
+      <div className="mt-6">
+        <Card title="Mensagens automáticas do WhatsApp">
+          <p className="text-xs text-muted-foreground -mt-1 mb-3">
+            Personalize o texto. Use variáveis entre chaves que serão substituídas no momento do envio.
+          </p>
+
+          <Field label="Mensagem para o cliente — saiu para entrega">
+            <Textarea
+              rows={7}
+              value={f.deliveryMessageTemplate}
+              onChange={(e) => setF({ ...f, deliveryMessageTemplate: e.target.value })}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Variáveis: <code>{"{cliente}"}</code>, <code>{"{telefone}"}</code>, <code>{"{produto}"}</code>, <code>{"{endereco}"}</code>, <code>{"{total}"}</code>, <code>{"{loja}"}</code>, <code>{"{observacoes}"}</code>
+            </p>
+          </Field>
+
+          <Field label="Mensagem para o motoboy / grupo">
+            <Textarea
+              rows={10}
+              value={f.motoboyMessageTemplate}
+              onChange={(e) => setF({ ...f, motoboyMessageTemplate: e.target.value })}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Variáveis: <code>{"{cliente}"}</code>, <code>{"{telefone}"}</code>, <code>{"{endereco}"}</code>, <code>{"{mapa}"}</code>, <code>{"{itens}"}</code>, <code>{"{pagamento}"}</code>, <code>{"{total}"}</code>, <code>{"{observacoes}"}</code>, <code>{"{loja}"}</code>
+            </p>
+          </Field>
+        </Card>
+      </div>
+
       <div className="mt-6 flex justify-end">
         <Button onClick={() => { updateSettings(f); toast.success("Configurações salvas"); }}>Salvar alterações</Button>
       </div>
     </AppShell>
   );
 }
+
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
