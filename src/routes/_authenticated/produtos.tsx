@@ -13,7 +13,7 @@ import { Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/produtos")({
+export const Route = createFileRoute("/_authenticated/produtos")({
   head: () => ({ meta: [{ title: "Produtos — LucroTrack" }] }),
   component: ProdutosPage,
 });

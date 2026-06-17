@@ -26,7 +26,7 @@ import { Plus, Trash2, Copy, ExternalLink } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/pedidos")({
+export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — LucroTrack" }] }),
   component: PedidosPage,
 });

@@ -13,7 +13,7 @@ import { Plus, Trash2, TrendingDown, TrendingUp, Wallet, DollarSign } from "luci
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/financeiro")({
+export const Route = createFileRoute("/_authenticated/financeiro")({
   head: () => ({ meta: [{ title: "Financeiro — LucroTrack" }] }),
   component: Page,
 });

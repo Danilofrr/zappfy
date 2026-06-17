@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   TrendingUp,
+  LogOut,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,7 @@ const nav = [
 export function AppShell({ children, title, subtitle, actions }: { children: ReactNode; title: string; subtitle?: string; actions?: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
-  const { state } = useStore();
+  const { state, signOut, user } = useStore();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -87,11 +88,18 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
               })}
             </nav>
 
-            <div className="border-t border-sidebar-border p-4">
+            <div className="border-t border-sidebar-border p-4 space-y-3">
               <div className="rounded-xl bg-card p-3 border border-border">
                 <div className="text-xs text-muted-foreground">Loja</div>
                 <div className="font-semibold truncate">{state.settings.storeName}</div>
+                {user?.email && <div className="text-[11px] text-muted-foreground truncate mt-1">{user.email}</div>}
               </div>
+              <button
+                onClick={() => signOut()}
+                className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+              >
+                <LogOut className="h-4 w-4" /> Sair
+              </button>
             </div>
           </div>
         </aside>

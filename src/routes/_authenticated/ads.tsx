@@ -5,7 +5,7 @@ import { brl } from "@/lib/format";
 import { Megaphone, Target, ShoppingBag, DollarSign } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 
-export const Route = createFileRoute("/ads")({
+export const Route = createFileRoute("/_authenticated/ads")({
   head: () => ({ meta: [{ title: "Facebook Ads — LucroTrack" }] }),
   component: Page,
 });
