@@ -295,6 +295,8 @@ type Ctx = {
   deleteOrder: (id: string) => Promise<void>;
   addExpense: (e: Omit<Expense, "id">) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
+  addAd: (a: Omit<AdEntry, "id">) => Promise<void>;
+  deleteAd: (id: string) => Promise<void>;
   updateSettings: (s: Partial<Settings>) => Promise<void>;
   resetSeed: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -455,6 +457,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, expenses: s.expenses.filter((x) => x.id !== id) }));
     },
+    async addAd(a) {
+      if (!user) return;
+      const { data, error } = await supabase.from("ads").insert({
+        user_id: user.id, date: a.date, invested: a.invested, purchases: a.purchases, revenue: a.revenue,
+      }).select().single();
+      if (error) { toast.error(error.message); return; }
+      setState((s) => ({ ...s, ads: [...s.ads, toAd(data)].sort((x, y) => x.date.localeCompare(y.date)) }));
+    },
+    async deleteAd(id) {
+      const { error } = await supabase.from("ads").delete().eq("id", id);
+      if (error) { toast.error(error.message); return; }
+      setState((s) => ({ ...s, ads: s.ads.filter((x) => x.id !== id) }));
+    },
     async updateSettings(p) {
       if (!user) return;
       const patch: any = {};
@@ -536,9 +551,9 @@ export function monthRange(date = new Date()) {
   return { start, end };
 }
 
-export function useFinance() {
+export function useFinance(range?: { start: Date; end: Date }) {
   const { state } = useStore();
-  const { start, end } = monthRange();
+  const { start, end } = range ?? monthRange();
 
   const monthOrders = state.orders.filter(
     (o) => new Date(o.date) >= start && new Date(o.date) < end && o.status !== "cancelado",
