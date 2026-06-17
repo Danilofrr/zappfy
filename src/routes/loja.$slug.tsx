@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckoutView } from "@/components/CheckoutView";
 import type { Product, Settings, ShippingOption } from "@/lib/store";
-import { submitPublicOrder } from "@/lib/api/public-checkout.functions";
 
 export const Route = createFileRoute("/loja/$slug")({
   ssr: false,
