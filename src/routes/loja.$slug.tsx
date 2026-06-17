@@ -197,7 +197,17 @@ function PublicCheckout() {
       products={products}
       settings={settings}
       onSubmit={async (order) => {
-        await submitPublicOrder({ data: { slug: slug.toLowerCase(), order } });
+        const res = await fetch("/api/public/submit-order", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ slug: slug.toLowerCase(), order }),
+        });
+        if (!res.ok) {
+          let detail: any = null;
+          try { detail = await res.json(); } catch { detail = await res.text().catch(() => null); }
+          console.error("[checkout] submit failed", res.status, detail);
+          throw new Error(detail?.error || `Erro ${res.status} ao enviar pedido`);
+        }
       }}
     />
   );
