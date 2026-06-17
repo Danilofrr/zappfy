@@ -236,6 +236,18 @@ const toSettings = (r: any): Settings => ({
   checkoutButtonLabel: r.checkout_button_label ?? "Enviar pedido pelo WhatsApp",
   checkoutButtonColor: r.checkout_button_color ?? "#a855f7",
   checkoutHeaderBgColor: r.checkout_header_bg_color ?? "#0a0a0a",
+  checkoutSecureLabel: r.checkout_secure_label ?? "Checkout seguro",
+  checkoutStep1ButtonLabel: r.checkout_step1_button_label ?? "Continuar",
+  checkoutStep2ButtonLabel: r.checkout_step2_button_label ?? "Calcular frete",
+  checkoutStep3ButtonLabel: r.checkout_step3_button_label ?? "Ir para pagamento",
+  checkoutStepButtonColor: r.checkout_step_button_color ?? "#a855f7",
+  checkoutStepButtonTextColor: r.checkout_step_button_text_color ?? "#ffffff",
+  shippingOptions: Array.isArray(r.shipping_options) ? r.shipping_options as ShippingOption[] : [],
+  checkoutFooterEnabled: r.checkout_footer_enabled ?? true,
+  checkoutFooterBrand: r.checkout_footer_brand ?? "",
+  checkoutFooterCopyright: r.checkout_footer_copyright ?? "",
+  checkoutFooterEmail: r.checkout_footer_email ?? "",
+  checkoutFooterPayments: r.checkout_footer_payments ?? "",
 });
 
 type Ctx = {
