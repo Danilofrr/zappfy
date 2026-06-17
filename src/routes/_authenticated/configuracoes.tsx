@@ -10,6 +10,8 @@ import { RotateCcw, Image as ImageIcon, Upload, X, Plus, Trash2 } from "lucide-r
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { ShippingOption } from "@/lib/store";
+import { SHIPPING_ICONS } from "@/lib/shipping-icons";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — LucroTrack" }] }),
