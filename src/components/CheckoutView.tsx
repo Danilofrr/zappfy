@@ -339,8 +339,8 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                       <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})}/></Field>
                     </div>
                     <div>
-                      <Label className="text-xs mb-2 block">Forma de entrega</Label>
-                      <div className="grid gap-2">
+                      <Label className="text-xs mb-2 block">Forma de entrega <span className="opacity-60">(toque para selecionar)</span></Label>
+                      <div className="grid gap-2" role="radiogroup">
                         {settings.shippingOptions.map((opt) => {
                           const active = shippingId === opt.id;
                           const Icon = getShippingIcon(opt.icon);
@@ -348,6 +348,8 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                             <button
                               key={opt.id}
                               type="button"
+                              role="radio"
+                              aria-checked={active}
                               onClick={() => setShippingId(opt.id)}
                               className="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors"
                               style={{
@@ -356,6 +358,16 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                                 boxShadow: active ? `0 0 14px ${neonColor}55` : "none",
                               }}
                             >
+                              <span
+                                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors"
+                                style={{
+                                  border: `2px solid ${neonColor}`,
+                                  backgroundColor: active ? neonColor : "transparent",
+                                }}
+                                aria-hidden
+                              >
+                                {active && <span className="h-2 w-2 rounded-full bg-background" />}
+                              </span>
                               <Icon className="h-5 w-5 shrink-0" style={{ color: neonColor }}/>
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate">{opt.label}</div>
