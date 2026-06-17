@@ -65,7 +65,9 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
         >
-          <div className="flex h-full flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+          <div
+            className="flex h-full flex-col pt-[calc(env(safe-area-inset-top)+4rem)] lg:pt-0"
+          >
             <div className="hidden lg:flex items-center gap-2 px-5 h-16 border-b border-sidebar-border">
               <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary shadow-glow">
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
