@@ -216,6 +216,7 @@ export type Database = {
           checkout_footer_enabled: boolean | null
           checkout_footer_payments: string | null
           checkout_footer_show_cards_image: boolean | null
+          checkout_footer_whatsapp: string | null
           checkout_header_bg_color: string
           checkout_logo_align: string | null
           checkout_logo_size: number | null
@@ -260,6 +261,7 @@ export type Database = {
           checkout_footer_enabled?: boolean | null
           checkout_footer_payments?: string | null
           checkout_footer_show_cards_image?: boolean | null
+          checkout_footer_whatsapp?: string | null
           checkout_header_bg_color?: string
           checkout_logo_align?: string | null
           checkout_logo_size?: number | null
@@ -304,6 +306,7 @@ export type Database = {
           checkout_footer_enabled?: boolean | null
           checkout_footer_payments?: string | null
           checkout_footer_show_cards_image?: boolean | null
+          checkout_footer_whatsapp?: string | null
           checkout_header_bg_color?: string
           checkout_logo_align?: string | null
           checkout_logo_size?: number | null
