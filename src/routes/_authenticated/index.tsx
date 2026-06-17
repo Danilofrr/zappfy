@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — LucroTrack" },
+      { title: "Dashboard — ZappFy" },
       { name: "description", content: "Veja o lucro real do seu negócio em segundos." },
     ],
   }),

@@ -44,7 +44,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow">
               <TrendingUp className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold tracking-tight text-lg truncate">LucroTrack</span>
+            <span className="font-bold tracking-tight text-lg truncate">ZappFy</span>
           </Link>
           <button
             onClick={() => setOpen((v) => !v)}
@@ -73,7 +73,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
               </div>
               <div className="leading-tight">
-                <div className="font-bold tracking-tight">LucroTrack</div>
+                <div className="font-bold tracking-tight">ZappFy</div>
                 <div className="text-[11px] text-muted-foreground">Gestão para WhatsApp</div>
               </div>
             </div>

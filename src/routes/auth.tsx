@@ -13,8 +13,8 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Entrar — LucroTrack" },
-      { name: "description", content: "Acesse sua conta LucroTrack para gerenciar pedidos, vendas e lucro." },
+      { title: "Entrar — ZappFy" },
+      { name: "description", content: "Acesse sua conta ZappFy para gerenciar pedidos, vendas e lucro." },
     ],
   }),
   component: AuthPage,
@@ -98,7 +98,7 @@ function AuthPage() {
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-primary shadow-glow">
             <TrendingUp className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-neon">LucroTrack</span>
+          <span className="text-xl font-bold tracking-tight text-neon">ZappFy</span>
         </Link>
 
         <Card className="p-6 card-neon animate-neon-pulse">

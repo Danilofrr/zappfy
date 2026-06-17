@@ -7,7 +7,7 @@ import {
 } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/relatorios")({
-  head: () => ({ meta: [{ title: "Relatórios — LucroTrack" }] }),
+  head: () => ({ meta: [{ title: "Relatórios — ZappFy" }] }),
   component: Page,
 });
 
