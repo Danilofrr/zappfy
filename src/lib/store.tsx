@@ -112,6 +112,7 @@ export type Settings = {
   checkoutFooterCardsImageUrl: string;
   checkoutFooterShowCardsImage: boolean;
   checkoutFooterCardsImageHeight: number;
+  checkoutFooterWhatsapp: string;
 };
 
 type State = {
