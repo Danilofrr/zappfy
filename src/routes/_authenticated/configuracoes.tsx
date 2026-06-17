@@ -8,7 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { RotateCcw } from "lucide-react";
 
-export const Route = createFileRoute("/configuracoes")({
+export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — LucroTrack" }] }),
   component: Page,
 });

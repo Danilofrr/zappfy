@@ -1,0 +1,139 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { TrendingUp, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/auth")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Entrar — LucroTrack" },
+      { name: "description", content: "Acesse sua conta LucroTrack para gerenciar pedidos, vendas e lucro." },
+    ],
+  }),
+  component: AuthPage,
+});
+
+function AuthPage() {
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [storeName, setStoreName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) navigate({ to: "/" });
+    });
+  }, [navigate]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { full_name: fullName, store_name: storeName || "Minha Loja" },
+          },
+        });
+        if (error) throw error;
+        toast.success("Conta criada! Você já pode entrar.");
+        setMode("login");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Bem-vindo de volta!");
+        navigate({ to: "/" });
+      }
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao autenticar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen grid place-items-center bg-background px-4 py-10">
+      <div className="w-full max-w-md">
+        <Link to="/auth" className="flex items-center justify-center gap-2 mb-6">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-primary shadow-glow">
+            <TrendingUp className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <span className="text-xl font-bold tracking-tight">LucroTrack</span>
+        </Link>
+
+        <Card className="p-6">
+          <h1 className="text-xl font-semibold tracking-tight">
+            {mode === "login" ? "Entrar na sua conta" : "Criar conta grátis"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {mode === "login"
+              ? "Acesse seu painel de gestão financeira."
+              : "Comece a controlar suas vendas pelo WhatsApp."}
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {mode === "signup" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="fullName">Seu nome</Label>
+                  <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="João Silva" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="storeName">Nome da loja</Label>
+                  <Input id="storeName" value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="TechShop Recife" />
+                </div>
+              </>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="email">E-mail</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="voce@email.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Senha</Label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Mínimo 6 caracteres" />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {mode === "login" ? "Entrar" : "Criar conta"}
+            </Button>
+          </form>
+
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            {mode === "login" ? (
+              <>
+                Ainda não tem conta?{" "}
+                <button type="button" onClick={() => setMode("signup")} className="text-primary hover:underline">
+                  Cadastre-se
+                </button>
+              </>
+            ) : (
+              <>
+                Já tem conta?{" "}
+                <button type="button" onClick={() => setMode("login")} className="text-primary hover:underline">
+                  Entrar
+                </button>
+              </>
+            )}
+          </div>
+        </Card>
+
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          Para testes rápidos, desative a confirmação de e-mail nas configurações do Supabase Auth.
+        </p>
+      </div>
+    </div>
+  );
+}
