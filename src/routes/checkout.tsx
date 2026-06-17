@@ -13,7 +13,7 @@ import cardsImageAsset from "@/assets/cards-payment-methods.png.asset.json";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/checkout")({
+export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
       { title: "Finalizar Pedido" },
