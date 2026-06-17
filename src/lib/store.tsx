@@ -515,6 +515,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutFooterCardsImageUrl !== undefined) patch.checkout_footer_cards_image_url = p.checkoutFooterCardsImageUrl;
       if (p.checkoutFooterShowCardsImage !== undefined) patch.checkout_footer_show_cards_image = p.checkoutFooterShowCardsImage;
       if (p.checkoutFooterCardsImageHeight !== undefined) patch.checkout_footer_cards_image_height = p.checkoutFooterCardsImageHeight;
+      if (p.checkoutFooterWhatsapp !== undefined) patch.checkout_footer_whatsapp = p.checkoutFooterWhatsapp;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
