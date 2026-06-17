@@ -27,12 +27,37 @@ function Checkout() {
   const [productId, setProductId] = useState(products[0]?.id ?? "");
   const [qty, setQty] = useState(1);
   const [form, setForm] = useState({
-    customer: "", phone: "", address: "", reference: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
+    customer: "", phone: "", cep: "", address: "", reference: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
   });
   const [done, setDone] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepCalculated, setCepCalculated] = useState(false);
 
   const product = products.find((p) => p.id === productId);
-  const total = (product?.price ?? 0) * qty + settings.deliveryFee;
+  const total = (product?.price ?? 0) * qty + (cepCalculated ? settings.deliveryFee : 0);
+
+  async function lookupCep(raw: string) {
+    const cep = raw.replace(/\D/g, "");
+    if (cep.length !== 8) { setCepCalculated(false); return; }
+    setCepLoading(true);
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await r.json();
+      if (data.erro) { toast.error("CEP não encontrado"); setCepCalculated(false); return; }
+      setForm((f) => ({
+        ...f,
+        address: f.address || [data.logradouro, data.complemento].filter(Boolean).join(", "),
+        district: f.district || data.bairro || "",
+        city: f.city || (data.localidade && data.uf ? `${data.localidade}/${data.uf}` : data.localidade || ""),
+      }));
+      setCepCalculated(true);
+      toast.success(`Frete calculado: ${brl(settings.deliveryFee)}`);
+    } catch {
+      toast.error("Erro ao consultar CEP");
+    } finally {
+      setCepLoading(false);
+    }
+  }
 
   // Apply custom checkout theme + background as inline styles on the root container.
   const isLight = settings.checkoutTheme === "light";
