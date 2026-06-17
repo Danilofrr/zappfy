@@ -135,8 +135,11 @@ function PedidosPage() {
     [state.orders, filter],
   );
 
+  const { user } = useStore();
   const checkoutLink =
-    typeof window !== "undefined" ? `${window.location.origin}/checkout` : "/checkout";
+    typeof window !== "undefined" && user
+      ? `${window.location.origin}/loja/${user.id}`
+      : "";
 
   return (
     <AppShell
