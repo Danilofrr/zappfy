@@ -27,12 +27,37 @@ function Checkout() {
   const [productId, setProductId] = useState(products[0]?.id ?? "");
   const [qty, setQty] = useState(1);
   const [form, setForm] = useState({
-    customer: "", phone: "", address: "", reference: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
+    customer: "", phone: "", cep: "", address: "", reference: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
   });
   const [done, setDone] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepCalculated, setCepCalculated] = useState(false);
 
   const product = products.find((p) => p.id === productId);
-  const total = (product?.price ?? 0) * qty + settings.deliveryFee;
+  const total = (product?.price ?? 0) * qty + (cepCalculated ? settings.deliveryFee : 0);
+
+  async function lookupCep(raw: string) {
+    const cep = raw.replace(/\D/g, "");
+    if (cep.length !== 8) { setCepCalculated(false); return; }
+    setCepLoading(true);
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await r.json();
+      if (data.erro) { toast.error("CEP não encontrado"); setCepCalculated(false); return; }
+      setForm((f) => ({
+        ...f,
+        address: f.address || [data.logradouro, data.complemento].filter(Boolean).join(", "),
+        district: f.district || data.bairro || "",
+        city: f.city || (data.localidade && data.uf ? `${data.localidade}/${data.uf}` : data.localidade || ""),
+      }));
+      setCepCalculated(true);
+      toast.success(`Frete calculado: ${brl(settings.deliveryFee)}`);
+    } catch {
+      toast.error("Erro ao consultar CEP");
+    } finally {
+      setCepLoading(false);
+    }
+  }
 
   // Apply custom checkout theme + background as inline styles on the root container.
   const isLight = settings.checkoutTheme === "light";
@@ -171,6 +196,21 @@ function Checkout() {
 
               <Field label="Nome completo"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} placeholder="Seu nome"/></Field>
               <Field label="Telefone (WhatsApp)"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="(81) 99999-9999"/></Field>
+              <Field label="CEP">
+                <Input
+                  value={form.cep}
+                  onChange={(e) => { setForm({...form, cep: e.target.value}); setCepCalculated(false); }}
+                  onBlur={(e) => lookupCep(e.target.value)}
+                  placeholder="00000-000"
+                  inputMode="numeric"
+                />
+                {cepLoading && <p className="text-[11px] opacity-60 mt-1">Consultando Correios...</p>}
+                {cepCalculated && !cepLoading && (
+                  <p className="text-[11px] mt-1" style={{ color: neonColor }}>
+                    ✓ Correios: {settings.deliveryLabel || "Entrega"} — {brl(settings.deliveryFee)}
+                  </p>
+                )}
+              </Field>
               <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} placeholder="Rua, número, complemento"/></Field>
               <Field label="Ponto de referência"><Input value={form.reference} onChange={(e) => setForm({...form, reference: e.target.value})} placeholder="Ex: próximo à padaria, portão azul..."/></Field>
               <div className="grid grid-cols-2 gap-3">
@@ -202,10 +242,13 @@ function Checkout() {
             <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4" style={{ color: neonColor }}/>Resumo</div>
             <div className="mt-4 space-y-2 text-sm">
               <Row label={`${product?.name ?? "—"} × ${qty}`} value={brl((product?.price ?? 0) * qty)}/>
-              <Row label={settings.deliveryLabel || "Entrega"} value={brl(settings.deliveryFee)}/>
+              <Row
+                label={settings.deliveryLabel || "Entrega"}
+                value={cepCalculated ? brl(settings.deliveryFee) : (cepLoading ? "calculando..." : "informe o CEP")}
+              />
               <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
                 <span className="font-semibold">Total</span>
-                <span className="font-bold text-lg" style={{ color: neonColor, textShadow: `0 0 10px ${neonColor}` }}>{brl(total)}</span>
+                <span className="font-bold text-lg">{brl(total)}</span>
               </div>
             </div>
             <Button
