@@ -70,7 +70,35 @@ function Page() {
           <Field label="WhatsApp (com DDI, só números)"><Input value={f.whatsapp} onChange={(e) => setF({ ...f, whatsapp: e.target.value })} placeholder="5581999990000" /></Field>
           <Field label="Chave PIX"><Input value={f.pixKey} onChange={(e) => setF({ ...f, pixKey: e.target.value })} /></Field>
           <Field label="Endereço"><Input value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
+          <Field label="Link público do checkout (slug)">
+            <Input
+              value={f.slug}
+              onChange={(e) => setF({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })}
+              placeholder="esparta"
+            />
+            {f.slug && (
+              <div className="mt-2 flex items-center gap-2">
+                <Input
+                  readOnly
+                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/loja/${f.slug}`}
+                  className="text-xs"
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const url = `${window.location.origin}/loja/${f.slug}`;
+                    navigator.clipboard?.writeText(url);
+                    toast.success("Link copiado!");
+                  }}
+                >Copiar</Button>
+              </div>
+            )}
+            <p className="mt-1 text-[11px] text-muted-foreground">Compartilhe esse link com seus clientes. Eles abrirão o checkout sem precisar de login.</p>
+          </Field>
         </Card>
+
 
         <Card title="Metas e operação">
           <div className="grid grid-cols-2 gap-3">
