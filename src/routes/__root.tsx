@@ -137,6 +137,7 @@ function RootComponent() {
       <ThemeProvider defaultTheme="dark">
         <StoreProvider>
           <Outlet />
+          <InstallPrompt />
           <Toaster position="top-right" />
         </StoreProvider>
       </ThemeProvider>
