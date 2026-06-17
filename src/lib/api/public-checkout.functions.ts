@@ -51,7 +51,7 @@ export const submitPublicOrder = createServerFn({ method: "POST" })
         address: o.address ?? "",
         district: o.district ?? "",
         city: o.city ?? "",
-        items: o.items as unknown as object,
+        items: o.items as unknown as never,
         total: o.total,
         payment: o.payment,
         status: "aguardando",
