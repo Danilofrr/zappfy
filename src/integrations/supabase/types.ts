@@ -440,6 +440,7 @@ export type Database = {
           slug: string | null
           store_name: string | null
           user_id: string | null
+          whatsapp: string | null
         }
         Insert: {
           checkout_bg_color?: string | null
@@ -483,6 +484,7 @@ export type Database = {
           slug?: string | null
           store_name?: string | null
           user_id?: string | null
+          whatsapp?: string | null
         }
         Update: {
           checkout_bg_color?: string | null
@@ -526,6 +528,7 @@ export type Database = {
           slug?: string | null
           store_name?: string | null
           user_id?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
