@@ -200,6 +200,9 @@ export type Database = {
       settings: {
         Row: {
           address: string
+          checkout_bg_color: string
+          checkout_logo_url: string
+          checkout_theme: string
           created_at: string
           delivery_fee: number
           monthly_profit_goal: number
@@ -212,6 +215,9 @@ export type Database = {
         }
         Insert: {
           address?: string
+          checkout_bg_color?: string
+          checkout_logo_url?: string
+          checkout_theme?: string
           created_at?: string
           delivery_fee?: number
           monthly_profit_goal?: number
@@ -224,6 +230,9 @@ export type Database = {
         }
         Update: {
           address?: string
+          checkout_bg_color?: string
+          checkout_logo_url?: string
+          checkout_theme?: string
           created_at?: string
           delivery_fee?: number
           monthly_profit_goal?: number
