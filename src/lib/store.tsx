@@ -69,7 +69,7 @@ export type AdEntry = {
   revenue: number;
 };
 
-export type ShippingOption = { id: string; label: string; price: number };
+export type ShippingOption = { id: string; label: string; price: number; icon?: string };
 
 export type Settings = {
   storeName: string;
@@ -136,9 +136,9 @@ const emptySettings: Settings = {
   checkoutStepButtonColor: "#a855f7",
   checkoutStepButtonTextColor: "#ffffff",
   shippingOptions: [
-    { id: "motoboy", label: "Motoboy", price: 19.9 },
-    { id: "pac", label: "Correios PAC", price: 24.9 },
-    { id: "sedex", label: "Correios SEDEX", price: 34.9 },
+    { id: "motoboy", label: "Motoboy", price: 19.9, icon: "bike" },
+    { id: "pac", label: "Correios PAC", price: 24.9, icon: "truck" },
+    { id: "sedex", label: "Correios SEDEX", price: 34.9, icon: "rocket" },
   ],
   checkoutFooterEnabled: true,
   checkoutFooterBrand: "Esparta Imports",

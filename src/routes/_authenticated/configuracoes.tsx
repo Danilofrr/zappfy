@@ -10,6 +10,8 @@ import { RotateCcw, Image as ImageIcon, Upload, X, Plus, Trash2 } from "lucide-r
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { ShippingOption } from "@/lib/store";
+import { SHIPPING_ICONS } from "@/lib/shipping-icons";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — LucroTrack" }] }),
@@ -184,7 +186,7 @@ function Page() {
           <p className="text-[11px] text-muted-foreground -mt-2">Cadastre as opções que aparecem após o cliente preencher o CEP. Ex: Motoboy, Correios PAC, SEDEX.</p>
           <div className="grid gap-2">
             {f.shippingOptions.map((opt, idx) => (
-              <div key={idx} className="grid grid-cols-[1fr_120px_auto] gap-2 items-end">
+              <div key={idx} className="grid grid-cols-[1fr_140px_120px_auto] gap-2 items-end">
                 <Field label={idx === 0 ? "Título" : ""}>
                   <Input
                     value={opt.label}
@@ -195,6 +197,30 @@ function Page() {
                     }}
                     placeholder="Ex: Motoboy"
                   />
+                </Field>
+                <Field label={idx === 0 ? "Ícone" : ""}>
+                  <Select
+                    value={opt.icon || "truck"}
+                    onValueChange={(v) => {
+                      const next = [...f.shippingOptions];
+                      next[idx] = { ...next[idx], icon: v };
+                      setF({ ...f, shippingOptions: next });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SHIPPING_ICONS.map(({ key, label, Icon }) => (
+                        <SelectItem key={key} value={key}>
+                          <span className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" />
+                            {label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
                 <Field label={idx === 0 ? "Valor (R$)" : ""}>
                   <Input
