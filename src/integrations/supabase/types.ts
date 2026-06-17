@@ -531,7 +531,26 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      submit_public_order: {
+        Args: {
+          _address: string
+          _cep: string
+          _city: string
+          _customer: string
+          _district: string
+          _notes?: string
+          _payment: string
+          _phone: string
+          _product_id: string
+          _quantity: number
+          _reference: string
+          _shipping_value: number
+          _slug: string
+          _total: number
+          _unit_price: number
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,28 +1,37 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import type { Database } from "@/integrations/supabase/types";
 
-const orderItemSchema = z.object({
-  productId: z.string(),
-  name: z.string(),
+const num = z.preprocess(
+  (v) => (v === null || v === undefined || v === "" ? 0 : v),
+  z.coerce.number(),
+);
+
+const itemSchema = z.object({
+  productId: z.string().uuid(),
+  name: z.string().optional().default(""),
   qty: z.coerce.number().int().positive(),
-  price: z.coerce.number().nonnegative(),
-  cost: z.preprocess(
-    (v) => (v === null || v === undefined || v === "" ? 0 : v),
-    z.coerce.number().nonnegative(),
-  ),
+  price: num.refine((n) => n >= 0, "Valor unitário inválido"),
+  cost: num.refine((n) => n >= 0, "Custo inválido"),
 });
 
 const submitSchema = z.object({
   slug: z.string().min(1).max(120),
   order: z.object({
-    customer: z.string().min(1).max(200),
-    phone: z.string().min(1).max(40),
-    address: z.string().max(400).optional().default(""),
+    customer: z.string().min(1, "Nome do cliente não preenchido").max(200),
+    phone: z.string().min(1, "WhatsApp inválido").max(40),
+    cep: z.string().max(20).optional().default(""),
+    address: z.string().min(1, "Endereço não preenchido").max(400),
+    reference: z.string().max(400).optional().default(""),
     district: z.string().max(200).optional().default(""),
     city: z.string().max(200).optional().default(""),
-    items: z.array(orderItemSchema).min(1),
-    total: z.number().nonnegative().optional(),
-    payment: z.enum(["pix", "cartao", "dinheiro"]),
+    items: z.array(itemSchema).min(1, "Produto inválido"),
+    shipping: num.optional(),
+    total: num.optional(),
+    payment: z.enum(["pix", "cartao", "dinheiro"], {
+      errorMap: () => ({ message: "Forma de pagamento não selecionada" }),
+    }),
     notes: z.string().max(2000).optional().default(""),
   }),
 });
@@ -41,103 +50,80 @@ export const Route = createFileRoute("/api/public/submit-order")({
         let raw: unknown;
         try {
           raw = await request.json();
-        } catch {
-          return jsonError(400, "JSON inválido");
+        } catch (e) {
+          console.error("[submit-order] invalid JSON body", e);
+          return jsonError(400, "JSON inválido no corpo da requisição");
         }
+
+        console.log("[submit-order] payload recebido:", JSON.stringify(raw));
 
         const parsed = submitSchema.safeParse(raw);
         if (!parsed.success) {
-          console.error("[submit-order] validation failed", {
-            received: raw,
-            issues: parsed.error.issues,
-          });
           const first = parsed.error.issues[0];
           const fieldMap: Record<string, string> = {
             "order.customer": "Nome do cliente",
             "order.phone": "WhatsApp",
             "order.address": "Endereço",
+            "order.cep": "CEP",
             "order.payment": "Forma de pagamento",
             "order.items": "Produto",
             "order.total": "Valor total",
+            "order.shipping": "Valor de entrega",
             "slug": "Loja",
           };
           const path = first?.path.join(".") ?? "campo";
           const label = fieldMap[path] || path;
           const msg = `Campo inválido: ${label} — ${first?.message ?? "valor inválido"}`;
+          console.error("[submit-order] validation failed", { path, message: first?.message, issues: parsed.error.issues });
           return jsonError(400, msg, parsed.error.flatten());
         }
 
         const { slug, order } = parsed.data;
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const item = order.items[0];
 
-        const { data: settingsRow, error: sErr } = await supabaseAdmin
-          .from("settings")
-          .select("user_id, delivery_fee")
-          .ilike("slug", slug.toLowerCase().trim())
-          .maybeSingle();
-
-        if (sErr) {
-          console.error("[submit-order] settings lookup error", sErr);
-          return jsonError(500, "Falha ao localizar loja", sErr.message);
-        }
-        if (!settingsRow?.user_id) {
-          return jsonError(404, "Loja não encontrada");
+        const SUPABASE_URL = process.env.SUPABASE_URL;
+        const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+        if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+          console.error("[submit-order] missing supabase env", {
+            hasUrl: !!SUPABASE_URL,
+            hasKey: !!SUPABASE_PUBLISHABLE_KEY,
+          });
+          return jsonError(500, "Servidor sem credenciais do Supabase configuradas");
         }
 
-        // Re-fetch authoritative product price/cost server-side.
-        const productIds = order.items.map((i) => i.productId);
-        const { data: prodRows, error: pErr } = await supabaseAdmin
-          .from("products")
-          .select("id, name, price, cost")
-          .in("id", productIds)
-          .eq("user_id", settingsRow.user_id);
-
-        if (pErr) {
-          console.error("[submit-order] products lookup error", pErr);
-          return jsonError(500, "Falha ao validar produtos", pErr.message);
-        }
-
-        const byId = new Map((prodRows ?? []).map((p: any) => [p.id, p]));
-        const items = order.items.map((i) => {
-          const p = byId.get(i.productId);
-          return {
-            productId: i.productId,
-            name: p?.name ?? i.name,
-            qty: Number(i.qty),
-            price: p ? Number(p.price) : Number(i.price),
-            cost: p ? Number(p.cost) : 0,
-          };
+        const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+          auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
         });
 
-        const itemsTotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-        const shipping = Number(settingsRow.delivery_fee ?? 0);
-        const total = Math.round((itemsTotal + shipping) * 100) / 100;
+        const rpcArgs = {
+          _slug: slug,
+          _customer: order.customer,
+          _phone: order.phone,
+          _cep: order.cep ?? "",
+          _address: order.address,
+          _reference: order.reference ?? "",
+          _district: order.district ?? "",
+          _city: order.city ?? "",
+          _product_id: item.productId,
+          _quantity: Number(item.qty),
+          _unit_price: Number(item.price),
+          _shipping_value: Number(order.shipping ?? 0),
+          _total: Number(order.total ?? 0),
+          _payment: order.payment,
+          _notes: order.notes ?? "",
+        };
 
-        const { data: inserted, error: iErr } = await supabaseAdmin
-          .from("orders")
-          .insert({
-            user_id: settingsRow.user_id,
-            customer: order.customer,
-            phone: order.phone,
-            address: order.address ?? "",
-            district: order.district ?? "",
-            city: order.city ?? "",
-            items: items as unknown as never,
-            total,
-            payment: order.payment,
-            status: "aguardando",
-            notes: order.notes ?? null,
-            date: new Date().toISOString(),
-          })
-          .select("id")
-          .single();
+        console.log("[submit-order] chamando submit_public_order:", rpcArgs);
 
-        if (iErr || !inserted) {
-          console.error("[submit-order] insert error", iErr);
-          return jsonError(500, "Falha ao registrar pedido", iErr?.message);
+        const { data, error } = await (supabase as any).rpc("submit_public_order", rpcArgs);
+
+        if (error) {
+          console.error("[submit-order] supabase rpc error", error);
+          return jsonError(400, error.message || "Falha ao registrar pedido", error);
         }
 
-        return Response.json({ id: inserted.id });
+        console.log("[submit-order] pedido criado:", data);
+        return Response.json({ id: data });
       },
     },
   },

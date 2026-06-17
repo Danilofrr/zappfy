@@ -97,35 +97,46 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
     if (product.stock < qty) { toast.error("Estoque insuficiente para esta quantidade"); return; }
     if (!Number.isFinite(total) || total <= 0) { toast.error("Valor total inválido"); return; }
 
+    const unitPrice = Number(product.price ?? 0);
+    const itemCost = Number.isFinite(Number(product.cost)) ? Number(product.cost) : unitPrice;
+    const shippingValue = Number(shipping.price ?? 0);
+
     const payload = {
-      customer: form.customer,
-      phone: form.phone,
-      address: form.address,
+      customer: form.customer.trim(),
+      phone: form.phone.trim(),
+      cep: form.cep,
+      address: form.address.trim(),
+      reference: form.reference,
       district: form.district,
       city: form.city,
       items: [{
         productId: product.id,
         name: product.name,
         qty: Number(qty),
-        price: Number(product.price ?? 0),
-        cost: Number.isFinite(Number(product.cost)) ? Number(product.cost) : Number(product.price ?? 0),
+        price: unitPrice,
+        cost: itemCost,
       }],
-      total,
+      shipping: shippingValue,
+      total: Number(total),
       payment: form.payment,
       status: "aguardando" as const,
       notes: form.notes,
       date: new Date().toISOString(),
     };
 
-    // Log explícito do objeto enviado ao backend/Supabase
     console.log("[checkout] enviando pedido:", {
       nome_cliente: payload.customer,
       whatsapp: payload.phone,
+      cep: payload.cep,
       endereco: payload.address,
+      ponto_referencia: payload.reference,
+      bairro: payload.district,
+      cidade: payload.city,
       produto: product.name,
-      quantidade: qty,
-      valor_unitario: product.price,
-      valor_total: total,
+      quantidade: Number(qty),
+      valor_unitario: unitPrice,
+      valor_entrega: shippingValue,
+      valor_total: Number(total),
       forma_pagamento: payload.payment,
       status_pedido: payload.status,
       _raw: payload,
