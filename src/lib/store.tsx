@@ -113,6 +113,10 @@ export type Settings = {
   checkoutFooterShowCardsImage: boolean;
   checkoutFooterCardsImageHeight: number;
   checkoutFooterWhatsapp: string;
+  checkoutFooterCnpj: string;
+  checkoutFooterShowCnpj: boolean;
+  checkoutFooterShowEmail: boolean;
+  checkoutFooterShowWhatsapp: boolean;
 };
 
 type State = {
@@ -168,6 +172,10 @@ const emptySettings: Settings = {
   checkoutFooterShowCardsImage: true,
   checkoutFooterCardsImageHeight: 40,
   checkoutFooterWhatsapp: "",
+  checkoutFooterCnpj: "",
+  checkoutFooterShowCnpj: true,
+  checkoutFooterShowEmail: true,
+  checkoutFooterShowWhatsapp: true,
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -284,6 +292,10 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterShowCardsImage: r.checkout_footer_show_cards_image ?? true,
   checkoutFooterCardsImageHeight: Number(r.checkout_footer_cards_image_height ?? 40),
   checkoutFooterWhatsapp: r.checkout_footer_whatsapp ?? "",
+  checkoutFooterCnpj: r.checkout_footer_cnpj ?? "",
+  checkoutFooterShowCnpj: r.checkout_footer_show_cnpj ?? true,
+  checkoutFooterShowEmail: r.checkout_footer_show_email ?? true,
+  checkoutFooterShowWhatsapp: r.checkout_footer_show_whatsapp ?? true,
 });
 
 type Ctx = {
@@ -516,6 +528,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutFooterShowCardsImage !== undefined) patch.checkout_footer_show_cards_image = p.checkoutFooterShowCardsImage;
       if (p.checkoutFooterCardsImageHeight !== undefined) patch.checkout_footer_cards_image_height = p.checkoutFooterCardsImageHeight;
       if (p.checkoutFooterWhatsapp !== undefined) patch.checkout_footer_whatsapp = p.checkoutFooterWhatsapp;
+      if (p.checkoutFooterCnpj !== undefined) patch.checkout_footer_cnpj = p.checkoutFooterCnpj;
+      if (p.checkoutFooterShowCnpj !== undefined) patch.checkout_footer_show_cnpj = p.checkoutFooterShowCnpj;
+      if (p.checkoutFooterShowEmail !== undefined) patch.checkout_footer_show_email = p.checkoutFooterShowEmail;
+      if (p.checkoutFooterShowWhatsapp !== undefined) patch.checkout_footer_show_whatsapp = p.checkoutFooterShowWhatsapp;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));

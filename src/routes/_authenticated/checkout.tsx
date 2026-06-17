@@ -435,10 +435,13 @@ function Checkout() {
             {settings.checkoutFooterCopyright && (
               <div className="text-[11px] opacity-70">{settings.checkoutFooterCopyright}</div>
             )}
-            {settings.checkoutFooterEmail && (
+            {settings.checkoutFooterShowCnpj && settings.checkoutFooterCnpj && (
+              <div className="text-[11px] opacity-70">CNPJ: {settings.checkoutFooterCnpj}</div>
+            )}
+            {settings.checkoutFooterShowEmail && settings.checkoutFooterEmail && (
               <div className="text-[11px] opacity-70">E-mail: {settings.checkoutFooterEmail}</div>
             )}
-            {settings.checkoutFooterWhatsapp && (
+            {settings.checkoutFooterShowWhatsapp && settings.checkoutFooterWhatsapp && (
               <div className="text-[11px] opacity-70">WhatsApp: {settings.checkoutFooterWhatsapp}</div>
             )}
           </div>
