@@ -132,6 +132,8 @@ type State = {
   ads: AdEntry[];
   settings: Settings;
 };
+export const DEFAULT_MOTOBOY_TEMPLATE = `🛵 *NOVA ENTREGA*\n\n👤 *Cliente:* {cliente}\n📦 *Produto:* {produto}\n📍 *Endereço:* {endereco}\n🗺️ *Localização:* {mapa}\n📱 *Telefone:* {telefone}\n\n💰 *Pagamento:* {pagamento}\n💵 *Total:* {total}`;
+export const DEFAULT_DELIVERY_TEMPLATE = `Oba! 🚚 Seu pedido{produto} acabou de sair para entrega!\n\nOlá *{cliente}*, tudo bem? Em instantes você o receberá no endereço:\n{endereco}\n\nQualquer dúvida é só chamar por aqui. 💜\n— {loja}`;
 
 const emptySettings: Settings = {
   storeName: "Minha Loja",
@@ -182,8 +184,8 @@ const emptySettings: Settings = {
   checkoutFooterShowCnpj: true,
   checkoutFooterShowEmail: true,
   checkoutFooterShowWhatsapp: true,
-  motoboyMessageTemplate: `🛵 *NOVA ENTREGA*\n\n👤 *Cliente:* {cliente}\n📦 *Produto:* {produto}\n📍 *Endereço:* {endereco}\n🗺️ *Localização:* {mapa}\n📱 *Telefone:* {telefone}\n\n💰 *Pagamento:* {pagamento}\n💵 *Total:* {total}`,
-  deliveryMessageTemplate: `Oba! 🚚 Seu pedido{produto} acabou de sair para entrega!\n\nOlá *{cliente}*, tudo bem? Em instantes você o receberá no endereço:\n{endereco}\n\nQualquer dúvida é só chamar por aqui. 💜\n— {loja}`,
+  motoboyMessageTemplate: DEFAULT_MOTOBOY_TEMPLATE,
+  deliveryMessageTemplate: DEFAULT_DELIVERY_TEMPLATE,
   motoboyFee: 0,
   slug: "",
 };
