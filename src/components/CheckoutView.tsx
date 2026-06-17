@@ -154,23 +154,25 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
 
     setDone(true);
     setSubmitting(false);
-
-    if (settings.whatsapp) {
-      const msg = `Olá, gostaria de finalizar meu pedido.%0A%0A` +
-        `*Produto:* ${product.name} (x${qty})%0A` +
-        `*Nome:* ${form.customer}%0A` +
-        `*Telefone:* ${form.phone}%0A` +
-        `*Endereço:* ${form.address}, ${form.district} - ${form.city}%0A` +
-        (form.reference ? `*Ponto de referência:* ${form.reference}%0A` : "") +
-        `*Entrega (${shipping.label}):* ${brl(shipping.price)}%0A` +
-        `*Pagamento:* ${form.payment.toUpperCase()}%0A` +
-        `*Total:* ${brl(total)}` +
-        (form.notes ? `%0A*Obs:* ${form.notes}` : "");
-      setTimeout(() => {
-        window.location.href = `https://wa.me/${settings.whatsapp}?text=${msg}`;
-      }, 1500);
-    }
   }
+
+  const waNumber = (settings.whatsapp || "").replace(/\D/g, "");
+  const waMessage =
+    product && shipping
+      ? `Olá! Acabei de finalizar meu pedido na loja *${settings.storeName}*.%0A%0A` +
+        `*Produto:* ${product.name} (x${qty})%0A` +
+        `*Valor unitário:* ${brl(product.price)}%0A` +
+        `*Entrega (${shipping.label}):* ${brl(shipping.price)}%0A` +
+        `*Total:* ${brl(total)}%0A%0A` +
+        `*Nome:* ${form.customer}%0A` +
+        `*WhatsApp:* ${form.phone}%0A` +
+        (form.cep ? `*CEP:* ${form.cep}%0A` : "") +
+        `*Endereço:* ${form.address}${form.district ? `, ${form.district}` : ""}${form.city ? ` - ${form.city}` : ""}%0A` +
+        (form.reference ? `*Ponto de referência:* ${form.reference}%0A` : "") +
+        `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? "Cartão" : "Dinheiro"}` +
+        (form.notes ? `%0A*Observações:* ${form.notes}` : "")
+      : "";
+  const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${waMessage}` : "";
 
   if (done) {
     return (
@@ -181,7 +183,25 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
               <CheckCircle2 className="h-8 w-8" style={{ color: neonColor }}/>
             </div>
             <h1 className="mt-4 text-xl font-bold">Pedido enviado com sucesso!</h1>
-            <p className="mt-2 text-sm opacity-70">Em breve entraremos em contato pelo WhatsApp.</p>
+            <p className="mt-2 text-sm opacity-70">
+              {waUrl
+                ? "Para concluir, envie os dados do pedido para o nosso WhatsApp."
+                : "Em breve entraremos em contato pelo WhatsApp."}
+            </p>
+            {waUrl && (
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 font-semibold w-full"
+                style={{ backgroundColor: "#25D366", color: "#fff", boxShadow: "0 0 18px #25D36699" }}
+              >
+                <svg viewBox="0 0 32 32" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+                  <path d="M19.11 17.21c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5-.89-.79-1.49-1.77-1.67-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.79.37s-1.05 1.02-1.05 2.49 1.07 2.88 1.22 3.08c.15.2 2.11 3.22 5.11 4.51.72.31 1.27.49 1.71.63.72.23 1.37.2 1.89.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35zM16 3C9.37 3 4 8.37 4 15c0 2.39.69 4.61 1.88 6.49L4 29l7.71-1.86A11.95 11.95 0 0 0 16 27c6.63 0 12-5.37 12-12S22.63 3 16 3z"/>
+                </svg>
+                Enviar pedido pelo WhatsApp
+              </a>
+            )}
           </div>
         </div>
       </div>
