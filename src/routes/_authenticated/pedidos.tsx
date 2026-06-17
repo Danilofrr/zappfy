@@ -56,20 +56,22 @@ function PedidosPage() {
     const phone = input.replace(/\D/g, "");
     if (phone.length < 10) { toast.error("Número inválido"); return; }
     if (typeof window !== "undefined") localStorage.setItem("motoboyPhone", phone);
-    const itemsTxt = o.items.map((i) => `• ${i.qty}x ${i.name}`).join("%0A");
+    const itemsTxt = o.items.map((i) => `• ${i.qty}x ${i.name}`).join("\n");
     const enderecoCompleto = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`;
-    const msg =
-      `🛵 *Nova entrega*%0A%0A` +
-      `*Cliente:* ${o.customer}%0A` +
-      `*Telefone:* ${o.phone}%0A` +
-      `*Endereço:* ${enderecoCompleto}%0A` +
-      `*Mapa:* ${mapsLink}%0A%0A` +
-      `*Itens:*%0A${itemsTxt}%0A%0A` +
-      `*Pagamento:* ${o.payment.toUpperCase()}%0A` +
-      `*Total:* ${brl(o.total)}` +
-      (o.notes ? `%0A*Obs:* ${o.notes}` : "");
-    window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+    const tpl = state.settings.motoboyMessageTemplate || "";
+    const text = applyTemplate(tpl, {
+      cliente: o.customer,
+      telefone: o.phone,
+      endereco: enderecoCompleto,
+      mapa: mapsLink,
+      itens: itemsTxt,
+      pagamento: o.payment.toUpperCase(),
+      total: brl(o.total),
+      observacoes: o.notes || "",
+      loja: state.settings.storeName || "",
+    });
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(text)}`, "_blank");
   }
 
   function applyTemplate(tpl: string, vars: Record<string, string>) {
