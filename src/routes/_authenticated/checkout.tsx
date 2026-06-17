@@ -296,9 +296,6 @@ function Checkout() {
               </div>
             </div>
           </aside>
-
-            <p className="mt-3 text-[11px] opacity-60 text-center">Será enviado para o WhatsApp da loja ({settings.whatsapp || "configure em Configurações"}).</p>
-          </aside>
         </div>
         )}
       </main>
