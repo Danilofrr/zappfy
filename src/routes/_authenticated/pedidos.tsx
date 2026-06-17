@@ -179,6 +179,20 @@ function PedidosPage() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
+                        onClick={() => setEditing(o)}
+                        title="Editar pedido"
+                        className="text-muted-foreground hover:text-primary p-1"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => sendToMotoboy(o)}
+                        title="Enviar endereço para o motoboy no WhatsApp"
+                        className="text-muted-foreground hover:text-blue-500 p-1"
+                      >
+                        <Bike className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => notifyDelivery(o)}
                         title="Avisar cliente no WhatsApp que o pedido saiu para entrega"
                         className="text-muted-foreground hover:text-green-500 p-1"
@@ -186,13 +200,14 @@ function PedidosPage() {
                         <MessageCircle className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => { if (confirm("Excluir este pedido?")) deleteOrder(o.id); }}
+                        onClick={() => { if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id); }}
                         className="text-muted-foreground hover:text-destructive p-1"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
+
                 </tr>
               ))}
             </tbody>
