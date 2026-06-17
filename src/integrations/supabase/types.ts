@@ -241,8 +241,10 @@ export type Database = {
           created_at: string
           delivery_fee: number
           delivery_label: string
+          delivery_message_template: string | null
           monthly_profit_goal: number
           monthly_revenue_goal: number
+          motoboy_message_template: string | null
           pix_key: string
           shipping_options: Json | null
           store_name: string
@@ -290,8 +292,10 @@ export type Database = {
           created_at?: string
           delivery_fee?: number
           delivery_label?: string
+          delivery_message_template?: string | null
           monthly_profit_goal?: number
           monthly_revenue_goal?: number
+          motoboy_message_template?: string | null
           pix_key?: string
           shipping_options?: Json | null
           store_name?: string
@@ -339,8 +343,10 @@ export type Database = {
           created_at?: string
           delivery_fee?: number
           delivery_label?: string
+          delivery_message_template?: string | null
           monthly_profit_goal?: number
           monthly_revenue_goal?: number
+          motoboy_message_template?: string | null
           pix_key?: string
           shipping_options?: Json | null
           store_name?: string

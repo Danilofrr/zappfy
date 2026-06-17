@@ -117,6 +117,8 @@ export type Settings = {
   checkoutFooterShowCnpj: boolean;
   checkoutFooterShowEmail: boolean;
   checkoutFooterShowWhatsapp: boolean;
+  motoboyMessageTemplate: string;
+  deliveryMessageTemplate: string;
 };
 
 type State = {
@@ -176,6 +178,8 @@ const emptySettings: Settings = {
   checkoutFooterShowCnpj: true,
   checkoutFooterShowEmail: true,
   checkoutFooterShowWhatsapp: true,
+  motoboyMessageTemplate: `🛵 *Nova entrega*\n\n*Cliente:* {cliente}\n*Telefone:* {telefone}\n*Endereço:* {endereco}\n*Mapa:* {mapa}\n\n*Itens:*\n{itens}\n\n*Pagamento:* {pagamento}\n*Total:* {total}\n*Obs:* {observacoes}`,
+  deliveryMessageTemplate: `Oba! 🚚 Seu pedido{produto} acabou de sair para entrega!\n\nOlá *{cliente}*, tudo bem? Em instantes você o receberá no endereço:\n{endereco}\n\nQualquer dúvida é só chamar por aqui. 💜\n— {loja}`,
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -296,6 +300,8 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterShowCnpj: r.checkout_footer_show_cnpj ?? true,
   checkoutFooterShowEmail: r.checkout_footer_show_email ?? true,
   checkoutFooterShowWhatsapp: r.checkout_footer_show_whatsapp ?? true,
+  motoboyMessageTemplate: r.motoboy_message_template ?? emptySettings.motoboyMessageTemplate,
+  deliveryMessageTemplate: r.delivery_message_template ?? emptySettings.deliveryMessageTemplate,
 });
 
 type Ctx = {
@@ -580,6 +586,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutFooterShowCnpj !== undefined) patch.checkout_footer_show_cnpj = p.checkoutFooterShowCnpj;
       if (p.checkoutFooterShowEmail !== undefined) patch.checkout_footer_show_email = p.checkoutFooterShowEmail;
       if (p.checkoutFooterShowWhatsapp !== undefined) patch.checkout_footer_show_whatsapp = p.checkoutFooterShowWhatsapp;
+      if (p.motoboyMessageTemplate !== undefined) patch.motoboy_message_template = p.motoboyMessageTemplate;
+      if (p.deliveryMessageTemplate !== undefined) patch.delivery_message_template = p.deliveryMessageTemplate;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
