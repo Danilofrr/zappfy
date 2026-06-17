@@ -44,8 +44,24 @@ export const Route = createFileRoute("/api/public/submit-order")({
 
         const parsed = submitSchema.safeParse(raw);
         if (!parsed.success) {
-          console.error("[submit-order] validation failed", parsed.error.flatten());
-          return jsonError(400, "Dados do pedido inválidos", parsed.error.flatten());
+          console.error("[submit-order] validation failed", {
+            received: raw,
+            issues: parsed.error.issues,
+          });
+          const first = parsed.error.issues[0];
+          const fieldMap: Record<string, string> = {
+            "order.customer": "Nome do cliente",
+            "order.phone": "WhatsApp",
+            "order.address": "Endereço",
+            "order.payment": "Forma de pagamento",
+            "order.items": "Produto",
+            "order.total": "Valor total",
+            "slug": "Loja",
+          };
+          const path = first?.path.join(".") ?? "campo";
+          const label = fieldMap[path] || path;
+          const msg = `Campo inválido: ${label} — ${first?.message ?? "valor inválido"}`;
+          return jsonError(400, msg, parsed.error.flatten());
         }
 
         const { slug, order } = parsed.data;
