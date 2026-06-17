@@ -204,6 +204,7 @@ export type Database = {
           checkout_button_color: string
           checkout_button_label: string
           checkout_card_color: string
+          checkout_header_bg_color: string
           checkout_logo_url: string
           checkout_neon_color: string
           checkout_text_color: string
@@ -225,6 +226,7 @@ export type Database = {
           checkout_button_color?: string
           checkout_button_label?: string
           checkout_card_color?: string
+          checkout_header_bg_color?: string
           checkout_logo_url?: string
           checkout_neon_color?: string
           checkout_text_color?: string
@@ -246,6 +248,7 @@ export type Database = {
           checkout_button_color?: string
           checkout_button_label?: string
           checkout_card_color?: string
+          checkout_header_bg_color?: string
           checkout_logo_url?: string
           checkout_neon_color?: string
           checkout_text_color?: string
