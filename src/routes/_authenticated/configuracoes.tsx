@@ -209,3 +209,19 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
 }
+
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <Field label={label}>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value || "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-10 w-12 rounded-md border border-border bg-transparent cursor-pointer shrink-0"
+        />
+        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="#000000" />
+      </div>
+    </Field>
+  );
+}
