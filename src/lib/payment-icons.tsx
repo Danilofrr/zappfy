@@ -90,7 +90,7 @@ const Boleto = ({ className }: Props) => (
   </Card>
 );
 
-const REGISTRY: Record<string, (p: Props) => JSX.Element> = {
+const REGISTRY: Record<string, React.FC<Props>> = {
   pix: Pix,
   visa: Visa,
   mastercard: Mastercard,
