@@ -138,7 +138,7 @@ function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
         <StatCard label="Faturamento" value={brl(fin.revenue)} hint={range.label} icon={DollarSign} />
         <StatCard label="Lucro Líquido" value={brl(fin.profit)} hint={range.label} icon={TrendingUp} tone="success" />
-        <StatCard label="Total Gastos" value={brl(fin.cogs + fin.adsSpend + fin.opEx)} hint={range.label} icon={TrendingDown} tone="danger" />
+        <StatCard label="Total Gastos" value={brl(fin.cogs + fin.adsSpend + fin.opEx + fin.motoboyCost)} hint={range.label} icon={TrendingDown} tone="danger" />
         <StatCard label="Saldo em Caixa" value={brl(fin.cash)} hint="acumulado" icon={Wallet} />
         <StatCard label="Pedidos" value={String(fin.ordersCount)} hint={range.label} icon={ShoppingCart} />
         <StatCard label="Meta" value={pct(goalPct)} hint={brl(goalRev)} icon={Target} tone="warning" />
@@ -159,6 +159,7 @@ function Dashboard() {
             <Row label="(-) Custos dos Produtos" value={`- ${brl(fin.cogs)}`} />
             <Row label="(-) Facebook Ads" value={`- ${brl(fin.adsSpend)}`} />
             <Row label="(-) Despesas Operacionais" value={`- ${brl(fin.opEx)}`} />
+            <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${brl(fin.motoboyCost)}`} />
             <div className="sm:col-span-2 border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold">(=) Lucro Líquido</span>
               <span className="text-primary font-bold text-lg">{brl(fin.profit)}</span>
