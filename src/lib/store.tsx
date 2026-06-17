@@ -112,6 +112,7 @@ export type Settings = {
   checkoutFooterCardsImageUrl: string;
   checkoutFooterShowCardsImage: boolean;
   checkoutFooterCardsImageHeight: number;
+  checkoutFooterWhatsapp: string;
 };
 
 type State = {
@@ -166,6 +167,7 @@ const emptySettings: Settings = {
   checkoutFooterCardsImageUrl: "",
   checkoutFooterShowCardsImage: true,
   checkoutFooterCardsImageHeight: 40,
+  checkoutFooterWhatsapp: "",
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -281,6 +283,7 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterCardsImageUrl: r.checkout_footer_cards_image_url ?? "",
   checkoutFooterShowCardsImage: r.checkout_footer_show_cards_image ?? true,
   checkoutFooterCardsImageHeight: Number(r.checkout_footer_cards_image_height ?? 40),
+  checkoutFooterWhatsapp: r.checkout_footer_whatsapp ?? "",
 });
 
 type Ctx = {
@@ -512,6 +515,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutFooterCardsImageUrl !== undefined) patch.checkout_footer_cards_image_url = p.checkoutFooterCardsImageUrl;
       if (p.checkoutFooterShowCardsImage !== undefined) patch.checkout_footer_show_cards_image = p.checkoutFooterShowCardsImage;
       if (p.checkoutFooterCardsImageHeight !== undefined) patch.checkout_footer_cards_image_height = p.checkoutFooterCardsImageHeight;
+      if (p.checkoutFooterWhatsapp !== undefined) patch.checkout_footer_whatsapp = p.checkoutFooterWhatsapp;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));

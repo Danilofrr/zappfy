@@ -1,0 +1,1 @@
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS checkout_footer_whatsapp TEXT DEFAULT '';

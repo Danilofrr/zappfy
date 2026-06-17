@@ -400,16 +400,16 @@ function Checkout() {
 
       {settings.checkoutFooterEnabled && (
         <footer
-          className="border-t mt-8"
+          className="border-t mt-3"
           style={{
             borderColor: `${neonColor}22`,
             backgroundColor: settings.checkoutFooterBgColor || settings.checkoutHeaderBgColor || rootStyle.backgroundColor,
           }}
         >
-          <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6 text-center space-y-3">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 py-3 text-center space-y-1.5">
             {settings.checkoutFooterShowCardsImage ? (
               <div>
-                <div className="text-[11px] uppercase tracking-wider opacity-60 mb-2">Formas de pagamento aceitas</div>
+                <div className="text-[11px] uppercase tracking-wider opacity-60 mb-0.5">Formas de pagamento aceitas</div>
                 <div className="flex justify-center">
                   <img
                     src={settings.checkoutFooterCardsImageUrl || cardsImageAsset.url}
@@ -421,7 +421,7 @@ function Checkout() {
               </div>
             ) : payments.length > 0 ? (
               <div>
-                <div className="text-[11px] uppercase tracking-wider opacity-60 mb-2">Formas de pagamento aceitas</div>
+                <div className="text-[11px] uppercase tracking-wider opacity-60 mb-0.5">Formas de pagamento aceitas</div>
                 <div className="flex flex-wrap justify-center items-center gap-2">
                   {payments.map((p) => (
                     <PaymentBadge key={p} brand={p} />
@@ -430,13 +430,16 @@ function Checkout() {
               </div>
             ) : null}
             {settings.checkoutFooterBrand && (
-              <div className="text-sm font-bold">{settings.checkoutFooterBrand}</div>
+              <div className="text-sm font-bold pt-1">{settings.checkoutFooterBrand}</div>
             )}
             {settings.checkoutFooterCopyright && (
               <div className="text-[11px] opacity-70">{settings.checkoutFooterCopyright}</div>
             )}
             {settings.checkoutFooterEmail && (
               <div className="text-[11px] opacity-70">E-mail: {settings.checkoutFooterEmail}</div>
+            )}
+            {settings.checkoutFooterWhatsapp && (
+              <div className="text-[11px] opacity-70">WhatsApp: {settings.checkoutFooterWhatsapp}</div>
             )}
           </div>
         </footer>
