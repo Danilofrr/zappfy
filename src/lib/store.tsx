@@ -119,6 +119,7 @@ export type Settings = {
   checkoutFooterShowWhatsapp: boolean;
   motoboyMessageTemplate: string;
   deliveryMessageTemplate: string;
+  motoboyFee: number;
   slug: string;
 };
 
@@ -182,6 +183,7 @@ const emptySettings: Settings = {
   checkoutFooterShowWhatsapp: true,
   motoboyMessageTemplate: `🛵 *NOVA ENTREGA*\n\n👤 *Cliente:* {cliente}\n📦 *Produto:* {produto}\n📍 *Endereço:* {endereco}\n🗺️ *Localização:* {mapa}\n📱 *Telefone:* {telefone}\n\n💰 *Pagamento:* {pagamento}\n💵 *Total:* {total}`,
   deliveryMessageTemplate: `Oba! 🚚 Seu pedido{produto} acabou de sair para entrega!\n\nOlá *{cliente}*, tudo bem? Em instantes você o receberá no endereço:\n{endereco}\n\nQualquer dúvida é só chamar por aqui. 💜\n— {loja}`,
+  motoboyFee: 0,
   slug: "",
 };
 
@@ -305,6 +307,7 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterShowWhatsapp: r.checkout_footer_show_whatsapp ?? true,
   motoboyMessageTemplate: r.motoboy_message_template ?? emptySettings.motoboyMessageTemplate,
   deliveryMessageTemplate: r.delivery_message_template ?? emptySettings.deliveryMessageTemplate,
+  motoboyFee: Number(r.motoboy_fee ?? 0),
   slug: r.slug ?? "",
 });
 
@@ -629,6 +632,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutFooterShowWhatsapp !== undefined) patch.checkout_footer_show_whatsapp = p.checkoutFooterShowWhatsapp;
       if (p.motoboyMessageTemplate !== undefined) patch.motoboy_message_template = p.motoboyMessageTemplate;
       if (p.deliveryMessageTemplate !== undefined) patch.delivery_message_template = p.deliveryMessageTemplate;
+      if (p.motoboyFee !== undefined) patch.motoboy_fee = p.motoboyFee;
       if (p.slug !== undefined) patch.slug = p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || null : null;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
@@ -672,27 +676,27 @@ export function monthRange(date = new Date()) {
 export function useFinance(range?: { start: Date; end: Date }) {
   const { state } = useStore();
   const { start, end } = range ?? monthRange();
+  const motoboyFee = Number(state.settings.motoboyFee ?? 0);
 
   const monthOrders = state.orders.filter(
     (o) => new Date(o.date) >= start && new Date(o.date) < end && o.status !== "cancelado",
   );
   const revenue = monthOrders.reduce((a, o) => a + o.total, 0);
   const cogs = monthOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
+  const motoboyCost = motoboyFee * monthOrders.length;
 
   const monthExpenses = state.expenses.filter((e) => new Date(e.date) >= start && new Date(e.date) < end);
   const adsSpend = monthExpenses.filter((e) => e.category === "ads").reduce((a, e) => a + e.amount, 0);
   const opEx = monthExpenses.filter((e) => e.category !== "ads").reduce((a, e) => a + e.amount, 0);
 
-  const profit = revenue - cogs - adsSpend - opEx;
+  const profit = revenue - cogs - adsSpend - opEx - motoboyCost;
 
-  const allRevenue = state.orders
-    .filter((o) => o.status !== "cancelado" && o.status !== "aguardando")
-    .reduce((a, o) => a + o.total, 0);
+  const paidOrders = state.orders.filter((o) => o.status !== "cancelado" && o.status !== "aguardando");
+  const allRevenue = paidOrders.reduce((a, o) => a + o.total, 0);
   const allExpenses = state.expenses.reduce((a, e) => a + e.amount, 0);
-  const allCogs = state.orders
-    .filter((o) => o.status !== "cancelado" && o.status !== "aguardando")
-    .reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
-  const cash = allRevenue - allExpenses - allCogs;
+  const allCogs = paidOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
+  const allMotoboy = motoboyFee * paidOrders.length;
+  const cash = allRevenue - allExpenses - allCogs - allMotoboy;
 
-  return { revenue, cogs, adsSpend, opEx, profit, cash, ordersCount: monthOrders.length };
+  return { revenue, cogs, adsSpend, opEx, motoboyCost, profit, cash, ordersCount: monthOrders.length };
 }

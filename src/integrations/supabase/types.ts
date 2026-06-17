@@ -277,6 +277,7 @@ export type Database = {
           delivery_message_template: string | null
           monthly_profit_goal: number
           monthly_revenue_goal: number
+          motoboy_fee: number
           motoboy_message_template: string | null
           pix_key: string
           shipping_options: Json | null
@@ -329,6 +330,7 @@ export type Database = {
           delivery_message_template?: string | null
           monthly_profit_goal?: number
           monthly_revenue_goal?: number
+          motoboy_fee?: number
           motoboy_message_template?: string | null
           pix_key?: string
           shipping_options?: Json | null
@@ -381,6 +383,7 @@ export type Database = {
           delivery_message_template?: string | null
           monthly_profit_goal?: number
           monthly_revenue_goal?: number
+          motoboy_fee?: number
           motoboy_message_template?: string | null
           pix_key?: string
           shipping_options?: Json | null

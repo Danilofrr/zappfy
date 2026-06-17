@@ -110,6 +110,18 @@ function Page() {
               <Input type="number" step="0.01" value={f.deliveryFee} onChange={(e) => setF({ ...f, deliveryFee: Number(e.target.value) })} />
             </Field>
           </div>
+          <Field label="Taxa do motoboy (R$) — descontada do lucro por pedido">
+            <Input
+              type="number"
+              step="0.01"
+              value={f.motoboyFee}
+              onChange={(e) => setF({ ...f, motoboyFee: Number(e.target.value) })}
+              placeholder="Ex: 10.00"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Esse valor é o que você paga ao motoboy por entrega. Ele será descontado automaticamente do lucro líquido no dashboard, deixando apenas o lucro real do produto.
+            </p>
+          </Field>
           <Field label="Meta mensal de faturamento (R$)">
             <Input type="number" step="0.01" value={f.monthlyRevenueGoal} onChange={(e) => setF({ ...f, monthlyRevenueGoal: Number(e.target.value) })} />
           </Field>

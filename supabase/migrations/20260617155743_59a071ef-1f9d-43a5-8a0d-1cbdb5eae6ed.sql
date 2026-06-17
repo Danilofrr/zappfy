@@ -1,0 +1,1 @@
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS motoboy_fee numeric NOT NULL DEFAULT 0;

@@ -43,6 +43,7 @@ function toSettings(r: any): Settings {
     pixKey: r.pix_key ?? "",
     address: r.address ?? "",
     deliveryFee: Number(r.delivery_fee ?? 0),
+    motoboyFee: Number(r.motoboy_fee ?? 0),
     deliveryLabel: r.delivery_label ?? "Entrega",
     monthlyRevenueGoal: Number(r.monthly_revenue_goal ?? 0),
     monthlyProfitGoal: Number(r.monthly_profit_goal ?? 0),
