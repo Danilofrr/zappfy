@@ -32,6 +32,7 @@ function Checkout() {
   const [done, setDone] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepCalculated, setCepCalculated] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const product = products.find((p) => p.id === productId);
   const total = (product?.price ?? 0) * qty + (cepCalculated ? settings.deliveryFee : 0);
@@ -166,76 +167,120 @@ function Checkout() {
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           <div className="p-6" style={cardStyle}>
             <h1 className="text-2xl font-bold tracking-tight">Finalizar pedido</h1>
-            <p className="text-sm opacity-70 mt-1">Preencha seus dados — leva menos de 1 minuto.</p>
+            <Stepper step={step} neonColor={neonColor} />
 
-
-            <div className="mt-6 grid gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Produto">
-                  <Select value={productId} onValueChange={setProductId}>
-                    <SelectTrigger><SelectValue/></SelectTrigger>
-                    <SelectContent>
-                      {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
-                          {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Quantidade">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={product?.stock ?? 1}
-                    value={qty}
-                    onChange={(e) => setQty(Math.max(1, Math.min(product?.stock ?? 1, Number(e.target.value))))}
-                  />
-                </Field>
-              </div>
-
-              <Field label="Nome completo"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} placeholder="Seu nome"/></Field>
-              <Field label="Telefone (WhatsApp)"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="(81) 99999-9999"/></Field>
-              <Field label="CEP">
-                <Input
-                  value={form.cep}
-                  onChange={(e) => { setForm({...form, cep: e.target.value}); setCepCalculated(false); }}
-                  onBlur={(e) => lookupCep(e.target.value)}
-                  placeholder="00000-000"
-                  inputMode="numeric"
-                />
-                {cepLoading && <p className="text-[11px] opacity-60 mt-1">Consultando Correios...</p>}
-                {cepCalculated && !cepLoading && (
-                  <p className="text-[11px] mt-1" style={{ color: neonColor }}>
-                    ✓ Correios: {settings.deliveryLabel || "Entrega"} — {brl(settings.deliveryFee)}
-                  </p>
-                )}
-              </Field>
-              <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} placeholder="Rua, número, complemento"/></Field>
-              <Field label="Ponto de referência"><Input value={form.reference} onChange={(e) => setForm({...form, reference: e.target.value})} placeholder="Ex: próximo à padaria, portão azul..."/></Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})}/></Field>
-                <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})}/></Field>
-              </div>
-
-              <div>
-                <Label className="text-xs mb-2 block">Forma de pagamento</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["pix", "cartao", "dinheiro"] as PaymentMethod[]).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setForm({...form, payment: p})}
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-medium capitalize transition-colors ${
-                        form.payment === p ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"
-                      }`}
-                    >{p === "cartao" ? "Cartão" : p === "pix" ? "PIX" : "Dinheiro"}</button>
-                  ))}
+            {step === 1 && (
+              <div className="mt-6 grid gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Produto">
+                    <Select value={productId} onValueChange={setProductId}>
+                      <SelectTrigger><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        {products.map((p) => (
+                          <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
+                            {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Quantidade">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={product?.stock ?? 1}
+                      value={qty}
+                      onChange={(e) => setQty(Math.max(1, Math.min(product?.stock ?? 1, Number(e.target.value))))}
+                    />
+                  </Field>
+                </div>
+                <Field label="Nome completo"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} placeholder="Seu nome"/></Field>
+                <Field label="Telefone (WhatsApp)"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="(81) 99999-9999"/></Field>
+                <div className="flex justify-end pt-2">
+                  <Button
+                    onClick={() => {
+                      if (!product) return toast.error("Selecione um produto");
+                      if (!form.customer || !form.phone) return toast.error("Preencha nome e telefone");
+                      setStep(2);
+                    }}
+                    style={{ backgroundColor: buttonColor, color: "#fff" }}
+                  >Continuar</Button>
                 </div>
               </div>
+            )}
 
-              <Field label="Observações (opcional)"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} placeholder="Ex: tocar interfone, troco para R$ 200..."/></Field>
-            </div>
+            {step === 2 && (
+              <div className="mt-6 grid gap-4">
+                <Field label="CEP">
+                  <Input
+                    value={form.cep}
+                    onChange={(e) => { setForm({...form, cep: e.target.value}); setCepCalculated(false); }}
+                    onBlur={(e) => lookupCep(e.target.value)}
+                    placeholder="00000-000"
+                    inputMode="numeric"
+                  />
+                  {cepLoading && <p className="text-[11px] opacity-60 mt-1">Consultando CEP...</p>}
+                  {cepCalculated && !cepLoading && (
+                    <p className="text-[11px] mt-1" style={{ color: neonColor }}>
+                      ✓ {settings.deliveryLabel || "Motoboy"} — {brl(settings.deliveryFee)}
+                    </p>
+                  )}
+                </Field>
+                {cepCalculated && (
+                  <>
+                    <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} placeholder="Rua, número, complemento"/></Field>
+                    <Field label="Ponto de referência"><Input value={form.reference} onChange={(e) => setForm({...form, reference: e.target.value})} placeholder="Ex: próximo à padaria, portão azul..."/></Field>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})}/></Field>
+                      <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})}/></Field>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between pt-2">
+                  <Button variant="outline" onClick={() => setStep(1)}>Voltar</Button>
+                  <Button
+                    onClick={() => {
+                      if (!cepCalculated) return toast.error("Informe um CEP válido");
+                      if (!form.address) return toast.error("Preencha o endereço");
+                      setStep(3);
+                    }}
+                    style={{ backgroundColor: buttonColor, color: "#fff" }}
+                  >Continuar</Button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="mt-6 grid gap-4">
+                <div>
+                  <Label className="text-xs mb-2 block">Forma de pagamento</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["pix", "cartao", "dinheiro"] as PaymentMethod[]).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setForm({...form, payment: p})}
+                        className={`rounded-lg border px-3 py-2.5 text-sm font-medium capitalize transition-colors ${
+                          form.payment === p ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"
+                        }`}
+                      >{p === "cartao" ? "Cartão" : p === "pix" ? "PIX" : "Dinheiro"}</button>
+                    ))}
+                  </div>
+                </div>
+                <Field label="Observações (opcional)"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} placeholder="Ex: tocar interfone, troco para R$ 200..."/></Field>
+                <div className="flex justify-between pt-2">
+                  <Button variant="outline" onClick={() => setStep(2)}>Voltar</Button>
+                  <Button
+                    onClick={submit}
+                    className="font-semibold text-white"
+                    style={{ backgroundColor: buttonColor, boxShadow: `0 0 20px ${buttonColor}99, 0 0 40px ${neonColor}66` }}
+                  >
+                    {settings.checkoutButtonLabel || "Enviar pedido pelo WhatsApp"}
+                  </Button>
+                </div>
+                <p className="text-[11px] opacity-60 text-center">Será enviado para o WhatsApp da loja ({settings.whatsapp || "configure em Configurações"}).</p>
+              </div>
+            )}
           </div>
 
           <aside className="p-6 h-fit lg:sticky lg:top-6" style={cardStyle}>
@@ -251,14 +296,6 @@ function Checkout() {
                 <span className="font-bold text-lg">{brl(total)}</span>
               </div>
             </div>
-            <Button
-              onClick={submit}
-              className="mt-5 w-full font-semibold text-white"
-              style={{ backgroundColor: buttonColor, boxShadow: `0 0 20px ${buttonColor}99, 0 0 40px ${neonColor}66` }}
-            >
-              {settings.checkoutButtonLabel || "Enviar pedido pelo WhatsApp"}
-            </Button>
-            <p className="mt-3 text-[11px] opacity-60 text-center">Será enviado para o WhatsApp da loja ({settings.whatsapp || "configure em Configurações"}).</p>
           </aside>
         </div>
         )}
@@ -272,4 +309,31 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 function Row({ label, value }: { label: string; value: string }) {
   return <div className="flex justify-between opacity-80"><span className="truncate pr-2">{label}</span><span className="opacity-100">{value}</span></div>;
+}
+function Stepper({ step, neonColor }: { step: 1 | 2 | 3; neonColor: string }) {
+  const labels = ["Você", "Entrega", "Pagamento"];
+  return (
+    <div className="mt-4 flex items-center gap-2">
+      {labels.map((label, i) => {
+        const n = (i + 1) as 1 | 2 | 3;
+        const active = step === n;
+        const done = step > n;
+        return (
+          <div key={label} className="flex items-center gap-2 flex-1">
+            <div
+              className="h-7 w-7 grid place-items-center rounded-full text-xs font-bold"
+              style={{
+                backgroundColor: active || done ? neonColor : "transparent",
+                color: active || done ? "#fff" : "currentColor",
+                border: `1px solid ${neonColor}${active || done ? "" : "55"}`,
+                boxShadow: active ? `0 0 12px ${neonColor}` : "none",
+              }}
+            >{done ? "✓" : n}</div>
+            <span className="text-xs font-medium hidden sm:inline" style={{ opacity: active ? 1 : 0.6 }}>{label}</span>
+            {i < 2 && <div className="flex-1 h-px" style={{ backgroundColor: `${neonColor}55` }} />}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
