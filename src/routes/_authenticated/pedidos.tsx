@@ -223,9 +223,92 @@ function PedidosPage() {
       >
         <ExternalLink className="h-3.5 w-3.5" /> Abrir página de checkout pública
       </a>
+
+      <EditOrderDialog
+        order={editing}
+        onClose={() => setEditing(null)}
+        onSave={async (patch) => {
+          if (!editing) return;
+          await updateOrder(editing.id, patch);
+          toast.success("Pedido atualizado!");
+          setEditing(null);
+        }}
+      />
     </AppShell>
   );
 }
+
+function EditOrderDialog({
+  order, onClose, onSave,
+}: {
+  order: Order | null;
+  onClose: () => void;
+  onSave: (patch: Partial<Omit<Order, "id" | "items">>) => void;
+}) {
+  const [form, setForm] = useState({
+    customer: "", phone: "", address: "", district: "", city: "",
+    payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
+  });
+
+  // Sincroniza ao abrir
+  useMemo(() => {
+    if (order) {
+      setForm({
+        customer: order.customer, phone: order.phone, address: order.address,
+        district: order.district, city: order.city,
+        payment: order.payment as any, status: order.status, notes: order.notes ?? "",
+      });
+    }
+  }, [order]);
+
+  return (
+    <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Editar pedido</DialogTitle>
+          <DialogDescription>Altere os dados do cliente, endereço e status.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Cliente"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
+            <Field label="Telefone"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
+          </div>
+          <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
+            <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Pagamento">
+              <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
+                <SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pix">PIX</SelectItem>
+                  <SelectItem value="cartao">Cartão</SelectItem>
+                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Status">
+              <Select value={form.status} onValueChange={(v: any) => setForm({...form, status: v})}>
+                <SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent>
+                  {statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+          <Field label="Observações"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} /></Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => onSave(form)}>Salvar alterações</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function Chip({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick: () => void }) {
   return (
