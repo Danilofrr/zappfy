@@ -130,7 +130,7 @@ export function InstallPrompt() {
             <Download className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight">Instale o LucroTrack</p>
+            <p className="text-sm font-semibold leading-tight">Instale o ZappFy</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {showIOS
                 ? "Adicione à tela inicial para abrir como um app."

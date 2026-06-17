@@ -11,7 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/ads")({
-  head: () => ({ meta: [{ title: "Facebook Ads — LucroTrack" }] }),
+  head: () => ({ meta: [{ title: "Facebook Ads — ZappFy" }] }),
   component: Page,
 });
 

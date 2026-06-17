@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/produtos")({
-  head: () => ({ meta: [{ title: "Produtos — LucroTrack" }] }),
+  head: () => ({ meta: [{ title: "Produtos — ZappFy" }] }),
   component: ProdutosPage,
 });
 

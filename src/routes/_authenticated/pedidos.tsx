@@ -27,7 +27,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
-  head: () => ({ meta: [{ title: "Pedidos — LucroTrack" }] }),
+  head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
   component: PedidosPage,
 });
 

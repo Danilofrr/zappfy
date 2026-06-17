@@ -14,7 +14,7 @@ import { SHIPPING_ICONS } from "@/lib/shipping-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
-  head: () => ({ meta: [{ title: "Configurações — LucroTrack" }] }),
+  head: () => ({ meta: [{ title: "Configurações — ZappFy" }] }),
   component: Page,
 });
 
