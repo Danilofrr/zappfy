@@ -37,11 +37,11 @@ function Page() {
   const [open, setOpen] = useState(false);
 
   const cashflow = useMemo(() => {
-    const items: { date: string; label: string; in: number; out: number }[] = [];
+    const items: { date: string; label: string; in: number; out: number; type: "order" | "expense" }[] = [];
     state.orders
       .filter((o) => o.status !== "cancelado" && o.status !== "aguardando")
-      .forEach((o) => items.push({ date: o.date, label: `Venda — ${o.customer}`, in: o.total, out: 0 }));
-    state.expenses.forEach((e) => items.push({ date: e.date, label: e.description, in: 0, out: e.amount }));
+      .forEach((o) => items.push({ date: o.date, label: `Venda — ${o.customer}`, in: o.total, out: 0, type: "order" }));
+    state.expenses.forEach((e) => items.push({ date: e.date, label: e.description, in: 0, out: e.amount, type: "expense" }));
     return items.sort((a, b) => +new Date(b.date) - +new Date(a.date)).slice(0, 25);
   }, [state]);
 
@@ -85,7 +85,7 @@ function Page() {
               <div key={i} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/40 px-3 py-2.5">
                 <div className="min-w-0">
                   <div className="font-medium truncate">{c.label}</div>
-                  <div className="text-xs text-muted-foreground">{fmtDate(c.date)}</div>
+                  <div className="text-xs text-muted-foreground">{c.type === "expense" ? fmtBusinessDate(c.date) : fmtDate(c.date)}</div>
                 </div>
                 <div className={`font-semibold shrink-0 ${c.in ? "text-primary" : "text-destructive"}`}>
                   {c.in ? `+ ${brl(c.in)}` : `- ${brl(c.out)}`}
