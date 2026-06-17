@@ -69,7 +69,7 @@ export type AdEntry = {
   revenue: number;
 };
 
-export type ShippingOption = { id: string; label: string; price: number };
+export type ShippingOption = { id: string; label: string; price: number; icon?: string };
 
 export type Settings = {
   storeName: string;
