@@ -141,6 +141,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          image_url: string | null
           min_stock: number
           name: string
           price: number
@@ -154,6 +155,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           min_stock?: number
           name: string
           price?: number
@@ -167,6 +169,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           min_stock?: number
           name?: string
           price?: number
@@ -206,6 +209,7 @@ export type Database = {
           checkout_card_color: string
           checkout_footer_bg_color: string | null
           checkout_footer_brand: string | null
+          checkout_footer_cards_image_height: number | null
           checkout_footer_cards_image_url: string | null
           checkout_footer_copyright: string | null
           checkout_footer_email: string | null
@@ -249,6 +253,7 @@ export type Database = {
           checkout_card_color?: string
           checkout_footer_bg_color?: string | null
           checkout_footer_brand?: string | null
+          checkout_footer_cards_image_height?: number | null
           checkout_footer_cards_image_url?: string | null
           checkout_footer_copyright?: string | null
           checkout_footer_email?: string | null
@@ -292,6 +297,7 @@ export type Database = {
           checkout_card_color?: string
           checkout_footer_bg_color?: string | null
           checkout_footer_brand?: string | null
+          checkout_footer_cards_image_height?: number | null
           checkout_footer_cards_image_url?: string | null
           checkout_footer_copyright?: string | null
           checkout_footer_email?: string | null
