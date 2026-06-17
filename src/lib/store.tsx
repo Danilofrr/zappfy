@@ -205,6 +205,7 @@ const toSettings = (r: any): Settings => ({
   checkoutNeonColor: r.checkout_neon_color ?? "#a855f7",
   checkoutButtonLabel: r.checkout_button_label ?? "Enviar pedido pelo WhatsApp",
   checkoutButtonColor: r.checkout_button_color ?? "#a855f7",
+  checkoutHeaderBgColor: r.checkout_header_bg_color ?? "#0a0a0a",
 });
 
 type Ctx = {
