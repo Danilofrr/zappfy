@@ -2,8 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
 import { brl } from "@/lib/format";
-import { Megaphone, Target, ShoppingBag, DollarSign } from "lucide-react";
+import { Megaphone, Target, ShoppingBag, DollarSign, Plus, Trash2 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/ads")({
   head: () => ({ meta: [{ title: "Facebook Ads — LucroTrack" }] }),
@@ -11,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/ads")({
 });
 
 function Page() {
-  const { state } = useStore();
+  const { state, addAd, deleteAd } = useStore();
   const ads = state.ads;
   const totals = ads.reduce(
     (a, x) => ({ inv: a.inv + x.invested, rev: a.rev + x.revenue, p: a.p + x.purchases }),
@@ -26,6 +31,26 @@ function Page() {
     Faturamento: a.revenue,
   }));
 
+  const [form, setForm] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    invested: "",
+    purchases: "",
+    revenue: "",
+  });
+
+  async function save() {
+    const invested = Number(form.invested);
+    if (!form.date || !invested) { toast.error("Informe a data e o valor investido"); return; }
+    await addAd({
+      date: new Date(form.date).toISOString(),
+      invested,
+      purchases: Number(form.purchases) || 0,
+      revenue: Number(form.revenue) || 0,
+    });
+    toast.success("Gasto de Ads adicionado");
+    setForm({ date: new Date().toISOString().slice(0, 10), invested: "", purchases: "", revenue: "" });
+  }
+
   return (
     <AppShell title="Facebook Ads" subtitle="Performance dos seus anúncios">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
@@ -34,6 +59,30 @@ function Page() {
         <StatCard label="CPA Médio" value={brl(cpa)} icon={DollarSign}/>
         <StatCard label="Compras" value={String(totals.p)} icon={ShoppingBag} tone="success"/>
       </div>
+
+      <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
+        <div className="text-sm font-semibold mb-3">Adicionar gasto de Ads manualmente</div>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+          <div className="grid gap-1.5">
+            <Label className="text-xs">Data</Label>
+            <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs">Investido (R$)</Label>
+            <Input type="number" step="0.01" value={form.invested} onChange={(e) => setForm({ ...form, invested: e.target.value })} placeholder="0,00" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs">Compras</Label>
+            <Input type="number" value={form.purchases} onChange={(e) => setForm({ ...form, purchases: e.target.value })} placeholder="0" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs">Faturamento gerado (R$)</Label>
+            <Input type="number" step="0.01" value={form.revenue} onChange={(e) => setForm({ ...form, revenue: e.target.value })} placeholder="0,00" />
+          </div>
+          <Button onClick={save}><Plus className="mr-2 h-4 w-4"/>Adicionar</Button>
+        </div>
+      </div>
+
 
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
         <div className="text-sm font-semibold mb-4">Investimento x Faturamento gerado</div>
