@@ -113,6 +113,10 @@ export type Settings = {
   checkoutFooterShowCardsImage: boolean;
   checkoutFooterCardsImageHeight: number;
   checkoutFooterWhatsapp: string;
+  checkoutFooterCnpj: string;
+  checkoutFooterShowCnpj: boolean;
+  checkoutFooterShowEmail: boolean;
+  checkoutFooterShowWhatsapp: boolean;
 };
 
 type State = {
@@ -168,6 +172,10 @@ const emptySettings: Settings = {
   checkoutFooterShowCardsImage: true,
   checkoutFooterCardsImageHeight: 40,
   checkoutFooterWhatsapp: "",
+  checkoutFooterCnpj: "",
+  checkoutFooterShowCnpj: true,
+  checkoutFooterShowEmail: true,
+  checkoutFooterShowWhatsapp: true,
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
