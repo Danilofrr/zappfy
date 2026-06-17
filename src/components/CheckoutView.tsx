@@ -146,10 +146,10 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
     try {
       await onSubmit?.(payload);
     } catch (e: any) {
-      console.error("[checkout] erro ao enviar pedido:", e);
-      setSubmitting(false);
-      toast.error(e?.message || "Falha ao enviar pedido");
-      return;
+      console.error("[checkout] erro ao registrar pedido (seguindo para WhatsApp):", e);
+      toast.warning(
+        "Não foi possível registrar o pedido no sistema, mas você pode finalizar enviando pelo WhatsApp.",
+      );
     }
 
     setDone(true);
