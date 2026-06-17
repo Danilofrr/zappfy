@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink, MessageCircle } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -43,7 +43,34 @@ const statusList: { value: OrderStatus; label: string; color: string }[] = [
 const statusMap = Object.fromEntries(statusList.map((s) => [s.value, s]));
 
 function PedidosPage() {
-  const { state, addOrder, updateOrderStatus, deleteOrder } = useStore();
+  const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
+  const [editing, setEditing] = useState<Order | null>(null);
+
+  function sendToMotoboy(o: Order) {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("motoboyPhone") || "" : "";
+    const input = window.prompt(
+      "WhatsApp do motoboy ou grupo (com DDD, só números). Ex: 81999990000",
+      saved,
+    );
+    if (!input) return;
+    const phone = input.replace(/\D/g, "");
+    if (phone.length < 10) { toast.error("Número inválido"); return; }
+    if (typeof window !== "undefined") localStorage.setItem("motoboyPhone", phone);
+    const itemsTxt = o.items.map((i) => `• ${i.qty}x ${i.name}`).join("%0A");
+    const enderecoCompleto = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
+    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`;
+    const msg =
+      `🛵 *Nova entrega*%0A%0A` +
+      `*Cliente:* ${o.customer}%0A` +
+      `*Telefone:* ${o.phone}%0A` +
+      `*Endereço:* ${enderecoCompleto}%0A` +
+      `*Mapa:* ${mapsLink}%0A%0A` +
+      `*Itens:*%0A${itemsTxt}%0A%0A` +
+      `*Pagamento:* ${o.payment.toUpperCase()}%0A` +
+      `*Total:* ${brl(o.total)}` +
+      (o.notes ? `%0A*Obs:* ${o.notes}` : "");
+    window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+  }
 
   function notifyDelivery(o: Order) {
     const phone = (o.phone || "").replace(/\D/g, "");
@@ -152,6 +179,20 @@ function PedidosPage() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
+                        onClick={() => setEditing(o)}
+                        title="Editar pedido"
+                        className="text-muted-foreground hover:text-primary p-1"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => sendToMotoboy(o)}
+                        title="Enviar endereço para o motoboy no WhatsApp"
+                        className="text-muted-foreground hover:text-blue-500 p-1"
+                      >
+                        <Bike className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => notifyDelivery(o)}
                         title="Avisar cliente no WhatsApp que o pedido saiu para entrega"
                         className="text-muted-foreground hover:text-green-500 p-1"
@@ -159,13 +200,14 @@ function PedidosPage() {
                         <MessageCircle className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => { if (confirm("Excluir este pedido?")) deleteOrder(o.id); }}
+                        onClick={() => { if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id); }}
                         className="text-muted-foreground hover:text-destructive p-1"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
+
                 </tr>
               ))}
             </tbody>
@@ -181,9 +223,92 @@ function PedidosPage() {
       >
         <ExternalLink className="h-3.5 w-3.5" /> Abrir página de checkout pública
       </a>
+
+      <EditOrderDialog
+        order={editing}
+        onClose={() => setEditing(null)}
+        onSave={async (patch) => {
+          if (!editing) return;
+          await updateOrder(editing.id, patch);
+          toast.success("Pedido atualizado!");
+          setEditing(null);
+        }}
+      />
     </AppShell>
   );
 }
+
+function EditOrderDialog({
+  order, onClose, onSave,
+}: {
+  order: Order | null;
+  onClose: () => void;
+  onSave: (patch: Partial<Omit<Order, "id" | "items">>) => void;
+}) {
+  const [form, setForm] = useState({
+    customer: "", phone: "", address: "", district: "", city: "",
+    payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
+  });
+
+  // Sincroniza ao abrir
+  useMemo(() => {
+    if (order) {
+      setForm({
+        customer: order.customer, phone: order.phone, address: order.address,
+        district: order.district, city: order.city,
+        payment: order.payment as any, status: order.status, notes: order.notes ?? "",
+      });
+    }
+  }, [order]);
+
+  return (
+    <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Editar pedido</DialogTitle>
+          <DialogDescription>Altere os dados do cliente, endereço e status.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Cliente"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
+            <Field label="Telefone"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
+          </div>
+          <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
+            <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Pagamento">
+              <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
+                <SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pix">PIX</SelectItem>
+                  <SelectItem value="cartao">Cartão</SelectItem>
+                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Status">
+              <Select value={form.status} onValueChange={(v: any) => setForm({...form, status: v})}>
+                <SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent>
+                  {statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+          <Field label="Observações"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} /></Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => onSave(form)}>Salvar alterações</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function Chip({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick: () => void }) {
   return (

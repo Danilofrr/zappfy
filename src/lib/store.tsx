@@ -306,6 +306,7 @@ type Ctx = {
   updateProduct: (id: string, p: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   addOrder: (o: Omit<Order, "id">) => Promise<void>;
+  updateOrder: (id: string, patch: Partial<Omit<Order, "id" | "items">>) => Promise<void>;
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   addExpense: (e: Omit<Expense, "id">) => Promise<void>;
@@ -449,7 +450,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!user) return;
       const { data, error } = await supabase.from("orders").insert({ user_id: user.id, ...fromOrder(o) }).select().single();
       if (error) { toast.error(error.message); return; }
-      setState((s) => ({ ...s, orders: [toOrder(data), ...s.orders] }));
+      // Baixa de estoque para cada item do pedido (ignora cancelado)
+      if (o.status !== "cancelado") {
+        const updatedProducts: Product[] = [];
+        for (const it of o.items) {
+          const prod = state.products.find((p) => p.id === it.productId);
+          if (!prod) continue;
+          const newStock = Math.max(0, prod.stock - it.qty);
+          const { data: pd } = await supabase.from("products").update({ stock: newStock }).eq("id", it.productId).select().single();
+          if (pd) updatedProducts.push(toProduct(pd));
+        }
+        setState((s) => ({
+          ...s,
+          orders: [toOrder(data), ...s.orders],
+          products: s.products.map((p) => updatedProducts.find((u) => u.id === p.id) ?? p),
+        }));
+      } else {
+        setState((s) => ({ ...s, orders: [toOrder(data), ...s.orders] }));
+      }
+    },
+    async updateOrder(id, patch) {
+      const body: any = {};
+      if (patch.customer !== undefined) body.customer = patch.customer;
+      if (patch.phone !== undefined) body.phone = patch.phone;
+      if (patch.address !== undefined) body.address = patch.address;
+      if (patch.district !== undefined) body.district = patch.district;
+      if (patch.city !== undefined) body.city = patch.city;
+      if (patch.notes !== undefined) body.notes = patch.notes;
+      if (patch.payment !== undefined) body.payment = patch.payment;
+      if (patch.status !== undefined) body.status = patch.status;
+      const { data, error } = await supabase.from("orders").update(body).eq("id", id).select().single();
+      if (error) { toast.error(error.message); return; }
+      setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
     },
     async updateOrderStatus(id, status) {
       const { data, error } = await supabase.from("orders").update({ status }).eq("id", id).select().single();
@@ -457,9 +489,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
     },
     async deleteOrder(id) {
+      const order = state.orders.find((o) => o.id === id);
       const { error } = await supabase.from("orders").delete().eq("id", id);
       if (error) { toast.error(error.message); return; }
-      setState((s) => ({ ...s, orders: s.orders.filter((x) => x.id !== id) }));
+      // Devolve o estoque se o pedido não estava cancelado
+      const updatedProducts: Product[] = [];
+      if (order && order.status !== "cancelado") {
+        for (const it of order.items) {
+          const prod = state.products.find((p) => p.id === it.productId);
+          if (!prod) continue;
+          const newStock = prod.stock + it.qty;
+          const { data: pd } = await supabase.from("products").update({ stock: newStock }).eq("id", it.productId).select().single();
+          if (pd) updatedProducts.push(toProduct(pd));
+        }
+      }
+      setState((s) => ({
+        ...s,
+        orders: s.orders.filter((x) => x.id !== id),
+        products: s.products.map((p) => updatedProducts.find((u) => u.id === p.id) ?? p),
+      }));
     },
     async addExpense(e) {
       if (!user) return;
