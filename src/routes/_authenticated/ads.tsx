@@ -38,11 +38,15 @@ function Page() {
     revenue: "",
   });
 
+  function localDateISO(ymd: string) {
+    const [y, m, d] = ymd.split("-").map(Number);
+    return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0, 0).toISOString();
+  }
   async function save() {
     const invested = Number(form.invested);
     if (!form.date || !invested) { toast.error("Informe a data e o valor investido"); return; }
     await addAd({
-      date: new Date(form.date).toISOString(),
+      date: localDateISO(form.date),
       invested,
       purchases: Number(form.purchases) || 0,
       revenue: Number(form.revenue) || 0,
