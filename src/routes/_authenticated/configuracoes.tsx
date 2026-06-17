@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ShippingOption } from "@/lib/store";
 import { SHIPPING_ICONS } from "@/lib/shipping-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { NotificationsCard } from "@/components/NotificationsCard";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — ZappFy" }] }),
@@ -414,6 +415,12 @@ function Page() {
               Resumo do pedido · <span style={{ color: f.checkoutNeonColor, textShadow: `0 0 8px ${f.checkoutNeonColor}` }}>Total em neon</span>
             </div>
           </div>
+        </Card>
+      </div>
+
+      <div className="mt-6">
+        <Card title="Notificações no celular">
+          <NotificationsCard />
         </Card>
       </div>
 

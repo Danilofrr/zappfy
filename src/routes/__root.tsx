@@ -159,6 +159,22 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+    const h = window.location.hostname;
+    const isPreview =
+      h.startsWith("id-preview--") ||
+      h.startsWith("preview--") ||
+      h.endsWith(".lovableproject.com") ||
+      h.endsWith(".lovableproject-dev.com") ||
+      window.self !== window.top;
+    if (isPreview) return;
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch((e) => {
+      console.warn("[sw] registration failed", e);
+    });
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">
