@@ -98,9 +98,20 @@ function Dashboard() {
     };
   });
 
-  const ads = state.ads.slice(-1)[0];
-  const adsRoas = ads ? ads.revenue / Math.max(1, ads.invested) : 0;
-  const adsCpa = ads ? ads.invested / Math.max(1, ads.purchases) : 0;
+  // Ads metrics dentro do período selecionado (combina entradas em /ads + despesas categoria "ads")
+  const adsInRange = state.ads.filter((a) => {
+    const d = dateOnlyToLocalDate(a.date);
+    return d >= range.start && d < range.end;
+  });
+  const adsEntryInvested = adsInRange.reduce((a, x) => a + x.invested, 0);
+  const adsEntryPurchases = adsInRange.reduce((a, x) => a + x.purchases, 0);
+  const adsEntryRevenue = adsInRange.reduce((a, x) => a + x.revenue, 0);
+  // adsSpend (do useFinance) já vem das despesas categoria "ads" no período
+  const adsInvested = adsEntryInvested + fin.adsSpend;
+  const adsPurchases = adsEntryPurchases > 0 ? adsEntryPurchases : fin.ordersCount;
+  const adsRevenue = adsEntryRevenue > 0 ? adsEntryRevenue : fin.revenue;
+  const adsRoas = adsInvested > 0 ? adsRevenue / adsInvested : 0;
+  const adsCpa = adsPurchases > 0 ? adsInvested / adsPurchases : 0;
 
   const periodBtns: { id: Period; label: string }[] = [
     { id: "today", label: "Hoje" },
