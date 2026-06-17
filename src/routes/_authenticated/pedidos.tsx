@@ -42,27 +42,48 @@ const statusList: { value: OrderStatus; label: string; color: string }[] = [
 
 const statusMap = Object.fromEntries(statusList.map((s) => [s.value, s]));
 
+type MotoboyContact = { label: string; phone: string };
+
+function loadContacts(): MotoboyContact[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem("motoboyContacts");
+    if (raw) return JSON.parse(raw);
+    // migração do formato antigo (um único número)
+    const old = localStorage.getItem("motoboyPhone");
+    if (old) return [{ label: "Motoboy", phone: old }];
+    return [];
+  } catch { return []; }
+}
+
+function saveContacts(list: MotoboyContact[]) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("motoboyContacts", JSON.stringify(list));
+  }
+}
+
+function applyTemplate(tpl: string, vars: Record<string, string>) {
+  return Object.entries(vars).reduce(
+    (acc, [k, v]) => acc.replaceAll(`{${k}}`, v),
+    tpl,
+  );
+}
+
 function PedidosPage() {
   const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
   const [editing, setEditing] = useState<Order | null>(null);
+  const [motoboyFor, setMotoboyFor] = useState<Order | null>(null);
 
-  function sendToMotoboy(o: Order) {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("motoboyPhone") || "" : "";
-    const input = window.prompt(
-      "WhatsApp do motoboy ou grupo (com DDD, só números). Ex: 81999990000",
-      saved,
-    );
-    if (!input) return;
-    const phone = input.replace(/\D/g, "");
-    if (phone.length < 10) { toast.error("Número inválido"); return; }
-    if (typeof window !== "undefined") localStorage.setItem("motoboyPhone", phone);
+  function buildMotoboyText(o: Order) {
     const itemsTxt = o.items.map((i) => `• ${i.qty}x ${i.name}`).join("\n");
+    const produto = o.items.map((i) => `${i.qty}x ${i.name}`).join(", ");
     const enderecoCompleto = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`;
     const tpl = state.settings.motoboyMessageTemplate || "";
-    const text = applyTemplate(tpl, {
+    return applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,
+      produto,
       endereco: enderecoCompleto,
       mapa: mapsLink,
       itens: itemsTxt,
@@ -71,15 +92,30 @@ function PedidosPage() {
       observacoes: o.notes || "",
       loja: state.settings.storeName || "",
     });
+  }
+
+  function notifyDelivery(o: Order) {
+    const phone = (o.phone || "").replace(/\D/g, "");
+    if (!phone) {
+      toast.error("Cliente sem telefone cadastrado");
+      return;
+    }
+    const storeName = state.settings.storeName || "nossa loja";
+    const item = o.items[0]?.name ? ` (${o.items[0].name})` : "";
+    const endereco = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
+    const tpl = state.settings.deliveryMessageTemplate || "";
+    const text = applyTemplate(tpl, {
+      cliente: o.customer,
+      telefone: o.phone,
+      produto: item,
+      endereco,
+      loja: storeName,
+      total: brl(o.total),
+      observacoes: o.notes || "",
+    });
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(text)}`, "_blank");
   }
 
-  function applyTemplate(tpl: string, vars: Record<string, string>) {
-    return Object.entries(vars).reduce(
-      (acc, [k, v]) => acc.replaceAll(`{${k}}`, v),
-      tpl,
-    );
-  }
 
   function notifyDelivery(o: Order) {
     const phone = (o.phone || "").replace(/\D/g, "");
