@@ -68,6 +68,12 @@ export function NotificationsCard() {
 
   async function sendTest() {
     setBusy("test");
+    // Pre-warm audio inside the user gesture so autoplay is allowed when the SW posts back.
+    try {
+      const a = new Audio("/cash-register.mp3");
+      a.volume = 1;
+      await a.play().catch(() => {});
+    } catch (_) {}
     try {
       const r = await test({ data: undefined });
       if (r.sent > 0) toast.success(`Notificação de teste enviada (${r.sent} dispositivo${r.sent > 1 ? "s" : ""})`);
