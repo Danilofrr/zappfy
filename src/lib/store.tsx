@@ -69,6 +69,8 @@ export type AdEntry = {
   revenue: number;
 };
 
+export type ShippingOption = { id: string; label: string; price: number };
+
 export type Settings = {
   storeName: string;
   whatsapp: string;
@@ -87,6 +89,18 @@ export type Settings = {
   checkoutButtonLabel: string;
   checkoutButtonColor: string;
   checkoutHeaderBgColor: string;
+  checkoutSecureLabel: string;
+  checkoutStep1ButtonLabel: string;
+  checkoutStep2ButtonLabel: string;
+  checkoutStep3ButtonLabel: string;
+  checkoutStepButtonColor: string;
+  checkoutStepButtonTextColor: string;
+  shippingOptions: ShippingOption[];
+  checkoutFooterEnabled: boolean;
+  checkoutFooterBrand: string;
+  checkoutFooterCopyright: string;
+  checkoutFooterEmail: string;
+  checkoutFooterPayments: string;
 };
 
 type State = {
