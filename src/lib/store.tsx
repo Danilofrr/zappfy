@@ -104,6 +104,12 @@ export type Settings = {
   checkoutSecureColor: string;
   checkoutLogoSize: number;
   checkoutFooterBgColor: string;
+  checkoutLogoAlign: "left" | "center";
+  checkoutStep1Title: string;
+  checkoutStep2Title: string;
+  checkoutStep3Title: string;
+  checkoutFooterCardsImageUrl: string;
+  checkoutFooterShowCardsImage: boolean;
 };
 
 type State = {
