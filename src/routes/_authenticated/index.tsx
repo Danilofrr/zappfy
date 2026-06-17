@@ -98,9 +98,20 @@ function Dashboard() {
     };
   });
 
-  const ads = state.ads.slice(-1)[0];
-  const adsRoas = ads ? ads.revenue / Math.max(1, ads.invested) : 0;
-  const adsCpa = ads ? ads.invested / Math.max(1, ads.purchases) : 0;
+  // Ads metrics dentro do período selecionado (combina entradas em /ads + despesas categoria "ads")
+  const adsInRange = state.ads.filter((a) => {
+    const d = dateOnlyToLocalDate(a.date);
+    return d >= range.start && d < range.end;
+  });
+  const adsEntryInvested = adsInRange.reduce((a, x) => a + x.invested, 0);
+  const adsEntryPurchases = adsInRange.reduce((a, x) => a + x.purchases, 0);
+  const adsEntryRevenue = adsInRange.reduce((a, x) => a + x.revenue, 0);
+  // adsSpend (do useFinance) já vem das despesas categoria "ads" no período
+  const adsInvested = adsEntryInvested + fin.adsSpend;
+  const adsPurchases = adsEntryPurchases > 0 ? adsEntryPurchases : fin.ordersCount;
+  const adsRevenue = adsEntryRevenue > 0 ? adsEntryRevenue : fin.revenue;
+  const adsRoas = adsInvested > 0 ? adsRevenue / adsInvested : 0;
+  const adsCpa = adsPurchases > 0 ? adsInvested / adsPurchases : 0;
 
   const periodBtns: { id: Period; label: string }[] = [
     { id: "today", label: "Hoje" },
@@ -173,14 +184,14 @@ function Dashboard() {
             <span className="text-xs uppercase tracking-wider text-muted-foreground">Facebook Ads</span>
             <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
           </div>
-          <div className="text-2xl font-bold">{brl(ads?.invested ?? 0)}</div>
-          <div className="text-xs text-muted-foreground">Investido no mês</div>
+          <div className="text-2xl font-bold">{brl(adsInvested)}</div>
+          <div className="text-xs text-muted-foreground">Investido — {range.label}</div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <Mini label="ROAS" value={`${adsRoas.toFixed(2)}x`} />
             <Mini label="CPA" value={brl(adsCpa)} />
-            <Mini label="Compras" value={String(ads?.purchases ?? 0)} />
-            <Mini label="Faturamento" value={brl(ads?.revenue ?? 0)} />
+            <Mini label="Compras" value={String(adsPurchases)} />
+            <Mini label="Faturamento" value={brl(adsRevenue)} />
           </div>
         </div>
       </div>
