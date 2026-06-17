@@ -441,6 +441,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutButtonLabel !== undefined) patch.checkout_button_label = p.checkoutButtonLabel;
       if (p.checkoutButtonColor !== undefined) patch.checkout_button_color = p.checkoutButtonColor;
       if (p.checkoutHeaderBgColor !== undefined) patch.checkout_header_bg_color = p.checkoutHeaderBgColor;
+      if (p.checkoutSecureLabel !== undefined) patch.checkout_secure_label = p.checkoutSecureLabel;
+      if (p.checkoutStep1ButtonLabel !== undefined) patch.checkout_step1_button_label = p.checkoutStep1ButtonLabel;
+      if (p.checkoutStep2ButtonLabel !== undefined) patch.checkout_step2_button_label = p.checkoutStep2ButtonLabel;
+      if (p.checkoutStep3ButtonLabel !== undefined) patch.checkout_step3_button_label = p.checkoutStep3ButtonLabel;
+      if (p.checkoutStepButtonColor !== undefined) patch.checkout_step_button_color = p.checkoutStepButtonColor;
+      if (p.checkoutStepButtonTextColor !== undefined) patch.checkout_step_button_text_color = p.checkoutStepButtonTextColor;
+      if (p.shippingOptions !== undefined) patch.shipping_options = p.shippingOptions as any;
+      if (p.checkoutFooterEnabled !== undefined) patch.checkout_footer_enabled = p.checkoutFooterEnabled;
+      if (p.checkoutFooterBrand !== undefined) patch.checkout_footer_brand = p.checkoutFooterBrand;
+      if (p.checkoutFooterCopyright !== undefined) patch.checkout_footer_copyright = p.checkoutFooterCopyright;
+      if (p.checkoutFooterEmail !== undefined) patch.checkout_footer_email = p.checkoutFooterEmail;
+      if (p.checkoutFooterPayments !== undefined) patch.checkout_footer_payments = p.checkoutFooterPayments;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
