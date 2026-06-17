@@ -354,10 +354,11 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 <div className="flex justify-end pt-2">
                   <Button
                     onClick={submit}
+                    disabled={submitting}
                     className="font-semibold"
                     style={{ backgroundColor: buttonColor, color: stepBtnText, boxShadow: `0 0 20px ${buttonColor}99` }}
                   >
-                    {settings.checkoutButtonLabel || settings.checkoutStep3ButtonLabel || "Enviar pedido pelo WhatsApp"}
+                    {submitting ? "Enviando..." : (settings.checkoutButtonLabel || settings.checkoutStep3ButtonLabel || "Enviar pedido pelo WhatsApp")}
                   </Button>
                 </div>
               </div>
