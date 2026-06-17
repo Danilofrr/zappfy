@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
 import { useFinance, useStore, monthRange } from "@/lib/store";
 import { brl, pct } from "@/lib/format";
+import { useMemo, useState } from "react";
 import {
   DollarSign,
   TrendingUp,
@@ -21,6 +22,8 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -32,9 +35,45 @@ export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
 });
 
+type Period = "today" | "yesterday" | "7d" | "30d" | "month" | "custom";
+
+function startOfDay(d: Date) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+
+function rangeFor(period: Period, customStart?: string, customEnd?: string): { start: Date; end: Date; label: string } {
+  const now = new Date();
+  if (period === "today") {
+    const s = startOfDay(now); const e = new Date(s); e.setDate(e.getDate()+1);
+    return { start: s, end: e, label: "hoje" };
+  }
+  if (period === "yesterday") {
+    const e = startOfDay(now); const s = new Date(e); s.setDate(s.getDate()-1);
+    return { start: s, end: e, label: "ontem" };
+  }
+  if (period === "7d") {
+    const e = startOfDay(now); e.setDate(e.getDate()+1);
+    const s = new Date(e); s.setDate(s.getDate()-7);
+    return { start: s, end: e, label: "últimos 7 dias" };
+  }
+  if (period === "30d") {
+    const e = startOfDay(now); e.setDate(e.getDate()+1);
+    const s = new Date(e); s.setDate(s.getDate()-30);
+    return { start: s, end: e, label: "últimos 30 dias" };
+  }
+  if (period === "custom" && customStart && customEnd) {
+    const s = startOfDay(new Date(customStart));
+    const e = startOfDay(new Date(customEnd)); e.setDate(e.getDate()+1);
+    return { start: s, end: e, label: "período personalizado" };
+  }
+  const m = monthRange(); return { start: m.start, end: m.end, label: "este mês" };
+}
+
 function Dashboard() {
   const { state } = useStore();
-  const fin = useFinance();
+  const [period, setPeriod] = useState<Period>("month");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const range = useMemo(() => rangeFor(period, customStart, customEnd), [period, customStart, customEnd]);
+  const fin = useFinance({ start: range.start, end: range.end });
   const goalRev = state.settings.monthlyRevenueGoal;
   const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
 
@@ -63,17 +102,48 @@ function Dashboard() {
   const adsRoas = ads ? ads.revenue / Math.max(1, ads.invested) : 0;
   const adsCpa = ads ? ads.invested / Math.max(1, ads.purchases) : 0;
 
+  const periodBtns: { id: Period; label: string }[] = [
+    { id: "today", label: "Hoje" },
+    { id: "yesterday", label: "Ontem" },
+    { id: "7d", label: "7 dias" },
+    { id: "30d", label: "30 dias" },
+    { id: "month", label: "Mês" },
+    { id: "custom", label: "Personalizado" },
+  ];
+
   return (
-    <AppShell title="Dashboard" subtitle="Saúde financeira da sua operação em tempo real">
+    <AppShell title="Dashboard" subtitle={`Saúde financeira — ${range.label}`}>
+      {/* Period filter */}
+      <div className="mb-5 rounded-2xl border border-border bg-card p-3 lg:p-4 shadow-elegant">
+        <div className="flex flex-wrap items-center gap-2">
+          {periodBtns.map((p) => (
+            <Button
+              key={p.id}
+              size="sm"
+              variant={period === p.id ? "default" : "outline"}
+              onClick={() => setPeriod(p.id)}
+            >{p.label}</Button>
+          ))}
+          {period === "custom" && (
+            <div className="flex items-center gap-2 ml-auto">
+              <Input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="h-9 w-auto" />
+              <span className="text-xs text-muted-foreground">até</span>
+              <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="h-9 w-auto" />
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* KPI grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
-        <StatCard label="Faturamento" value={brl(fin.revenue)} hint="este mês" icon={DollarSign} />
-        <StatCard label="Lucro Líquido" value={brl(fin.profit)} hint="este mês" icon={TrendingUp} tone="success" />
-        <StatCard label="Total Gastos" value={brl(fin.cogs + fin.adsSpend + fin.opEx)} hint="este mês" icon={TrendingDown} tone="danger" />
+        <StatCard label="Faturamento" value={brl(fin.revenue)} hint={range.label} icon={DollarSign} />
+        <StatCard label="Lucro Líquido" value={brl(fin.profit)} hint={range.label} icon={TrendingUp} tone="success" />
+        <StatCard label="Total Gastos" value={brl(fin.cogs + fin.adsSpend + fin.opEx)} hint={range.label} icon={TrendingDown} tone="danger" />
         <StatCard label="Saldo em Caixa" value={brl(fin.cash)} hint="acumulado" icon={Wallet} />
-        <StatCard label="Pedidos" value={String(fin.ordersCount)} hint="este mês" icon={ShoppingCart} />
+        <StatCard label="Pedidos" value={String(fin.ordersCount)} hint={range.label} icon={ShoppingCart} />
         <StatCard label="Meta" value={pct(goalPct)} hint={brl(goalRev)} icon={Target} tone="warning" />
       </div>
+
 
       {/* Lucro real card */}
       <div className="mt-6 grid lg:grid-cols-3 gap-6">
