@@ -61,7 +61,7 @@ export const sendTestNotification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { sendPushToUser } = await import("@/lib/push.server");
-    const result = await sendPushToUser(context.userId, {
+    const result = await sendPushToUser(context.supabase, context.userId, {
       title: "🔔 Teste de notificação",
       body: "Notificações ativadas com sucesso.",
       icon: "/icon-192.png",

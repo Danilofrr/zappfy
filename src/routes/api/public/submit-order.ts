@@ -126,31 +126,37 @@ export const Route = createFileRoute("/api/public/submit-order")({
 
         // Fire-and-forget push notification to the store owner.
         try {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { sendPushToUser } = await import("@/lib/push.server");
+          if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            console.warn("[submit-order] SUPABASE_SERVICE_ROLE_KEY not set — skipping push notification");
+          } else {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            const { sendPushToUser } = await import("@/lib/push.server");
 
-          const { data: order } = await (supabaseAdmin as any)
-            .from("orders")
-            .select("user_id, total, items")
-            .eq("id", data)
-            .maybeSingle();
+            const { data: order, error: orderErr } = await (supabaseAdmin as any)
+              .from("orders")
+              .select("user_id, total, items")
+              .eq("id", data)
+              .maybeSingle();
 
-          if (order?.user_id) {
-            const total = Number(order.total ?? 0);
-            const totalLabel = total.toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            });
-            const firstItem = Array.isArray(order.items) ? order.items[0] : null;
-            const productName: string = firstItem?.name || item.name || "Produto";
-            await sendPushToUser(order.user_id, {
-              title: "🔔 Nova venda realizada",
-              body: `Valor: ${totalLabel}\nProduto: ${productName}`,
-              icon: "/icon-192.png",
-              badge: "/icon-192.png",
-              tag: `order-${data}`,
-              data: { url: "/pedidos", orderId: data },
-            });
+            if (orderErr) console.error("[submit-order] failed to load order for push", orderErr);
+
+            if (order?.user_id) {
+              const total = Number(order.total ?? 0);
+              const totalLabel = total.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              });
+              const firstItem = Array.isArray(order.items) ? order.items[0] : null;
+              const productName: string = firstItem?.name || item.name || "Produto";
+              await sendPushToUser(supabaseAdmin, order.user_id, {
+                title: "🔔 Nova venda realizada",
+                body: `Valor: ${totalLabel}\nProduto: ${productName}`,
+                icon: "/icon-192.png",
+                badge: "/icon-192.png",
+                tag: `order-${data}`,
+                data: { url: "/pedidos", orderId: data },
+              });
+            }
           }
         } catch (pushErr) {
           console.error("[submit-order] push notification failed", pushErr);

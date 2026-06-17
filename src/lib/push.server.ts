@@ -1,5 +1,7 @@
 // Server-only push helpers. Edge/Worker compatible (Web Crypto, no Node Buffer).
 import { buildPushPayload } from "@block65/webcrypto-web-push";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const VAPID_PUBLIC_KEY =
   "BEMaUchwsmaAILommuH7nAnp6zu8PO0un7R7xRAuKvvjLiXCGQ77YW99WoC8npUAbJ3sOZe1x6nuMj8J_Ne8F8o";
@@ -15,17 +17,21 @@ export type PushPayload = {
   data?: Record<string, unknown>;
 };
 
+type AnySupabase = SupabaseClient<Database> | SupabaseClient<any, any, any>;
+
 /**
  * Send a web-push notification to every active subscription of a user.
- * Removes subscriptions that respond with 404/410 (Gone).
+ * Pass an authenticated supabase client (RLS) when sending to the current user,
+ * or supabaseAdmin when sending to another user (e.g. store owner from a public endpoint).
  */
 export async function sendPushToUser(
+  client: AnySupabase,
   userId: string,
   payload: PushPayload,
 ): Promise<{ sent: number; removed: number }> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  console.log("[push] sendPushToUser start", { userId, title: payload.title });
 
-  const { data: subs, error } = await supabaseAdmin
+  const { data: subs, error } = await (client as any)
     .from("notification_subscriptions")
     .select("id, endpoint, p256dh, auth")
     .eq("user_id", userId);
@@ -39,6 +45,8 @@ export async function sendPushToUser(
     return { sent: 0, removed: 0 };
   }
 
+  console.log("[push] subscriptions found", subs.length);
+
   const vapid = {
     subject: VAPID_SUBJECT,
     publicKey: VAPID_PUBLIC_KEY,
@@ -49,7 +57,7 @@ export async function sendPushToUser(
   const stale: string[] = [];
 
   await Promise.all(
-    subs.map(async (s) => {
+    subs.map(async (s: { id: string; endpoint: string; p256dh: string; auth: string }) => {
       const subscription = {
         endpoint: s.endpoint,
         expirationTime: null,
@@ -74,7 +82,7 @@ export async function sendPushToUser(
   );
 
   if (stale.length) {
-    await supabaseAdmin.from("notification_subscriptions").delete().in("id", stale);
+    await (client as any).from("notification_subscriptions").delete().in("id", stale);
   }
 
   console.log("[push] result", { userId, sent, removed: stale.length, total: subs.length });
