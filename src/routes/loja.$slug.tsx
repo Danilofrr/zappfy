@@ -62,6 +62,7 @@ const emptySettings: Settings = {
   checkoutFooterShowWhatsapp: true,
   motoboyMessageTemplate: "",
   deliveryMessageTemplate: "",
+  motoboyFee: 0,
   slug: "",
 };
 
