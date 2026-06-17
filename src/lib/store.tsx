@@ -157,6 +157,12 @@ const emptySettings: Settings = {
   checkoutSecureColor: "#a855f7",
   checkoutLogoSize: 40,
   checkoutFooterBgColor: "#0a0a0a",
+  checkoutLogoAlign: "left",
+  checkoutStep1Title: "Dados pessoais",
+  checkoutStep2Title: "Entrega",
+  checkoutStep3Title: "Pagamento",
+  checkoutFooterCardsImageUrl: "",
+  checkoutFooterShowCardsImage: true,
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -263,6 +269,12 @@ const toSettings = (r: any): Settings => ({
   checkoutSecureColor: r.checkout_secure_color ?? r.checkout_neon_color ?? "#a855f7",
   checkoutLogoSize: Number(r.checkout_logo_size ?? 40),
   checkoutFooterBgColor: r.checkout_footer_bg_color ?? r.checkout_header_bg_color ?? "#0a0a0a",
+  checkoutLogoAlign: (r.checkout_logo_align as "left" | "center") ?? "left",
+  checkoutStep1Title: r.checkout_step1_title ?? "Dados pessoais",
+  checkoutStep2Title: r.checkout_step2_title ?? "Entrega",
+  checkoutStep3Title: r.checkout_step3_title ?? "Pagamento",
+  checkoutFooterCardsImageUrl: r.checkout_footer_cards_image_url ?? "",
+  checkoutFooterShowCardsImage: r.checkout_footer_show_cards_image ?? true,
 });
 
 type Ctx = {
@@ -471,6 +483,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutSecureColor !== undefined) patch.checkout_secure_color = p.checkoutSecureColor;
       if (p.checkoutLogoSize !== undefined) patch.checkout_logo_size = p.checkoutLogoSize;
       if (p.checkoutFooterBgColor !== undefined) patch.checkout_footer_bg_color = p.checkoutFooterBgColor;
+      if (p.checkoutLogoAlign !== undefined) patch.checkout_logo_align = p.checkoutLogoAlign;
+      if (p.checkoutStep1Title !== undefined) patch.checkout_step1_title = p.checkoutStep1Title;
+      if (p.checkoutStep2Title !== undefined) patch.checkout_step2_title = p.checkoutStep2Title;
+      if (p.checkoutStep3Title !== undefined) patch.checkout_step3_title = p.checkoutStep3Title;
+      if (p.checkoutFooterCardsImageUrl !== undefined) patch.checkout_footer_cards_image_url = p.checkoutFooterCardsImageUrl;
+      if (p.checkoutFooterShowCardsImage !== undefined) patch.checkout_footer_show_cards_image = p.checkoutFooterShowCardsImage;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
