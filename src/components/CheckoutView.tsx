@@ -83,33 +83,51 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
-    if (!product || !form.customer || !form.phone) {
-      toast.error("Preencha nome, telefone e selecione um produto");
+    // Validações campo-a-campo (mensagens específicas)
+    if (!form.customer?.trim()) { toast.error("Nome do cliente não preenchido"); return; }
+    if (!form.phone?.trim() || form.phone.replace(/\D/g, "").length < 8) {
+      toast.error("WhatsApp inválido");
       return;
     }
-    if (!shipping) {
-      toast.error("Selecione uma forma de entrega");
-      return;
-    }
-    if (product.stock < qty) {
-      toast.error("Estoque insuficiente para esta quantidade");
-      return;
-    }
+    if (!product) { toast.error("Produto inválido — selecione um produto"); return; }
+    if (!Number.isFinite(qty) || qty < 1) { toast.error("Quantidade inválida"); return; }
+    if (!form.payment) { toast.error("Forma de pagamento não selecionada"); return; }
+    if (!form.address?.trim()) { toast.error("Endereço não preenchido"); return; }
+    if (!shipping) { toast.error("Selecione uma forma de entrega"); return; }
+    if (product.stock < qty) { toast.error("Estoque insuficiente para esta quantidade"); return; }
+    if (!Number.isFinite(total) || total <= 0) { toast.error("Valor total inválido"); return; }
+
+    const payload = {
+      customer: form.customer,
+      phone: form.phone,
+      address: form.address,
+      district: form.district,
+      city: form.city,
+      items: [{ productId: product.id, name: product.name, qty, price: product.price, cost: product.cost }],
+      total,
+      payment: form.payment,
+      status: "aguardando" as const,
+      notes: form.notes,
+      date: new Date().toISOString(),
+    };
+
+    // Log explícito do objeto enviado ao backend/Supabase
+    console.log("[checkout] enviando pedido:", {
+      nome_cliente: payload.customer,
+      whatsapp: payload.phone,
+      endereco: payload.address,
+      produto: product.name,
+      quantidade: qty,
+      valor_unitario: product.price,
+      valor_total: total,
+      forma_pagamento: payload.payment,
+      status_pedido: payload.status,
+      _raw: payload,
+    });
+
     setSubmitting(true);
     try {
-      await onSubmit?.({
-        customer: form.customer,
-        phone: form.phone,
-        address: form.address,
-        district: form.district,
-        city: form.city,
-        items: [{ productId: product.id, name: product.name, qty, price: product.price, cost: product.cost }],
-        total,
-        payment: form.payment,
-        status: "aguardando",
-        notes: form.notes,
-        date: new Date().toISOString(),
-      });
+      await onSubmit?.(payload);
     } catch (e: any) {
       console.error("[checkout] erro ao enviar pedido:", e);
       setSubmitting(false);
