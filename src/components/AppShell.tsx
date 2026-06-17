@@ -15,6 +15,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { ThemeToggle } from "@/lib/theme";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -119,7 +120,10 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                 <h1 className="truncate text-2xl lg:text-3xl font-bold tracking-tight">{title}</h1>
                 {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
               </div>
-              {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
+              <div className="shrink-0 flex items-center gap-2">
+                {actions}
+                <ThemeToggle />
+              </div>
             </div>
             {children}
           </div>
@@ -151,7 +155,7 @@ export function StatCard({
       ? "text-warning"
       : "text-foreground";
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-elegant transition-colors hover:border-primary/30">
+    <div className="rounded-2xl border border-border bg-card p-5 card-neon card-neon-hover">
       <div className="flex items-center justify-between">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
         {Icon && (
