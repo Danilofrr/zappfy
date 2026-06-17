@@ -310,3 +310,30 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Row({ label, value }: { label: string; value: string }) {
   return <div className="flex justify-between opacity-80"><span className="truncate pr-2">{label}</span><span className="opacity-100">{value}</span></div>;
 }
+function Stepper({ step, neonColor }: { step: 1 | 2 | 3; neonColor: string }) {
+  const labels = ["Você", "Entrega", "Pagamento"];
+  return (
+    <div className="mt-4 flex items-center gap-2">
+      {labels.map((label, i) => {
+        const n = (i + 1) as 1 | 2 | 3;
+        const active = step === n;
+        const done = step > n;
+        return (
+          <div key={label} className="flex items-center gap-2 flex-1">
+            <div
+              className="h-7 w-7 grid place-items-center rounded-full text-xs font-bold"
+              style={{
+                backgroundColor: active || done ? neonColor : "transparent",
+                color: active || done ? "#fff" : "currentColor",
+                border: `1px solid ${neonColor}${active || done ? "" : "55"}`,
+                boxShadow: active ? `0 0 12px ${neonColor}` : "none",
+              }}
+            >{done ? "✓" : n}</div>
+            <span className="text-xs font-medium hidden sm:inline" style={{ opacity: active ? 1 : 0.6 }}>{label}</span>
+            {i < 2 && <div className="flex-1 h-px" style={{ backgroundColor: `${neonColor}55` }} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
