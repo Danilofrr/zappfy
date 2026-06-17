@@ -450,3 +450,96 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+function MotoboyDialog({
+  order, onClose, buildText,
+}: {
+  order: Order | null;
+  onClose: () => void;
+  buildText: (o: Order) => string;
+}) {
+  const [contacts, setContacts] = useState<MotoboyContact[]>([]);
+  const [newLabel, setNewLabel] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [text, setText] = useState("");
+
+  useMemo(() => {
+    if (order) {
+      setContacts(loadContacts());
+      setText(buildText(order));
+    }
+  }, [order]);
+
+  function addContact() {
+    const phone = newPhone.replace(/\D/g, "");
+    if (!newLabel.trim()) { toast.error("Dê um nome ao contato"); return; }
+    if (phone.length < 10) { toast.error("Número inválido"); return; }
+    const list = [...contacts, { label: newLabel.trim(), phone }];
+    setContacts(list); saveContacts(list);
+    setNewLabel(""); setNewPhone("");
+  }
+
+  function removeContact(i: number) {
+    const list = contacts.filter((_, idx) => idx !== i);
+    setContacts(list); saveContacts(list);
+  }
+
+  function send(phone: string) {
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(text)}`, "_blank");
+    onClose();
+  }
+
+  return (
+    <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Enviar para o motoboy</DialogTitle>
+          <DialogDescription>Escolha um contato salvo ou cadastre um novo (grupo ou número).</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <Field label="Mensagem (você pode ajustar antes de enviar)">
+            <Textarea rows={8} value={text} onChange={(e) => setText(e.target.value)} />
+          </Field>
+
+          <div>
+            <Label className="text-xs">Enviar para</Label>
+            <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+              {contacts.length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhum contato salvo ainda.</p>
+              )}
+              {contacts.map((c, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{c.label}</div>
+                    <div className="text-xs text-muted-foreground">{c.phone}</div>
+                  </div>
+                  <Button size="sm" onClick={() => send(c.phone)}>Enviar</Button>
+                  <button onClick={() => removeContact(i)} className="text-muted-foreground hover:text-destructive p-1">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-dashed border-border p-3">
+            <Label className="text-xs">Adicionar novo contato</Label>
+            <div className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-2">
+              <Input placeholder="Nome (ex: Motoboy João, Grupo Entregas)" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+              <Input placeholder="DDD + número" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} inputMode="numeric" />
+              <Button variant="outline" onClick={addContact}><Plus className="h-4 w-4" /></Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Para enviar a um grupo do WhatsApp, use o número de um administrador ou crie um contato com o link do grupo (o WhatsApp só aceita envio direto a números — para grupos, abra o grupo e cole a mensagem manualmente).
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
