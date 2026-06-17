@@ -586,6 +586,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutFooterShowCnpj !== undefined) patch.checkout_footer_show_cnpj = p.checkoutFooterShowCnpj;
       if (p.checkoutFooterShowEmail !== undefined) patch.checkout_footer_show_email = p.checkoutFooterShowEmail;
       if (p.checkoutFooterShowWhatsapp !== undefined) patch.checkout_footer_show_whatsapp = p.checkoutFooterShowWhatsapp;
+      if (p.motoboyMessageTemplate !== undefined) patch.motoboy_message_template = p.motoboyMessageTemplate;
+      if (p.deliveryMessageTemplate !== undefined) patch.delivery_message_template = p.deliveryMessageTemplate;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
