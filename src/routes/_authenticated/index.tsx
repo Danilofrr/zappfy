@@ -69,7 +69,7 @@ function rangeFor(period: Period, customStart?: string, customEnd?: string): { s
 
 function Dashboard() {
   const { state } = useStore();
-  const [period, setPeriod] = useState<Period>("month");
+  const [period, setPeriod] = useState<Period>("today");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const range = useMemo(() => rangeFor(period, customStart, customEnd), [period, customStart, customEnd]);
