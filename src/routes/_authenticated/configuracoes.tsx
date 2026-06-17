@@ -318,6 +318,17 @@ function Page() {
           <Field label="URL da imagem dos cartões (opcional — deixe em branco para usar a padrão)">
             <Input value={f.checkoutFooterCardsImageUrl} onChange={(e) => setF({ ...f, checkoutFooterCardsImageUrl: e.target.value })} placeholder="https://..." />
           </Field>
+          <Field label={`Tamanho da imagem dos cartões: ${f.checkoutFooterCardsImageHeight}px`}>
+            <input
+              type="range"
+              min={20}
+              max={120}
+              step={2}
+              value={f.checkoutFooterCardsImageHeight}
+              onChange={(e) => setF({ ...f, checkoutFooterCardsImageHeight: Number(e.target.value) })}
+              className="w-full"
+            />
+          </Field>
           <Field label="Bandeiras (usadas quando a imagem está desativada)">
             <Input value={f.checkoutFooterPayments} onChange={(e) => setF({ ...f, checkoutFooterPayments: e.target.value })} placeholder="pix,visa,mastercard,elo,amex,hipercard,boleto" />
             <p className="text-[11px] text-muted-foreground mt-1">Disponíveis: pix, visa, mastercard, elo, amex, hipercard, boleto.</p>

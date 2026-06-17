@@ -12,6 +12,7 @@ export type Product = {
   stock: number;
   minStock: number;
   description?: string;
+  imageUrl?: string;
 };
 
 export type OrderStatus =
@@ -110,6 +111,7 @@ export type Settings = {
   checkoutStep3Title: string;
   checkoutFooterCardsImageUrl: string;
   checkoutFooterShowCardsImage: boolean;
+  checkoutFooterCardsImageHeight: number;
 };
 
 type State = {
@@ -163,6 +165,7 @@ const emptySettings: Settings = {
   checkoutStep3Title: "Pagamento",
   checkoutFooterCardsImageUrl: "",
   checkoutFooterShowCardsImage: true,
+  checkoutFooterCardsImageHeight: 40,
 };
 
 const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
@@ -214,10 +217,12 @@ const seedExpensesData: Omit<Expense, "id">[] = [
 const toProduct = (r: any): Product => ({
   id: r.id, name: r.name, category: r.category ?? "", cost: Number(r.cost), price: Number(r.price),
   stock: r.stock, minStock: r.min_stock, description: r.description ?? undefined,
+  imageUrl: r.image_url ?? undefined,
 });
 const fromProduct = (p: Omit<Product, "id">) => ({
   name: p.name, category: p.category, cost: p.cost, price: p.price,
   stock: p.stock, min_stock: p.minStock, description: p.description ?? null,
+  image_url: p.imageUrl ?? null,
 });
 const toOrder = (r: any): Order => ({
   id: r.id, customer: r.customer, phone: r.phone ?? "", address: r.address ?? "",
@@ -275,6 +280,7 @@ const toSettings = (r: any): Settings => ({
   checkoutStep3Title: r.checkout_step3_title ?? "Pagamento",
   checkoutFooterCardsImageUrl: r.checkout_footer_cards_image_url ?? "",
   checkoutFooterShowCardsImage: r.checkout_footer_show_cards_image ?? true,
+  checkoutFooterCardsImageHeight: Number(r.checkout_footer_cards_image_height ?? 40),
 });
 
 type Ctx = {
@@ -412,6 +418,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.stock !== undefined) patch.stock = p.stock;
       if (p.minStock !== undefined) patch.min_stock = p.minStock;
       if (p.description !== undefined) patch.description = p.description;
+      if (p.imageUrl !== undefined) patch.image_url = p.imageUrl;
       const { data, error } = await supabase.from("products").update(patch).eq("id", id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, products: s.products.map((x) => x.id === id ? toProduct(data) : x) }));
@@ -489,6 +496,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutStep3Title !== undefined) patch.checkout_step3_title = p.checkoutStep3Title;
       if (p.checkoutFooterCardsImageUrl !== undefined) patch.checkout_footer_cards_image_url = p.checkoutFooterCardsImageUrl;
       if (p.checkoutFooterShowCardsImage !== undefined) patch.checkout_footer_show_cards_image = p.checkoutFooterShowCardsImage;
+      if (p.checkoutFooterCardsImageHeight !== undefined) patch.checkout_footer_cards_image_height = p.checkoutFooterCardsImageHeight;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
