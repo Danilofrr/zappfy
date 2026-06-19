@@ -20,8 +20,10 @@ import {
   addTrialDays,
   generateActivationToken,
   listPlans,
+  setClientPassword,
+  sendClientPasswordReset,
 } from "@/lib/admin.functions";
-import { Plus, Copy, Trash2, Ban, Play, RotateCw, CalendarPlus, Link as LinkIcon } from "lucide-react";
+import { Plus, Copy, Trash2, Ban, Play, RotateCw, CalendarPlus, Link as LinkIcon, KeyRound, Mail, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/clientes")({
   component: ClientsPage,
