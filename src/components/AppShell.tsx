@@ -64,27 +64,26 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
+        {/* Sidebar — collapses to icons; expands on hover (desktop) */}
         <aside
           className={cn(
-            "fixed lg:sticky top-0 left-0 z-40 h-screen w-64 shrink-0 border-r border-sidebar-border bg-sidebar transition-transform",
+            "group/sidebar fixed lg:sticky top-0 left-0 z-40 h-screen shrink-0 border-r border-sidebar-border bg-sidebar transition-[transform,width] duration-300 ease-out",
+            "w-64 lg:w-[4.5rem] lg:hover:w-64 lg:focus-within:w-64",
             open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
         >
-          <div
-            className="flex h-full flex-col pt-[calc(env(safe-area-inset-top)+4rem)] lg:pt-0"
-          >
-            <div className="hidden lg:flex items-center gap-2 px-5 h-16 border-b border-sidebar-border">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary shadow-glow">
+          <div className="flex h-full flex-col pt-[calc(env(safe-area-inset-top)+4rem)] lg:pt-0 overflow-hidden">
+            <div className="hidden lg:flex items-center gap-2 px-4 h-16 border-b border-sidebar-border">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow">
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div className="leading-tight">
+              <div className="leading-tight min-w-0 opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                 <div className="font-bold tracking-tight">ZappFy</div>
                 <div className="text-[11px] text-muted-foreground">Gestão para WhatsApp</div>
               </div>
             </div>
 
-            <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+            <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1">
               {nav.map((item) => {
                 const Icon = item.icon;
                 const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
@@ -93,31 +92,36 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                     key={item.to}
                     to={item.to}
                     onClick={() => setOpen(false)}
+                    title={item.label}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                       active
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(34,197,94,0.55),0_0_4px_rgba(34,197,94,0.9)_inset] ring-1 ring-primary/60"
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
                     )}
                   >
-                    <Icon className={cn("h-4 w-4", active && "text-primary")} />
-                    {item.label}
+                    <Icon className={cn("h-5 w-5 shrink-0", active && "text-primary-foreground drop-shadow-[0_0_6px_rgba(34,197,94,0.9)]")} />
+                    <span className="truncate opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                      {item.label}
+                    </span>
                   </Link>
                 );
               })}
             </nav>
 
-            <div className="border-t border-sidebar-border p-4 space-y-3">
-              <div className="rounded-xl bg-card p-3 border border-border">
+            <div className="border-t border-sidebar-border p-3 space-y-3">
+              <div className="rounded-xl bg-card p-3 border border-border opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200">
                 <div className="text-xs text-muted-foreground">Loja</div>
                 <div className="font-semibold truncate">{state.settings.storeName}</div>
                 {user?.email && <div className="text-[11px] text-muted-foreground truncate mt-1">{user.email}</div>}
               </div>
               <button
                 onClick={() => signOut()}
+                title="Sair"
                 className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
               >
-                <LogOut className="h-4 w-4" /> Sair
+                <LogOut className="h-4 w-4 shrink-0" />
+                <span className="opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">Sair</span>
               </button>
             </div>
           </div>
