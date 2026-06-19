@@ -53,13 +53,36 @@ function EstoquePage() {
     });
   }, [state.products, query, cat]);
 
+  const scope = useMemo(
+    () => (cat === "todas" ? state.products : state.products.filter((p) => p.category === cat)),
+    [state.products, cat]
+  );
+
   const totals = useMemo(() => {
-    const valorEstoque = state.products.reduce((s, p) => s + p.cost * p.stock, 0);
-    const valorVenda = state.products.reduce((s, p) => s + p.price * p.stock, 0);
-    const abaixoMin = state.products.filter((p) => p.stock <= p.minStock).length;
-    const skus = state.products.length;
+    const valorEstoque = scope.reduce((s, p) => s + p.cost * p.stock, 0);
+    const valorVenda = scope.reduce((s, p) => s + p.price * p.stock, 0);
+    const abaixoMin = scope.filter((p) => p.stock <= p.minStock).length;
+    const skus = scope.length;
     return { valorEstoque, valorVenda, abaixoMin, skus };
+  }, [scope]);
+
+  const categoryStats = useMemo(() => {
+    const map = new Map<string, { estoque: number; venda: number; count: number }>();
+    state.products.forEach((p) => {
+      const key = p.category || "Sem categoria";
+      const cur = map.get(key) || { estoque: 0, venda: 0, count: 0 };
+      cur.estoque += p.cost * p.stock;
+      cur.venda += p.price * p.stock;
+      cur.count += 1;
+      map.set(key, cur);
+    });
+    return map;
   }, [state.products]);
+
+  const totalEstoqueGeral = useMemo(
+    () => state.products.reduce((s, p) => s + p.cost * p.stock, 0),
+    [state.products]
+  );
 
   return (
     <AppShell
@@ -160,10 +183,30 @@ function EstoquePage() {
 
       {/* Filters: category chips + view toggle */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <CatChip active={cat === "todas"} onClick={() => setCat("todas")} color="primary">Todas</CatChip>
-        {categories.map((c) => (
-          <CatChip key={c} active={cat === c} onClick={() => setCat(c)} color="pink">{c}</CatChip>
-        ))}
+        <CatChip
+          active={cat === "todas"}
+          onClick={() => setCat("todas")}
+          color="primary"
+          amount={brl(totalEstoqueGeral)}
+          count={state.products.length}
+        >
+          Todas
+        </CatChip>
+        {categories.map((c) => {
+          const s = categoryStats.get(c);
+          return (
+            <CatChip
+              key={c}
+              active={cat === c}
+              onClick={() => setCat(c)}
+              color="pink"
+              amount={brl(s?.estoque ?? 0)}
+              count={s?.count ?? 0}
+            >
+              {c}
+            </CatChip>
+          );
+        })}
         <div className="ml-auto inline-flex rounded-lg border border-border overflow-hidden">
           <button
             onClick={() => setView("tabela")}
@@ -183,6 +226,15 @@ function EstoquePage() {
           </button>
         </div>
       </div>
+
+      {cat !== "todas" && (
+        <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span>Categoria: <span className="text-foreground font-semibold">{cat}</span></span>
+          <span>Custo em estoque: <span className="text-violet-300 font-semibold">{brl(totals.valorEstoque)}</span></span>
+          <span>Valor de venda: <span className="text-emerald-300 font-semibold">{brl(totals.valorVenda)}</span></span>
+          <span>Lucro potencial: <span className="text-emerald-300 font-semibold">{brl(totals.valorVenda - totals.valorEstoque)}</span></span>
+        </div>
+      )}
 
       {tab === "kits" ? (
         <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-elegant">
@@ -358,22 +410,26 @@ function KpiCard({
 }
 
 function CatChip({
-  active, onClick, color, children,
-}: { active: boolean; onClick: () => void; color: "primary" | "pink"; children: React.ReactNode }) {
-  const base = "px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-colors";
-  if (active) {
-    return (
-      <button
-        onClick={onClick}
-        className={`${base} ${color === "primary" ? "bg-primary text-primary-foreground border-primary shadow-glow" : "bg-pink-500/20 text-pink-300 border-pink-500/40"}`}
-      >
-        {children}
-      </button>
-    );
-  }
+  active, onClick, color, children, amount, count,
+}: { active: boolean; onClick: () => void; color: "primary" | "pink"; children: React.ReactNode; amount?: string; count?: number }) {
+  const base = "inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-colors";
+  const activeCls = color === "primary"
+    ? "bg-primary text-primary-foreground border-primary shadow-glow"
+    : "bg-pink-500/20 text-pink-300 border-pink-500/40";
+  const inactiveCls = "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30";
   return (
-    <button onClick={onClick} className={`${base} border-border text-muted-foreground hover:text-foreground hover:border-foreground/30`}>
-      {children}
+    <button onClick={onClick} className={`${base} ${active ? activeCls : inactiveCls}`}>
+      <span>{children}</span>
+      {typeof count === "number" && (
+        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${active ? "bg-black/20" : "bg-secondary/60 text-foreground/70"}`}>
+          {count}
+        </span>
+      )}
+      {amount && (
+        <span className={`text-[10px] font-semibold ${active ? "opacity-90" : "text-muted-foreground"}`}>
+          {amount}
+        </span>
+      )}
     </button>
   );
 }
