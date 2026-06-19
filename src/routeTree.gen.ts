@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
 import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
+import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
@@ -53,6 +54,11 @@ const CheckoutSlugRoute = CheckoutSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => CheckoutRoute,
+} as any)
+const AuthenticatedTrocasRoute = AuthenticatedTrocasRouteImport.update({
+  id: '/trocas',
+  path: '/trocas',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
   id: '/relatorios',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/trocas': typeof AuthenticatedTrocasRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/trocas': typeof AuthenticatedTrocasRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/': typeof AuthenticatedIndexRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/_authenticated/trocas': typeof AuthenticatedTrocasRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/produtos'
     | '/relatorios'
+    | '/trocas'
     | '/checkout/$slug'
     | '/loja/$slug'
     | '/api/public/submit-order'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/produtos'
     | '/relatorios'
+    | '/trocas'
     | '/checkout/$slug'
     | '/loja/$slug'
     | '/'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pedidos'
     | '/_authenticated/produtos'
     | '/_authenticated/relatorios'
+    | '/_authenticated/trocas'
     | '/checkout/$slug'
     | '/loja/$slug'
     | '/_authenticated/'
@@ -254,6 +266,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/checkout/$slug'
       preLoaderRoute: typeof CheckoutSlugRouteImport
       parentRoute: typeof CheckoutRoute
+    }
+    '/_authenticated/trocas': {
+      id: '/_authenticated/trocas'
+      path: '/trocas'
+      fullPath: '/trocas'
+      preLoaderRoute: typeof AuthenticatedTrocasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/relatorios': {
       id: '/_authenticated/relatorios'
@@ -330,6 +349,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+  AuthenticatedTrocasRoute: typeof AuthenticatedTrocasRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -342,6 +362,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+  AuthenticatedTrocasRoute: AuthenticatedTrocasRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
