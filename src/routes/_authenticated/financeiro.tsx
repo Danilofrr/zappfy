@@ -52,10 +52,10 @@ function Page() {
       actions={<NewExpense open={open} setOpen={setOpen} onAdd={(e) => { addExpense(e); toast.success("Despesa lançada"); setOpen(false); }} />}
     >
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        <StatCard label="Receita Total" value={brl(fin.revenue)} icon={DollarSign} tone="success" hint="mês"/>
-        <StatCard label="Despesas Totais" value={brl(fin.cogs + fin.adsSpend + fin.opEx)} icon={TrendingDown} tone="danger" hint="mês"/>
-        <StatCard label="Lucro Líquido" value={brl(fin.profit)} icon={TrendingUp} tone="success" hint="mês"/>
-        <StatCard label="Saldo em Caixa" value={brl(fin.cash)} icon={Wallet} hint="acumulado"/>
+        <StatCard label="Receita Total" value={brl(fin.revenue)} icon={DollarSign} tone="success" hint="mês" neon="56 189 248"/>
+        <StatCard label="Despesas Totais" value={brl(fin.cogs + fin.adsSpend + fin.opEx)} icon={TrendingDown} tone="danger" hint="mês" neon="244 63 94"/>
+        <StatCard label="Lucro Líquido" value={brl(fin.profit)} icon={TrendingUp} tone="success" hint="mês" neon="167 139 250"/>
+        <StatCard label="Saldo em Caixa" value={brl(fin.cash)} icon={Wallet} hint="acumulado" neon="251 191 36"/>
       </div>
 
       <div className="mt-6 grid lg:grid-cols-2 gap-6">
