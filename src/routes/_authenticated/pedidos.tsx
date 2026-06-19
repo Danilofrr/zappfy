@@ -268,7 +268,7 @@ function PedidosPage() {
   .grow{flex:1}
   .barcode{padding:6px;text-align:center;border-bottom:2px solid #000;background:#fff}
   .barcode .bars{display:flex;justify-content:center;align-items:end;gap:0;height:40px;overflow:hidden}
-  .sec-title{background:#000;color:#fff;padding:3px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px}
+  .sec-title{background:#fff;color:#000;padding:3px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;border-top:2px solid #000;border-bottom:1px solid #000}
   .recv{padding:6px 8px;border-bottom:2px solid #000;font-size:11px}
   .recv .line{display:flex;gap:6px;margin-bottom:5px;align-items:flex-end}
   .recv .line:last-child{margin-bottom:0}
