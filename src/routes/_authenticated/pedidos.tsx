@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
