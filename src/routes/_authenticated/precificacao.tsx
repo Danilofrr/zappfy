@@ -27,6 +27,7 @@ function Page() {
   const [cardPct, setCardPct] = useState("");
   const [platformPct, setPlatformPct] = useState("");
   const [adsPct, setAdsPct] = useState("");
+  const [adsTaxPct, setAdsTaxPct] = useState("17.65");
   const [otherPct, setOtherPct] = useState("");
 
   const [mode, setMode] = useState<Mode>("markup");
@@ -37,7 +38,8 @@ function Page() {
 
   const data = useMemo(() => {
     const realCost = num(cost) + num(freight) + num(packaging) + num(otherCost);
-    const variablePct = (num(taxPct) + num(cardPct) + num(platformPct) + num(adsPct) + num(otherPct)) / 100;
+    const adsEffectivePct = num(adsPct) * (1 + num(adsTaxPct) / 100);
+    const variablePct = (num(taxPct) + num(cardPct) + num(platformPct) + adsEffectivePct + num(otherPct)) / 100;
 
     let price = 0;
     if (mode === "markup") {
@@ -50,7 +52,9 @@ function Page() {
       price = num(manualPrice);
     }
 
-    const adsCost = price * (num(adsPct) / 100);
+    const adsSpend = price * (num(adsPct) / 100);
+    const adsTaxValue = adsSpend * (num(adsTaxPct) / 100);
+    const adsCost = adsSpend + adsTaxValue;
     const variableCost = price * variablePct;
     const otherVariableCost = variableCost - adsCost;
     const profit = price - realCost - variableCost;
@@ -58,22 +62,23 @@ function Page() {
     const markupCalc = realCost > 0 ? price / realCost : 0;
     const breakEven = realCost / Math.max(1 - variablePct, 0.0001);
 
-    // CPA: considera despesas variáveis SEM o % de ads (o CPA já é o custo de ads em R$)
-    const variablePctNoAds = variablePct - num(adsPct) / 100;
+    // CPA: considera despesas variáveis SEM ads (CPA já é o gasto real). Mantém imposto sobre o CPA.
+    const variablePctNoAds = variablePct - adsEffectivePct / 100;
     const variableCostNoAds = price * variablePctNoAds;
-    const grossPerSale = price - realCost - variableCostNoAds; // disponível pra ads + lucro
-    const cpaMax = Math.max(grossPerSale, 0); // break-even em ads
+    const grossPerSale = price - realCost - variableCostNoAds; // disponível pra ads + imposto + lucro
+    const taxMult = 1 + num(adsTaxPct) / 100;
+    const cpaMax = Math.max(grossPerSale / taxMult, 0); // break-even em ads (já descontando imposto)
     const tMargin = Math.min(Math.max(num(targetMargin), 0), 99) / 100;
-    const cpaIdeal = Math.max(grossPerSale - price * tMargin, 0);
+    const cpaIdeal = Math.max((grossPerSale - price * tMargin) / taxMult, 0);
     const roasMin = cpaMax > 0 ? price / cpaMax : 0;
     const roasIdeal = cpaIdeal > 0 ? price / cpaIdeal : 0;
 
-    return { realCost, variablePct, price, variableCost, otherVariableCost, adsCost, profit, marginPct, markupCalc, breakEven, cpaMax, cpaIdeal, roasMin, roasIdeal };
-  }, [cost, freight, packaging, otherCost, taxPct, cardPct, platformPct, adsPct, otherPct, mode, markup, margin, manualPrice, targetMargin]);
+    return { realCost, variablePct, price, variableCost, otherVariableCost, adsSpend, adsTaxValue, adsCost, profit, marginPct, markupCalc, breakEven, cpaMax, cpaIdeal, roasMin, roasIdeal };
+  }, [cost, freight, packaging, otherCost, taxPct, cardPct, platformPct, adsPct, adsTaxPct, otherPct, mode, markup, margin, manualPrice, targetMargin]);
 
   function reset() {
     setName(""); setCost(""); setFreight(""); setPackaging(""); setOtherCost("");
-    setTaxPct(""); setCardPct(""); setPlatformPct(""); setAdsPct(""); setOtherPct("");
+    setTaxPct(""); setCardPct(""); setPlatformPct(""); setAdsPct(""); setAdsTaxPct("17.65"); setOtherPct("");
     setMarkup("2"); setMargin("30"); setManualPrice(""); setMode("markup"); setTargetMargin("20");
   }
 
@@ -148,6 +153,9 @@ function Page() {
             <Field label="Custo de tráfego/ads (%)">
               <input className="input" inputMode="decimal" value={adsPct} onChange={(e) => setAdsPct(e.target.value)} placeholder="0" />
             </Field>
+            <Field label="Imposto sobre Ads (%)">
+              <input className="input" inputMode="decimal" value={adsTaxPct} onChange={(e) => setAdsTaxPct(e.target.value)} placeholder="17,65" />
+            </Field>
             <Field label="Outras taxas (%)">
               <input className="input" inputMode="decimal" value={otherPct} onChange={(e) => setOtherPct(e.target.value)} placeholder="0" />
             </Field>
@@ -201,7 +209,9 @@ function Page() {
             <div className="grid gap-2 sm:grid-cols-2 text-sm">
               <Row label="Preço sugerido" value={brl(data.price)} strong />
               <Row label="Custo real do produto" value={brl(data.realCost)} />
-              <Row label="Custo de marketing (Facebook Ads)" value={brl(data.adsCost)} tone="bad" />
+              <Row label="Gasto em Facebook Ads" value={brl(data.adsSpend)} tone="bad" />
+              <Row label="Imposto sobre Ads" value={brl(data.adsTaxValue)} tone="bad" />
+              <Row label="Custo total de marketing (Ads + imposto)" value={brl(data.adsCost)} strong tone="bad" />
               <Row label="Outras despesas variáveis" value={brl(data.otherVariableCost)} />
               <Row label="Despesas variáveis totais" value={brl(data.variableCost)} />
               <Row label="Lucro líquido" value={brl(data.profit)} strong tone={data.profit >= 0 ? "ok" : "bad"} />
