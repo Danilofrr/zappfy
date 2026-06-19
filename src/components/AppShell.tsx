@@ -150,7 +150,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                 className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
-                <span className="opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">Sair</span>
+                <span className="opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">Sair</span>
               </button>
             </div>
           </div>
