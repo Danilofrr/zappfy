@@ -142,7 +142,7 @@ function AuthPage() {
         <div className="absolute top-2/3 left-16 h-1.5 w-1.5 rounded-full bg-primary-glow/80 shadow-[0_0_16px_var(--primary-glow)]" />
         <div className="absolute top-1/2 right-1/3 h-1 w-1 rounded-full bg-primary/60" />
 
-        <div className="relative h-full flex flex-col justify-between p-12 xl:p-16">
+        <div className="relative h-full flex flex-col justify-between p-8 xl:p-12">
           {/* Top: badge */}
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 backdrop-blur px-3 py-1.5 text-xs font-medium text-primary">
@@ -153,14 +153,14 @@ function AuthPage() {
 
           {/* Middle: headline + showcase */}
           <div className="max-w-2xl">
-            <h2 className="text-4xl xl:text-[3.25rem] font-bold tracking-tight text-foreground leading-[1.05]">
+            <h2 className="text-3xl xl:text-[2.5rem] font-bold tracking-tight text-foreground leading-[1.05]">
               Venda mais.
               <br />
               <span className="bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
                 Sem perder o controle.
               </span>
             </h2>
-            <p className="mt-5 text-lg text-muted-foreground leading-relaxed max-w-lg">
+            <p className="mt-3 text-base text-muted-foreground leading-relaxed max-w-lg">
               O Zappfy unifica pedidos, financeiro e relatórios para quem vende todos os dias pelo WhatsApp.
             </p>
 
