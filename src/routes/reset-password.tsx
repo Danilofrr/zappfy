@@ -73,9 +73,8 @@ function ResetPasswordPage() {
     <div className="min-h-screen grid place-items-center bg-background px-4 py-8">
       <div className="absolute top-4 right-4"><ThemeToggle /></div>
       <Card className="w-full max-w-md p-6 lg:p-8">
-        <div className="flex items-center gap-2 mb-6">
-          <img src="/logo-bubble.png" alt="Zappfy" className="h-10 w-10 object-contain" />
-          <span className="text-xl font-bold tracking-tight text-neon">ZappFy</span>
+        <div className="flex items-center mb-6">
+          <img src="/logo-full.png" alt="Zappfy" className="h-12 w-auto object-contain" />
         </div>
 
         <h1 className="text-2xl font-bold mb-1">Redefinir senha</h1>
