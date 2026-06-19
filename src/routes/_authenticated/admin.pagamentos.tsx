@@ -10,11 +10,21 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { listPayments, listClients, registerPayment } from "@/lib/admin.functions";
 import { brl } from "@/lib/format";
-import { Plus } from "lucide-react";
+import { Plus, AlertTriangle, Inbox } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/admin/pagamentos")({ component: PaymentsPage });
+export const Route = createFileRoute("/_authenticated/admin/pagamentos")({
+  component: PaymentsPage,
+  errorComponent: ({ error }) => (
+    <AdminShell title="Pagamentos" subtitle="Histórico financeiro dos clientes">
+      <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
+        Erro ao carregar pagamentos: {error.message}
+      </div>
+    </AdminShell>
+  ),
+});
 
 const statusColors: Record<string, string> = {
   pago: "bg-green-500/15 text-green-500 border-green-500/30",
@@ -23,61 +33,145 @@ const statusColors: Record<string, string> = {
   cancelado: "bg-secondary text-muted-foreground border-border",
 };
 
+function fmtDate(v: string | null | undefined) {
+  if (!v) return "—";
+  try { return new Date(v).toLocaleDateString("pt-BR"); } catch { return "—"; }
+}
+function fmtDateTime(v: string | null | undefined) {
+  if (!v) return "—";
+  try { return new Date(v).toLocaleString("pt-BR"); } catch { return "—"; }
+}
+
 function PaymentsPage() {
   const qc = useQueryClient();
   const listFn = useServerFn(listPayments);
   const clientsFn = useServerFn(listClients);
   const regFn = useServerFn(registerPayment);
-  const { data: payments = [], isLoading } = useQuery({ queryKey: ["admin-payments"], queryFn: () => listFn() });
-  const { data: clients = [] } = useQuery({ queryKey: ["admin-clients"], queryFn: () => clientsFn() });
+
+  const paymentsQ = useQuery({
+    queryKey: ["admin-payments"],
+    queryFn: async () => {
+      const t0 = Date.now();
+      try {
+        const r = await listFn();
+        console.log("[admin/pagamentos] listPayments ok", r.length, "em", Date.now() - t0, "ms");
+        return r;
+      } catch (e: any) {
+        console.error("[admin/pagamentos] listPayments erro", e);
+        throw e;
+      }
+    },
+    retry: 1,
+    staleTime: 30_000,
+  });
+
+  const clientsQ = useQuery({
+    queryKey: ["admin-clients"],
+    queryFn: () => clientsFn(),
+    retry: 1,
+    staleTime: 60_000,
+  });
+
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ userId: "", amount: "", method: "pix", status: "pago", notes: "", renewDays: "30" });
 
   const register = useMutation({
     mutationFn: () => regFn({ data: { userId: form.userId, amount: Number(form.amount), method: form.method, status: form.status as any, notes: form.notes, renewDays: Number(form.renewDays) } }),
-    onSuccess: () => { toast.success("Pagamento registrado"); setOpen(false); setForm({ userId: "", amount: "", method: "pix", status: "pago", notes: "", renewDays: "30" }); qc.invalidateQueries({ queryKey: ["admin-payments"] }); qc.invalidateQueries({ queryKey: ["admin-clients"] }); },
-    onError: (e: any) => toast.error(e.message),
+    onSuccess: () => {
+      toast.success("Pagamento registrado");
+      setOpen(false);
+      setForm({ userId: "", amount: "", method: "pix", status: "pago", notes: "", renewDays: "30" });
+      qc.invalidateQueries({ queryKey: ["admin-payments"] });
+      qc.invalidateQueries({ queryKey: ["admin-clients"] });
+      qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Falha ao registrar"),
   });
 
+  const payments = paymentsQ.data ?? [];
+  const clients = clientsQ.data ?? [];
+
   return (
-    <AdminShell title="Pagamentos" subtitle="Histórico financeiro dos clientes"
-      actions={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" />Registrar pagamento</Button>}>
-      {isLoading ? <div className="text-muted-foreground">Carregando...</div> : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full text-sm">
-            <thead className="bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr><th className="text-left p-3">Cliente</th><th className="text-left p-3">Plano</th><th className="text-left p-3">Valor</th><th className="text-left p-3">Método</th><th className="text-left p-3">Status</th><th className="text-left p-3">Data</th></tr>
-            </thead>
-            <tbody>
-              {payments.map((p: any) => (
+    <AdminShell
+      title="Pagamentos"
+      subtitle="Histórico financeiro dos clientes"
+      actions={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" />Registrar pagamento</Button>}
+    >
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <table className="w-full text-sm">
+          <thead className="bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="text-left p-3">Cliente</th>
+              <th className="text-left p-3">Loja</th>
+              <th className="text-left p-3">Plano</th>
+              <th className="text-left p-3">Valor</th>
+              <th className="text-left p-3">Forma</th>
+              <th className="text-left p-3">Status</th>
+              <th className="text-left p-3">Pago em</th>
+              <th className="text-left p-3">Vencimento</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paymentsQ.isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-t border-border">
+                  {Array.from({ length: 8 }).map((_, j) => (
+                    <td key={j} className="p-3"><Skeleton className="h-4 w-full" /></td>
+                  ))}
+                </tr>
+              ))
+            ) : paymentsQ.isError ? (
+              <tr>
+                <td colSpan={8} className="p-6">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Erro ao carregar: {(paymentsQ.error as any)?.message ?? "tente novamente"}</span>
+                    <Button size="sm" variant="outline" className="ml-2" onClick={() => paymentsQ.refetch()}>Tentar novamente</Button>
+                  </div>
+                </td>
+              </tr>
+            ) : payments.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="p-10">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Inbox className="h-6 w-6" />
+                    <span>Nenhum pagamento registrado ainda.</span>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              payments.map((p: any) => (
                 <tr key={p.id} className="border-t border-border">
                   <td className="p-3">{p.fullName || "—"}</td>
-                  <td className="p-3">{p.subscriptions?.plans?.name || "—"}</td>
+                  <td className="p-3">{p.storeName || "—"}</td>
+                  <td className="p-3">{p.planName || "—"}</td>
                   <td className="p-3 font-medium">{brl(Number(p.amount))}</td>
                   <td className="p-3 capitalize">{p.method}</td>
-                  <td className="p-3"><Badge variant="outline" className={statusColors[p.status]}>{p.status}</Badge></td>
-                  <td className="p-3 text-xs">{new Date(p.created_at).toLocaleString("pt-BR")}</td>
+                  <td className="p-3"><Badge variant="outline" className={statusColors[p.status] ?? ""}>{p.status}</Badge></td>
+                  <td className="p-3 text-xs">{fmtDateTime(p.paid_at ?? p.created_at)}</td>
+                  <td className="p-3 text-xs">{fmtDate(p.expiresAt)}</td>
                 </tr>
-              ))}
-              {payments.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum pagamento registrado</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Registrar pagamento</DialogTitle></DialogHeader>
           <div className="grid gap-3">
-            <div><Label>Cliente</Label>
+            <div>
+              <Label>Cliente</Label>
               <Select value={form.userId} onValueChange={(v) => setForm({ ...form, userId: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={clientsQ.isLoading ? "Carregando..." : "Selecione"} /></SelectTrigger>
                 <SelectContent>{clients.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.fullName || c.email}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Valor (R$)</Label><Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
-              <div><Label>Método</Label>
+              <div>
+                <Label>Método</Label>
                 <Select value={form.method} onValueChange={(v) => setForm({ ...form, method: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -91,7 +185,8 @@ function PaymentsPage() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Status</Label>
+              <div>
+                <Label>Status</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
