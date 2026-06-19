@@ -387,10 +387,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const [products, orders, expenses, ads, settings] = await Promise.all([
-        supabase.from("products").select("*").order("created_at", { ascending: false }),
-        supabase.from("orders").select("*").order("date", { ascending: false }),
-        supabase.from("expenses").select("*").order("date", { ascending: false }),
-        supabase.from("ads").select("*").order("date", { ascending: true }),
+        supabase.from("products").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("orders").select("*").eq("user_id", userId).order("date", { ascending: false }),
+        supabase.from("expenses").select("*").eq("user_id", userId).order("date", { ascending: false }),
+        supabase.from("ads").select("*").eq("user_id", userId).order("date", { ascending: true }),
         supabase.from("settings").select("*").eq("user_id", userId).maybeSingle(),
       ]);
 
