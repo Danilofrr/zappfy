@@ -83,10 +83,6 @@ function EstoquePage() {
     () => state.products.reduce((s, p) => s + p.cost * p.stock, 0),
     [state.products]
   );
-  const totalVendaGeral = useMemo(
-    () => state.products.reduce((s, p) => s + p.price * p.stock, 0),
-    [state.products]
-  );
 
   return (
     <AppShell
