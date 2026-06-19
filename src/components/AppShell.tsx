@@ -82,9 +82,10 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         className="lg:hidden sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="flex items-center justify-between px-4 h-16">
-          <Link to="/" className="flex items-center min-w-0">
-            <img src="/logo-full.png" alt="Zappfy" className="h-12 w-auto object-contain" />
+        <div className="flex items-center justify-between px-4 h-[72px]">
+          <Link to="/" className="flex items-center gap-2 min-w-0">
+            <img src="/logo-bubble.png" alt="" className="h-11 w-11 object-contain shrink-0" />
+            <span className="text-2xl font-bold tracking-tight">ZappFy</span>
           </Link>
           <ThemeToggle />
         </div>
@@ -97,21 +98,28 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           onMouseLeave={() => setSidebarHovered(false)}
           className={cn(
             "group/sidebar fixed lg:sticky top-0 left-0 z-50 h-screen shrink-0 border-r border-sidebar-border bg-sidebar transition-[transform,width] duration-300 ease-out",
-            "w-64",
-            sidebarHovered ? "lg:w-64" : "lg:w-[5.5rem]",
+            "w-[260px]",
+            sidebarHovered ? "lg:w-[260px]" : "lg:w-[5.5rem]",
             open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
         >
           <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0 overflow-hidden">
-            <div className="flex items-center justify-between gap-2 px-2 lg:px-1 lg:group-hover/sidebar:px-3 h-20 border-b border-sidebar-border transition-[padding] duration-200">
-              <div className="flex items-center min-w-0 relative h-[4.5rem] w-full overflow-hidden">
-                <img src="/logo-full.png" alt="Zappfy" className="block lg:hidden h-14 w-auto object-contain absolute left-0 top-1/2 -translate-y-1/2" />
-                {sidebarHovered ? (
-                  <img src="/logo-full.png" alt="Zappfy" className="hidden lg:block h-[4.5rem] w-auto max-w-full object-contain absolute left-0 top-1/2 -translate-y-1/2" />
-                ) : (
-                  <img src="/logo-bubble.png" alt="Zappfy" className="hidden lg:block h-14 w-14 object-contain absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-                )}
-              </div>
+            <div className="relative flex items-center justify-between gap-2 px-4 h-[110px] border-b border-sidebar-border bg-gradient-to-b from-sidebar-accent/30 to-transparent">
+              <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-3 min-w-0 w-full">
+                <img
+                  src="/logo-bubble.png"
+                  alt=""
+                  className="h-14 w-14 object-contain shrink-0 drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]"
+                />
+                <span
+                  className={cn(
+                    "text-[26px] font-bold tracking-tight text-sidebar-foreground whitespace-nowrap transition-opacity duration-200",
+                    "opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100",
+                  )}
+                >
+                  ZappFy
+                </span>
+              </Link>
               <button
                 onClick={() => setOpen(false)}
                 className="lg:hidden grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-card"
