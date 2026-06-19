@@ -32,6 +32,13 @@ function AuthPage() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [supportWhats, setSupportWhats] = useState<string | null>(null);
+
+  useEffect(() => {
+    getPublicSupport()
+      .then((r) => setSupportWhats(r?.whats ?? null))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("lt_remember_email");
