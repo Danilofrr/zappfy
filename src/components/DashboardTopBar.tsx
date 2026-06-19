@@ -65,6 +65,7 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
           >
             {privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
+          <ThemeToggle />
           
           <Link
             to="/configuracoes"

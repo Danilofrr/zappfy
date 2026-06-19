@@ -190,7 +190,6 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
               </div>
               <div className="shrink-0 flex items-center gap-2">
                 {actions}
-                <span className="hidden lg:block"><ThemeToggle /></span>
               </div>
             </div>
             {children}
