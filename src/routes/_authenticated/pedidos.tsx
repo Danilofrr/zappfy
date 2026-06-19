@@ -25,6 +25,7 @@ import {
 import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { getSenderInfo } from "@/lib/sender-info";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
