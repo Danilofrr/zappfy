@@ -13,6 +13,7 @@ import type { ShippingOption } from "@/lib/store";
 import { SHIPPING_ICONS } from "@/lib/shipping-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NotificationsCard } from "@/components/NotificationsCard";
+import { getSenderInfo, saveSenderInfo, type SenderInfo } from "@/lib/sender-info";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — ZappFy" }] }),
