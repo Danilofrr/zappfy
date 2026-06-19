@@ -107,11 +107,15 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           )}
         >
           <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0">
-            <div className="relative flex items-center pl-6 pr-3 h-[90px] border-b border-sidebar-border bg-gradient-to-b from-sidebar-accent/30 to-transparent">
+            <div className={cn(
+              "relative flex items-center pr-3 h-[90px] border-b border-sidebar-border bg-gradient-to-b from-sidebar-accent/30 to-transparent",
+              sidebarHovered ? "lg:pl-6 lg:justify-start" : "lg:pl-0 lg:justify-center",
+              "pl-6 justify-start",
+            )}>
               <Link
                 to="/"
                 onClick={() => setOpen(false)}
-                className="flex items-center min-w-0 w-full h-full text-2xl font-bold justify-start"
+                className="flex items-center min-w-0 h-full text-2xl font-bold"
               >
                 {/* Collapsed (desktop only): bubble icon */}
                 <img
