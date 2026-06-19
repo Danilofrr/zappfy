@@ -19,7 +19,7 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
         .select("value")
         .eq("key", "system")
         .maybeSingle();
-      return ((data?.value as any)?.prize ?? {}) as PrizeCfg;
+      return ((data?.value as any)?.prize ?? {}) as { enabled?: boolean; goal?: number; reward?: string; period?: string };
     },
     staleTime: 60_000,
   });
