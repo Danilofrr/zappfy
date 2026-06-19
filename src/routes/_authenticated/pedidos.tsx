@@ -309,6 +309,13 @@ function PedidosPage() {
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
+                        onClick={() => printReceipt(o)}
+                        title="Gerar recibo e imprimir"
+                        className="text-muted-foreground hover:text-primary p-1"
+                      >
+                        <Receipt className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => setMotoboyFor(o)}
                         title="Enviar endereço para o motoboy no WhatsApp"
                         className="text-muted-foreground hover:text-blue-500 p-1"
