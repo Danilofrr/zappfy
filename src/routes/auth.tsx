@@ -269,16 +269,6 @@ function AuthPage() {
               </div>
             </div>
 
-            <div className="hidden xl:flex items-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                Sem cartão
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                Suporte humano
-              </div>
-            </div>
           </div>
         </div>
       </aside>
