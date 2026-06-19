@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/lib/theme";
+import { AvatarUploader } from "@/components/AvatarUploader";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -27,6 +28,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [storeName, setStoreName] = useState("");
   const [fullName, setFullName] = useState("");
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
