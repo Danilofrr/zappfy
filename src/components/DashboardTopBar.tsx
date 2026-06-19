@@ -10,6 +10,7 @@ import { usePrivacy, mask } from "@/hooks/use-privacy";
 export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   const { user, state } = useStore();
   const { revenue } = useFinance();
+  const { on: privacy, toggle: togglePrivacy } = usePrivacy();
 
   const prizeQ = useQuery({
     queryKey: ["public-prize"],
@@ -55,15 +56,14 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         {subtitle && <span>{subtitle}</span>}
         <div className="flex items-center gap-1 ml-1">
-          <Link
-            to={state.settings.slug ? "/loja/$slug" : "/"}
-            params={state.settings.slug ? { slug: state.settings.slug } : undefined as any}
-            target={state.settings.slug ? "_blank" : undefined}
+          <button
+            type="button"
+            onClick={togglePrivacy}
             className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-            title="Ver loja pública"
+            title={privacy ? "Mostrar valores" : "Ocultar valores"}
           >
-            <Eye className="h-4 w-4" />
-          </Link>
+            {privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
           
           <Link
             to="/configuracoes"
@@ -90,7 +90,7 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
               <span className="font-semibold text-primary">Prêmios</span>
               <span className="text-muted-foreground">
                 {" "}
-                {formatBRL(revenue)} / {formatBRL(goal)}
+                {mask(formatBRL(revenue), privacy)} / {mask(formatBRL(goal), privacy)}
               </span>
             </div>
             <div className="w-20 h-1.5 rounded-full bg-secondary overflow-hidden">
