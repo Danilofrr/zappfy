@@ -160,11 +160,20 @@ function computeDRE(state: any, start: Date, end: Date) {
   return { receita, cmv, lucroBruto, impostos, trafego, operacional, lucroOperacional, proLabore, resultadoFinal, totalGastos, taxRate };
 }
 
-function KPI({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "good" | "bad" }) {
+function KPI({ label, value, hint, tone, neon }: { label: string; value: string; hint?: string; tone?: "good" | "bad"; neon?: string }) {
+  const style = neon ? ({ ["--neon-rgb" as any]: neon.replace(/\s+/g, ", ") } as React.CSSProperties) : undefined;
+  const valueStyle = neon && tone !== "bad"
+    ? { color: `rgb(${neon.replace(/\s+/g, ", ")})`, textShadow: `0 0 12px rgba(${neon.replace(/\s+/g, ", ")}, 0.6)` }
+    : undefined;
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-elegant">
+    <div className="rounded-2xl border border-border bg-card p-4 card-neon card-neon-hover" style={style}>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-bold mt-1 ${tone === "good" ? "text-primary" : tone === "bad" ? "text-destructive" : ""}`}>{value}</div>
+      <div
+        className={`text-2xl font-bold mt-1 ${tone === "bad" ? "text-destructive" : !neon && tone === "good" ? "text-primary" : ""}`}
+        style={valueStyle}
+      >
+        {value}
+      </div>
       {hint && <div className="text-[11px] text-muted-foreground mt-1">{hint}</div>}
     </div>
   );
