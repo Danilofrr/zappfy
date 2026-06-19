@@ -217,6 +217,53 @@ function AdminSettings() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="prize">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Trophy className="h-4 w-4 text-primary" />Meta de Prêmios</CardTitle>
+              <CardDescription>Defina um objetivo de faturamento que aparece na dashboard dos clientes. Quando bater a meta, ganha o prêmio configurado.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 md:col-span-2">
+                <Switch checked={!!s.prize?.enabled} onCheckedChange={(v) => set("prize", { enabled: v })} />
+                <Label>Exibir meta de prêmios na dashboard dos clientes</Label>
+              </div>
+              <Field label="Valor da meta (R$)">
+                <Input
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={s.prize?.goal ?? 0}
+                  onChange={(e) => set("prize", { goal: Number(e.target.value) })}
+                  placeholder="10000"
+                />
+              </Field>
+              <Field label="Período">
+                <select
+                  className="w-full h-10 rounded-md border border-border bg-background px-3"
+                  value={s.prize?.period ?? "mensal"}
+                  onChange={(e) => set("prize", { period: e.target.value })}
+                >
+                  <option value="mensal">Mensal</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </Field>
+              <Field label="Descrição do prêmio" className="md:col-span-2">
+                <Textarea
+                  rows={3}
+                  value={s.prize?.reward ?? ""}
+                  onChange={(e) => set("prize", { reward: e.target.value })}
+                  placeholder="Ex.: Quem vender R$ 10.000 ganha um iPhone 16!"
+                />
+              </Field>
+              <div className="md:col-span-2 rounded-lg border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
+                💡 Exemplo: vendeu R$ 10.000 → ganha um iPhone. O valor e o prêmio aparecem no topo da dashboard do cliente com uma barra de progresso.
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="integrations">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
