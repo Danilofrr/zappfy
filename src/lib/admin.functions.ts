@@ -371,19 +371,53 @@ export const deletePlan = createServerFn({ method: "POST" })
 export const listPayments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const t0 = Date.now();
     const { supabase, userId } = context as any;
     await ensureAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
+
+    const { data: payments, error: payErr } = await supabaseAdmin
       .from("subscription_payments")
-      .select("*, subscriptions(plan_id, plans(name))")
+      .select("id, subscription_id, user_id, amount, method, status, due_at, paid_at, notes, created_at")
       .order("created_at", { ascending: false })
       .limit(500);
-    const userIds = Array.from(new Set((data ?? []).map((p: any) => p.user_id)));
-    const { data: users } = await supabaseAdmin.from("profiles").select("id, full_name").in("id", userIds);
-    const m = new Map((users ?? []).map((u: any) => [u.id, u.full_name]));
-    return (data ?? []).map((p: any) => ({ ...p, fullName: m.get(p.user_id) ?? "" }));
+    if (payErr) {
+      console.error("[listPayments] subscription_payments error", payErr);
+      throw new Error(payErr.message);
+    }
+    const rows = payments ?? [];
+    if (rows.length === 0) {
+      console.log("[listPayments] empty in", Date.now() - t0, "ms");
+      return [];
+    }
+
+    const userIds = Array.from(new Set(rows.map((p: any) => p.user_id).filter(Boolean)));
+    const subIds = Array.from(new Set(rows.map((p: any) => p.subscription_id).filter(Boolean)));
+
+    const [profilesRes, settingsRes, subsRes] = await Promise.all([
+      userIds.length ? supabaseAdmin.from("profiles").select("id, full_name").in("id", userIds) : Promise.resolve({ data: [] as any[] }),
+      userIds.length ? supabaseAdmin.from("settings").select("user_id, store_name").in("user_id", userIds) : Promise.resolve({ data: [] as any[] }),
+      subIds.length ? supabaseAdmin.from("subscriptions").select("id, plan_id, expires_at, plans(name)").in("id", subIds) : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const nameMap = new Map((profilesRes.data ?? []).map((u: any) => [u.id, u.full_name]));
+    const storeMap = new Map((settingsRes.data ?? []).map((s: any) => [s.user_id, s.store_name]));
+    const subMap = new Map((subsRes.data ?? []).map((s: any) => [s.id, s]));
+
+    const out = rows.map((p: any) => {
+      const sub = subMap.get(p.subscription_id) as any;
+      return {
+        ...p,
+        fullName: nameMap.get(p.user_id) ?? "",
+        storeName: storeMap.get(p.user_id) ?? "",
+        planName: sub?.plans?.name ?? "",
+        expiresAt: sub?.expires_at ?? null,
+      };
+    });
+    console.log("[listPayments]", out.length, "rows in", Date.now() - t0, "ms");
+    return out;
   });
+
 
 export const registerPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
