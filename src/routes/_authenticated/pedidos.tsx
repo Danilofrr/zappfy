@@ -216,19 +216,20 @@ function PedidosPage() {
     const storeName = s.storeName || "Loja";
     const logoUrl = s.checkoutLogoUrl || "";
     const escape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
-    const senderName = (s as any).senderName || storeName;
-    const senderAddress = (s as any).senderAddress || "Rua das Flores, 123";
-    const senderDistrict = (s as any).senderDistrict || "Centro";
-    const senderCity = (s as any).senderCity || "São Paulo - SP";
-    const senderCep = (s as any).senderCep || "00000-000";
-    const senderCnpj = (s as any).senderCnpj || "00.000.000/0001-00";
+    const sender = getSenderInfo();
+    const senderName = sender.name || storeName;
+    const senderAddress = sender.address;
+    const senderDistrict = sender.district;
+    const senderCity = sender.city;
+    const senderCep = sender.cep;
+    const senderCnpj = sender.cnpj;
+    const hasSender = !!(senderAddress || senderCity || senderCep || senderCnpj);
 
     // deterministic fictitious numbers seeded by order id
     let seed = 0;
     for (let i = 0; i < o.id.length; i++) seed = (seed * 31 + o.id.charCodeAt(i)) >>> 0;
     const rand = (n: number) => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed % n; };
     const digits = (n: number) => Array.from({ length: n }, () => rand(10)).join("");
-    const trackingCode = `LV${digits(9)}BR`;
     const nf = digits(9);
     const pedidoNum = digits(6);
     const peso = (0.2 + rand(2000) / 1000).toFixed(3).replace(".", ",") + " kg";
@@ -237,7 +238,7 @@ function PedidosPage() {
     const bars = Array.from({ length: 70 }, () => {
       const w = 1 + rand(3);
       const black = rand(2) === 0;
-      return `<span style="display:inline-block;width:${w}px;height:60px;background:${black ? "#000" : "#fff"}"></span>`;
+      return `<span style="display:inline-block;width:${w}px;height:40px;background:${black ? "#000" : "#fff"}"></span>`;
     }).join("");
 
     const totalQty = o.items.reduce((a, i) => a + i.qty, 0);
@@ -247,46 +248,45 @@ function PedidosPage() {
     const cityLine = [o.city, uf].filter(Boolean).join(" - ").toUpperCase();
 
     const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/>
-<title>Etiqueta ${escape(trackingCode)}</title>
+<title>Etiqueta ${escape(pedidoNum)}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;color:#000}
-  body{background:#e5e5e5;padding:20px}
-  .actions{max-width:520px;margin:0 auto 12px;display:flex;gap:8px;justify-content:flex-end}
-  .actions button{padding:8px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+  body{background:#e5e5e5;padding:16px}
+  .actions{max-width:520px;margin:0 auto 10px;display:flex;gap:8px;justify-content:flex-end}
+  .actions button{padding:7px 14px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
   .actions .print{background:#111;color:#fff}.actions .close{background:#eee;color:#111}
   .label{width:520px;margin:0 auto;background:#fff;border:2px solid #000;font-size:12px}
-  .brand{display:flex;align-items:center;justify-content:center;padding:10px;border-bottom:2px solid #000;min-height:70px;background:#fff}
-  .brand img{max-height:50px;max-width:280px;object-fit:contain}
-  .brand .name{font-size:20px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+  .brand{display:flex;align-items:center;justify-content:center;padding:6px;border-bottom:2px solid #000;min-height:50px;background:#fff}
+  .brand img{max-height:38px;max-width:260px;object-fit:contain}
+  .brand .name{font-size:18px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
   .row{display:flex;border-bottom:2px solid #000}
-  .row > div{padding:6px 10px}
+  .row > div{padding:4px 8px}
   .row > div + div{border-left:2px solid #000}
   .lbl{font-size:8px;text-transform:uppercase;color:#000;letter-spacing:.6px;font-weight:700}
-  .val{font-weight:700;font-size:13px;margin-top:2px}
+  .val{font-weight:700;font-size:12px;margin-top:1px}
   .grow{flex:1}
-  .barcode{padding:10px;text-align:center;border-bottom:2px solid #000;background:#fff}
-  .barcode .bars{display:flex;justify-content:center;align-items:end;gap:0;height:60px;overflow:hidden}
-  .barcode .code{font-family:'Courier New',monospace;font-size:14px;font-weight:700;letter-spacing:2px;margin-top:4px}
-  .sec-title{background:#000;color:#fff;padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px}
-  .recv{padding:8px 10px;border-bottom:2px solid #000;font-size:11px}
-  .recv .line{display:flex;gap:8px;margin-bottom:6px;align-items:flex-end}
+  .barcode{padding:6px;text-align:center;border-bottom:2px solid #000;background:#fff}
+  .barcode .bars{display:flex;justify-content:center;align-items:end;gap:0;height:40px;overflow:hidden}
+  .sec-title{background:#000;color:#fff;padding:3px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px}
+  .recv{padding:6px 8px;border-bottom:2px solid #000;font-size:11px}
+  .recv .line{display:flex;gap:6px;margin-bottom:5px;align-items:flex-end}
   .recv .line:last-child{margin-bottom:0}
-  .recv .field{flex:1;border-bottom:1px solid #000;min-height:18px;padding:0 4px}
+  .recv .field{flex:1;border-bottom:1px solid #000;min-height:16px;padding:0 4px}
   .recv .lbl2{font-size:9px;text-transform:uppercase;font-weight:700;white-space:nowrap}
-  .dest{padding:10px;border-bottom:2px solid #000}
-  .dest .name{font-size:16px;font-weight:800;text-transform:uppercase;margin-bottom:4px}
-  .dest .addr{font-size:13px;line-height:1.4}
-  .dest .city{font-size:18px;font-weight:800;text-transform:uppercase;margin-top:6px}
-  .dest .cep{font-size:20px;font-weight:800;letter-spacing:2px;margin-top:4px;font-family:'Courier New',monospace}
-  .sender{padding:8px 10px;font-size:11px;background:#f5f5f5;line-height:1.5}
+  .dest{padding:8px;border-bottom:2px solid #000}
+  .dest .name{font-size:15px;font-weight:800;text-transform:uppercase;margin-bottom:3px}
+  .dest .addr{font-size:12px;line-height:1.35}
+  .dest .city{font-size:16px;font-weight:800;text-transform:uppercase;margin-top:4px}
+  .dest .cep{font-size:17px;font-weight:800;letter-spacing:2px;margin-top:2px;font-family:'Courier New',monospace}
+  .sender{padding:6px 8px;font-size:11px;background:#f5f5f5;line-height:1.4}
   .sender strong{font-size:12px;text-transform:uppercase}
-  .items{padding:6px 10px;font-size:10px;border-top:2px solid #000;background:#fafafa;line-height:1.4}
+  .items{padding:5px 8px;font-size:10px;border-top:2px solid #000;background:#fafafa;line-height:1.35}
   .items .ttl{font-size:9px;text-transform:uppercase;font-weight:700;margin-bottom:2px}
   @media print{
     body{background:#fff;padding:0}
     .actions{display:none}
     .label{margin:0;border-width:1.5px}
-    @page{size:auto;margin:6mm}
+    @page{size:auto;margin:5mm}
   }
 </style></head><body>
 <div class="actions">
@@ -305,7 +305,6 @@ function PedidosPage() {
   </div>
   <div class="barcode">
     <div class="bars">${bars}</div>
-    <div class="code">${escape(trackingCode)}</div>
   </div>
   <div class="sec-title">Recebedor</div>
   <div class="recv">
@@ -324,10 +323,10 @@ function PedidosPage() {
   </div>
   <div class="sec-title">Remetente</div>
   <div class="sender">
-    <strong>${escape(senderName)}</strong><br/>
-    ${escape(senderAddress)}${senderDistrict ? " — " + escape(senderDistrict) : ""}<br/>
-    ${escape(senderCity)} — CEP ${escape(senderCep)}<br/>
-    CNPJ: ${escape(senderCnpj)}
+    <strong>${escape(senderName)}</strong>${hasSender ? "" : `<br/><span style="font-size:10px;color:#666">Configure o endereço do remetente em Configurações → Remetente da etiqueta.</span>`}
+    ${senderAddress ? `<br/>${escape(senderAddress)}${senderDistrict ? " — " + escape(senderDistrict) : ""}` : ""}
+    ${senderCity || senderCep ? `<br/>${escape(senderCity)}${senderCep ? " — CEP " + escape(senderCep) : ""}` : ""}
+    ${senderCnpj ? `<br/>CNPJ: ${escape(senderCnpj)}` : ""}
   </div>
   <div class="items">
     <div class="ttl">Conteúdo (${totalQty} ${totalQty === 1 ? "item" : "itens"})</div>
@@ -336,7 +335,7 @@ function PedidosPage() {
 </div>
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script>
 </body></html>`;
-    const w = window.open("", "_blank", "width=600,height=900");
+    const w = window.open("", "_blank", "width=600,height=820");
     if (!w) { toast.error("Permita pop-ups para imprimir a etiqueta"); return; }
     w.document.open(); w.document.write(html); w.document.close();
   }
