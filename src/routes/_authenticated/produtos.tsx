@@ -121,35 +121,39 @@ function EstoquePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5">
         <KpiCard
           icon={<Wallet className="h-5 w-5" />}
-          iconBg="bg-violet-500/15 text-violet-400"
-          glow="from-violet-500/10"
+          iconBg="bg-violet-500/15 text-violet-300"
+          glow="from-violet-500/15"
+          neon="167 139 250"
           label="VALOR EM ESTOQUE"
           value={brl(totals.valorEstoque)}
-          valueClass="text-violet-400"
+          valueClass="text-violet-300"
         />
         <KpiCard
           icon={<DollarSign className="h-5 w-5" />}
-          iconBg="bg-emerald-500/15 text-emerald-400"
-          glow="from-emerald-500/10"
+          iconBg="bg-emerald-500/15 text-emerald-300"
+          glow="from-emerald-500/15"
+          neon="52 211 153"
           label="VALOR DE VENDA"
           value={brl(totals.valorVenda)}
-          valueClass="text-emerald-400"
+          valueClass="text-emerald-300"
         />
         <KpiCard
           icon={<AlertTriangle className="h-5 w-5" />}
-          iconBg="bg-orange-500/15 text-orange-400"
-          glow="from-orange-500/10"
+          iconBg="bg-orange-500/15 text-orange-300"
+          glow="from-orange-500/15"
+          neon="251 146 60"
           label="ABAIXO DO MÍNIMO"
           value={`${totals.abaixoMin} produto${totals.abaixoMin === 1 ? "" : "s"}`}
-          valueClass="text-orange-400"
+          valueClass="text-orange-300"
         />
         <KpiCard
           icon={<BarChart3 className="h-5 w-5" />}
-          iconBg="bg-sky-500/15 text-sky-400"
-          glow="from-sky-500/10"
+          iconBg="bg-sky-500/15 text-sky-300"
+          glow="from-sky-500/15"
+          neon="56 189 248"
           label="TOTAL DE SKUS"
           value={String(totals.skus)}
-          valueClass="text-sky-400"
+          valueClass="text-sky-300"
           hint="Produtos cadastrados"
         />
       </div>
@@ -318,19 +322,36 @@ function EstoquePage() {
 }
 
 function KpiCard({
-  icon, iconBg, glow, label, value, valueClass, hint,
+  icon, iconBg, glow, label, value, valueClass, hint, neon,
 }: {
   icon: React.ReactNode; iconBg: string; glow: string;
   label: string; value: string; valueClass?: string; hint?: string;
+  neon: string; // rgb triplet, e.g. "139 92 246"
 }) {
+  const style = {
+    borderColor: `rgb(${neon} / 0.55)`,
+    boxShadow: `0 0 0 1px rgb(${neon} / 0.35), 0 0 18px rgb(${neon} / 0.35), 0 0 48px rgb(${neon} / 0.25), inset 0 0 24px rgb(${neon} / 0.08)`,
+  } as React.CSSProperties;
   return (
-    <div className={`relative overflow-hidden rounded-2xl border border-border bg-card p-4 lg:p-5 shadow-elegant`}>
-      <div className={`pointer-events-none absolute -inset-1 bg-gradient-to-br ${glow} via-transparent to-transparent opacity-60`} />
+    <div
+      className="group relative overflow-hidden rounded-2xl border bg-card p-4 lg:p-5 transition-shadow"
+      style={style}
+    >
+      <div className={`pointer-events-none absolute -inset-1 bg-gradient-to-br ${glow} via-transparent to-transparent opacity-70`} />
+      <div
+        className="pointer-events-none absolute -inset-px rounded-2xl opacity-60 blur-[2px]"
+        style={{ background: `linear-gradient(135deg, rgb(${neon} / 0.35), transparent 60%)` }}
+      />
       <div className="relative flex items-center gap-3">
-        <div className={`grid h-11 w-11 place-items-center rounded-xl ${iconBg}`}>{icon}</div>
+        <div className={`grid h-11 w-11 place-items-center rounded-xl ${iconBg}`} style={{ boxShadow: `0 0 14px rgb(${neon} / 0.55)` }}>{icon}</div>
         <div className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground leading-tight">{label}</div>
       </div>
-      <div className={`relative mt-4 text-2xl lg:text-3xl font-extrabold ${valueClass ?? ""}`}>{value}</div>
+      <div
+        className={`relative mt-4 text-2xl lg:text-3xl font-extrabold ${valueClass ?? ""}`}
+        style={{ textShadow: `0 0 12px rgb(${neon} / 0.65), 0 0 24px rgb(${neon} / 0.35)` }}
+      >
+        {value}
+      </div>
       {hint && <div className="relative mt-1 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );
