@@ -82,9 +82,8 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="flex items-center justify-between px-4 h-14">
-          <Link to="/" className="flex items-center gap-2 min-w-0">
-            <img src="/logo-bubble.png" alt="Zappfy" className="h-9 w-9 shrink-0 object-contain" />
-            <span className="font-bold tracking-tight text-lg truncate">ZappFy</span>
+          <Link to="/" className="flex items-center min-w-0">
+            <img src="/logo-full.png" alt="Zappfy" className="h-9 w-auto object-contain" />
           </Link>
           <ThemeToggle />
         </div>
@@ -101,12 +100,9 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         >
           <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0 overflow-hidden">
             <div className="flex items-center justify-between gap-2 px-4 h-16 border-b border-sidebar-border">
-              <div className="flex items-center gap-2 min-w-0">
-                <img src="/logo-bubble.png" alt="Zappfy" className="h-9 w-9 shrink-0 object-contain" />
-                <div className="leading-tight min-w-0 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                  <div className="font-bold tracking-tight">ZappFy</div>
-                  <div className="text-[11px] text-muted-foreground">Gestão para WhatsApp</div>
-                </div>
+              <div className="flex items-center min-w-0 relative">
+                <img src="/logo-bubble.png" alt="Zappfy" className="h-9 w-9 shrink-0 object-contain lg:opacity-100 lg:group-hover/sidebar:opacity-0 lg:group-focus-within/sidebar:opacity-0 transition-opacity duration-200 opacity-0" />
+                <img src="/logo-full.png" alt="Zappfy" className="h-9 w-auto object-contain absolute left-0 top-1/2 -translate-y-1/2 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200" />
               </div>
               <button
                 onClick={() => setOpen(false)}
