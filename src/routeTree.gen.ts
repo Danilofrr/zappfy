@@ -21,6 +21,7 @@ import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
 import { Route as AuthenticatedPorProdutoRouteImport } from './routes/_authenticated/por-produto'
+import { Route as AuthenticatedPersonalizarCheckoutRouteImport } from './routes/_authenticated/personalizar-checkout'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedMinhaAssinaturaRouteImport } from './routes/_authenticated/minha-assinatura'
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
@@ -103,6 +104,12 @@ const AuthenticatedPorProdutoRoute = AuthenticatedPorProdutoRouteImport.update({
   path: '/por-produto',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPersonalizarCheckoutRoute =
+  AuthenticatedPersonalizarCheckoutRouteImport.update({
+    id: '/personalizar-checkout',
+    path: '/personalizar-checkout',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
@@ -235,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/metas': typeof AuthenticatedMetasRoute
   '/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
+  '/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -267,6 +275,7 @@ export interface FileRoutesByTo {
   '/metas': typeof AuthenticatedMetasRoute
   '/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
+  '/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -303,6 +312,7 @@ export interface FileRoutesById {
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
+  '/_authenticated/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
   '/_authenticated/por-produto': typeof AuthenticatedPorProdutoRoute
   '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/metas'
     | '/minha-assinatura'
     | '/pedidos'
+    | '/personalizar-checkout'
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/metas'
     | '/minha-assinatura'
     | '/pedidos'
+    | '/personalizar-checkout'
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
@@ -407,6 +419,7 @@ export interface FileRouteTypes {
     | '/_authenticated/metas'
     | '/_authenticated/minha-assinatura'
     | '/_authenticated/pedidos'
+    | '/_authenticated/personalizar-checkout'
     | '/_authenticated/por-produto'
     | '/_authenticated/precificacao'
     | '/_authenticated/produtos'
@@ -521,6 +534,13 @@ declare module '@tanstack/react-router' {
       path: '/por-produto'
       fullPath: '/por-produto'
       preLoaderRoute: typeof AuthenticatedPorProdutoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/personalizar-checkout': {
+      id: '/_authenticated/personalizar-checkout'
+      path: '/personalizar-checkout'
+      fullPath: '/personalizar-checkout'
+      preLoaderRoute: typeof AuthenticatedPersonalizarCheckoutRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pedidos': {
@@ -712,6 +732,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedMinhaAssinaturaRoute: typeof AuthenticatedMinhaAssinaturaRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
+  AuthenticatedPersonalizarCheckoutRoute: typeof AuthenticatedPersonalizarCheckoutRoute
   AuthenticatedPorProdutoRoute: typeof AuthenticatedPorProdutoRoute
   AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
@@ -732,6 +753,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedMinhaAssinaturaRoute: AuthenticatedMinhaAssinaturaRoute,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
+  AuthenticatedPersonalizarCheckoutRoute:
+    AuthenticatedPersonalizarCheckoutRoute,
   AuthenticatedPorProdutoRoute: AuthenticatedPorProdutoRoute,
   AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
@@ -766,13 +789,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
