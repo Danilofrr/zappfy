@@ -19,7 +19,7 @@ import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({ component: AdminSettings });
 
 type Settings = {
-  platform?: { name?: string; logoUrl?: string; primaryColor?: string; supportEmail?: string; supportWhats?: string; cnpj?: string; url?: string };
+  platform?: { name?: string; logoUrl?: string; primaryColor?: string; supportEmail?: string; supportWhats?: string; cnpj?: string; url?: string; loginWhatsEnabled?: boolean };
   subscription?: { trialDays?: number; autoBlock?: boolean; toleranceDays?: number; msgExpired?: string; msgBlocked?: string };
   payment?: { pixKey?: string; receiverName?: string; bank?: string; defaultLink?: string; gateway?: string };
   messages?: { welcome?: string; nearDue?: string; expired?: string; paid?: string; blocked?: string; reactivated?: string };
@@ -124,6 +124,17 @@ function AdminSettings() {
               <Field label="E-mail de suporte"><Input type="email" value={s.platform?.supportEmail ?? ""} onChange={(e) => set("platform", { supportEmail: e.target.value })} /></Field>
               <Field label="WhatsApp de suporte"><Input value={s.platform?.supportWhats ?? ""} onChange={(e) => set("platform", { supportWhats: e.target.value })} placeholder="+55 11 ..." /></Field>
               <Field label="CNPJ/Empresa"><Input value={s.platform?.cnpj ?? ""} onChange={(e) => set("platform", { cnpj: e.target.value })} /></Field>
+              <div className="flex items-center gap-3 md:col-span-2 rounded-lg border border-border p-3">
+                <Switch
+                  checked={s.platform?.loginWhatsEnabled !== false}
+                  onCheckedChange={(v) => set("platform", { loginWhatsEnabled: v })}
+                />
+                <div className="flex-1">
+                  <Label>Mostrar botão do WhatsApp na tela de login</Label>
+                  <p className="text-xs text-muted-foreground">Quando ativado, exibe uma bolinha verde do WhatsApp no canto inferior direito da tela de login usando o número de suporte acima.</p>
+                </div>
+              </div>
+
             </CardContent>
           </Card>
         </TabsContent>
