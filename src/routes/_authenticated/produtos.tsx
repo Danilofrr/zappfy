@@ -414,22 +414,26 @@ function KpiCard({
 }
 
 function CatChip({
-  active, onClick, color, children,
-}: { active: boolean; onClick: () => void; color: "primary" | "pink"; children: React.ReactNode }) {
-  const base = "px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-colors";
-  if (active) {
-    return (
-      <button
-        onClick={onClick}
-        className={`${base} ${color === "primary" ? "bg-primary text-primary-foreground border-primary shadow-glow" : "bg-pink-500/20 text-pink-300 border-pink-500/40"}`}
-      >
-        {children}
-      </button>
-    );
-  }
+  active, onClick, color, children, amount, count,
+}: { active: boolean; onClick: () => void; color: "primary" | "pink"; children: React.ReactNode; amount?: string; count?: number }) {
+  const base = "inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-colors";
+  const activeCls = color === "primary"
+    ? "bg-primary text-primary-foreground border-primary shadow-glow"
+    : "bg-pink-500/20 text-pink-300 border-pink-500/40";
+  const inactiveCls = "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30";
   return (
-    <button onClick={onClick} className={`${base} border-border text-muted-foreground hover:text-foreground hover:border-foreground/30`}>
-      {children}
+    <button onClick={onClick} className={`${base} ${active ? activeCls : inactiveCls}`}>
+      <span>{children}</span>
+      {typeof count === "number" && (
+        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${active ? "bg-black/20" : "bg-secondary/60 text-foreground/70"}`}>
+          {count}
+        </span>
+      )}
+      {amount && (
+        <span className={`text-[10px] font-semibold ${active ? "opacity-90" : "text-muted-foreground"}`}>
+          {amount}
+        </span>
+      )}
     </button>
   );
 }
