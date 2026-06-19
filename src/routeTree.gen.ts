@@ -18,6 +18,7 @@ import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
 import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
+import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
 import { Route as AuthenticatedPorProdutoRouteImport } from './routes/_authenticated/por-produto'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
@@ -73,6 +74,12 @@ const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
   path: '/produtos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPrecificacaoRoute =
+  AuthenticatedPrecificacaoRouteImport.update({
+    id: '/precificacao',
+    path: '/precificacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPorProdutoRoute = AuthenticatedPorProdutoRouteImport.update({
   id: '/por-produto',
   path: '/por-produto',
@@ -139,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/metas': typeof AuthenticatedMetasRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
+  '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/trocas': typeof AuthenticatedTrocasRoute
@@ -158,6 +166,7 @@ export interface FileRoutesByTo {
   '/metas': typeof AuthenticatedMetasRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
+  '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/trocas': typeof AuthenticatedTrocasRoute
@@ -180,6 +189,7 @@ export interface FileRoutesById {
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/por-produto': typeof AuthenticatedPorProdutoRoute
+  '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/trocas': typeof AuthenticatedTrocasRoute
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/metas'
     | '/pedidos'
     | '/por-produto'
+    | '/precificacao'
     | '/produtos'
     | '/relatorios'
     | '/trocas'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/metas'
     | '/pedidos'
     | '/por-produto'
+    | '/precificacao'
     | '/produtos'
     | '/relatorios'
     | '/trocas'
@@ -243,6 +255,7 @@ export interface FileRouteTypes {
     | '/_authenticated/metas'
     | '/_authenticated/pedidos'
     | '/_authenticated/por-produto'
+    | '/_authenticated/precificacao'
     | '/_authenticated/produtos'
     | '/_authenticated/relatorios'
     | '/_authenticated/trocas'
@@ -323,6 +336,13 @@ declare module '@tanstack/react-router' {
       path: '/produtos'
       fullPath: '/produtos'
       preLoaderRoute: typeof AuthenticatedProdutosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/precificacao': {
+      id: '/_authenticated/precificacao'
+      path: '/precificacao'
+      fullPath: '/precificacao'
+      preLoaderRoute: typeof AuthenticatedPrecificacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/por-produto': {
@@ -408,6 +428,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedPorProdutoRoute: typeof AuthenticatedPorProdutoRoute
+  AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedTrocasRoute: typeof AuthenticatedTrocasRoute
@@ -424,6 +445,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedPorProdutoRoute: AuthenticatedPorProdutoRoute,
+  AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedTrocasRoute: AuthenticatedTrocasRoute,
@@ -455,13 +477,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
