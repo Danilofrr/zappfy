@@ -6,12 +6,14 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Link } from "@tanstack/react-router";
 import { brl as formatBRL } from "@/lib/format";
 import { usePrivacy, mask } from "@/hooks/use-privacy";
-import { ThemeToggle } from "@/lib/theme";
+import { useTheme } from "@/lib/theme";
+import { Sun, Moon } from "lucide-react";
 
 export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   const { user, state } = useStore();
   const { revenue } = useFinance();
   const { on: privacy, toggle: togglePrivacy } = usePrivacy();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const prizeQ = useQuery({
     queryKey: ["public-prize"],
@@ -65,7 +67,15 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
           >
             {privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
-          <ThemeToggle />
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Alternar tema"
+            aria-label="Alternar tema"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
           
           <Link
             to="/configuracoes"
