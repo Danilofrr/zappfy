@@ -526,6 +526,71 @@ function Page() {
 }
 
 
+function ProfileCard() {
+  const qc = useQueryClient();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const q = useQuery({
+    queryKey: ["my-profile-full"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      setUserId(u.user.id);
+      setEmail(u.user.email ?? null);
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", u.user.id)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (q.data) {
+      setFullName(q.data.full_name ?? "");
+      setAvatar(q.data.avatar_url ?? null);
+    }
+  }, [q.data]);
+
+  async function save() {
+    if (!userId) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ id: userId, full_name: fullName, avatar_url: avatar });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Perfil atualizado");
+    qc.invalidateQueries({ queryKey: ["my-profile"] });
+    qc.invalidateQueries({ queryKey: ["my-profile-full"] });
+  }
+
+  return (
+    <Card title="Meu perfil">
+      <div className="flex flex-col gap-4">
+        <AvatarUploader value={avatar} onChange={setAvatar} name={fullName} email={email} size={88} />
+        <div className="grid md:grid-cols-2 gap-3">
+          <Field label="Nome exibido">
+            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" />
+          </Field>
+          <Field label="E-mail">
+            <Input value={email ?? ""} disabled />
+          </Field>
+        </div>
+        <div>
+          <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar perfil"}</Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 lg:p-6 card-neon">
