@@ -29,7 +29,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import { redirect } from "@tanstack/react-router";
+
 export const Route = createFileRoute("/_authenticated/")({
+  beforeLoad: ({ context }) => {
+    if ((context as any).isAdmin) throw redirect({ to: "/admin" });
+  },
   head: () => ({
     meta: [
       { title: "Dashboard — ZappFy" },
