@@ -377,6 +377,23 @@ function AuthPage() {
           </p>
         </div>
       </div>
+
+      {/* WhatsApp floating bubble */}
+      {supportWhats && (
+        <a
+          href={`https://wa.me/${supportWhats.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Preciso de ajuda para acessar o Zappfy.")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Falar com o suporte no WhatsApp"
+          className="fixed bottom-5 right-5 z-30 group flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-3 text-white font-semibold shadow-[0_0_0_1px_rgba(37,211,102,0.5),0_10px_30px_-5px_rgba(37,211,102,0.55)] hover:shadow-[0_0_0_1px_rgba(37,211,102,0.8),0_0_30px_2px_rgba(37,211,102,0.7)] transition-all hover:-translate-y-0.5"
+        >
+          <span className="absolute -inset-1 rounded-full bg-[#25D366]/40 blur-md opacity-60 animate-pulse -z-10" />
+          <svg viewBox="0 0 32 32" className="h-6 w-6 fill-current" aria-hidden="true">
+            <path d="M19.11 17.205c-.372 0-1.088 1.39-1.518 1.39a.63.63 0 0 1-.315-.1c-.802-.402-1.504-.817-2.163-1.447-.545-.516-1.146-1.29-1.46-1.963a.426.426 0 0 1-.073-.215c0-.33.99-.945.99-1.49 0-.143-.73-2.09-.832-2.335-.143-.372-.214-.487-.6-.487-.187 0-.36-.043-.53-.043-.302 0-.53.115-.746.315-.688.645-1.032 1.318-1.06 2.264v.114c-.015.99.472 1.977 1.017 2.78 1.23 1.82 2.506 3.41 4.554 4.34.616.287 2.035.832 2.722.832.817 0 2.15-.387 2.55-1.17.115-.244.27-.487.27-.76 0-.6-1.6-1.347-2.062-1.524ZM16.04 21.71c-2.42 0-4.74-.96-6.45-2.66l-.45-.43-4.5 1.13 1.2-4.39-.43-.45a8.94 8.94 0 0 1-2.66-6.36c0-4.96 4.04-9 9.04-9 4.96 0 9 4.04 9 9 0 4.96-4.04 9.16-8.74 9.16Zm6.4-15.58a10.86 10.86 0 0 0-7.71-3.2c-6.01 0-10.89 4.88-10.89 10.89 0 1.92.5 3.78 1.45 5.42L3 28.71l5.34-1.4a10.92 10.92 0 0 0 5.15 1.32c6.01 0 10.89-4.88 10.89-10.89 0-2.91-1.13-5.65-3.19-7.7Z" />
+          </svg>
+          <span className="hidden sm:inline">Suporte</span>
+        </a>
+      )}
     </div>
   );
 }
