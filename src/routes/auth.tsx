@@ -99,9 +99,6 @@ function AuthPage() {
 
   return (
     <div className="min-h-screen bg-background relative lg:grid lg:grid-cols-[1.1fr_1fr]">
-      <div className="absolute top-4 right-4 z-20">
-        <ThemeToggle />
-      </div>
 
       {/* LEFT — Marketing panel (desktop only) */}
       <aside className="hidden lg:block relative overflow-hidden">
