@@ -52,7 +52,9 @@ function Page() {
       price = num(manualPrice);
     }
 
-    const adsCost = price * (num(adsPct) / 100);
+    const adsSpend = price * (num(adsPct) / 100);
+    const adsTaxValue = adsSpend * (num(adsTaxPct) / 100);
+    const adsCost = adsSpend + adsTaxValue;
     const variableCost = price * variablePct;
     const otherVariableCost = variableCost - adsCost;
     const profit = price - realCost - variableCost;
@@ -60,22 +62,23 @@ function Page() {
     const markupCalc = realCost > 0 ? price / realCost : 0;
     const breakEven = realCost / Math.max(1 - variablePct, 0.0001);
 
-    // CPA: considera despesas variáveis SEM o % de ads (o CPA já é o custo de ads em R$)
-    const variablePctNoAds = variablePct - num(adsPct) / 100;
+    // CPA: considera despesas variáveis SEM ads (CPA já é o gasto real). Mantém imposto sobre o CPA.
+    const variablePctNoAds = variablePct - adsEffectivePct / 100;
     const variableCostNoAds = price * variablePctNoAds;
-    const grossPerSale = price - realCost - variableCostNoAds; // disponível pra ads + lucro
-    const cpaMax = Math.max(grossPerSale, 0); // break-even em ads
+    const grossPerSale = price - realCost - variableCostNoAds; // disponível pra ads + imposto + lucro
+    const taxMult = 1 + num(adsTaxPct) / 100;
+    const cpaMax = Math.max(grossPerSale / taxMult, 0); // break-even em ads (já descontando imposto)
     const tMargin = Math.min(Math.max(num(targetMargin), 0), 99) / 100;
-    const cpaIdeal = Math.max(grossPerSale - price * tMargin, 0);
+    const cpaIdeal = Math.max((grossPerSale - price * tMargin) / taxMult, 0);
     const roasMin = cpaMax > 0 ? price / cpaMax : 0;
     const roasIdeal = cpaIdeal > 0 ? price / cpaIdeal : 0;
 
-    return { realCost, variablePct, price, variableCost, otherVariableCost, adsCost, profit, marginPct, markupCalc, breakEven, cpaMax, cpaIdeal, roasMin, roasIdeal };
-  }, [cost, freight, packaging, otherCost, taxPct, cardPct, platformPct, adsPct, otherPct, mode, markup, margin, manualPrice, targetMargin]);
+    return { realCost, variablePct, price, variableCost, otherVariableCost, adsSpend, adsTaxValue, adsCost, profit, marginPct, markupCalc, breakEven, cpaMax, cpaIdeal, roasMin, roasIdeal };
+  }, [cost, freight, packaging, otherCost, taxPct, cardPct, platformPct, adsPct, adsTaxPct, otherPct, mode, markup, margin, manualPrice, targetMargin]);
 
   function reset() {
     setName(""); setCost(""); setFreight(""); setPackaging(""); setOtherCost("");
-    setTaxPct(""); setCardPct(""); setPlatformPct(""); setAdsPct(""); setOtherPct("");
+    setTaxPct(""); setCardPct(""); setPlatformPct(""); setAdsPct(""); setAdsTaxPct("17.65"); setOtherPct("");
     setMarkup("2"); setMargin("30"); setManualPrice(""); setMode("markup"); setTargetMargin("20");
   }
 
