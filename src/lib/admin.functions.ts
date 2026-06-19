@@ -581,5 +581,6 @@ export const getPublicSupport = createServerFn({ method: "GET" }).handler(async 
   return {
     whats: (v?.platform?.supportWhats as string | undefined) ?? null,
     email: (v?.platform?.supportEmail as string | undefined) ?? null,
+    enabled: v?.platform?.supportWhatsEnabled !== false,
   };
 });
