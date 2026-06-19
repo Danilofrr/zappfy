@@ -12,6 +12,10 @@ import {
   Target,
   ArrowDownRight,
   ArrowUpRight,
+  Package,
+  Receipt,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import {
   ResponsiveContainer,
