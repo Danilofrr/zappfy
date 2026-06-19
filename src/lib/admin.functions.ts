@@ -573,11 +573,8 @@ export const getPublicSupport = createServerFn({ method: "GET" }).handler(async 
     .eq("key", "system")
     .maybeSingle();
   const v = (data?.value as any) ?? {};
-  const loginEnabledRaw = v?.platform?.loginWhatsEnabled;
   return {
     whats: (v?.platform?.supportWhats as string | undefined) ?? null,
     email: (v?.platform?.supportEmail as string | undefined) ?? null,
-    loginEnabled: loginEnabledRaw === undefined ? true : !!loginEnabledRaw,
   };
 });
-
