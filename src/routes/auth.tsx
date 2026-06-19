@@ -165,7 +165,7 @@ function AuthPage() {
             </p>
 
             {/* Floating dashboard preview card */}
-            <div className="mt-10 relative max-w-md">
+            <div className="mt-6 relative max-w-md">
               <div
                 className="absolute -inset-1 rounded-2xl opacity-60 blur-xl"
                 style={{ background: "linear-gradient(135deg, var(--primary), var(--primary-glow))" }}
