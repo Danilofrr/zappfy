@@ -715,12 +715,34 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   const [lines, setLines] = useState<CartLine[]>([]);
   const [picker, setPicker] = useState<string>("");
 
+  // Novos campos
+  const [shippingOptionId, setShippingOptionId] = useState<string>("none");
+  const [shippingValue, setShippingValue] = useState<number>(0);
+  const [feeLabel, setFeeLabel] = useState<string>("");
+  const [feeValue, setFeeValue] = useState<number>(0);
+  const [discountType, setDiscountType] = useState<"valor" | "percent">("valor");
+  const [discountValue, setDiscountValue] = useState<number>(0);
+  const [couponCode, setCouponCode] = useState<string>("");
+
   const selectedIds = new Set(lines.map((l) => l.productId));
   const available = state.products.filter((p) => !selectedIds.has(p.id));
-  const total = lines.reduce((sum, l) => {
+  const subtotal = lines.reduce((sum, l) => {
     const prod = state.products.find((p) => p.id === l.productId);
     return sum + (prod?.price ?? 0) * l.qty;
   }, 0);
+  const discountAmount =
+    discountType === "percent"
+      ? Math.min(subtotal, (subtotal * Math.max(0, discountValue)) / 100)
+      : Math.min(subtotal, Math.max(0, discountValue));
+  const total = Math.max(0, subtotal + Number(shippingValue || 0) + Number(feeValue || 0) - discountAmount);
+
+  function pickShipping(id: string) {
+    setShippingOptionId(id);
+    if (id === "none") { setShippingValue(0); return; }
+    if (id === "custom") return;
+    const opt = state.settings.shippingOptions?.find((s) => s.id === id);
+    if (opt) setShippingValue(opt.price);
+  }
 
   function addLine(productId: string) {
     if (!productId || selectedIds.has(productId)) return;
@@ -738,7 +760,16 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
     setForm({ customer: "", phone: "", address: "", district: "", city: "", payment: "pix", status: "aguardando", notes: "" });
     setLines([]);
     setPicker("");
+    setShippingOptionId("none"); setShippingValue(0);
+    setFeeLabel(""); setFeeValue(0);
+    setDiscountType("valor"); setDiscountValue(0); setCouponCode("");
   }
+
+  const paymentOptions = [
+    { value: "pix", label: "PIX" },
+    { value: "cartao", label: "Cartão (Crédito/Débito)" },
+    { value: "dinheiro", label: "Dinheiro" },
+  ] as const;
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
@@ -748,7 +779,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo pedido</DialogTitle>
-          <DialogDescription>Registre manualmente um pedido recebido. Adicione um ou mais produtos.</DialogDescription>
+          <DialogDescription>Registre manualmente um pedido, com entrega, taxas, descontos e cupons.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
@@ -828,14 +859,65 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             </div>
           </div>
 
+          {/* Entrega */}
+          <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Entrega</Label>
+            <div className="grid grid-cols-[1fr_140px] gap-2">
+              <Select value={shippingOptionId} onValueChange={pickShipping}>
+                <SelectTrigger><SelectValue placeholder="Forma de entrega" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem entrega / retirada</SelectItem>
+                  {(state.settings.shippingOptions ?? []).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.label} — {brl(s.price)}</SelectItem>
+                  ))}
+                  <SelectItem value="custom">Valor personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="number" min={0} step="0.01"
+                value={shippingValue}
+                onChange={(e) => { setShippingValue(Number(e.target.value)); if (shippingOptionId === "none") setShippingOptionId("custom"); }}
+                placeholder="R$ 0,00"
+              />
+            </div>
+          </div>
+
+          {/* Taxa adicional */}
+          <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Taxa adicional</Label>
+            <div className="grid grid-cols-[1fr_140px] gap-2">
+              <Input placeholder="Descrição (ex: Taxa de serviço)" value={feeLabel} onChange={(e) => setFeeLabel(e.target.value)} />
+              <Input type="number" min={0} step="0.01" value={feeValue} onChange={(e) => setFeeValue(Number(e.target.value))} placeholder="R$ 0,00" />
+            </div>
+          </div>
+
+          {/* Desconto / Cupom */}
+          <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Desconto / Cupom</Label>
+            <div className="grid grid-cols-[1fr_120px_140px] gap-2">
+              <Input placeholder="Código do cupom (opcional)" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} />
+              <Select value={discountType} onValueChange={(v) => setDiscountType(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="valor">R$ valor</SelectItem>
+                  <SelectItem value="percent">% percentual</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input type="number" min={0} step="0.01" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} placeholder={discountType === "percent" ? "%" : "R$"} />
+            </div>
+            {discountAmount > 0 && (
+              <div className="text-xs text-emerald-500">Desconto aplicado: −{brl(discountAmount)}</div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Pagamento">
+            <Field label="Forma de pagamento">
               <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="cartao">Cartão</SelectItem>
-                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                  {paymentOptions.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>
@@ -849,7 +931,15 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             </Field>
           </div>
           <Field label="Observações"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} /></Field>
-          <div className="text-right text-sm">Total: <span className="font-bold text-primary">{brl(total)}</span></div>
+
+          {/* Resumo */}
+          <div className="rounded-xl border border-border bg-card p-3 space-y-1 text-sm">
+            <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
+            {shippingValue > 0 && <div className="flex justify-between text-muted-foreground"><span>Entrega</span><span>{brl(shippingValue)}</span></div>}
+            {feeValue > 0 && <div className="flex justify-between text-muted-foreground"><span>{feeLabel || "Taxa"}</span><span>{brl(feeValue)}</span></div>}
+            {discountAmount > 0 && <div className="flex justify-between text-emerald-500"><span>Desconto{couponCode ? ` (${couponCode})` : ""}</span><span>−{brl(discountAmount)}</span></div>}
+            <div className="flex justify-between font-bold text-base pt-1 border-t border-border mt-1"><span>Total</span><span className="text-primary">{brl(total)}</span></div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -860,11 +950,16 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
               const prod = state.products.find((p) => p.id === l.productId)!;
               return { productId: prod.id, name: prod.name, qty: l.qty, price: prod.price, cost: prod.cost };
             });
+            const extraNotesLines: string[] = [];
+            if (shippingValue > 0) extraNotesLines.push(`Entrega: ${brl(shippingValue)}`);
+            if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
+            if (discountAmount > 0) extraNotesLines.push(`Desconto${couponCode ? ` (cupom ${couponCode})` : ""}: -${brl(discountAmount)}`);
+            const finalNotes = [form.notes, extraNotesLines.join("\n")].filter(Boolean).join("\n\n");
             onCreate({
               customer: form.customer, phone: form.phone, address: form.address,
               district: form.district, city: form.city,
               items,
-              total, payment: form.payment, status: form.status, notes: form.notes,
+              total, payment: form.payment, status: form.status, notes: finalNotes,
               date: new Date().toISOString(),
             });
             reset();
