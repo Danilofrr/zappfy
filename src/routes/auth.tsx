@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/lib/theme";
+import { AvatarUploader } from "@/components/AvatarUploader";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -27,6 +28,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [storeName, setStoreName] = useState("");
   const [fullName, setFullName] = useState("");
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -62,7 +64,7 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -71,6 +73,12 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        // Tenta salvar avatar imediatamente (funciona se confirmação automática estiver ligada)
+        if (avatar && signUpData?.user?.id) {
+          await supabase
+            .from("profiles")
+            .upsert({ id: signUpData.user.id, full_name: fullName, avatar_url: avatar });
+        }
         toast.success("Conta criada! Você já pode entrar.");
         setMode("login");
       } else {
@@ -122,6 +130,10 @@ function AuthPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="storeName">Nome da loja</Label>
                   <Input id="storeName" value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="TechShop Recife" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Foto de perfil (opcional)</Label>
+                  <AvatarUploader value={avatar} onChange={setAvatar} name={fullName} email={email} size={64} />
                 </div>
               </>
             )}

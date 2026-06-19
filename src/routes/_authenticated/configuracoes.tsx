@@ -14,6 +14,9 @@ import { SHIPPING_ICONS } from "@/lib/shipping-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NotificationsCard } from "@/components/NotificationsCard";
 import { getSenderInfo, saveSenderInfo, type SenderInfo } from "@/lib/sender-info";
+import { AvatarUploader } from "@/components/AvatarUploader";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — ZappFy" }] }),
@@ -67,7 +70,8 @@ function Page() {
         </Button>
       }
     >
-      <div className="grid lg:grid-cols-2 gap-6">
+      <ProfileCard />
+      <div className="grid lg:grid-cols-2 gap-6 mt-6">
         <Card title="Dados da loja">
           <Field label="Nome da Loja"><Input value={f.storeName} onChange={(e) => setF({ ...f, storeName: e.target.value })} /></Field>
           <Field label="WhatsApp (com DDI, só números)"><Input value={f.whatsapp} onChange={(e) => setF({ ...f, whatsapp: e.target.value })} placeholder="5581999990000" /></Field>
@@ -521,6 +525,71 @@ function Page() {
   );
 }
 
+
+function ProfileCard() {
+  const qc = useQueryClient();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const q = useQuery({
+    queryKey: ["my-profile-full"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      setUserId(u.user.id);
+      setEmail(u.user.email ?? null);
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", u.user.id)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (q.data) {
+      setFullName(q.data.full_name ?? "");
+      setAvatar(q.data.avatar_url ?? null);
+    }
+  }, [q.data]);
+
+  async function save() {
+    if (!userId) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ id: userId, full_name: fullName, avatar_url: avatar });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Perfil atualizado");
+    qc.invalidateQueries({ queryKey: ["my-profile"] });
+    qc.invalidateQueries({ queryKey: ["my-profile-full"] });
+  }
+
+  return (
+    <Card title="Meu perfil">
+      <div className="flex flex-col gap-4">
+        <AvatarUploader value={avatar} onChange={setAvatar} name={fullName} email={email} size={88} />
+        <div className="grid md:grid-cols-2 gap-3">
+          <Field label="Nome exibido">
+            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" />
+          </Field>
+          <Field label="E-mail">
+            <Input value={email ?? ""} disabled />
+          </Field>
+        </div>
+        <div>
+          <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar perfil"}</Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (

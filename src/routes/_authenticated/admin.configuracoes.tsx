@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSystemSettings, saveSystemSettings } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock } from "lucide-react";
+import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({ component: AdminSettings });
 
@@ -25,6 +25,7 @@ type Settings = {
   messages?: { welcome?: string; nearDue?: string; expired?: string; paid?: string; blocked?: string; reactivated?: string };
   security?: { adminOnly?: boolean; accessLogs?: boolean; sessionMinutes?: number };
   appearance?: { theme?: string; brandName?: string; sidebarLogo?: string; primaryColor?: string };
+  prize?: { enabled?: boolean; goal?: number; reward?: string; period?: string };
 };
 
 const DEFAULTS: Settings = {
@@ -41,6 +42,7 @@ const DEFAULTS: Settings = {
   },
   security: { adminOnly: true, accessLogs: true, sessionMinutes: 240 },
   appearance: { theme: "dark", brandName: "ZappFy", primaryColor: "#22c55e" },
+  prize: { enabled: false, goal: 1000000, reward: "Prêmio especial ao bater a meta!", period: "mensal" },
 };
 
 function AdminSettings() {
@@ -59,6 +61,7 @@ function AdminSettings() {
         messages: { ...DEFAULTS.messages, ...(q.data.messages ?? {}) },
         security: { ...DEFAULTS.security, ...(q.data.security ?? {}) },
         appearance: { ...DEFAULTS.appearance, ...(q.data.appearance ?? {}) },
+        prize: { ...DEFAULTS.prize, ...(q.data.prize ?? {}) },
       });
     }
   }, [q.data]);
@@ -106,6 +109,7 @@ function AdminSettings() {
           <TabsTrigger value="messages"><MessageSquare className="h-4 w-4 mr-1" />Mensagens</TabsTrigger>
           <TabsTrigger value="security"><Shield className="h-4 w-4 mr-1" />Segurança</TabsTrigger>
           <TabsTrigger value="appearance"><Palette className="h-4 w-4 mr-1" />Aparência</TabsTrigger>
+          <TabsTrigger value="prize"><Trophy className="h-4 w-4 mr-1" />Prêmios</TabsTrigger>
           <TabsTrigger value="integrations"><Plug className="h-4 w-4 mr-1" />Integrações</TabsTrigger>
         </TabsList>
 
@@ -209,6 +213,53 @@ function AdminSettings() {
               <Field label="Cor principal"><div className="flex gap-2"><Input type="color" className="w-16 h-10 p-1" value={s.appearance?.primaryColor ?? "#22c55e"} onChange={(e) => set("appearance", { primaryColor: e.target.value })} /><Input value={s.appearance?.primaryColor ?? ""} onChange={(e) => set("appearance", { primaryColor: e.target.value })} /></div></Field>
               <Field label="Nome exibido no painel"><Input value={s.appearance?.brandName ?? ""} onChange={(e) => set("appearance", { brandName: e.target.value })} /></Field>
               <Field label="Logo do menu lateral (URL)"><Input value={s.appearance?.sidebarLogo ?? ""} onChange={(e) => set("appearance", { sidebarLogo: e.target.value })} /></Field>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="prize">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Trophy className="h-4 w-4 text-primary" />Meta de Prêmios</CardTitle>
+              <CardDescription>Defina um objetivo de faturamento que aparece na dashboard dos clientes. Quando bater a meta, ganha o prêmio configurado.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 md:col-span-2">
+                <Switch checked={!!s.prize?.enabled} onCheckedChange={(v) => set("prize", { enabled: v })} />
+                <Label>Exibir meta de prêmios na dashboard dos clientes</Label>
+              </div>
+              <Field label="Valor da meta (R$)">
+                <Input
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={s.prize?.goal ?? 0}
+                  onChange={(e) => set("prize", { goal: Number(e.target.value) })}
+                  placeholder="10000"
+                />
+              </Field>
+              <Field label="Período">
+                <select
+                  className="w-full h-10 rounded-md border border-border bg-background px-3"
+                  value={s.prize?.period ?? "mensal"}
+                  onChange={(e) => set("prize", { period: e.target.value })}
+                >
+                  <option value="mensal">Mensal</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </Field>
+              <Field label="Descrição do prêmio" className="md:col-span-2">
+                <Textarea
+                  rows={3}
+                  value={s.prize?.reward ?? ""}
+                  onChange={(e) => set("prize", { reward: e.target.value })}
+                  placeholder="Ex.: Quem vender R$ 10.000 ganha um iPhone 16!"
+                />
+              </Field>
+              <div className="md:col-span-2 rounded-lg border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
+                💡 Exemplo: vendeu R$ 10.000 → ganha um iPhone. O valor e o prêmio aparecem no topo da dashboard do cliente com uma barra de progresso.
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
