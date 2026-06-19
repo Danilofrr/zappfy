@@ -374,9 +374,8 @@ export const listPayments = createServerFn({ method: "GET" })
     const t0 = Date.now();
     const { supabase, userId } = context as any;
     await ensureAdmin(supabase, userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: payments, error: payErr } = await supabaseAdmin
+    const { data: payments, error: payErr } = await supabase
       .from("subscription_payments")
       .select("id, subscription_id, user_id, amount, method, status, due_at, paid_at, notes, created_at")
       .order("created_at", { ascending: false })
@@ -391,17 +390,20 @@ export const listPayments = createServerFn({ method: "GET" })
       return [];
     }
 
-    const userIds = Array.from(new Set(rows.map((p: any) => p.user_id).filter(Boolean)));
     const subIds = Array.from(new Set(rows.map((p: any) => p.subscription_id).filter(Boolean)));
-
-    const [profilesRes, settingsRes, subsRes] = await Promise.all([
-      userIds.length ? supabaseAdmin.from("profiles").select("id, full_name").in("id", userIds) : Promise.resolve({ data: [] as any[] }),
-      userIds.length ? supabaseAdmin.from("settings").select("user_id, store_name").in("user_id", userIds) : Promise.resolve({ data: [] as any[] }),
-      subIds.length ? supabaseAdmin.from("subscriptions").select("id, plan_id, expires_at, plans(name)").in("id", subIds) : Promise.resolve({ data: [] as any[] }),
+    const [clientsRes, subsRes] = await Promise.all([
+      supabase.rpc("admin_list_clients"),
+      subIds.length
+        ? supabase.from("subscriptions").select("id, plan_id, expires_at, plans(name)").in("id", subIds)
+        : Promise.resolve({ data: [] as any[] }),
     ]);
 
-    const nameMap = new Map((profilesRes.data ?? []).map((u: any) => [u.id, u.full_name]));
-    const storeMap = new Map((settingsRes.data ?? []).map((s: any) => [s.user_id, s.store_name]));
+    const nameMap = new Map<string, string>();
+    const storeMap = new Map<string, string>();
+    for (const c of (clientsRes.data ?? []) as any[]) {
+      nameMap.set(c.id, c.full_name ?? "");
+      storeMap.set(c.id, c.store_name ?? "");
+    }
     const subMap = new Map((subsRes.data ?? []).map((s: any) => [s.id, s]));
 
     const out = rows.map((p: any) => {
@@ -417,7 +419,6 @@ export const listPayments = createServerFn({ method: "GET" })
     console.log("[listPayments]", out.length, "rows in", Date.now() - t0, "ms");
     return out;
   });
-
 
 export const registerPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -436,10 +437,14 @@ export const registerPayment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
     await ensureAdmin(supabase, userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: sub } = await supabaseAdmin.from("subscriptions").select("id, expires_at").eq("user_id", data.userId).maybeSingle();
+    const { data: sub, error: subErr } = await supabase
+      .from("subscriptions")
+      .select("id, expires_at")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+    if (subErr) throw new Error(subErr.message);
     if (!sub) throw new Error("Cliente sem assinatura");
-    await supabaseAdmin.from("subscription_payments").insert({
+    const { error: insErr } = await supabase.from("subscription_payments").insert({
       subscription_id: sub.id,
       user_id: data.userId,
       amount: data.amount,
@@ -448,16 +453,19 @@ export const registerPayment = createServerFn({ method: "POST" })
       paid_at: data.status === "pago" ? new Date().toISOString() : null,
       notes: data.notes,
     });
+    if (insErr) throw new Error(insErr.message);
     if (data.status === "pago" && data.renewDays > 0) {
       const base = sub.expires_at && new Date(sub.expires_at) > new Date() ? new Date(sub.expires_at) : new Date();
       base.setDate(base.getDate() + data.renewDays);
-      await supabaseAdmin
+      const { error: updErr } = await supabase
         .from("subscriptions")
         .update({ status: "ativo", expires_at: base.toISOString(), last_payment_at: new Date().toISOString() })
         .eq("id", sub.id);
+      if (updErr) throw new Error(updErr.message);
     }
     return { ok: true };
   });
+
 
 // ===== Cupons =====
 export const listCoupons = createServerFn({ method: "GET" })
