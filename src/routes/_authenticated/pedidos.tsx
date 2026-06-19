@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
@@ -706,6 +706,26 @@ function colorForProduct(id: string) {
 
 type CartLine = { productId: string; qty: number };
 
+const MACHINE_BRANDS = ["VISA", "MASTERCARD", "ELO", "DÉBITO", "PIX", "DINHEIRO", "LINK"] as const;
+type MachineFees = Record<string, Record<number, number>>; // brand -> parcela -> %
+
+function loadMachineFees(): MachineFees {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem("machineFees") || "{}"); } catch { return {}; }
+}
+function saveMachineFees(f: MachineFees) {
+  if (typeof window !== "undefined") localStorage.setItem("machineFees", JSON.stringify(f));
+}
+
+function SectionLabel({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
+      <Icon className="h-3.5 w-3.5" />
+      <span>{children}</span>
+    </div>
+  );
+}
+
 function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (v: boolean) => void; onCreate: (o: Omit<Order, "id">) => void }) {
   const { state } = useStore();
   const [form, setForm] = useState({
@@ -720,9 +740,17 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   const [shippingValue, setShippingValue] = useState<number>(0);
   const [feeLabel, setFeeLabel] = useState<string>("");
   const [feeValue, setFeeValue] = useState<number>(0);
-  const [discountType, setDiscountType] = useState<"valor" | "percent">("valor");
+  const [discountType, setDiscountType] = useState<"valor" | "percent">("percent");
   const [discountValue, setDiscountValue] = useState<number>(0);
   const [couponCode, setCouponCode] = useState<string>("");
+  const [couponApplied, setCouponApplied] = useState<string>("");
+
+  // Segundo pagamento
+  const [secondPayment, setSecondPayment] = useState<string>("none");
+  const [secondPaymentValue, setSecondPaymentValue] = useState<number>(0);
+
+  // Modal de taxas de maquininha
+  const [feesOpen, setFeesOpen] = useState(false);
 
   const selectedIds = new Set(lines.map((l) => l.productId));
   const available = state.products.filter((p) => !selectedIds.has(p.id));
@@ -735,6 +763,13 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
       ? Math.min(subtotal, (subtotal * Math.max(0, discountValue)) / 100)
       : Math.min(subtotal, Math.max(0, discountValue));
   const total = Math.max(0, subtotal + Number(shippingValue || 0) + Number(feeValue || 0) - discountAmount);
+
+  function applyCoupon() {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) { toast.error("Digite um código de cupom"); return; }
+    setCouponApplied(code);
+    toast.success(`Cupom ${code} aplicado`);
+  }
 
   function pickShipping(id: string) {
     setShippingOptionId(id);
@@ -762,7 +797,8 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
     setPicker("");
     setShippingOptionId("none"); setShippingValue(0);
     setFeeLabel(""); setFeeValue(0);
-    setDiscountType("valor"); setDiscountValue(0); setCouponCode("");
+    setDiscountType("percent"); setDiscountValue(0); setCouponCode(""); setCouponApplied("");
+    setSecondPayment("none"); setSecondPaymentValue(0);
   }
 
   const paymentOptions = [
@@ -779,23 +815,32 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo pedido</DialogTitle>
-          <DialogDescription>Registre manualmente um pedido, com entrega, taxas, descontos e cupons.</DialogDescription>
+          <DialogDescription>Registre manualmente um pedido, com entrega, taxas, descontos, cupons e pagamento dividido.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Cliente"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
-            <Field label="Telefone"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
+          {/* Cliente */}
+          <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+            <SectionLabel icon={UserIcon}>Cliente</SectionLabel>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Nome"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
+              <Field label="Telefone"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
+            </div>
           </div>
-          <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
-            <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
+
+          {/* Endereço */}
+          <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+            <SectionLabel icon={MapPin}>Endereço</SectionLabel>
+            <Field label="Rua / nº"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
+              <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
+            </div>
           </div>
 
           {/* Produtos do pedido */}
-          <div className="space-y-2">
-            <Label className="text-xs">Produtos do pedido</Label>
-            <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-2">
+          <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+            <SectionLabel icon={ShoppingBag}>Produtos do pedido</SectionLabel>
+            <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2">
               {lines.length === 0 && (
                 <div className="text-xs text-muted-foreground py-2 text-center">Nenhum produto adicionado ainda.</div>
               )}
@@ -861,7 +906,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
 
           {/* Entrega */}
           <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
-            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Entrega</Label>
+            <SectionLabel icon={Truck}>Entrega</SectionLabel>
             <div className="grid grid-cols-[1fr_140px] gap-2">
               <Select value={shippingOptionId} onValueChange={pickShipping}>
                 <SelectTrigger><SelectValue placeholder="Forma de entrega" /></SelectTrigger>
@@ -884,7 +929,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
 
           {/* Taxa adicional */}
           <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
-            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Taxa adicional</Label>
+            <SectionLabel icon={Receipt}>Taxa adicional (opcional)</SectionLabel>
             <div className="grid grid-cols-[1fr_140px] gap-2">
               <Input placeholder="Descrição (ex: Taxa de serviço)" value={feeLabel} onChange={(e) => setFeeLabel(e.target.value)} />
               <Input type="number" min={0} step="0.01" value={feeValue} onChange={(e) => setFeeValue(Number(e.target.value))} placeholder="R$ 0,00" />
@@ -892,83 +937,237 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
           </div>
 
           {/* Desconto / Cupom */}
-          <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
-            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Desconto / Cupom</Label>
-            <div className="grid grid-cols-[1fr_120px_140px] gap-2">
-              <Input placeholder="Código do cupom (opcional)" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} />
-              <Select value={discountType} onValueChange={(v) => setDiscountType(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="valor">R$ valor</SelectItem>
-                  <SelectItem value="percent">% percentual</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input type="number" min={0} step="0.01" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} placeholder={discountType === "percent" ? "%" : "R$"} />
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+            <SectionLabel icon={Tag}>Desconto (opcional)</SectionLabel>
+            <div className="grid grid-cols-3 gap-2">
+              <Field label="TIPO">
+                <Select value={discountType} onValueChange={(v) => setDiscountType(v as any)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percent">% Percentual</SelectItem>
+                    <SelectItem value="valor">R$ Valor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={discountType === "percent" ? "DESCONTO (%)" : "DESCONTO (R$)"}>
+                <Input
+                  type="number" min={0} step="0.01"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(Number(e.target.value))}
+                  placeholder={discountType === "percent" ? "Ex: 10" : "Ex: 5,00"}
+                />
+              </Field>
+              <Field label="OU CUPOM">
+                <div className="flex gap-1">
+                  <Input
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="CODIGO"
+                  />
+                  <Button type="button" size="sm" onClick={applyCoupon} className="bg-amber-500 hover:bg-amber-600 text-black font-semibold">OK</Button>
+                </div>
+              </Field>
             </div>
             {discountAmount > 0 && (
-              <div className="text-xs text-emerald-500">Desconto aplicado: −{brl(discountAmount)}</div>
+              <div className="text-xs text-emerald-500 flex items-center gap-1">
+                <Percent className="h-3 w-3" />
+                Desconto aplicado: −{brl(discountAmount)} {couponApplied && `(cupom ${couponApplied})`}
+              </div>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Forma de pagamento">
-              <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
-                <SelectTrigger><SelectValue/></SelectTrigger>
-                <SelectContent>
-                  {paymentOptions.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Status">
-              <Select value={form.status} onValueChange={(v: any) => setForm({...form, status: v})}>
-                <SelectTrigger><SelectValue/></SelectTrigger>
-                <SelectContent>
-                  {statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
+          {/* Pagamento */}
+          <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+            <SectionLabel icon={CreditCard}>Pagamento</SectionLabel>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Forma">
+                <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
+                  <SelectTrigger><SelectValue/></SelectTrigger>
+                  <SelectContent>
+                    {paymentOptions.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Status">
+                <Select value={form.status} onValueChange={(v: any) => setForm({...form, status: v})}>
+                  <SelectTrigger><SelectValue/></SelectTrigger>
+                  <SelectContent>
+                    {statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+
+            {/* Segundo pagamento (opcional) */}
+            <div className="pt-1 border-t border-border/60 mt-1">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium mb-2">
+                <Wallet className="h-3.5 w-3.5" />
+                <span>+ Segundo pagamento (opcional)</span>
+              </div>
+              <div className="grid grid-cols-[1fr_160px] gap-2">
+                <Field label="FORMA">
+                  <Select value={secondPayment} onValueChange={setSecondPayment}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— Nenhum —</SelectItem>
+                      {paymentOptions.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="VALOR (R$)">
+                  <Input
+                    type="number" min={0} step="0.01"
+                    value={secondPaymentValue}
+                    onChange={(e) => setSecondPaymentValue(Number(e.target.value))}
+                    placeholder="0,00"
+                    disabled={secondPayment === "none"}
+                  />
+                </Field>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFeesOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary mt-2"
+            >
+              <Settings className="h-3.5 w-3.5" /> Configurar taxas de maquininha
+            </button>
           </div>
-          <Field label="Observações"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} /></Field>
+
+          {/* Observações */}
+          <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+            <SectionLabel icon={StickyNote}>Observações</SectionLabel>
+            <Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} placeholder="Notas internas sobre o pedido..." />
+          </div>
 
           {/* Resumo */}
-          <div className="rounded-xl border border-border bg-card p-3 space-y-1 text-sm">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-1 text-sm">
             <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
             {shippingValue > 0 && <div className="flex justify-between text-muted-foreground"><span>Entrega</span><span>{brl(shippingValue)}</span></div>}
             {feeValue > 0 && <div className="flex justify-between text-muted-foreground"><span>{feeLabel || "Taxa"}</span><span>{brl(feeValue)}</span></div>}
-            {discountAmount > 0 && <div className="flex justify-between text-emerald-500"><span>Desconto{couponCode ? ` (${couponCode})` : ""}</span><span>−{brl(discountAmount)}</span></div>}
+            {discountAmount > 0 && <div className="flex justify-between text-emerald-500"><span>Desconto{couponApplied ? ` (${couponApplied})` : ""}</span><span>−{brl(discountAmount)}</span></div>}
             <div className="flex justify-between font-bold text-base pt-1 border-t border-border mt-1"><span>Total</span><span className="text-primary">{brl(total)}</span></div>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => {
-            if (!form.customer) { toast.error("Preencha o nome do cliente"); return; }
-            if (lines.length === 0) { toast.error("Adicione ao menos um produto"); return; }
-            const items = lines.map((l) => {
-              const prod = state.products.find((p) => p.id === l.productId)!;
-              return { productId: prod.id, name: prod.name, qty: l.qty, price: prod.price, cost: prod.cost };
-            });
-            const extraNotesLines: string[] = [];
-            if (shippingValue > 0) extraNotesLines.push(`Entrega: ${brl(shippingValue)}`);
-            if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
-            if (discountAmount > 0) extraNotesLines.push(`Desconto${couponCode ? ` (cupom ${couponCode})` : ""}: -${brl(discountAmount)}`);
-            const finalNotes = [form.notes, extraNotesLines.join("\n")].filter(Boolean).join("\n\n");
-            onCreate({
-              customer: form.customer, phone: form.phone, address: form.address,
-              district: form.district, city: form.city,
-              items,
-              total, payment: form.payment, status: form.status, notes: finalNotes,
-              date: new Date().toISOString(),
-            });
-            reset();
-          }}>Salvar pedido</Button>
+          <Button
+            className="bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+            onClick={() => {
+              if (!form.customer) { toast.error("Preencha o nome do cliente"); return; }
+              if (lines.length === 0) { toast.error("Adicione ao menos um produto"); return; }
+              const items = lines.map((l) => {
+                const prod = state.products.find((p) => p.id === l.productId)!;
+                return { productId: prod.id, name: prod.name, qty: l.qty, price: prod.price, cost: prod.cost };
+              });
+              const extraNotesLines: string[] = [];
+              if (shippingValue > 0) extraNotesLines.push(`Entrega: ${brl(shippingValue)}`);
+              if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
+              if (discountAmount > 0) extraNotesLines.push(`Desconto${couponApplied ? ` (cupom ${couponApplied})` : ""}: -${brl(discountAmount)}`);
+              if (secondPayment !== "none" && secondPaymentValue > 0) {
+                const label = paymentOptions.find((p) => p.value === secondPayment)?.label || secondPayment;
+                extraNotesLines.push(`Segundo pagamento: ${label} — ${brl(secondPaymentValue)}`);
+              }
+              const finalNotes = [form.notes, extraNotesLines.join("\n")].filter(Boolean).join("\n\n");
+              onCreate({
+                customer: form.customer, phone: form.phone, address: form.address,
+                district: form.district, city: form.city,
+                items,
+                total, payment: form.payment, status: form.status, notes: finalNotes,
+                date: new Date().toISOString(),
+              });
+              reset();
+            }}>
+            <Save className="mr-2 h-4 w-4" /> Salvar Venda
+          </Button>
+        </DialogFooter>
+
+        <MachineFeesDialog open={feesOpen} onClose={() => setFeesOpen(false)} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [fees, setFees] = useState<MachineFees>({});
+  useMemo(() => { if (open) setFees(loadMachineFees()); }, [open]);
+
+  function setFee(brand: string, parcela: number, value: number) {
+    setFees((prev) => ({
+      ...prev,
+      [brand]: { ...(prev[brand] || {}), [parcela]: value },
+    }));
+  }
+
+  // Brands sem parcelamento
+  const noInstallment = (brand: string) => brand === "DÉBITO" || brand === "PIX";
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Settings className="h-4 w-4" /> Taxas de maquininha</DialogTitle>
+          <DialogDescription>Configure a taxa (%) por bandeira e por parcela. Salvo neste navegador.</DialogDescription>
+        </DialogHeader>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-wider text-muted-foreground">
+                <th className="text-left px-2 py-2 font-medium">Parcelas</th>
+                {MACHINE_BRANDS.map((b) => (
+                  <th key={b} className="text-left px-2 py-2 font-medium">{b}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((parcela) => (
+                <tr key={parcela} className="border-t border-border">
+                  <td className="px-2 py-2 text-muted-foreground font-medium">{parcela}x</td>
+                  {MACHINE_BRANDS.map((b) => {
+                    if (parcela > 1 && noInstallment(b)) {
+                      return <td key={b} className="px-2 py-2 text-muted-foreground text-center">—</td>;
+                    }
+                    const val = fees[b]?.[parcela] ?? 0;
+                    return (
+                      <td key={b} className="px-2 py-2">
+                        <div className="relative">
+                          <Input
+                            type="number" min={0} step="0.01"
+                            value={val}
+                            onChange={(e) => setFee(b, parcela, Number(e.target.value))}
+                            className="h-8 pr-7 text-sm"
+                            placeholder="0"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button
+            className="bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+            onClick={() => { saveMachineFees(fees); toast.success("Taxas salvas!"); onClose(); }}
+          >
+            <Save className="mr-2 h-4 w-4" /> Salvar Taxas
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+
 
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
