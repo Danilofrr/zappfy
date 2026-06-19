@@ -105,7 +105,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative lg:grid lg:grid-cols-[1.1fr_1fr]">
+    <div className="min-h-screen lg:h-screen lg:min-h-0 lg:overflow-hidden bg-background relative lg:grid lg:grid-cols-[1.1fr_1fr]">
 
       {/* LEFT — Marketing panel (desktop only) */}
       <aside className="hidden lg:block relative overflow-hidden">
@@ -142,7 +142,7 @@ function AuthPage() {
         <div className="absolute top-2/3 left-16 h-1.5 w-1.5 rounded-full bg-primary-glow/80 shadow-[0_0_16px_var(--primary-glow)]" />
         <div className="absolute top-1/2 right-1/3 h-1 w-1 rounded-full bg-primary/60" />
 
-        <div className="relative h-full flex flex-col justify-between p-12 xl:p-16">
+        <div className="relative h-full flex flex-col justify-between p-8 xl:p-12">
           {/* Top: badge */}
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 backdrop-blur px-3 py-1.5 text-xs font-medium text-primary">
@@ -153,19 +153,19 @@ function AuthPage() {
 
           {/* Middle: headline + showcase */}
           <div className="max-w-2xl">
-            <h2 className="text-4xl xl:text-[3.25rem] font-bold tracking-tight text-foreground leading-[1.05]">
+            <h2 className="text-3xl xl:text-[2.5rem] font-bold tracking-tight text-foreground leading-[1.05]">
               Venda mais.
               <br />
               <span className="bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
                 Sem perder o controle.
               </span>
             </h2>
-            <p className="mt-5 text-lg text-muted-foreground leading-relaxed max-w-lg">
+            <p className="mt-3 text-base text-muted-foreground leading-relaxed max-w-lg">
               O Zappfy unifica pedidos, financeiro e relatórios para quem vende todos os dias pelo WhatsApp.
             </p>
 
             {/* Floating dashboard preview card */}
-            <div className="mt-10 relative max-w-md">
+            <div className="mt-6 relative max-w-md">
               <div
                 className="absolute -inset-1 rounded-2xl opacity-60 blur-xl"
                 style={{ background: "linear-gradient(135deg, var(--primary), var(--primary-glow))" }}
@@ -230,7 +230,7 @@ function AuthPage() {
             </div>
 
             {/* Compact feature row */}
-            <ul className="mt-12 grid grid-cols-2 gap-x-6 gap-y-4 max-w-lg">
+            <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 max-w-lg">
               {[
                 { icon: MessageCircle, title: "Pedidos do WhatsApp" },
                 { icon: BarChart3, title: "Relatórios e DRE" },
@@ -269,28 +269,18 @@ function AuthPage() {
               </div>
             </div>
 
-            <div className="hidden xl:flex items-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                Sem cartão
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                Suporte humano
-              </div>
-            </div>
           </div>
         </div>
       </aside>
 
       {/* RIGHT — Form */}
-      <div className="flex items-center justify-center px-4 py-10 lg:px-12 lg:py-12">
+      <div className="flex items-center justify-center px-4 py-8 lg:px-10 lg:py-6 lg:h-screen lg:overflow-y-auto">
         <div className="w-full max-w-md">
-          <Link to="/auth" className="flex items-center justify-center lg:justify-start mb-8">
-            <img src="/logo-full.png" alt="Zappfy" className="h-14 w-auto object-contain" />
+          <Link to="/auth" className="flex items-center justify-center lg:justify-start mb-5">
+            <img src="/logo-full.png" alt="Zappfy" className="h-12 w-auto object-contain" />
           </Link>
 
-          <Card className="p-6 lg:p-8 card-neon lg:border-border/60 lg:shadow-elegant">
+          <Card className="p-6 lg:p-7 card-neon lg:border-border/60 lg:shadow-elegant">
             <h1 className="text-2xl font-semibold tracking-tight">
               {mode === "login" ? "Entrar na sua conta" : "Criar conta grátis"}
             </h1>
