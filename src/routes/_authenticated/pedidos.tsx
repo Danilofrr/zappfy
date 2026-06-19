@@ -178,7 +178,7 @@ function PedidosPage() {
     </div>
     <div style="text-align:right">
       <div class="badge">#${escape(o.id.slice(0, 8).toUpperCase())}</div>
-      <div class="muted" style="margin-top:6px">${escape(fmtDate(o.createdAt))}</div>
+      <div class="muted" style="margin-top:6px">${escape(fmtDate(o.date))}</div>
     </div>
   </div>
   <div class="grid">
