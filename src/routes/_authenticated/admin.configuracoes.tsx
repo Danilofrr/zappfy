@@ -19,7 +19,7 @@ import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({ component: AdminSettings });
 
 type Settings = {
-  platform?: { name?: string; logoUrl?: string; primaryColor?: string; supportEmail?: string; supportWhats?: string; cnpj?: string; url?: string };
+  platform?: { name?: string; logoUrl?: string; primaryColor?: string; supportEmail?: string; supportWhats?: string; supportWhatsEnabled?: boolean; cnpj?: string; url?: string };
   subscription?: { trialDays?: number; autoBlock?: boolean; toleranceDays?: number; msgExpired?: string; msgBlocked?: string };
   payment?: { pixKey?: string; receiverName?: string; bank?: string; defaultLink?: string; gateway?: string };
   messages?: { welcome?: string; nearDue?: string; expired?: string; paid?: string; blocked?: string; reactivated?: string };
@@ -123,6 +123,10 @@ function AdminSettings() {
               <Field label="Cor principal"><div className="flex gap-2"><Input type="color" className="w-16 h-10 p-1" value={s.platform?.primaryColor ?? "#22c55e"} onChange={(e) => set("platform", { primaryColor: e.target.value })} /><Input value={s.platform?.primaryColor ?? ""} onChange={(e) => set("platform", { primaryColor: e.target.value })} /></div></Field>
               <Field label="E-mail de suporte"><Input type="email" value={s.platform?.supportEmail ?? ""} onChange={(e) => set("platform", { supportEmail: e.target.value })} /></Field>
               <Field label="WhatsApp de suporte"><Input value={s.platform?.supportWhats ?? ""} onChange={(e) => set("platform", { supportWhats: e.target.value })} placeholder="+55 11 ..." /></Field>
+              <div className="flex items-center gap-3 md:col-span-2 rounded-lg border border-border/60 bg-muted/30 p-3">
+                <Switch checked={s.platform?.supportWhatsEnabled !== false} onCheckedChange={(v) => set("platform", { supportWhatsEnabled: v })} />
+                <Label className="cursor-pointer">Exibir botão flutuante de WhatsApp na tela de login</Label>
+              </div>
               <Field label="CNPJ/Empresa"><Input value={s.platform?.cnpj ?? ""} onChange={(e) => set("platform", { cnpj: e.target.value })} /></Field>
             </CardContent>
           </Card>
