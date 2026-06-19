@@ -6,7 +6,8 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Link } from "@tanstack/react-router";
 import { brl as formatBRL } from "@/lib/format";
 import { usePrivacy, mask } from "@/hooks/use-privacy";
-import { ThemeToggle } from "@/lib/theme";
+import { useTheme } from "@/lib/theme";
+import { Sun, Moon } from "lucide-react";
 
 export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   const { user, state } = useStore();
