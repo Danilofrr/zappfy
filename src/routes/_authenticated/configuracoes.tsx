@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 function Page() {
   const { state, updateSettings, resetSeed } = useStore();
   const [f, setF] = useState(state.settings);
+  const [sender, setSender] = useState<SenderInfo>(() => getSenderInfo());
   const [logoDims, setLogoDims] = useState<{ w: number; h: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
