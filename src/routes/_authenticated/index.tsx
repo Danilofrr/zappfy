@@ -144,7 +144,66 @@ function Dashboard() {
               <Input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="h-9 w-auto" />
               <span className="text-xs text-muted-foreground">até</span>
               <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="h-9 w-auto" />
+      </div>
+
+      {/* Onboarding checklist — visível até o usuário concluir todos os passos */}
+      {(() => {
+        const steps = [
+          { key: "product", label: "Cadastrar produto", desc: "Adicione seus produtos no estoque", to: "/produtos", icon: Package, done: state.products.length > 0 },
+          { key: "order", label: "Primeira venda", desc: "Lance sua primeira venda no sistema", to: "/pedidos", icon: ShoppingCart, done: state.orders.length > 0 },
+          { key: "expense", label: "Primeiro gasto", desc: "Categorize seus gastos fixos e variáveis", to: "/financeiro", icon: Receipt, done: state.expenses.length > 0 },
+          { key: "goal", label: "Definir metas", desc: "Configure suas metas de faturamento", to: "/configuracoes", icon: Target, done: (state.settings.monthlyRevenueGoal ?? 0) > 0 },
+        ];
+        const completed = steps.filter((s) => s.done).length;
+        if (completed === steps.length) return null;
+        const progress = Math.round((completed / steps.length) * 100);
+        return (
+          <div className="mb-5 rounded-2xl border border-border bg-card p-4 lg:p-5 shadow-elegant">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-base font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" /> Configure seu sistema
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{completed} de {steps.length} passos concluídos</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:block w-32 h-2 rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                </div>
+                <span className="text-sm font-semibold text-primary">{progress}%</span>
+              </div>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {steps.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <Link
+                    key={s.key}
+                    to={s.to}
+                    className={`group rounded-xl border p-3 transition ${s.done ? "border-primary/40 bg-primary/5" : "border-border bg-secondary/30 hover:border-primary/50 hover:bg-secondary/60"}`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className={`h-9 w-9 rounded-lg grid place-items-center ${s.done ? "bg-primary/20 text-primary" : "bg-background text-muted-foreground"}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      {s.done ? (
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-muted-foreground/50" />
+                      )}
+                    </div>
+                    <div className={`text-sm font-medium ${s.done ? "line-through text-muted-foreground" : ""}`}>{s.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{s.desc}</div>
+                    {!s.done && (
+                      <div className="mt-2 text-xs font-medium text-primary group-hover:underline">Ir agora →</div>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
           )}
         </div>
       </div>
