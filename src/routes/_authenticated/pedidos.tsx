@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -122,7 +122,94 @@ function PedidosPage() {
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(text)}`, "_blank");
   }
 
-
+  function printReceipt(o: Order) {
+    const s = state.settings;
+    const storeName = s.storeName || "Loja";
+    const subtotal = o.items.reduce((a, i) => a + i.price * i.qty, 0);
+    const enderecoLinha = [o.address, o.district, o.city].filter(Boolean).join(", ");
+    const paymentLabels: Record<string, string> = {
+      pix: "PIX", dinheiro: "Dinheiro", cartao_credito: "Cartão de Crédito",
+      cartao_debito: "Cartão de Débito", boleto: "Boleto", transferencia: "Transferência",
+    };
+    const escape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
+    const rows = o.items.map((i) => `
+      <tr>
+        <td>${escape(i.name)}</td>
+        <td class="c">${i.qty}</td>
+        <td class="r">${brl(i.price)}</td>
+        <td class="r">${brl(i.price * i.qty)}</td>
+      </tr>`).join("");
+    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/>
+<title>Recibo #${escape(o.id.slice(0, 8))}</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:0;padding:24px;background:#f5f5f5}
+  .sheet{max-width:720px;margin:0 auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  h1{font-size:22px;margin:0 0 4px}
+  .muted{color:#666;font-size:12px}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px}
+  .badge{display:inline-block;padding:4px 10px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:600;text-transform:uppercase}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+  .box{border:1px solid #e5e5e5;border-radius:8px;padding:12px}
+  .box h3{margin:0 0 6px;font-size:11px;text-transform:uppercase;color:#666;letter-spacing:.5px}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+  th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+  th{background:#f9f9f9;font-size:11px;text-transform:uppercase;color:#666;letter-spacing:.5px}
+  .r{text-align:right}.c{text-align:center}
+  tfoot td{font-weight:600;border-bottom:none}
+  .total td{font-size:18px;border-top:2px solid #111;padding-top:12px}
+  .notes{margin-top:16px;padding:12px;background:#fafafa;border-radius:8px;font-size:13px;white-space:pre-wrap}
+  .footer{margin-top:24px;text-align:center;color:#999;font-size:11px}
+  .actions{max-width:720px;margin:0 auto 16px;display:flex;gap:8px;justify-content:flex-end}
+  .actions button{padding:8px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+  .actions .print{background:#111;color:#fff}
+  .actions .close{background:#eee;color:#111}
+  @media print{body{background:#fff;padding:0}.sheet{box-shadow:none;border-radius:0;max-width:none}.actions{display:none}}
+</style></head><body>
+<div class="actions">
+  <button class="print" onclick="window.print()">Imprimir</button>
+  <button class="close" onclick="window.close()">Fechar</button>
+</div>
+<div class="sheet">
+  <div class="head">
+    <div>
+      <h1>${escape(storeName)}</h1>
+      <div class="muted">Recibo de Pedido</div>
+    </div>
+    <div style="text-align:right">
+      <div class="badge">#${escape(o.id.slice(0, 8).toUpperCase())}</div>
+      <div class="muted" style="margin-top:6px">${escape(fmtDate(o.date))}</div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="box">
+      <h3>Cliente</h3>
+      <div><strong>${escape(o.customer)}</strong></div>
+      ${o.phone ? `<div class="muted">${escape(o.phone)}</div>` : ""}
+    </div>
+    <div class="box">
+      <h3>Entrega</h3>
+      <div>${escape(enderecoLinha) || '<span class="muted">—</span>'}</div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Produto</th><th class="c">Qtd</th><th class="r">Preço</th><th class="r">Subtotal</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot>
+      <tr><td colspan="3" class="r">Subtotal</td><td class="r">${brl(subtotal)}</td></tr>
+      <tr><td colspan="3" class="r">Pagamento</td><td class="r">${escape(paymentLabels[o.payment] || o.payment)}</td></tr>
+      <tr class="total"><td colspan="3" class="r">TOTAL</td><td class="r">${brl(o.total)}</td></tr>
+    </tfoot>
+  </table>
+  ${o.notes ? `<div class="notes"><strong>Observações:</strong>\n${escape(o.notes)}</div>` : ""}
+  <div class="footer">Obrigado pela preferência! • ${escape(storeName)}</div>
+</div>
+<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script>
+</body></html>`;
+    const w = window.open("", "_blank", "width=820,height=900");
+    if (!w) { toast.error("Permita pop-ups para imprimir o recibo"); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+  }
 
 
   function handleStatusChange(o: Order, status: OrderStatus) {
@@ -307,6 +394,13 @@ function PedidosPage() {
                         className="text-muted-foreground hover:text-primary p-1"
                       >
                         <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => printReceipt(o)}
+                        title="Gerar recibo e imprimir"
+                        className="text-muted-foreground hover:text-primary p-1"
+                      >
+                        <Receipt className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => setMotoboyFor(o)}
