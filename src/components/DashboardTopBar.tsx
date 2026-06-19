@@ -6,6 +6,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Link } from "@tanstack/react-router";
 import { brl as formatBRL } from "@/lib/format";
 import { usePrivacy, mask } from "@/hooks/use-privacy";
+import { ThemeToggle } from "@/lib/theme";
 
 export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   const { user, state } = useStore();
