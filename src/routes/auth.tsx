@@ -103,9 +103,7 @@ function AuthPage() {
       </div>
       <div className="w-full max-w-md">
         <Link to="/auth" className="flex items-center justify-center gap-2 mb-6">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-primary shadow-glow">
-            <TrendingUp className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src="/logo-bubble.png" alt="Zappfy" className="h-10 w-10 object-contain" />
           <span className="text-xl font-bold tracking-tight text-neon">ZappFy</span>
         </Link>
 
