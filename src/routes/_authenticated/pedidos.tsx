@@ -217,47 +217,76 @@ function PedidosPage() {
     const logoUrl = s.checkoutLogoUrl || "";
     const escape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
     const senderName = (s as any).senderName || storeName;
-    const senderAddress = (s as any).senderAddress || "";
-    const senderCity = (s as any).senderCity || "";
+    const senderAddress = (s as any).senderAddress || "Rua das Flores, 123";
+    const senderDistrict = (s as any).senderDistrict || "Centro";
+    const senderCity = (s as any).senderCity || "São Paulo - SP";
+    const senderCep = (s as any).senderCep || "00000-000";
+    const senderCnpj = (s as any).senderCnpj || "00.000.000/0001-00";
+
+    // deterministic fictitious numbers seeded by order id
+    let seed = 0;
+    for (let i = 0; i < o.id.length; i++) seed = (seed * 31 + o.id.charCodeAt(i)) >>> 0;
+    const rand = (n: number) => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed % n; };
+    const digits = (n: number) => Array.from({ length: n }, () => rand(10)).join("");
+    const trackingCode = `LV${digits(9)}BR`;
+    const nf = digits(9);
+    const pedidoNum = digits(6);
+    const peso = (0.2 + rand(2000) / 1000).toFixed(3).replace(".", ",") + " kg";
+
+    // barcode bars (random widths) — visual only, not a real code
+    const bars = Array.from({ length: 70 }, () => {
+      const w = 1 + rand(3);
+      const black = rand(2) === 0;
+      return `<span style="display:inline-block;width:${w}px;height:60px;background:${black ? "#000" : "#fff"}"></span>`;
+    }).join("");
+
     const totalQty = o.items.reduce((a, i) => a + i.qty, 0);
     const itemsList = o.items.map((i) => `${i.qty}x ${escape(i.name)}`).join(" • ");
-    const cityUpper = (o.city || "").toUpperCase();
-    const districtUpper = (o.district || "").toUpperCase();
+    const cep = (o as any).cep || "00000-000";
+    const uf = (o as any).uf || "";
+    const cityLine = [o.city, uf].filter(Boolean).join(" - ").toUpperCase();
+
     const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/>
-<title>Etiqueta #${escape(o.id.slice(0, 8))}</title>
+<title>Etiqueta ${escape(trackingCode)}</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#000;background:#e5e5e5;padding:20px}
-  .actions{max-width:480px;margin:0 auto 12px;display:flex;gap:8px;justify-content:flex-end}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;color:#000}
+  body{background:#e5e5e5;padding:20px}
+  .actions{max-width:520px;margin:0 auto 12px;display:flex;gap:8px;justify-content:flex-end}
   .actions button{padding:8px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
-  .actions .print{background:#111;color:#fff}
-  .actions .close{background:#eee;color:#111}
-  .label{width:480px;margin:0 auto;background:#fff;border:2px solid #000;font-size:13px}
-  .brand{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;border-bottom:2px solid #000;background:#fff;min-height:90px}
-  .brand img{max-height:60px;max-width:240px;object-fit:contain}
-  .brand .name{font-size:22px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+  .actions .print{background:#111;color:#fff}.actions .close{background:#eee;color:#111}
+  .label{width:520px;margin:0 auto;background:#fff;border:2px solid #000;font-size:12px}
+  .brand{display:flex;align-items:center;justify-content:center;padding:10px;border-bottom:2px solid #000;min-height:70px;background:#fff}
+  .brand img{max-height:50px;max-width:280px;object-fit:contain}
+  .brand .name{font-size:20px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
   .row{display:flex;border-bottom:2px solid #000}
-  .row > div{padding:10px 12px}
-  .row .lbl{font-size:9px;text-transform:uppercase;color:#444;letter-spacing:.8px;margin-bottom:2px}
-  .row .val{font-weight:700;font-size:14px}
+  .row > div{padding:6px 10px}
+  .row > div + div{border-left:2px solid #000}
+  .lbl{font-size:8px;text-transform:uppercase;color:#000;letter-spacing:.6px;font-weight:700}
+  .val{font-weight:700;font-size:13px;margin-top:2px}
   .grow{flex:1}
-  .split > div + div{border-left:2px solid #000}
-  .dest-head{background:#000;color:#fff;padding:6px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;text-align:center}
-  .dest{padding:14px;border-bottom:2px solid #000}
-  .dest .name{font-size:17px;font-weight:800;text-transform:uppercase;margin-bottom:6px}
-  .dest .addr{font-size:14px;line-height:1.45}
-  .city-block{display:flex;border-bottom:2px solid #000}
-  .city-block .city{flex:1;padding:10px 12px;font-size:18px;font-weight:800;text-transform:uppercase}
-  .city-block .neigh{padding:10px 12px;font-size:12px;text-align:right;border-left:2px solid #000;min-width:140px}
-  .sender{padding:10px 12px;font-size:11px;background:#fafafa}
-  .sender .ttl{font-size:9px;text-transform:uppercase;color:#666;letter-spacing:.8px;margin-bottom:3px;font-weight:700}
-  .items{padding:10px 12px;font-size:11px;border-top:2px solid #000;background:#fafafa}
-  .items .ttl{font-size:9px;text-transform:uppercase;color:#666;letter-spacing:.8px;margin-bottom:3px;font-weight:700}
+  .barcode{padding:10px;text-align:center;border-bottom:2px solid #000;background:#fff}
+  .barcode .bars{display:flex;justify-content:center;align-items:end;gap:0;height:60px;overflow:hidden}
+  .barcode .code{font-family:'Courier New',monospace;font-size:14px;font-weight:700;letter-spacing:2px;margin-top:4px}
+  .sec-title{background:#000;color:#fff;padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px}
+  .recv{padding:8px 10px;border-bottom:2px solid #000;font-size:11px}
+  .recv .line{display:flex;gap:8px;margin-bottom:6px;align-items:flex-end}
+  .recv .line:last-child{margin-bottom:0}
+  .recv .field{flex:1;border-bottom:1px solid #000;min-height:18px;padding:0 4px}
+  .recv .lbl2{font-size:9px;text-transform:uppercase;font-weight:700;white-space:nowrap}
+  .dest{padding:10px;border-bottom:2px solid #000}
+  .dest .name{font-size:16px;font-weight:800;text-transform:uppercase;margin-bottom:4px}
+  .dest .addr{font-size:13px;line-height:1.4}
+  .dest .city{font-size:18px;font-weight:800;text-transform:uppercase;margin-top:6px}
+  .dest .cep{font-size:20px;font-weight:800;letter-spacing:2px;margin-top:4px;font-family:'Courier New',monospace}
+  .sender{padding:8px 10px;font-size:11px;background:#f5f5f5;line-height:1.5}
+  .sender strong{font-size:12px;text-transform:uppercase}
+  .items{padding:6px 10px;font-size:10px;border-top:2px solid #000;background:#fafafa;line-height:1.4}
+  .items .ttl{font-size:9px;text-transform:uppercase;font-weight:700;margin-bottom:2px}
   @media print{
     body{background:#fff;padding:0}
     .actions{display:none}
-    .label{margin:0;border-width:1px}
-    @page{size:auto;margin:8mm}
+    .label{margin:0;border-width:1.5px}
+    @page{size:auto;margin:6mm}
   }
 </style></head><body>
 <div class="actions">
@@ -266,29 +295,39 @@ function PedidosPage() {
 </div>
 <div class="label">
   <div class="brand">
-    ${logoUrl ? `<img src="${escape(logoUrl)}" alt="${escape(storeName)}" onerror="this.style.display='none'"/>` : `<div class="name">${escape(storeName)}</div>`}
+    ${logoUrl ? `<img src="${escape(logoUrl)}" alt="${escape(storeName)}" onerror="this.parentNode.innerHTML='<div class=\\'name\\'>${escape(storeName)}</div>'"/>` : `<div class="name">${escape(storeName)}</div>`}
   </div>
-  <div class="row split">
-    <div class="grow"><div class="lbl">Pedido</div><div class="val">#${escape(o.id.slice(0, 8).toUpperCase())}</div></div>
-    <div><div class="lbl">Data</div><div class="val">${escape(fmtDate(o.date))}</div></div>
-    <div><div class="lbl">Volumes</div><div class="val">1 / 1</div></div>
+  <div class="row">
+    <div class="grow"><div class="lbl">NF</div><div class="val">${escape(nf)}</div></div>
+    <div class="grow"><div class="lbl">Pedido</div><div class="val">${escape(pedidoNum)}</div></div>
+    <div><div class="lbl">Volume</div><div class="val">1 / 1</div></div>
+    <div><div class="lbl">Peso</div><div class="val">${escape(peso)}</div></div>
   </div>
-  <div class="dest-head">Destinatário</div>
+  <div class="barcode">
+    <div class="bars">${bars}</div>
+    <div class="code">${escape(trackingCode)}</div>
+  </div>
+  <div class="sec-title">Recebedor</div>
+  <div class="recv">
+    <div class="line"><span class="lbl2">Recebedor:</span><span class="field"></span></div>
+    <div class="line"><span class="lbl2">Assinatura:</span><span class="field"></span><span class="lbl2">Documento:</span><span class="field"></span></div>
+  </div>
+  <div class="sec-title">Destinatário</div>
   <div class="dest">
     <div class="name">${escape(o.customer)}</div>
     <div class="addr">
-      ${escape(o.address) || "—"}<br/>
-      ${o.phone ? `Tel: ${escape(o.phone)}` : ""}
+      ${escape(o.address) || "—"}${o.district ? "<br/>Bairro: " + escape(o.district) : ""}
+      ${o.phone ? `<br/>Tel: ${escape(o.phone)}` : ""}
     </div>
+    <div class="city">${escape(cityLine) || "—"}</div>
+    <div class="cep">CEP ${escape(cep)}</div>
   </div>
-  <div class="city-block">
-    <div class="city">${escape(cityUpper) || "—"}</div>
-    <div class="neigh">${escape(districtUpper) || ""}</div>
-  </div>
+  <div class="sec-title">Remetente</div>
   <div class="sender">
-    <div class="ttl">Remetente</div>
     <strong>${escape(senderName)}</strong><br/>
-    ${escape(senderAddress)}${senderCity ? " — " + escape(senderCity) : ""}
+    ${escape(senderAddress)}${senderDistrict ? " — " + escape(senderDistrict) : ""}<br/>
+    ${escape(senderCity)} — CEP ${escape(senderCep)}<br/>
+    CNPJ: ${escape(senderCnpj)}
   </div>
   <div class="items">
     <div class="ttl">Conteúdo (${totalQty} ${totalQty === 1 ? "item" : "itens"})</div>
@@ -297,10 +336,11 @@ function PedidosPage() {
 </div>
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script>
 </body></html>`;
-    const w = window.open("", "_blank", "width=560,height=820");
+    const w = window.open("", "_blank", "width=600,height=900");
     if (!w) { toast.error("Permita pop-ups para imprimir a etiqueta"); return; }
     w.document.open(); w.document.write(html); w.document.close();
   }
+
 
 
 
