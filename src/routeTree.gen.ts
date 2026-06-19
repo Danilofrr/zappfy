@@ -18,7 +18,10 @@ import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
 import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
+import { Route as AuthenticatedPorProdutoRouteImport } from './routes/_authenticated/por-produto'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
+import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
+import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedDreRouteImport } from './routes/_authenticated/dre'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
@@ -70,11 +73,27 @@ const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
   path: '/produtos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPorProdutoRoute = AuthenticatedPorProdutoRouteImport.update({
+  id: '/por-produto',
+  path: '/por-produto',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
+  id: '/metas',
+  path: '/metas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedIndicadoresRoute =
+  AuthenticatedIndicadoresRouteImport.update({
+    id: '/indicadores',
+    path: '/indicadores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
@@ -116,7 +135,10 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
+  '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/metas': typeof AuthenticatedMetasRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
+  '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/trocas': typeof AuthenticatedTrocasRoute
@@ -132,7 +154,10 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
+  '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/metas': typeof AuthenticatedMetasRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
+  '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/trocas': typeof AuthenticatedTrocasRoute
@@ -151,7 +176,10 @@ export interface FileRoutesById {
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dre': typeof AuthenticatedDreRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
+  '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
+  '/_authenticated/por-produto': typeof AuthenticatedPorProdutoRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/trocas': typeof AuthenticatedTrocasRoute
@@ -171,7 +199,10 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dre'
     | '/financeiro'
+    | '/indicadores'
+    | '/metas'
     | '/pedidos'
+    | '/por-produto'
     | '/produtos'
     | '/relatorios'
     | '/trocas'
@@ -187,7 +218,10 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dre'
     | '/financeiro'
+    | '/indicadores'
+    | '/metas'
     | '/pedidos'
+    | '/por-produto'
     | '/produtos'
     | '/relatorios'
     | '/trocas'
@@ -205,7 +239,10 @@ export interface FileRouteTypes {
     | '/_authenticated/configuracoes'
     | '/_authenticated/dre'
     | '/_authenticated/financeiro'
+    | '/_authenticated/indicadores'
+    | '/_authenticated/metas'
     | '/_authenticated/pedidos'
+    | '/_authenticated/por-produto'
     | '/_authenticated/produtos'
     | '/_authenticated/relatorios'
     | '/_authenticated/trocas'
@@ -288,11 +325,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProdutosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/por-produto': {
+      id: '/_authenticated/por-produto'
+      path: '/por-produto'
+      fullPath: '/por-produto'
+      preLoaderRoute: typeof AuthenticatedPorProdutoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/pedidos': {
       id: '/_authenticated/pedidos'
       path: '/pedidos'
       fullPath: '/pedidos'
       preLoaderRoute: typeof AuthenticatedPedidosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/metas': {
+      id: '/_authenticated/metas'
+      path: '/metas'
+      fullPath: '/metas'
+      preLoaderRoute: typeof AuthenticatedMetasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/indicadores': {
+      id: '/_authenticated/indicadores'
+      path: '/indicadores'
+      fullPath: '/indicadores'
+      preLoaderRoute: typeof AuthenticatedIndicadoresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/financeiro': {
@@ -346,7 +404,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDreRoute: typeof AuthenticatedDreRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
+  AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
+  AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
+  AuthenticatedPorProdutoRoute: typeof AuthenticatedPorProdutoRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedTrocasRoute: typeof AuthenticatedTrocasRoute
@@ -359,7 +420,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDreRoute: AuthenticatedDreRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
+  AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
+  AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
+  AuthenticatedPorProdutoRoute: AuthenticatedPorProdutoRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedTrocasRoute: AuthenticatedTrocasRoute,
