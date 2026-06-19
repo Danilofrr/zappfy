@@ -34,12 +34,17 @@ function AuthPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [supportWhats, setSupportWhats] = useState<string | null>(null);
+  const [whatsEnabled, setWhatsEnabled] = useState<boolean>(true);
 
   useEffect(() => {
     getPublicSupport()
-      .then((r) => setSupportWhats(r?.whats ?? null))
+      .then((r) => {
+        setSupportWhats(r?.whats ?? null);
+        setWhatsEnabled(r?.loginEnabled !== false);
+      })
       .catch(() => {});
   }, []);
+
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("lt_remember_email");
