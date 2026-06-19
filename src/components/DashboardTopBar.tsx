@@ -63,7 +63,7 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
           >
             <Eye className="h-4 w-4" />
           </Link>
-          <ThemeToggle />
+          
           <Link
             to="/configuracoes"
             className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
