@@ -35,36 +35,64 @@ export const getMyAccess = createServerFn({ method: "GET" })
   });
 
 // ===== Dashboard admin =====
+// Usa a MESMA fonte de dados da página de Clientes (RPC admin_list_clients)
+// para garantir que os números batam com a lista exibida.
 export const getAdminDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const t0 = Date.now();
     const { supabase, userId } = context as any;
     await ensureAdmin(supabase, userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: subs } = await supabaseAdmin
-      .from("subscriptions")
-      .select("status, expires_at, plan_id, started_at, plans(price_monthly)");
-    const list = subs ?? [];
-    const total = list.length;
-    const ativos = list.filter((s: any) => s.status === "ativo").length;
-    const teste = list.filter((s: any) => s.status === "teste").length;
-    const vencidos = list.filter((s: any) => s.status === "vencido").length;
-    const bloqueados = list.filter((s: any) => s.status === "bloqueado").length;
-    const pendentes = list.filter((s: any) => s.status === "pendente").length;
-    const mrr = list
-      .filter((s: any) => s.status === "ativo")
-      .reduce((acc: number, s: any) => acc + Number(s.plans?.price_monthly ?? 0), 0);
-    const arr = mrr * 12;
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-    const novosMes = list.filter((s: any) => new Date(s.started_at) >= startOfMonth).length;
+    const { data, error } = await supabase.rpc("admin_list_clients");
+    if (error) throw new Error(error.message);
+    const rows: any[] = data ?? [];
+
+    const now = new Date();
     const in7 = new Date();
     in7.setDate(in7.getDate() + 7);
-    const proximosVencer = list.filter(
-      (s: any) => s.expires_at && new Date(s.expires_at) <= in7 && new Date(s.expires_at) >= new Date(),
-    ).length;
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+
+    const norm = (s: any) => String(s ?? "").trim().toLowerCase();
+    const ATIVO = new Set(["ativo", "active"]);
+    const TESTE = new Set(["teste", "teste grátis", "teste gratis", "trial", "free_trial"]);
+    const PENDENTE = new Set(["pendente", "pending"]);
+    const BLOQUEADO = new Set(["bloqueado", "blocked"]);
+
+    let total = 0,
+      ativos = 0,
+      teste = 0,
+      pendentes = 0,
+      vencidos = 0,
+      bloqueados = 0,
+      novosMes = 0,
+      proximosVencer = 0,
+      mrr = 0;
+
+    for (const r of rows) {
+      total++;
+      const status = norm(r.sub_status);
+      const exp = r.sub_expires_at ? new Date(r.sub_expires_at) : null;
+      const created = r.created_at ? new Date(r.created_at) : null;
+      const isBlocked = BLOQUEADO.has(status);
+      const hasFutureExp = exp && exp.getTime() >= now.getTime();
+      const isActive =
+        ATIVO.has(status) || (!isBlocked && hasFutureExp && (r.plan_id || r.plan_name));
+
+      if (isActive) ativos++;
+      if (TESTE.has(status)) teste++;
+      if (PENDENTE.has(status)) pendentes++;
+      if (isBlocked) bloqueados++;
+      if (exp && exp.getTime() < now.getTime() && !isBlocked) vencidos++;
+      if (created && created >= startOfMonth) novosMes++;
+      if (exp && exp >= now && exp <= in7) proximosVencer++;
+      if (isActive) mrr += Number(r.price_monthly ?? 0);
+    }
+
+    const arr = mrr * 12;
+    // eslint-disable-next-line no-console
+    console.log(`[admin-dashboard] ${rows.length} clientes em ${Date.now() - t0}ms — ativos=${ativos} vencidos=${vencidos} MRR=${mrr}`);
+
     return { total, ativos, teste, vencidos, bloqueados, pendentes, mrr, arr, novosMes, proximosVencer };
   });
 
