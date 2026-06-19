@@ -177,6 +177,9 @@ function ClientsPage() {
                       }}>
                         <LinkIcon className="h-4 w-4" />
                       </Button>
+                      <Button size="sm" variant="ghost" title="Gerenciar senha" onClick={() => { setPwdClient({ id: c.id, email: c.email }); setNewPwd(""); setResetLink(null); }}>
+                        <KeyRound className="h-4 w-4 text-primary" />
+                      </Button>
                       <Button size="sm" variant="ghost" title="Excluir" onClick={async () => {
                         if (!confirm(`Excluir ${c.email}?`)) return;
                         await delFn({ data: { userId: c.id } });
