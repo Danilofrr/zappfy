@@ -74,9 +74,7 @@ function ResetPasswordPage() {
       <div className="absolute top-4 right-4"><ThemeToggle /></div>
       <Card className="w-full max-w-md p-6 lg:p-8">
         <div className="flex items-center gap-2 mb-6">
-          <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">
-            <TrendingUp className="h-5 w-5 text-primary" />
-          </div>
+          <img src="/logo-bubble.png" alt="Zappfy" className="h-10 w-10 object-contain" />
           <span className="text-xl font-bold tracking-tight text-neon">ZappFy</span>
         </div>
 
