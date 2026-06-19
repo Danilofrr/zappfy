@@ -540,3 +540,26 @@ export const getMySubscription = createServerFn({ method: "GET" })
       .limit(50);
     return { subscription: sub, payments: payments ?? [] };
   });
+
+// ===== Configurações do sistema =====
+export const getSystemSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context as any;
+    await ensureAdmin(supabase, userId);
+    const { data } = await supabase.from("admin_settings").select("value").eq("key", "system").maybeSingle();
+    return (data?.value as Record<string, any>) ?? {};
+  });
+
+export const saveSystemSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: any) => z.object({ value: z.record(z.string(), z.any()) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    await ensureAdmin(supabase, userId);
+    const { error } = await supabase
+      .from("admin_settings")
+      .upsert({ key: "system", value: data.value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
