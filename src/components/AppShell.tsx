@@ -17,6 +17,8 @@ import {
   Package,
   Activity,
   Target,
+  Calculator,
+
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -48,10 +50,12 @@ const navGroups: { label: string; items: { to: string; label: string; icon: any 
     label: "Gestão",
     items: [
       { to: "/financeiro", label: "Financeiro", icon: Wallet },
+      { to: "/precificacao", label: "Precificação", icon: Calculator },
       { to: "/ads", label: "Facebook Ads", icon: Megaphone },
       { to: "/configuracoes", label: "Configurações", icon: Cog },
     ],
   },
+
 ];
 
 export function AppShell({ children, title, subtitle, actions }: { children: ReactNode; title: string; subtitle?: string; actions?: ReactNode }) {
