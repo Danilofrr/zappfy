@@ -74,50 +74,28 @@ export const listClients = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context as any;
     await ensureAdmin(supabase, userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: users } = await supabaseAdmin.auth.admin.listUsers({ perPage: 500 });
-    const ids = (users?.users ?? []).map((u: any) => u.id);
-    const [{ data: profiles }, { data: settings }, { data: subs }, { data: roles }] = await Promise.all([
-      supabaseAdmin.from("profiles").select("id, full_name").in("id", ids),
-      supabaseAdmin.from("settings").select("user_id, store_name, whatsapp").in("user_id", ids),
-      supabaseAdmin
-        .from("subscriptions")
-        .select("user_id, status, expires_at, started_at, plan_id, plans(name, price_monthly)")
-        .in("user_id", ids),
-      supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
-    ]);
-    const p = new Map((profiles ?? []).map((x: any) => [x.id, x]));
-    const st = new Map((settings ?? []).map((x: any) => [x.user_id, x]));
-    const sb = new Map((subs ?? []).map((x: any) => [x.user_id, x]));
-    const rolesByUser = new Map<string, string[]>();
-    (roles ?? []).forEach((r: any) => {
-      const arr = rolesByUser.get(r.user_id) ?? [];
-      arr.push(r.role);
-      rolesByUser.set(r.user_id, arr);
-    });
-    return (users?.users ?? []).map((u: any) => {
-      const subscription = sb.get(u.id) as any;
-      return {
-        id: u.id,
-        email: u.email,
-        fullName: (p.get(u.id) as any)?.full_name ?? "",
-        storeName: (st.get(u.id) as any)?.store_name ?? "",
-        whatsapp: (st.get(u.id) as any)?.whatsapp ?? "",
-        createdAt: u.created_at,
-        lastSignInAt: u.last_sign_in_at,
-        roles: rolesByUser.get(u.id) ?? [],
-        subscription: subscription
-          ? {
-              status: subscription.status,
-              expiresAt: subscription.expires_at,
-              startedAt: subscription.started_at,
-              planId: subscription.plan_id,
-              planName: subscription.plans?.name ?? null,
-              priceMonthly: Number(subscription.plans?.price_monthly ?? 0),
-            }
-          : null,
-      };
-    });
+    const { data, error } = await supabase.rpc("admin_list_clients");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: any) => ({
+      id: r.id,
+      email: r.email,
+      fullName: r.full_name ?? "",
+      storeName: r.store_name ?? "",
+      whatsapp: r.whatsapp ?? "",
+      createdAt: r.created_at,
+      lastSignInAt: r.last_sign_in_at,
+      roles: r.roles ?? [],
+      subscription: r.sub_status
+        ? {
+            status: r.sub_status,
+            expiresAt: r.sub_expires_at,
+            startedAt: r.sub_started_at,
+            planId: r.plan_id,
+            planName: r.plan_name ?? null,
+            priceMonthly: Number(r.price_monthly ?? 0),
+          }
+        : null,
+    }));
   });
 
 export const createClient = createServerFn({ method: "POST" })

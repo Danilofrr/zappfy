@@ -1023,6 +1023,25 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_clients: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_sign_in_at: string
+          plan_id: string
+          plan_name: string
+          price_monthly: number
+          roles: string[]
+          store_name: string
+          sub_expires_at: string
+          sub_started_at: string
+          sub_status: string
+          whatsapp: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
