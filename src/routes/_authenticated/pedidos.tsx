@@ -1005,6 +1005,9 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 </Select>
               </Field>
             </div>
+            <Field label="Data do pedido">
+              <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
+            </Field>
 
             {/* Segundo pagamento (opcional) */}
             <div className="pt-1 border-t border-border/60 mt-1">
