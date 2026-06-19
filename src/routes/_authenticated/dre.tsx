@@ -69,10 +69,10 @@ function DREPage() {
     >
       {/* Cards de topo */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <KPI label="Resultado Final" value={brl(dre.resultadoFinal)} hint="Após gastos pessoais" tone={dre.resultadoFinal >= 0 ? "good" : "bad"} />
-        <KPI label="Margem Líquida" value={pct(dre.lucroOperacional, dre.receita)} hint="EBITDA / receita" />
-        <KPI label="Margem Bruta" value={pct(dre.lucroBruto, dre.receita)} hint="Lucro bruto / receita" />
-        <KPI label="Receita Bruta" value={brl(dre.receita)} hint="Faturamento" />
+        <KPI label="Resultado Final" value={brl(dre.resultadoFinal)} hint="Após gastos pessoais" tone={dre.resultadoFinal >= 0 ? "good" : "bad"} neon="56 189 248" />
+        <KPI label="Margem Líquida" value={pct(dre.lucroOperacional, dre.receita)} hint="EBITDA / receita" neon="167 139 250" />
+        <KPI label="Margem Bruta" value={pct(dre.lucroBruto, dre.receita)} hint="Lucro bruto / receita" neon="251 191 36" />
+        <KPI label="Receita Bruta" value={brl(dre.receita)} hint="Faturamento" neon="236 72 153" />
       </div>
 
       {/* Demonstrativo */}
