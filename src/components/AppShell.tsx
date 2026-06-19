@@ -98,18 +98,18 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           className={cn(
             "group/sidebar fixed lg:sticky top-0 left-0 z-50 h-screen shrink-0 border-r border-sidebar-border bg-sidebar transition-[transform,width] duration-300 ease-out",
             "w-64",
-            sidebarHovered ? "lg:w-64" : "lg:w-[4.5rem]",
+            sidebarHovered ? "lg:w-64" : "lg:w-[5.5rem]",
             open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
         >
           <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0 overflow-hidden">
-            <div className="flex items-center justify-between gap-2 px-4 lg:px-2 lg:group-hover/sidebar:px-4 h-20 border-b border-sidebar-border transition-[padding] duration-200">
-              <div className="flex items-center min-w-0 relative h-16 w-full overflow-hidden">
-                <img src="/logo-full.png" alt="Zappfy" className="block lg:hidden h-14 w-auto object-contain absolute left-0 top-1/2 -translate-y-1/2" />
+            <div className="flex items-center justify-between gap-2 px-4 lg:px-2 lg:group-hover/sidebar:px-4 h-28 border-b border-sidebar-border transition-[padding] duration-200">
+              <div className="flex items-center min-w-0 relative h-24 w-full overflow-hidden">
+                <img src="/logo-full.png" alt="Zappfy" className="block lg:hidden h-20 w-auto object-contain absolute left-0 top-1/2 -translate-y-1/2" />
                 {sidebarHovered ? (
-                  <img src="/logo-full.png" alt="Zappfy" className="hidden lg:block h-16 w-auto max-w-full object-contain absolute left-0 top-1/2 -translate-y-1/2" />
+                  <img src="/logo-full.png" alt="Zappfy" className="hidden lg:block h-24 w-auto max-w-full object-contain absolute left-0 top-1/2 -translate-y-1/2" />
                 ) : (
-                  <img src="/logo-bubble.png" alt="Zappfy" className="hidden lg:block h-16 w-16 object-contain absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  <img src="/logo-bubble.png" alt="Zappfy" className="hidden lg:block h-20 w-20 object-contain absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                 )}
               </div>
               <button
