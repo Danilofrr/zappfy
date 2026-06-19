@@ -196,8 +196,12 @@ function PedidosPage() {
                     <div className="text-xs text-muted-foreground">{o.phone}</div>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <div className="truncate max-w-[260px]">{o.items[0]?.name}</div>
-                    <div className="text-xs text-muted-foreground">Qtd: {o.items[0]?.qty} · {o.payment.toUpperCase()}</div>
+                    <div className="truncate max-w-[260px]">
+                      {o.items.map((it) => `${it.qty}x ${it.name}`).join(", ")}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {o.items.reduce((n, it) => n + it.qty, 0)} item(s) · {o.payment.toUpperCase()}
+                    </div>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">{o.district}</td>
                   <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">{fmtDate(o.date)}</td>
