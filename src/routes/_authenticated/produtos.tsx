@@ -187,10 +187,30 @@ function EstoquePage() {
 
       {/* Filters: category chips + view toggle */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <CatChip active={cat === "todas"} onClick={() => setCat("todas")} color="primary">Todas</CatChip>
-        {categories.map((c) => (
-          <CatChip key={c} active={cat === c} onClick={() => setCat(c)} color="pink">{c}</CatChip>
-        ))}
+        <CatChip
+          active={cat === "todas"}
+          onClick={() => setCat("todas")}
+          color="primary"
+          amount={brl(totalEstoqueGeral)}
+          count={state.products.length}
+        >
+          Todas
+        </CatChip>
+        {categories.map((c) => {
+          const s = categoryStats.get(c);
+          return (
+            <CatChip
+              key={c}
+              active={cat === c}
+              onClick={() => setCat(c)}
+              color="pink"
+              amount={brl(s?.estoque ?? 0)}
+              count={s?.count ?? 0}
+            >
+              {c}
+            </CatChip>
+          );
+        })}
         <div className="ml-auto inline-flex rounded-lg border border-border overflow-hidden">
           <button
             onClick={() => setView("tabela")}
@@ -210,6 +230,15 @@ function EstoquePage() {
           </button>
         </div>
       </div>
+
+      {cat !== "todas" && (
+        <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span>Categoria: <span className="text-foreground font-semibold">{cat}</span></span>
+          <span>Custo em estoque: <span className="text-violet-300 font-semibold">{brl(totals.valorEstoque)}</span></span>
+          <span>Valor de venda: <span className="text-emerald-300 font-semibold">{brl(totals.valorVenda)}</span></span>
+          <span>Lucro potencial: <span className="text-emerald-300 font-semibold">{brl(totals.valorVenda - totals.valorEstoque)}</span></span>
+        </div>
+      )}
 
       {tab === "kits" ? (
         <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-elegant">
