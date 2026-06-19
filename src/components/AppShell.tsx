@@ -83,15 +83,12 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="flex items-center justify-between px-3 h-[64px]">
-          <Link to="/" className="flex items-center gap-2 min-w-0">
+          <Link to="/" className="flex items-center min-w-0">
             <img
-              src="/logo-bubble.png"
+              src="/logo-full.png"
               alt="Zappfy"
-              className="h-11 w-11 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]"
+              className="h-11 w-auto object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]"
             />
-            <span className="text-[26px] font-bold tracking-tight leading-none text-sidebar-foreground">
-              ZappFy
-            </span>
           </Link>
           <ThemeToggle />
         </div>
@@ -115,23 +112,28 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                 to="/"
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 min-w-0 w-full h-full",
+                  "flex items-center min-w-0 w-full h-full",
                   "lg:justify-center lg:group-hover/sidebar:justify-start",
                 )}
               >
+                {/* Collapsed (desktop only): bubble icon */}
                 <img
                   src="/logo-bubble.png"
                   alt="Zappfy"
-                  className="h-12 w-12 shrink-0 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.5)]"
-                />
-                <span
                   className={cn(
-                    "text-[26px] font-bold tracking-tight leading-none text-sidebar-foreground whitespace-nowrap",
-                    "opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 transition-opacity duration-200",
+                    "hidden h-12 w-12 shrink-0 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.5)]",
+                    !sidebarHovered && "lg:block",
                   )}
-                >
-                  ZappFy
-                </span>
+                />
+                {/* Expanded / mobile: full logo */}
+                <img
+                  src="/logo-full.png"
+                  alt="Zappfy"
+                  className={cn(
+                    "block h-12 w-auto max-w-full object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]",
+                    sidebarHovered ? "lg:block" : "lg:hidden",
+                  )}
+                />
               </Link>
               <button
                 onClick={() => setOpen(false)}
