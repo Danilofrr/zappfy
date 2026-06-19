@@ -50,7 +50,9 @@ function Page() {
       price = num(manualPrice);
     }
 
+    const adsCost = price * (num(adsPct) / 100);
     const variableCost = price * variablePct;
+    const otherVariableCost = variableCost - adsCost;
     const profit = price - realCost - variableCost;
     const marginPct = price > 0 ? (profit / price) * 100 : 0;
     const markupCalc = realCost > 0 ? price / realCost : 0;
@@ -66,7 +68,7 @@ function Page() {
     const roasMin = cpaMax > 0 ? price / cpaMax : 0;
     const roasIdeal = cpaIdeal > 0 ? price / cpaIdeal : 0;
 
-    return { realCost, variablePct, price, variableCost, profit, marginPct, markupCalc, breakEven, cpaMax, cpaIdeal, roasMin, roasIdeal };
+    return { realCost, variablePct, price, variableCost, otherVariableCost, adsCost, profit, marginPct, markupCalc, breakEven, cpaMax, cpaIdeal, roasMin, roasIdeal };
   }, [cost, freight, packaging, otherCost, taxPct, cardPct, platformPct, adsPct, otherPct, mode, markup, margin, manualPrice, targetMargin]);
 
   function reset() {
@@ -198,8 +200,10 @@ function Page() {
             <h3 className="text-sm font-semibold mb-3">Resumo</h3>
             <div className="grid gap-2 sm:grid-cols-2 text-sm">
               <Row label="Preço sugerido" value={brl(data.price)} strong />
-              <Row label="Custo real" value={brl(data.realCost)} />
-              <Row label="Despesas variáveis" value={brl(data.variableCost)} />
+              <Row label="Custo real do produto" value={brl(data.realCost)} />
+              <Row label="Custo de marketing (Facebook Ads)" value={brl(data.adsCost)} tone="bad" />
+              <Row label="Outras despesas variáveis" value={brl(data.otherVariableCost)} />
+              <Row label="Despesas variáveis totais" value={brl(data.variableCost)} />
               <Row label="Lucro líquido" value={brl(data.profit)} strong tone={data.profit >= 0 ? "ok" : "bad"} />
               <Row label="Margem de lucro" value={`${data.marginPct.toFixed(2)}%`} />
               <Row label="Markup real" value={`${data.markupCalc.toFixed(2)}x`} />
