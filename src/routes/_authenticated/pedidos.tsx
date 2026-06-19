@@ -937,7 +937,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
           </div>
 
           {/* Desconto / Cupom */}
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
             <SectionLabel icon={Tag}>Desconto (opcional)</SectionLabel>
             <div className="grid grid-cols-3 gap-2">
               <Field label="TIPO">
@@ -964,7 +964,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="CODIGO"
                   />
-                  <Button type="button" size="sm" onClick={applyCoupon} className="bg-amber-500 hover:bg-amber-600 text-black font-semibold">OK</Button>
+                  <Button type="button" size="sm" onClick={applyCoupon} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">OK</Button>
                 </div>
               </Field>
             </div>
@@ -1057,7 +1057,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button
-            className="bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
             onClick={() => {
               if (!form.customer) { toast.error("Preencha o nome do cliente"); return; }
               if (lines.length === 0) { toast.error("Adicione ao menos um produto"); return; }
@@ -1156,7 +1156,7 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Fechar</Button>
           <Button
-            className="bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
             onClick={() => { saveMachineFees(fees); toast.success("Taxas salvas!"); onClose(); }}
           >
             <Save className="mr-2 h-4 w-4" /> Salvar Taxas
