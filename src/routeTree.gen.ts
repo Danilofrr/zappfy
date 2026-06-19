@@ -21,6 +21,7 @@ import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedDreRouteImport } from './routes/_authenticated/dre'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticated/compras'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
 
@@ -84,6 +85,11 @@ const AuthenticatedConfiguracoesRoute =
     path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedComprasRoute = AuthenticatedComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
   id: '/ads',
   path: '/ads',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
+  '/compras': typeof AuthenticatedComprasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
+  '/compras': typeof AuthenticatedComprasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
+  '/_authenticated/compras': typeof AuthenticatedComprasRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dre': typeof AuthenticatedDreRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/ads'
+    | '/compras'
     | '/configuracoes'
     | '/dre'
     | '/financeiro'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/ads'
+    | '/compras'
     | '/configuracoes'
     | '/dre'
     | '/financeiro'
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/_authenticated/ads'
+    | '/_authenticated/compras'
     | '/_authenticated/configuracoes'
     | '/_authenticated/dre'
     | '/_authenticated/financeiro'
@@ -285,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/compras': {
+      id: '/_authenticated/compras'
+      path: '/compras'
+      fullPath: '/compras'
+      preLoaderRoute: typeof AuthenticatedComprasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ads': {
       id: '/_authenticated/ads'
       path: '/ads'
@@ -304,6 +323,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
+  AuthenticatedComprasRoute: typeof AuthenticatedComprasRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDreRoute: typeof AuthenticatedDreRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
@@ -315,6 +335,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdsRoute: AuthenticatedAdsRoute,
+  AuthenticatedComprasRoute: AuthenticatedComprasRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDreRoute: AuthenticatedDreRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
