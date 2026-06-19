@@ -75,7 +75,7 @@ function Page() {
     setMarkup("2"); setMargin("30"); setManualPrice(""); setMode("markup");
   }
 
-  void targetMargin;
+  
 
   return (
     <AppShell
@@ -189,6 +189,9 @@ function Page() {
                 <input className="input" inputMode="decimal" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} placeholder="0,00" />
               </Field>
             )}
+            <Field label="Margem alvo para CPA Ideal (%)">
+              <input className="input" inputMode="decimal" value={targetMargin} onChange={(e) => setTargetMargin(e.target.value)} placeholder="20" />
+            </Field>
           </div>
 
           <div className="rounded-xl border border-border bg-secondary/30 p-4">
