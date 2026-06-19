@@ -180,14 +180,15 @@ function PedidosPage() {
                 <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Produto</th>
                 <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Bairro</th>
                 <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Data</th>
-                <th className="text-right px-4 py-3 font-medium">Valor / Lucro</th>
+                <th className="text-right px-4 py-3 font-medium">Valor</th>
+                <th className="text-right px-4 py-3 font-medium">Lucro</th>
                 <th className="text-left px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
               )}
               {filtered.map((o) => (
                 <tr key={o.id} className="border-t border-border hover:bg-secondary/30">
@@ -205,19 +206,19 @@ function PedidosPage() {
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">{o.district}</td>
                   <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">{fmtDate(o.date)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="font-semibold">{brl(o.total)}</div>
-                    {(() => {
-                      const cost = o.items.reduce((s, it) => s + (it.cost ?? 0) * it.qty, 0);
-                      const profit = o.total - cost;
-                      const cls = profit >= 0 ? "text-primary" : "text-destructive";
-                      return (
-                        <div className={`text-[11px] font-medium ${cls}`} title="Lucro líquido (venda - custo)">
-                          Lucro: {brl(profit)}
-                        </div>
-                      );
-                    })()}
-                  </td>
+                  <td className="px-4 py-3 text-right font-semibold">{brl(o.total)}</td>
+                  {(() => {
+                    const cost = o.items.reduce((s, it) => s + (it.cost ?? 0) * it.qty, 0);
+                    const profit = o.total - cost;
+                    const margin = o.total > 0 ? (profit / o.total) * 100 : 0;
+                    const cls = profit >= 0 ? "text-emerald-500" : "text-destructive";
+                    return (
+                      <td className="px-4 py-3 text-right">
+                        <div className={`font-semibold ${cls}`}>{brl(profit)}</div>
+                        <div className="text-[11px] text-muted-foreground">{margin.toFixed(1)}%</div>
+                      </td>
+                    );
+                  })()}
                   <td className="px-4 py-3">
                     <Select value={o.status} onValueChange={(v) => handleStatusChange(o, v as OrderStatus)}>
                       <SelectTrigger className={`h-8 w-[170px] border-0 ${statusMap[o.status].color}`}>
