@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock } from "lucide-react";
+import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock, Minus, Plus, ShieldCheck, Truck, CreditCard, User } from "lucide-react";
 import { getShippingIcon } from "@/lib/shipping-icons";
 import { PaymentBadge } from "@/lib/payment-icons";
 import { brl } from "@/lib/format";
@@ -254,7 +254,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-8">
         {noProducts ? (
           <div className="p-10 text-center" style={cardStyle}>
             <PackageX className="mx-auto h-10 w-10 opacity-50" />
@@ -262,37 +262,50 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
             <p className="mt-1 text-sm opacity-70">Volte mais tarde — a loja ainda não cadastrou produtos.</p>
           </div>
         ) : (
-        <div className="grid lg:grid-cols-[1fr_320px] gap-6">
-          <div className="space-y-3">
-            <div className="p-5" style={cardStyle}>
-              <div className="text-xs uppercase tracking-wider opacity-60 mb-3">Seu pedido</div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Produto">
-                  <Select value={productId} onValueChange={setProductId}>
-                    <SelectTrigger><SelectValue/></SelectTrigger>
-                    <SelectContent>
-                      {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
-                          {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Quantidade">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={product?.stock ?? 1}
-                    value={qty}
-                    onChange={(e) => setQty(Math.max(1, Math.min(product?.stock ?? 1, Number(e.target.value))))}
-                  />
-                </Field>
+        <>
+          {/* Barra de progresso das etapas */}
+          <ProgressBar step={step} neonColor={neonColor} textColor={textColor}
+            titles={[
+              settings.checkoutStep1Title || "Identificação",
+              settings.checkoutStep2Title || "Entrega",
+              settings.checkoutStep3Title || "Pagamento",
+            ]}
+          />
+
+        <div className="grid lg:grid-cols-[1fr_380px] gap-5 lg:gap-6 mt-6">
+          <div className="space-y-4">
+            {products.length > 1 && (
+              <div className="p-5" style={cardStyle}>
+                <div className="text-xs uppercase tracking-wider opacity-60 mb-3 font-semibold">Seu pedido</div>
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-3">
+                  <Field label="Produto">
+                    <Select value={productId} onValueChange={setProductId}>
+                      <SelectTrigger><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        {products.map((p) => (
+                          <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
+                            {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Quantidade">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={product?.stock ?? 1}
+                      value={qty}
+                      onChange={(e) => setQty(Math.max(1, Math.min(product?.stock ?? 1, Number(e.target.value))))}
+                    />
+                  </Field>
+                </div>
               </div>
-            </div>
+            )}
 
             <StepCard
               n={1} title={settings.checkoutStep1Title || "Dados pessoais"}
+              icon={User}
               state={step === 1 ? "active" : step > 1 ? "done" : "locked"}
               neonColor={neonColor} cardStyle={cardStyle}
               summary={step > 1 ? `${form.customer} · ${form.phone}` : undefined}
@@ -316,6 +329,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                       if (!form.customer || !form.phone) return toast.error("Preencha nome e telefone");
                       setStep(2);
                     }}
+                    className="px-6"
                     style={{ backgroundColor: stepBtnBg, color: stepBtnText }}
                   >{settings.checkoutStep1ButtonLabel || "Continuar"}</Button>
                 </div>
@@ -324,6 +338,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
 
             <StepCard
               n={2} title={settings.checkoutStep2Title || "Entrega"}
+              icon={Truck}
               state={step === 2 ? "active" : step > 2 ? "done" : "locked"}
               neonColor={neonColor} cardStyle={cardStyle}
               summary={step > 2 && shipping ? `${shipping.label} — ${brl(shipping.price)}` : undefined}
@@ -349,7 +364,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                       <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})}/></Field>
                     </div>
                     <div>
-                      <Label className="text-xs mb-2 block">Forma de entrega <span className="opacity-60">(toque para selecionar)</span></Label>
+                      <Label className="text-xs mb-2 block font-semibold">Forma de entrega <span className="opacity-60 font-normal">(toque para selecionar)</span></Label>
                       <div className="grid gap-2" role="radiogroup">
                         {settings.shippingOptions.map((opt) => {
                           const active = shippingId === opt.id;
@@ -361,7 +376,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                               role="radio"
                               aria-checked={active}
                               onClick={() => setShippingId(opt.id)}
-                              className="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors"
+                              className="flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-all"
                               style={{
                                 border: `1px solid ${active ? neonColor : `${neonColor}33`}`,
                                 backgroundColor: active ? `${neonColor}1a` : "transparent",
@@ -401,6 +416,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                       if (!shipping) return toast.error("Selecione uma forma de entrega");
                       setStep(3);
                     }}
+                    className="px-6"
                     style={{ backgroundColor: stepBtnBg, color: stepBtnText }}
                   >{settings.checkoutStep2ButtonLabel || "Continuar"}</Button>
                 </div>
@@ -409,78 +425,140 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
 
             <StepCard
               n={3} title={settings.checkoutStep3Title || "Pagamento"}
+              icon={CreditCard}
               state={step === 3 ? "active" : "locked"}
               neonColor={neonColor} cardStyle={cardStyle}
             >
               <div className="grid gap-4">
                 <div>
-                  <Label className="text-xs mb-2 block">Forma de pagamento</Label>
+                  <Label className="text-xs mb-2 block font-semibold">Forma de pagamento</Label>
                   <div className="grid grid-cols-3 gap-2">
-                    {(["pix", "cartao", "dinheiro"] as PaymentMethod[]).map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setForm({...form, payment: p})}
-                        className={`rounded-lg border px-3 py-2.5 text-sm font-medium capitalize transition-colors ${
-                          form.payment === p ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"
-                        }`}
-                      >{p === "cartao" ? "Cartão" : p === "pix" ? "PIX" : "Dinheiro"}</button>
-                    ))}
+                    {(["pix", "cartao", "dinheiro"] as PaymentMethod[]).map((p) => {
+                      const active = form.payment === p;
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setForm({...form, payment: p})}
+                          className="rounded-lg px-3 py-3 text-sm font-semibold capitalize transition-all"
+                          style={{
+                            border: `1px solid ${active ? neonColor : `${neonColor}33`}`,
+                            backgroundColor: active ? `${neonColor}1a` : "transparent",
+                            boxShadow: active ? `0 0 12px ${neonColor}55` : "none",
+                          }}
+                        >{p === "cartao" ? "Cartão" : p === "pix" ? "PIX" : "Dinheiro"}</button>
+                      );
+                    })}
                   </div>
                 </div>
                 <Field label="Observações (opcional)"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} placeholder="Ex: tocar interfone, troco para R$ 200..."/></Field>
-                <div className="flex justify-end pt-2">
-                  <Button
-                    onClick={submit}
-                    disabled={submitting}
-                    className="font-semibold"
-                    style={{ backgroundColor: buttonColor, color: stepBtnText, boxShadow: `0 0 20px ${buttonColor}99` }}
-                  >
-                    {submitting ? "Enviando..." : (settings.checkoutButtonLabel || settings.checkoutStep3ButtonLabel || "Enviar pedido pelo WhatsApp")}
-                  </Button>
+                <Button
+                  onClick={submit}
+                  disabled={submitting}
+                  className="w-full font-bold text-base py-6"
+                  style={{ backgroundColor: buttonColor, color: stepBtnText, boxShadow: `0 0 24px ${buttonColor}99` }}
+                >
+                  {submitting ? "Enviando..." : (settings.checkoutButtonLabel || settings.checkoutStep3ButtonLabel || "Finalizar pedido")}
+                </Button>
+                <div className="flex items-center justify-center gap-2 text-xs opacity-70">
+                  <ShieldCheck className="h-4 w-4" style={{ color: neonColor }} />
+                  <span>Pedido protegido — seus dados estão seguros</span>
                 </div>
               </div>
             </StepCard>
           </div>
 
-          <aside className="p-6 h-fit lg:sticky lg:top-6" style={cardStyle}>
-            <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4" style={{ color: neonColor }}/>Resumo</div>
-            <div className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center gap-3">
-                {product?.imageUrl ? (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="h-14 w-14 rounded-lg object-cover shrink-0"
-                    style={{ border: `1px solid ${neonColor}33` }}
-                  />
-                ) : (
-                  <div
-                    className="h-14 w-14 rounded-lg grid place-items-center shrink-0"
-                    style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}10` }}
-                  >
-                    <ShoppingBag className="h-5 w-5 opacity-50" />
+          <aside className="h-fit lg:sticky lg:top-6 space-y-3">
+            <div className="overflow-hidden" style={cardStyle}>
+              <div
+                className="px-5 py-3 text-xs uppercase tracking-wider font-bold flex items-center gap-2"
+                style={{ backgroundColor: `${neonColor}1a`, borderBottom: `1px solid ${neonColor}33`, color: neonColor }}
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Resumo do pedido
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="flex gap-3">
+                  {product?.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="h-20 w-20 rounded-lg object-cover shrink-0"
+                      style={{ border: `1px solid ${neonColor}33` }}
+                    />
+                  ) : (
+                    <div
+                      className="h-20 w-20 rounded-lg grid place-items-center shrink-0"
+                      style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}10` }}
+                    >
+                      <ShoppingBag className="h-7 w-7 opacity-50" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold leading-snug line-clamp-2">{product?.name ?? "—"}</div>
+                    {product?.category && (
+                      <div className="text-[11px] opacity-60 mt-0.5">{product.category}</div>
+                    )}
+                    <div className="text-sm font-bold mt-1" style={{ color: neonColor }}>{brl(product?.price ?? 0)}</div>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{product?.name ?? "—"}</div>
-                  <div className="text-xs opacity-60">Quantidade: {qty}</div>
                 </div>
-                <div className="text-sm font-semibold">{brl((product?.price ?? 0) * qty)}</div>
+
+                <div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ border: `1px solid ${neonColor}22` }}>
+                  <span className="text-xs font-semibold opacity-80">Quantidade</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setQty(Math.max(1, qty - 1))}
+                      disabled={qty <= 1}
+                      className="h-7 w-7 grid place-items-center rounded-md transition-opacity disabled:opacity-40"
+                      style={{ border: `1px solid ${neonColor}55`, color: neonColor }}
+                      aria-label="Diminuir quantidade"
+                    ><Minus className="h-3.5 w-3.5" /></button>
+                    <span className="min-w-[24px] text-center text-sm font-bold">{qty}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQty(Math.min(product?.stock ?? 99, qty + 1))}
+                      disabled={!!product && qty >= product.stock}
+                      className="h-7 w-7 grid place-items-center rounded-md transition-opacity disabled:opacity-40"
+                      style={{ border: `1px solid ${neonColor}55`, color: neonColor }}
+                      aria-label="Aumentar quantidade"
+                    ><Plus className="h-3.5 w-3.5" /></button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm pt-1" style={{ borderTop: `1px solid ${neonColor}22` }}>
+                  <div className="pt-3" />
+                  <Row label={`Subtotal (${qty} ${qty > 1 ? "itens" : "item"})`} value={brl((product?.price ?? 0) * qty)} />
+                  <Row
+                    label={shipping?.label || "Frete"}
+                    value={shipping ? brl(shipping.price) : (cepLoading ? "calculando..." : "a calcular")}
+                  />
+                </div>
+
+                <div
+                  className="flex items-end justify-between pt-3"
+                  style={{ borderTop: `1px solid ${neonColor}33` }}
+                >
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider opacity-60 font-semibold">Total</div>
+                    <div className="text-[10px] opacity-60">à vista</div>
+                  </div>
+                  <div className="text-2xl font-extrabold" style={{ color: neonColor }}>{brl(total)}</div>
+                </div>
               </div>
-              <Row
-                label={shipping?.label || "Entrega"}
-                value={shipping ? brl(shipping.price) : (cepLoading ? "calculando..." : "selecione")}
-              />
-              <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
-                <span className="font-semibold">Total</span>
-                <span className="font-bold text-lg">{brl(total)}</span>
-              </div>
+            </div>
+
+            <div className="p-4 grid grid-cols-3 gap-2 text-center" style={cardStyle}>
+              <TrustBadge icon={ShieldCheck} label="Compra segura" color={neonColor} />
+              <TrustBadge icon={Lock} label="Dados protegidos" color={neonColor} />
+              <TrustBadge icon={CheckCircle2} label="Entrega garantida" color={neonColor} />
             </div>
           </aside>
         </div>
+        </>
         )}
       </main>
+
 
       {settings.checkoutFooterEnabled && (
         <footer
@@ -542,7 +620,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return <div className="flex justify-between opacity-80"><span className="truncate pr-2">{label}</span><span className="opacity-100">{value}</span></div>;
 }
 function StepCard({
-  n, title, state, neonColor, cardStyle, summary, onEdit, children,
+  n, title, state, neonColor, cardStyle, summary, onEdit, icon: Icon, children,
 }: {
   n: 1 | 2 | 3;
   title: string;
@@ -551,11 +629,12 @@ function StepCard({
   cardStyle: React.CSSProperties;
   summary?: string;
   onEdit?: () => void;
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   children: React.ReactNode;
 }) {
   const headerBadge = (
     <div
-      className="h-8 w-8 grid place-items-center rounded-full text-xs font-bold shrink-0"
+      className="h-9 w-9 grid place-items-center rounded-full text-sm font-bold shrink-0"
       style={{
         backgroundColor: state === "locked" ? "transparent" : neonColor,
         color: state === "locked" ? "currentColor" : "#fff",
@@ -570,12 +649,21 @@ function StepCard({
 
   if (state === "active") {
     return (
-      <div className="p-5" style={cardStyle}>
-        <div className="flex items-center gap-3 mb-4">
+      <div className="overflow-hidden" style={cardStyle}>
+        <div
+          className="px-5 py-3 flex items-center gap-3"
+          style={{ backgroundColor: `${neonColor}1a`, borderBottom: `1px solid ${neonColor}33` }}
+        >
           {headerBadge}
-          <h2 className="font-bold">{title}</h2>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-wider font-bold opacity-70">Etapa {n} de 3</div>
+            <h2 className="font-bold flex items-center gap-2">
+              {Icon && <Icon className="h-4 w-4" style={{ color: neonColor }} />}
+              {title}
+            </h2>
+          </div>
         </div>
-        {children}
+        <div className="p-5">{children}</div>
       </div>
     );
   }
@@ -590,13 +678,82 @@ function StepCard({
       style={{ ...cardStyle, opacity: state === "locked" ? 0.55 : 1, boxShadow: "none", border: `1px solid ${neonColor}22` }}
     >
       {headerBadge}
+      {Icon && <Icon className="h-4 w-4 shrink-0 opacity-70" style={{ color: neonColor }} />}
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-sm">{title}</div>
         {summary && <div className="text-xs opacity-70 truncate">{summary}</div>}
       </div>
       {state === "done" && (
-        <span className="text-xs font-medium" style={{ color: neonColor }}>Editar</span>
+        <span className="text-xs font-semibold" style={{ color: neonColor }}>Editar</span>
       )}
     </div>
   );
 }
+
+function ProgressBar({
+  step, neonColor, textColor, titles,
+}: {
+  step: 1 | 2 | 3;
+  neonColor: string;
+  textColor: string;
+  titles: [string, string, string];
+}) {
+  return (
+    <div className="flex items-center gap-2 sm:gap-3">
+      {titles.map((t, i) => {
+        const n = (i + 1) as 1 | 2 | 3;
+        const done = step > n;
+        const active = step === n;
+        const dim = !done && !active;
+        return (
+          <div key={n} className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+            <div
+              className="h-8 w-8 grid place-items-center rounded-full text-xs font-bold shrink-0 transition-all"
+              style={{
+                backgroundColor: dim ? "transparent" : neonColor,
+                color: dim ? textColor : "#fff",
+                border: `2px solid ${dim ? `${neonColor}55` : neonColor}`,
+                boxShadow: active ? `0 0 12px ${neonColor}` : "none",
+                opacity: dim ? 0.55 : 1,
+              }}
+            >
+              {done ? "✓" : n}
+            </div>
+            <div className="hidden sm:block min-w-0 flex-1">
+              <div
+                className="text-[10px] uppercase tracking-wider font-bold"
+                style={{ opacity: dim ? 0.5 : 0.7 }}
+              >Etapa {n}</div>
+              <div
+                className="text-sm font-semibold truncate"
+                style={{ opacity: dim ? 0.55 : 1, color: active ? neonColor : "inherit" }}
+              >{t}</div>
+            </div>
+            {i < 2 && (
+              <div
+                className="hidden sm:block h-px flex-1 min-w-[24px]"
+                style={{ backgroundColor: step > n ? neonColor : `${neonColor}33` }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TrustBadge({
+  icon: Icon, label, color,
+}: {
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  label: string;
+  color: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 px-1">
+      <Icon className="h-5 w-5" style={{ color }} />
+      <span className="text-[10px] font-semibold leading-tight opacity-80">{label}</span>
+    </div>
+  );
+}
+
