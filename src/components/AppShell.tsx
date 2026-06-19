@@ -103,13 +103,13 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           )}
         >
           <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0 overflow-hidden">
-            <div className="flex items-center justify-between gap-2 px-2 lg:px-1 lg:group-hover/sidebar:px-3 h-20 border-b border-sidebar-border transition-[padding] duration-200">
-              <div className="flex items-center min-w-0 relative h-16 w-full overflow-hidden">
-                <img src="/logo-full.png" alt="Zappfy" className="block lg:hidden h-14 w-auto object-contain absolute left-0 top-1/2 -translate-y-1/2" />
+            <div className="flex items-center justify-between gap-2 px-1 lg:px-0.5 lg:group-hover/sidebar:px-2 h-16 border-b border-sidebar-border transition-[padding] duration-200">
+              <div className="flex items-center min-w-0 relative h-14 w-full overflow-hidden">
+                <img src="/logo-full.png" alt="Zappfy" className="block lg:hidden h-12 w-auto object-contain absolute left-0 top-1/2 -translate-y-1/2" />
                 {sidebarHovered ? (
-                  <img src="/logo-full.png" alt="Zappfy" className="hidden lg:block h-16 w-auto max-w-full object-contain absolute left-0 top-1/2 -translate-y-1/2" />
+                  <img src="/logo-full.png" alt="Zappfy" className="hidden lg:block h-14 w-auto max-w-full object-contain absolute left-0 top-1/2 -translate-y-1/2" />
                 ) : (
-                  <img src="/logo-bubble.png" alt="Zappfy" className="hidden lg:block h-14 w-14 object-contain absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  <img src="/logo-bubble.png" alt="Zappfy" className="hidden lg:block h-12 w-12 object-contain absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                 )}
               </div>
               <button
