@@ -359,11 +359,14 @@ function KpiCard({
 
 function CatChip({
   active, onClick, color, children,
-}: { active: boolean; onClick: () => void; color: "violet" | "pink"; children: React.ReactNode }) {
+}: { active: boolean; onClick: () => void; color: "primary" | "pink"; children: React.ReactNode }) {
   const base = "px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-colors";
   if (active) {
     return (
-      <button onClick={onClick} className={`${base} ${color === "violet" ? "bg-violet-500 text-white border-violet-500" : "bg-pink-500/20 text-pink-300 border-pink-500/40"}`}>
+      <button
+        onClick={onClick}
+        className={`${base} ${color === "primary" ? "bg-primary text-primary-foreground border-primary shadow-glow" : "bg-pink-500/20 text-pink-300 border-pink-500/40"}`}
+      >
         {children}
       </button>
     );
