@@ -111,10 +111,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
               <Link
                 to="/"
                 onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center min-w-0 w-full h-full text-2xl font-bold",
-                  "lg:justify-center lg:group-hover/sidebar:justify-start",
-                )}
+                className="flex items-center min-w-0 w-full h-full text-2xl font-bold justify-start"
               >
                 {/* Collapsed (desktop only): bubble icon */}
                 <img
