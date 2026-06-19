@@ -13,6 +13,7 @@ import type { ShippingOption } from "@/lib/store";
 import { SHIPPING_ICONS } from "@/lib/shipping-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NotificationsCard } from "@/components/NotificationsCard";
+import { getSenderInfo, saveSenderInfo, type SenderInfo } from "@/lib/sender-info";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — ZappFy" }] }),
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 function Page() {
   const { state, updateSettings, resetSeed } = useStore();
   const [f, setF] = useState(state.settings);
+  const [sender, setSender] = useState<SenderInfo>(() => getSenderInfo());
   const [logoDims, setLogoDims] = useState<{ w: number; h: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -98,6 +100,32 @@ function Page() {
             )}
             <p className="mt-1 text-[11px] text-muted-foreground">Compartilhe esse link com seus clientes. Eles abrirão o checkout sem precisar de login.</p>
           </Field>
+        </Card>
+
+        <Card title="Remetente da etiqueta">
+          <p className="text-[11px] text-muted-foreground -mt-2">Esses dados aparecem na etiqueta de envio impressa em cada pedido.</p>
+          <Field label="Nome / razão social do remetente">
+            <Input value={sender.name} onChange={(e) => setSender({ ...sender, name: e.target.value })} placeholder={f.storeName || "Sua loja"} />
+          </Field>
+          <Field label="Endereço (rua, número, complemento)">
+            <Input value={sender.address} onChange={(e) => setSender({ ...sender, address: e.target.value })} placeholder="Av. Brasil, 1000 - Sala 2" />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Bairro">
+              <Input value={sender.district} onChange={(e) => setSender({ ...sender, district: e.target.value })} placeholder="Centro" />
+            </Field>
+            <Field label="CEP">
+              <Input value={sender.cep} onChange={(e) => setSender({ ...sender, cep: e.target.value })} placeholder="00000-000" />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Cidade - UF">
+              <Input value={sender.city} onChange={(e) => setSender({ ...sender, city: e.target.value })} placeholder="São Paulo - SP" />
+            </Field>
+            <Field label="CNPJ / CPF (opcional)">
+              <Input value={sender.cnpj} onChange={(e) => setSender({ ...sender, cnpj: e.target.value })} placeholder="00.000.000/0001-00" />
+            </Field>
+          </div>
         </Card>
 
 
@@ -487,7 +515,7 @@ function Page() {
       </div>
 
       <div className="mt-6 flex justify-end">
-        <Button onClick={() => { updateSettings(f); toast.success("Configurações salvas"); }}>Salvar alterações</Button>
+        <Button onClick={() => { updateSettings(f); saveSenderInfo(sender); toast.success("Configurações salvas"); }}>Salvar alterações</Button>
       </div>
     </AppShell>
   );
