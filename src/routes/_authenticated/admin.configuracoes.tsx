@@ -19,7 +19,7 @@ import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({ component: AdminSettings });
 
 type Settings = {
-  platform?: { name?: string; logoUrl?: string; primaryColor?: string; supportEmail?: string; supportWhats?: string; cnpj?: string; url?: string };
+  platform?: { name?: string; logoUrl?: string; primaryColor?: string; supportEmail?: string; supportWhats?: string; cnpj?: string; url?: string; loginWhatsEnabled?: boolean };
   subscription?: { trialDays?: number; autoBlock?: boolean; toleranceDays?: number; msgExpired?: string; msgBlocked?: string };
   payment?: { pixKey?: string; receiverName?: string; bank?: string; defaultLink?: string; gateway?: string };
   messages?: { welcome?: string; nearDue?: string; expired?: string; paid?: string; blocked?: string; reactivated?: string };
