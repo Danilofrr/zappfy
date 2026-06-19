@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
 import { useMemo, useState } from "react";
 import { brl } from "@/lib/format";
-import { Calculator, Percent, DollarSign, TrendingUp, RotateCcw } from "lucide-react";
+import { Calculator, Percent, DollarSign, TrendingUp, RotateCcw, Target, Megaphone } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/precificacao")({
   head: () => ({ meta: [{ title: "Calculadora de Precificação — ZappFy" }] }),
@@ -33,6 +33,7 @@ function Page() {
   const [markup, setMarkup] = useState("2");
   const [margin, setMargin] = useState("30");
   const [manualPrice, setManualPrice] = useState("");
+  const [targetMargin, setTargetMargin] = useState("20");
 
   const data = useMemo(() => {
     const realCost = num(cost) + num(freight) + num(packaging) + num(otherCost);
@@ -55,8 +56,18 @@ function Page() {
     const markupCalc = realCost > 0 ? price / realCost : 0;
     const breakEven = realCost / Math.max(1 - variablePct, 0.0001);
 
-    return { realCost, variablePct, price, variableCost, profit, marginPct, markupCalc, breakEven };
-  }, [cost, freight, packaging, otherCost, taxPct, cardPct, platformPct, adsPct, otherPct, mode, markup, margin, manualPrice]);
+    // CPA: considera despesas variáveis SEM o % de ads (o CPA já é o custo de ads em R$)
+    const variablePctNoAds = variablePct - num(adsPct) / 100;
+    const variableCostNoAds = price * variablePctNoAds;
+    const grossPerSale = price - realCost - variableCostNoAds; // disponível pra ads + lucro
+    const cpaMax = Math.max(grossPerSale, 0); // break-even em ads
+    const tMargin = Math.min(Math.max(num(targetMargin), 0), 99) / 100;
+    const cpaIdeal = Math.max(grossPerSale - price * tMargin, 0);
+    const roasMin = cpaMax > 0 ? price / cpaMax : 0;
+    const roasIdeal = cpaIdeal > 0 ? price / cpaIdeal : 0;
+
+    return { realCost, variablePct, price, variableCost, profit, marginPct, markupCalc, breakEven, cpaMax, cpaIdeal, roasMin, roasIdeal };
+  }, [cost, freight, packaging, otherCost, taxPct, cardPct, platformPct, adsPct, otherPct, mode, markup, margin, manualPrice, targetMargin]);
 
   function reset() {
     setName(""); setCost(""); setFreight(""); setPackaging(""); setOtherCost("");
@@ -76,11 +87,18 @@ function Page() {
         </button>
       }
     >
+      <div className="grid gap-4 lg:grid-cols-4 mb-4">
+        <StatCard label="Preço de Venda" value={brl(data.price)} icon={DollarSign} neon="34 211 238" />
+        <StatCard label="Lucro Líquido" value={brl(data.profit)} icon={TrendingUp} neon="168 85 247" />
+        <StatCard label="Margem" value={`${data.marginPct.toFixed(1)}%`} icon={Percent} neon="244 114 182" />
+        <StatCard label="Markup" value={`${data.markupCalc.toFixed(2)}x`} icon={Calculator} neon="251 191 36" />
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-4 mb-6">
-        <StatCard label="Preço de Venda" value={brl(data.price)} icon={DollarSign} neon="34 197 94" />
-        <StatCard label="Lucro Líquido" value={brl(data.profit)} icon={TrendingUp} tone={profitTone as any} />
-        <StatCard label="Margem" value={`${data.marginPct.toFixed(1)}%`} icon={Percent} />
-        <StatCard label="Markup" value={`${data.markupCalc.toFixed(2)}x`} icon={Calculator} />
+        <StatCard label="CPA Máximo (break-even)" value={brl(data.cpaMax)} icon={Megaphone} neon="239 68 68" hint="Acima disso, você tem prejuízo" />
+        <StatCard label="CPA Ideal" value={brl(data.cpaIdeal)} icon={Target} neon="34 197 94" hint={`Mantendo ${num(targetMargin).toFixed(0)}% de margem`} />
+        <StatCard label="ROAS Mínimo" value={`${data.roasMin.toFixed(2)}x`} icon={TrendingUp} neon="249 115 22" />
+        <StatCard label="ROAS Ideal" value={`${data.roasIdeal.toFixed(2)}x`} icon={TrendingUp} neon="59 130 246" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
