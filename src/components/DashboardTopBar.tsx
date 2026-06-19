@@ -53,12 +53,25 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   return (
     <div className="hidden lg:flex items-center gap-4 mb-2 flex-wrap">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">Dashboard</span>
-        {subtitle && <span>· {subtitle}</span>}
-        <div className="flex items-center gap-1.5 ml-2">
-          <Eye className="h-4 w-4 opacity-70" />
-          <Sun className="h-4 w-4 opacity-70" />
-          <Pencil className="h-4 w-4 opacity-70" />
+        {subtitle && <span>{subtitle}</span>}
+        <div className="flex items-center gap-1 ml-1">
+          <Link
+            to={state.settings.slug ? "/loja/$slug" : "/"}
+            params={state.settings.slug ? { slug: state.settings.slug } : undefined as any}
+            target={state.settings.slug ? "_blank" : undefined}
+            className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Ver loja pública"
+          >
+            <Eye className="h-4 w-4" />
+          </Link>
+          <ThemeToggle />
+          <Link
+            to="/configuracoes"
+            className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Editar configurações"
+          >
+            <Pencil className="h-4 w-4" />
+          </Link>
         </div>
       </div>
 
