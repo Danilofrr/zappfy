@@ -54,10 +54,10 @@ function Page() {
   return (
     <AppShell title="Facebook Ads" subtitle="Performance dos seus anúncios">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        <StatCard label="Investido" value={brl(totals.inv)} icon={Megaphone}/>
-        <StatCard label="ROAS Médio" value={`${roas.toFixed(2)}x`} tone="success" icon={Target}/>
-        <StatCard label="CPA Médio" value={brl(cpa)} icon={DollarSign}/>
-        <StatCard label="Compras" value={String(totals.p)} icon={ShoppingBag} tone="success"/>
+        <StatCard label="Investido" value={brl(totals.inv)} icon={Megaphone} neon="167 139 250"/>
+        <StatCard label="ROAS Médio" value={`${roas.toFixed(2)}x`} tone="success" icon={Target} neon="56 189 248"/>
+        <StatCard label="CPA Médio" value={brl(cpa)} icon={DollarSign} neon="251 191 36"/>
+        <StatCard label="Compras" value={String(totals.p)} icon={ShoppingBag} tone="success" neon="236 72 153"/>
       </div>
 
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
