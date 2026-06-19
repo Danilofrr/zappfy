@@ -160,7 +160,7 @@ function EstoquePage() {
 
       {/* Filters: category chips + view toggle */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <CatChip active={cat === "todas"} onClick={() => setCat("todas")} color="violet">Todas</CatChip>
+        <CatChip active={cat === "todas"} onClick={() => setCat("todas")} color="primary">Todas</CatChip>
         {categories.map((c) => (
           <CatChip key={c} active={cat === c} onClick={() => setCat(c)} color="pink">{c}</CatChip>
         ))}
