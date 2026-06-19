@@ -563,3 +563,18 @@ export const saveSystemSettings = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ===== Suporte público (sem auth) — usado na tela de login =====
+export const getPublicSupport = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("admin_settings")
+    .select("value")
+    .eq("key", "system")
+    .maybeSingle();
+  const v = (data?.value as any) ?? {};
+  return {
+    whats: (v?.platform?.supportWhats as string | undefined) ?? null,
+    email: (v?.platform?.supportEmail as string | undefined) ?? null,
+  };
+});
