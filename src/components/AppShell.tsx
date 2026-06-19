@@ -99,10 +99,10 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           )}
         >
           <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0 overflow-hidden">
-            <div className="flex items-center justify-between gap-2 px-4 h-16 border-b border-sidebar-border">
-              <div className="flex items-center min-w-0 relative">
-                <img src="/logo-bubble.png" alt="Zappfy" className="h-9 w-9 shrink-0 object-contain lg:opacity-100 lg:group-hover/sidebar:opacity-0 lg:group-focus-within/sidebar:opacity-0 transition-opacity duration-200 opacity-0" />
-                <img src="/logo-full.png" alt="Zappfy" className="h-9 w-auto object-contain absolute left-0 top-1/2 -translate-y-1/2 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200" />
+            <div className="flex items-center justify-between gap-2 px-4 lg:px-2 lg:group-hover/sidebar:px-4 lg:group-focus-within/sidebar:px-4 h-16 border-b border-sidebar-border transition-[padding] duration-200">
+              <div className="flex items-center min-w-0 relative h-14 w-full">
+                <img src="/logo-bubble.png" alt="Zappfy" className="h-14 w-14 shrink-0 object-contain absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:opacity-100 lg:group-hover/sidebar:opacity-0 lg:group-focus-within/sidebar:opacity-0 transition-opacity duration-200 opacity-0" />
+                <img src="/logo-full.png" alt="Zappfy" className="h-10 w-auto object-contain absolute left-0 top-1/2 -translate-y-1/2 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200" />
               </div>
               <button
                 onClick={() => setOpen(false)}
