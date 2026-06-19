@@ -53,13 +53,40 @@ function EstoquePage() {
     });
   }, [state.products, query, cat]);
 
+  const scope = useMemo(
+    () => (cat === "todas" ? state.products : state.products.filter((p) => p.category === cat)),
+    [state.products, cat]
+  );
+
   const totals = useMemo(() => {
-    const valorEstoque = state.products.reduce((s, p) => s + p.cost * p.stock, 0);
-    const valorVenda = state.products.reduce((s, p) => s + p.price * p.stock, 0);
-    const abaixoMin = state.products.filter((p) => p.stock <= p.minStock).length;
-    const skus = state.products.length;
+    const valorEstoque = scope.reduce((s, p) => s + p.cost * p.stock, 0);
+    const valorVenda = scope.reduce((s, p) => s + p.price * p.stock, 0);
+    const abaixoMin = scope.filter((p) => p.stock <= p.minStock).length;
+    const skus = scope.length;
     return { valorEstoque, valorVenda, abaixoMin, skus };
+  }, [scope]);
+
+  const categoryStats = useMemo(() => {
+    const map = new Map<string, { estoque: number; venda: number; count: number }>();
+    state.products.forEach((p) => {
+      const key = p.category || "Sem categoria";
+      const cur = map.get(key) || { estoque: 0, venda: 0, count: 0 };
+      cur.estoque += p.cost * p.stock;
+      cur.venda += p.price * p.stock;
+      cur.count += 1;
+      map.set(key, cur);
+    });
+    return map;
   }, [state.products]);
+
+  const totalEstoqueGeral = useMemo(
+    () => state.products.reduce((s, p) => s + p.cost * p.stock, 0),
+    [state.products]
+  );
+  const totalVendaGeral = useMemo(
+    () => state.products.reduce((s, p) => s + p.price * p.stock, 0),
+    [state.products]
+  );
 
   return (
     <AppShell
