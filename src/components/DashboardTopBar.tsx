@@ -67,7 +67,15 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
           >
             {privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
-          <ThemeToggle />
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Alternar tema"
+            aria-label="Alternar tema"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
           
           <Link
             to="/configuracoes"
