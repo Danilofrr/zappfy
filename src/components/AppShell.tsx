@@ -107,11 +107,15 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           )}
         >
           <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0">
-            <div className="relative flex items-center pl-6 pr-3 h-[90px] border-b border-sidebar-border bg-gradient-to-b from-sidebar-accent/30 to-transparent">
+            <div className={cn(
+              "relative flex items-center pr-3 h-[90px] border-b border-sidebar-border bg-gradient-to-b from-sidebar-accent/30 to-transparent",
+              sidebarHovered ? "lg:pl-6 lg:justify-start" : "lg:pl-0 lg:justify-center",
+              "pl-6 justify-start",
+            )}>
               <Link
                 to="/"
                 onClick={() => setOpen(false)}
-                className="flex items-center min-w-0 w-full h-full text-2xl font-bold justify-start"
+                className="flex items-center min-w-0 h-full text-2xl font-bold"
               >
                 {/* Collapsed (desktop only): bubble icon */}
                 <img
@@ -158,7 +162,9 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                         onClick={() => setOpen(false)}
                         title={item.label}
                         className={cn(
-                          "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                          "relative flex items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition-all duration-200",
+                          sidebarHovered ? "lg:px-3 lg:justify-start" : "lg:px-0 lg:justify-center",
+                          "px-3 justify-start",
                           active
                             ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(34,197,94,0.55),0_0_4px_rgba(34,197,94,0.9)_inset] ring-1 ring-primary/60"
                             : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
