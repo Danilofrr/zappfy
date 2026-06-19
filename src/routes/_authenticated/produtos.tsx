@@ -9,69 +9,299 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, AlertTriangle, Upload, X, Image as ImageIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  Plus, Pencil, Trash2, AlertTriangle, Upload, X, Image as ImageIcon,
+  Search, Wallet, DollarSign, BarChart3, Boxes, Package, Gift, LayoutGrid, List,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/produtos")({
-  head: () => ({ meta: [{ title: "Produtos — ZappFy" }] }),
-  component: ProdutosPage,
+  head: () => ({ meta: [{ title: "Estoque — ZappFy" }] }),
+  component: EstoquePage,
 });
 
-function ProdutosPage() {
+function skuOf(id: string) {
+  return id.replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase() || "—";
+}
+
+function EstoquePage() {
   const { state, addProduct, updateProduct, deleteProduct } = useStore();
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"produtos" | "kits">("produtos");
+  const [view, setView] = useState<"tabela" | "cards">("tabela");
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState<string>("todas");
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    state.products.forEach((p) => { if (p.category) set.add(p.category); });
+    return Array.from(set);
+  }, [state.products]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return state.products.filter((p) => {
+      if (cat !== "todas" && p.category !== cat) return false;
+      if (!q) return true;
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.category || "").toLowerCase().includes(q) ||
+        skuOf(p.id).toLowerCase().includes(q)
+      );
+    });
+  }, [state.products, query, cat]);
+
+  const totals = useMemo(() => {
+    const valorEstoque = state.products.reduce((s, p) => s + p.cost * p.stock, 0);
+    const valorVenda = state.products.reduce((s, p) => s + p.price * p.stock, 0);
+    const abaixoMin = state.products.filter((p) => p.stock <= p.minStock).length;
+    const skus = state.products.length;
+    return { valorEstoque, valorVenda, abaixoMin, skus };
+  }, [state.products]);
 
   return (
     <AppShell
-      title="Produtos"
-      subtitle="Cadastre seu catálogo e acompanhe margens de lucro"
-      actions={<Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="mr-2 h-4 w-4"/>Novo produto</Button>}
+      title="Controle de Estoque"
+      subtitle={`PRODUTOS CADASTRADOS — ATUALIZADO HOJE`}
+      actions={
+        <div className="flex items-center gap-2">
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar produto..."
+              className="pl-9 w-[260px] bg-secondary/40"
+            />
+          </div>
+          <Button onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" />Novo Produto
+          </Button>
+        </div>
+      }
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {state.products.map((p) => {
-          const margin = p.price ? ((p.price - p.cost) / p.price) * 100 : 0;
-          const profit = p.price - p.cost;
-          const low = p.stock <= p.minStock;
-          return (
-            <div key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-elegant hover:border-primary/30 transition-colors">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  {p.imageUrl ? (
-                    <img src={p.imageUrl} alt={p.name} className="h-14 w-14 rounded-lg object-cover shrink-0 border border-border" />
-                  ) : (
-                    <div className="h-14 w-14 rounded-lg grid place-items-center bg-secondary/40 border border-border shrink-0">
-                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
+      {/* Tabs Produtos / Kits */}
+      <div className="flex gap-2 mb-5">
+        <button
+          onClick={() => setTab("produtos")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+            tab === "produtos"
+              ? "bg-primary text-primary-foreground shadow-elegant"
+              : "bg-secondary/60 text-foreground hover:bg-secondary"
+          }`}
+        >
+          <Package className="h-4 w-4" /> Produtos
+        </button>
+        <button
+          onClick={() => setTab("kits")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+            tab === "kits"
+              ? "bg-primary text-primary-foreground shadow-elegant"
+              : "bg-secondary/60 text-foreground hover:bg-secondary"
+          }`}
+        >
+          <Gift className="h-4 w-4" /> Kits & Combos
+        </button>
+      </div>
+
+      {/* Search mobile */}
+      <div className="relative md:hidden mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar produto..."
+          className="pl-9 bg-secondary/40"
+        />
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5">
+        <KpiCard
+          icon={<Wallet className="h-5 w-5" />}
+          iconBg="bg-violet-500/15 text-violet-400"
+          glow="from-violet-500/10"
+          label="VALOR EM ESTOQUE"
+          value={brl(totals.valorEstoque)}
+          valueClass="text-violet-400"
+        />
+        <KpiCard
+          icon={<DollarSign className="h-5 w-5" />}
+          iconBg="bg-emerald-500/15 text-emerald-400"
+          glow="from-emerald-500/10"
+          label="VALOR DE VENDA"
+          value={brl(totals.valorVenda)}
+          valueClass="text-emerald-400"
+        />
+        <KpiCard
+          icon={<AlertTriangle className="h-5 w-5" />}
+          iconBg="bg-orange-500/15 text-orange-400"
+          glow="from-orange-500/10"
+          label="ABAIXO DO MÍNIMO"
+          value={`${totals.abaixoMin} produto${totals.abaixoMin === 1 ? "" : "s"}`}
+          valueClass="text-orange-400"
+        />
+        <KpiCard
+          icon={<BarChart3 className="h-5 w-5" />}
+          iconBg="bg-sky-500/15 text-sky-400"
+          glow="from-sky-500/10"
+          label="TOTAL DE SKUS"
+          value={String(totals.skus)}
+          valueClass="text-sky-400"
+          hint="Produtos cadastrados"
+        />
+      </div>
+
+      {/* Filters: category chips + view toggle */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <CatChip active={cat === "todas"} onClick={() => setCat("todas")} color="violet">Todas</CatChip>
+        {categories.map((c) => (
+          <CatChip key={c} active={cat === c} onClick={() => setCat(c)} color="pink">{c}</CatChip>
+        ))}
+        <div className="ml-auto inline-flex rounded-lg border border-border overflow-hidden">
+          <button
+            onClick={() => setView("tabela")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs ${
+              view === "tabela" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <List className="h-3.5 w-3.5" /> Tabela
+          </button>
+          <button
+            onClick={() => setView("cards")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs ${
+              view === "cards" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" /> Cards
+          </button>
+        </div>
+      </div>
+
+      {tab === "kits" ? (
+        <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-elegant">
+          <Gift className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <h3 className="font-semibold mb-1">Kits & Combos</h3>
+          <p className="text-sm text-muted-foreground">Em breve: monte combos de produtos com preço promocional.</p>
+        </div>
+      ) : view === "tabela" ? (
+        <div className="rounded-2xl border border-border bg-card shadow-elegant overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
+            <h3 className="font-semibold">Produtos em Estoque</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-[11px] uppercase tracking-wider text-muted-foreground bg-secondary/30">
+                <tr>
+                  <th className="px-4 py-3 w-10"></th>
+                  <th className="text-left px-4 py-3 font-medium">Produto</th>
+                  <th className="text-left px-4 py-3 font-medium">SKU</th>
+                  <th className="text-left px-4 py-3 font-medium">Categoria</th>
+                  <th className="text-center px-4 py-3 font-medium">Estoque</th>
+                  <th className="text-center px-4 py-3 font-medium">Mín.</th>
+                  <th className="text-center px-4 py-3 font-medium">Status</th>
+                  <th className="text-right px-4 py-3 font-medium">Custo</th>
+                  <th className="text-right px-4 py-3 font-medium">Preço</th>
+                  <th className="text-right px-4 py-3 font-medium">Margem</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 && (
+                  <tr><td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>
+                )}
+                {filtered.map((p) => {
+                  const margin = p.price ? ((p.price - p.cost) / p.price) * 100 : 0;
+                  const low = p.stock <= p.minStock;
+                  const out = p.stock <= 0;
+                  return (
+                    <tr key={p.id} className="border-t border-border hover:bg-secondary/30">
+                      <td className="px-4 py-3">
+                        {p.imageUrl ? (
+                          <img src={p.imageUrl} alt={p.name} className="h-9 w-9 rounded-md object-cover border border-border" />
+                        ) : (
+                          <div className="h-9 w-9 rounded-md bg-secondary/50 grid place-items-center"><ImageIcon className="h-4 w-4 text-muted-foreground" /></div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-medium">{p.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{skuOf(p.id)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{p.category || "—"}</td>
+                      <td className={`px-4 py-3 text-center font-semibold ${out ? "text-destructive" : low ? "text-orange-400" : ""}`}>{p.stock}</td>
+                      <td className="px-4 py-3 text-center text-muted-foreground">{p.minStock}</td>
+                      <td className="px-4 py-3 text-center">
+                        {out ? (
+                          <span className="inline-flex rounded-md bg-destructive/15 text-destructive text-[11px] font-semibold px-2 py-0.5">ESGOTADO</span>
+                        ) : low ? (
+                          <span className="inline-flex rounded-md bg-orange-500/15 text-orange-400 text-[11px] font-semibold px-2 py-0.5">BAIXO</span>
+                        ) : (
+                          <span className="inline-flex rounded-md bg-emerald-500/15 text-emerald-400 text-[11px] font-semibold px-2 py-0.5">OK</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">{brl(p.cost)}</td>
+                      <td className="px-4 py-3 text-right font-semibold">{brl(p.price)}</td>
+                      <td className="px-4 py-3 text-right text-emerald-400 font-semibold">{pct(margin)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => { setEditing(p); setOpen(true); }} className="p-1 text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
+                          <button onClick={() => { if (confirm("Excluir produto?")) deleteProduct(p.id); }} className="p-1 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.length === 0 && (
+            <div className="col-span-full text-center text-muted-foreground py-10">Nenhum produto encontrado.</div>
+          )}
+          {filtered.map((p) => {
+            const margin = p.price ? ((p.price - p.cost) / p.price) * 100 : 0;
+            const profit = p.price - p.cost;
+            const low = p.stock <= p.minStock;
+            return (
+              <div key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-elegant hover:border-primary/30 transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    {p.imageUrl ? (
+                      <img src={p.imageUrl} alt={p.name} className="h-14 w-14 rounded-lg object-cover shrink-0 border border-border" />
+                    ) : (
+                      <div className="h-14 w-14 rounded-lg grid place-items-center bg-secondary/40 border border-border shrink-0">
+                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="text-xs text-muted-foreground">{p.category || "—"} · <span className="font-mono">{skuOf(p.id)}</span></div>
+                      <div className="font-semibold truncate">{p.name}</div>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <div className="text-xs text-muted-foreground">{p.category}</div>
-                    <div className="font-semibold truncate">{p.name}</div>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => { setEditing(p); setOpen(true); }} className="p-1.5 text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
+                    <button onClick={() => { if (confirm("Excluir produto?")) deleteProduct(p.id); }} className="p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  <button onClick={() => { setEditing(p); setOpen(true); }} className="p-1.5 text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4"/></button>
-                  <button onClick={() => { if (confirm("Excluir produto?")) deleteProduct(p.id); }} className="p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4"/></button>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div><div className="text-[11px] uppercase text-muted-foreground">Custo</div><div className="font-medium">{brl(p.cost)}</div></div>
+                  <div><div className="text-[11px] uppercase text-muted-foreground">Venda</div><div className="font-medium">{brl(p.price)}</div></div>
+                  <div><div className="text-[11px] uppercase text-muted-foreground">Lucro/un</div><div className="font-semibold text-emerald-400">{brl(profit)}</div></div>
+                  <div><div className="text-[11px] uppercase text-muted-foreground">Margem</div><div className="font-semibold text-emerald-400">{pct(margin)}</div></div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Estoque: <span className="text-foreground font-medium">{p.stock}</span> / mín {p.minStock}</span>
+                  {low && <span className="inline-flex items-center gap-1 text-orange-400"><AlertTriangle className="h-3.5 w-3.5" />Baixo</span>}
                 </div>
               </div>
-              {p.description && <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{p.description}</p>}
-
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <div><div className="text-[11px] uppercase text-muted-foreground">Custo</div><div className="font-medium">{brl(p.cost)}</div></div>
-                <div><div className="text-[11px] uppercase text-muted-foreground">Venda</div><div className="font-medium">{brl(p.price)}</div></div>
-                <div><div className="text-[11px] uppercase text-muted-foreground">Lucro/un</div><div className="font-semibold text-primary">{brl(profit)}</div></div>
-                <div><div className="text-[11px] uppercase text-muted-foreground">Margem</div><div className="font-semibold text-primary">{pct(margin)}</div></div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Estoque: <span className="text-foreground font-medium">{p.stock}</span></span>
-                {low && <span className="inline-flex items-center gap-1 text-warning"><AlertTriangle className="h-3.5 w-3.5"/>Estoque baixo</span>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <ProductDialog
         open={open}
@@ -87,9 +317,46 @@ function ProdutosPage() {
   );
 }
 
+function KpiCard({
+  icon, iconBg, glow, label, value, valueClass, hint,
+}: {
+  icon: React.ReactNode; iconBg: string; glow: string;
+  label: string; value: string; valueClass?: string; hint?: string;
+}) {
+  return (
+    <div className={`relative overflow-hidden rounded-2xl border border-border bg-card p-4 lg:p-5 shadow-elegant`}>
+      <div className={`pointer-events-none absolute -inset-1 bg-gradient-to-br ${glow} via-transparent to-transparent opacity-60`} />
+      <div className="relative flex items-center gap-3">
+        <div className={`grid h-11 w-11 place-items-center rounded-xl ${iconBg}`}>{icon}</div>
+        <div className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground leading-tight">{label}</div>
+      </div>
+      <div className={`relative mt-4 text-2xl lg:text-3xl font-extrabold ${valueClass ?? ""}`}>{value}</div>
+      {hint && <div className="relative mt-1 text-xs text-muted-foreground">{hint}</div>}
+    </div>
+  );
+}
+
+function CatChip({
+  active, onClick, color, children,
+}: { active: boolean; onClick: () => void; color: "violet" | "pink"; children: React.ReactNode }) {
+  const base = "px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-colors";
+  if (active) {
+    return (
+      <button onClick={onClick} className={`${base} ${color === "violet" ? "bg-violet-500 text-white border-violet-500" : "bg-pink-500/20 text-pink-300 border-pink-500/40"}`}>
+        {children}
+      </button>
+    );
+  }
+  return (
+    <button onClick={onClick} className={`${base} border-border text-muted-foreground hover:text-foreground hover:border-foreground/30`}>
+      {children}
+    </button>
+  );
+}
+
 function ProductDialog({
   open, setOpen, product, onSave,
-}: { open: boolean; setOpen: (v: boolean) => void; product: Product | null; onSave: (p: Omit<Product,"id">) => void }) {
+}: { open: boolean; setOpen: (v: boolean) => void; product: Product | null; onSave: (p: Omit<Product, "id">) => void }) {
   const [f, setF] = useState<Omit<Product, "id">>({
     name: "", category: "", cost: 0, price: 0, stock: 0, minStock: 0, description: "", imageUrl: "",
   });
@@ -108,7 +375,7 @@ function ProductDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><span/></DialogTrigger>
+      <DialogTrigger asChild><span /></DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{product ? "Editar produto" : "Novo produto"}</DialogTitle>
@@ -150,21 +417,21 @@ function ProductDialog({
               placeholder="https://..."
             />
           </Field>
-          <Field label="Nome"><Input value={f.name} onChange={(e) => setF({...f, name: e.target.value})}/></Field>
-          <Field label="Categoria"><Input value={f.category} onChange={(e) => setF({...f, category: e.target.value})}/></Field>
+          <Field label="Nome"><Input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
+          <Field label="Categoria"><Input value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} /></Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Preço de custo (R$)"><Input type="number" step="0.01" value={f.cost} onChange={(e) => setF({...f, cost: Number(e.target.value)})}/></Field>
-            <Field label="Preço de venda (R$)"><Input type="number" step="0.01" value={f.price} onChange={(e) => setF({...f, price: Number(e.target.value)})}/></Field>
+            <Field label="Preço de custo (R$)"><Input type="number" step="0.01" value={f.cost} onChange={(e) => setF({ ...f, cost: Number(e.target.value) })} /></Field>
+            <Field label="Preço de venda (R$)"><Input type="number" step="0.01" value={f.price} onChange={(e) => setF({ ...f, price: Number(e.target.value) })} /></Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Estoque"><Input type="number" value={f.stock} onChange={(e) => setF({...f, stock: Number(e.target.value)})}/></Field>
-            <Field label="Estoque mínimo"><Input type="number" value={f.minStock} onChange={(e) => setF({...f, minStock: Number(e.target.value)})}/></Field>
+            <Field label="Estoque"><Input type="number" value={f.stock} onChange={(e) => setF({ ...f, stock: Number(e.target.value) })} /></Field>
+            <Field label="Estoque mínimo"><Input type="number" value={f.minStock} onChange={(e) => setF({ ...f, minStock: Number(e.target.value) })} /></Field>
           </div>
-          <Field label="Descrição"><Textarea value={f.description} onChange={(e) => setF({...f, description: e.target.value})}/></Field>
+          <Field label="Descrição"><Textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
 
           <div className="grid grid-cols-2 gap-3 rounded-lg bg-secondary/40 border border-border p-3 text-sm">
-            <div><div className="text-[11px] uppercase text-muted-foreground">Lucro/un</div><div className="font-semibold text-primary">{brl(f.price - f.cost)}</div></div>
-            <div><div className="text-[11px] uppercase text-muted-foreground">Margem</div><div className="font-semibold text-primary">{pct(f.price ? ((f.price - f.cost) / f.price) * 100 : 0)}</div></div>
+            <div><div className="text-[11px] uppercase text-muted-foreground">Lucro/un</div><div className="font-semibold text-emerald-400">{brl(f.price - f.cost)}</div></div>
+            <div><div className="text-[11px] uppercase text-muted-foreground">Margem</div><div className="font-semibold text-emerald-400">{pct(f.price ? ((f.price - f.cost) / f.price) * 100 : 0)}</div></div>
           </div>
         </div>
         <DialogFooter>

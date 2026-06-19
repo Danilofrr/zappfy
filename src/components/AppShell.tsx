@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   ShoppingCart,
-  Package,
+  Boxes,
   Wallet,
   Megaphone,
   BarChart3,
@@ -23,7 +23,7 @@ import { ThemeToggle } from "@/lib/theme";
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/pedidos", label: "Pedidos", icon: ShoppingCart },
-  { to: "/produtos", label: "Produtos", icon: Package },
+  { to: "/produtos", label: "Estoque", icon: Boxes },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/ads", label: "Facebook Ads", icon: Megaphone },
   { to: "/dre", label: "DRE", icon: FileBarChart },
