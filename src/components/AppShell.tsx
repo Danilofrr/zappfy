@@ -107,7 +107,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-4">
               {navGroups.map((group) => (
                 <div key={group.label} className="space-y-1">
-                  <div className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45 opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                  <div className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                     {group.label}
                   </div>
                   <div className="hidden lg:block lg:group-hover/sidebar:hidden lg:group-focus-within/sidebar:hidden mx-2 my-1 h-px bg-sidebar-border/60" />
