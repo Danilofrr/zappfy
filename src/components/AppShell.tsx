@@ -157,23 +157,30 @@ export function StatCard({
   hint,
   icon: Icon,
   tone = "default",
+  neon,
 }: {
   label: string;
   value: string;
   hint?: string;
   icon?: any;
   tone?: "default" | "success" | "danger" | "warning";
+  /** RGB triplet to override the default green neon, e.g. "139 92 246" */
+  neon?: string;
 }) {
   const toneCls =
     tone === "success"
-      ? "text-primary"
+      ? ""
       : tone === "danger"
       ? "text-destructive"
       : tone === "warning"
       ? "text-warning"
       : "text-foreground";
+  const style = neon ? ({ ["--neon-rgb" as any]: neon.replace(/\s+/g, ", ") } as React.CSSProperties) : undefined;
+  const valueStyle = neon
+    ? { color: `rgb(${neon.replace(/\s+/g, ", ")})`, textShadow: `0 0 12px rgba(${neon.replace(/\s+/g, ", ")}, 0.65)` }
+    : undefined;
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 card-neon card-neon-hover">
+    <div className="rounded-2xl border border-border bg-card p-5 card-neon card-neon-hover" style={style}>
       <div className="flex items-center justify-between">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
         {Icon && (
@@ -182,7 +189,12 @@ export function StatCard({
           </div>
         )}
       </div>
-      <div className={cn("mt-3 text-2xl font-bold tracking-tight", toneCls)}>{value}</div>
+      <div
+        className={cn("mt-3 text-2xl font-bold tracking-tight", toneCls, tone === "success" && !neon && "text-primary")}
+        style={valueStyle}
+      >
+        {value}
+      </div>
       {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );
