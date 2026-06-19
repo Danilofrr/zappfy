@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSystemSettings, saveSystemSettings } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock } from "lucide-react";
+import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({ component: AdminSettings });
 
@@ -25,6 +25,7 @@ type Settings = {
   messages?: { welcome?: string; nearDue?: string; expired?: string; paid?: string; blocked?: string; reactivated?: string };
   security?: { adminOnly?: boolean; accessLogs?: boolean; sessionMinutes?: number };
   appearance?: { theme?: string; brandName?: string; sidebarLogo?: string; primaryColor?: string };
+  prize?: { enabled?: boolean; goal?: number; reward?: string; period?: string };
 };
 
 const DEFAULTS: Settings = {
@@ -41,6 +42,7 @@ const DEFAULTS: Settings = {
   },
   security: { adminOnly: true, accessLogs: true, sessionMinutes: 240 },
   appearance: { theme: "dark", brandName: "ZappFy", primaryColor: "#22c55e" },
+  prize: { enabled: false, goal: 1000000, reward: "Prêmio especial ao bater a meta!", period: "mensal" },
 };
 
 function AdminSettings() {
@@ -59,6 +61,7 @@ function AdminSettings() {
         messages: { ...DEFAULTS.messages, ...(q.data.messages ?? {}) },
         security: { ...DEFAULTS.security, ...(q.data.security ?? {}) },
         appearance: { ...DEFAULTS.appearance, ...(q.data.appearance ?? {}) },
+        prize: { ...DEFAULTS.prize, ...(q.data.prize ?? {}) },
       });
     }
   }, [q.data]);
