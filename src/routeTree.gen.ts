@@ -19,6 +19,7 @@ import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as AuthenticatedDreRouteImport } from './routes/_authenticated/dre'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
@@ -72,6 +73,11 @@ const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDreRoute = AuthenticatedDreRouteImport.update({
+  id: '/dre',
+  path: '/dre',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedConfiguracoesRoute =
   AuthenticatedConfiguracoesRouteImport.update({
     id: '/configuracoes',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRouteWithChildren
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/dre': typeof AuthenticatedDreRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/ads'
     | '/configuracoes'
+    | '/dre'
     | '/financeiro'
     | '/pedidos'
     | '/produtos'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/ads'
     | '/configuracoes'
+    | '/dre'
     | '/financeiro'
     | '/pedidos'
     | '/produtos'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/_authenticated/ads'
     | '/_authenticated/configuracoes'
+    | '/_authenticated/dre'
     | '/_authenticated/financeiro'
     | '/_authenticated/pedidos'
     | '/_authenticated/produtos'
@@ -259,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dre': {
+      id: '/_authenticated/dre'
+      path: '/dre'
+      fullPath: '/dre'
+      preLoaderRoute: typeof AuthenticatedDreRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/configuracoes': {
       id: '/_authenticated/configuracoes'
       path: '/configuracoes'
@@ -286,6 +305,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedDreRoute: typeof AuthenticatedDreRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
@@ -296,6 +316,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdsRoute: AuthenticatedAdsRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedDreRoute: AuthenticatedDreRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
