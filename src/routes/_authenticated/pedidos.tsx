@@ -732,6 +732,10 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
     customer: "", phone: "", address: "", district: "", city: "",
     payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
   });
+  const [orderDate, setOrderDate] = useState<string>(() => {
+    const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  });
   const [lines, setLines] = useState<CartLine[]>([]);
   const [picker, setPicker] = useState<string>("");
 
