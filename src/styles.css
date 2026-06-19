@@ -237,3 +237,7 @@ html, body {
 @utility animate-neon-pulse {
   animation: neon-pulse 2.6s ease-in-out infinite;
 }
+
+#lovable-badge {
+  display: none !important;
+}
