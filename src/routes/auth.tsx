@@ -336,7 +336,11 @@ function AuthPage() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={loading}>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 text-base font-semibold transition-all duration-300 hover:shadow-[0_0_0_1px_var(--primary),0_0_24px_2px_color-mix(in_oklab,var(--primary)_70%,transparent),0_0_60px_-4px_color-mix(in_oklab,var(--primary-glow)_80%,transparent)] hover:brightness-110 hover:-translate-y-0.5"
+              >
                 {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 {mode === "login" ? "Entrar" : "Criar conta"}
               </Button>
