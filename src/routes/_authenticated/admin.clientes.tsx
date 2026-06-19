@@ -242,6 +242,71 @@ function ClientsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!pwdClient} onOpenChange={(o) => !o && setPwdClient(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Gerenciar senha</DialogTitle></DialogHeader>
+          <div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs text-muted-foreground">
+            Por segurança, senhas são armazenadas como hash e <strong>não podem ser visualizadas</strong>. Você pode definir uma nova senha para o cliente ou enviar um link de redefinição por e-mail.
+          </div>
+          <div className="text-sm"><span className="text-muted-foreground">Cliente:</span> <strong>{pwdClient?.email}</strong></div>
+
+          <div className="grid gap-2">
+            <Label>Nova senha</Label>
+            <div className="flex gap-2">
+              <Input type="text" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} placeholder="Mínimo 6 caracteres" />
+              <Button variant="outline" type="button" onClick={genPwd} title="Gerar senha"><RefreshCw className="h-4 w-4" /></Button>
+              <Button variant="outline" type="button" disabled={!newPwd} onClick={() => { navigator.clipboard.writeText(newPwd); toast.success("Senha copiada"); }} title="Copiar"><Copy className="h-4 w-4" /></Button>
+            </div>
+            <Button
+              disabled={savingPwd || newPwd.length < 6 || !pwdClient}
+              onClick={async () => {
+                if (!pwdClient) return;
+                setSavingPwd(true);
+                try {
+                  await setPwdFn({ data: { userId: pwdClient.id, password: newPwd } });
+                  toast.success("Senha definida — copie e envie ao cliente");
+                } catch (e: any) {
+                  toast.error(e.message ?? "Erro ao definir senha");
+                } finally {
+                  setSavingPwd(false);
+                }
+              }}
+            >
+              <KeyRound className="h-4 w-4 mr-1" /> Definir esta senha
+            </Button>
+          </div>
+
+          <div className="border-t border-border pt-3 grid gap-2">
+            <Label>Ou envie um link de redefinição</Label>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (!pwdClient) return;
+                try {
+                  const r: any = await resetPwdFn({ data: { userId: pwdClient.id, redirectTo: `${window.location.origin}/reset-password` } });
+                  setResetLink(r.link);
+                  toast.success("Link de redefinição gerado");
+                } catch (e: any) {
+                  toast.error(e.message ?? "Erro ao gerar link");
+                }
+              }}
+            >
+              <Mail className="h-4 w-4 mr-1" /> Gerar link de redefinição
+            </Button>
+            {resetLink && (
+              <div className="flex gap-2">
+                <Input readOnly value={resetLink} />
+                <Button variant="outline" onClick={() => { navigator.clipboard.writeText(resetLink); toast.success("Link copiado"); }}><Copy className="h-4 w-4" /></Button>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPwdClient(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminShell>
   );
 }
