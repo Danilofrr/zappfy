@@ -732,6 +732,10 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
     customer: "", phone: "", address: "", district: "", city: "",
     payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
   });
+  const [orderDate, setOrderDate] = useState<string>(() => {
+    const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  });
   const [lines, setLines] = useState<CartLine[]>([]);
   const [picker, setPicker] = useState<string>("");
 
@@ -799,6 +803,8 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
     setFeeLabel(""); setFeeValue(0);
     setDiscountType("percent"); setDiscountValue(0); setCouponCode(""); setCouponApplied("");
     setSecondPayment("none"); setSecondPaymentValue(0);
+    const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    setOrderDate(d.toISOString().slice(0, 10));
   }
 
   const paymentOptions = [
@@ -999,6 +1005,9 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 </Select>
               </Field>
             </div>
+            <Field label="Data do pedido">
+              <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
+            </Field>
 
             {/* Segundo pagamento (opcional) */}
             <div className="pt-1 border-t border-border/60 mt-1">
@@ -1079,7 +1088,12 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 district: form.district, city: form.city,
                 items,
                 total, payment: form.payment, status: form.status, notes: finalNotes,
-                date: new Date().toISOString(),
+                date: (() => {
+                  const now = new Date();
+                  const [y, m, d] = orderDate.split("-").map(Number);
+                  const dt = new Date(y, (m || 1) - 1, d || 1, now.getHours(), now.getMinutes(), now.getSeconds());
+                  return dt.toISOString();
+                })(),
               });
               reset();
             }}>
