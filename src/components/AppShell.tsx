@@ -139,7 +139,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             </nav>
 
             <div className="border-t border-sidebar-border p-3 space-y-3">
-              <div className="rounded-xl bg-card p-3 border border-border opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200">
+              <div className="rounded-xl bg-card p-3 border border-border opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200">
                 <div className="text-xs text-muted-foreground">Loja</div>
                 <div className="font-semibold truncate">{state.settings.storeName}</div>
                 {user?.email && <div className="text-[11px] text-muted-foreground truncate mt-1">{user.email}</div>}
