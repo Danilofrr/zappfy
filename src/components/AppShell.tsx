@@ -98,7 +98,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow">
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div className="leading-tight min-w-0 opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+              <div className="leading-tight min-w-0 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                 <div className="font-bold tracking-tight">ZappFy</div>
                 <div className="text-[11px] text-muted-foreground">Gestão para WhatsApp</div>
               </div>
@@ -107,7 +107,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-4">
               {navGroups.map((group) => (
                 <div key={group.label} className="space-y-1">
-                  <div className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45 opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                  <div className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                     {group.label}
                   </div>
                   <div className="hidden lg:block lg:group-hover/sidebar:hidden lg:group-focus-within/sidebar:hidden mx-2 my-1 h-px bg-sidebar-border/60" />
@@ -128,7 +128,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                         )}
                       >
                         <Icon className={cn("h-5 w-5 shrink-0", active && "text-primary-foreground drop-shadow-[0_0_6px_rgba(34,197,94,0.9)]")} />
-                        <span className="truncate opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                        <span className="truncate opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                           {item.label}
                         </span>
                       </Link>
@@ -139,7 +139,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             </nav>
 
             <div className="border-t border-sidebar-border p-3 space-y-3">
-              <div className="rounded-xl bg-card p-3 border border-border opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200">
+              <div className="rounded-xl bg-card p-3 border border-border opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200">
                 <div className="text-xs text-muted-foreground">Loja</div>
                 <div className="font-semibold truncate">{state.settings.storeName}</div>
                 {user?.email && <div className="text-[11px] text-muted-foreground truncate mt-1">{user.email}</div>}
@@ -150,7 +150,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                 className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
-                <span className="opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">Sair</span>
+                <span className="opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">Sair</span>
               </button>
             </div>
           </div>
