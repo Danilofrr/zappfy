@@ -85,14 +85,15 @@ function TrocasPage() {
       }
     >
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <KPI label="Parado na Loja" value={brl(byStatus.parado.reduce((s, r) => s + Number(r.value_at_risk), 0))} hint={`${byStatus.parado.length} item(s) aguardando envio`} tone="warning" />
-        <KPI label="Com Fornecedor" value={brl(byStatus.fornec.reduce((s, r) => s + Number(r.value_at_risk), 0))} hint={`${byStatus.fornec.length} item(s) em trânsito/análise`} tone="info" />
-        <KPI label="Prejuízo (Perdido)" value={brl(byStatus.perdido.reduce((s, r) => s + Number(r.value_at_risk), 0))} hint={`${byStatus.perdido.length} produto(s) fora da prateleira`} tone="bad" />
+        <KPI label="Parado na Loja" value={brl(byStatus.parado.reduce((s, r) => s + Number(r.value_at_risk), 0))} hint={`${byStatus.parado.length} item(s) aguardando envio`} tone="warning" neon="251 191 36" />
+        <KPI label="Com Fornecedor" value={brl(byStatus.fornec.reduce((s, r) => s + Number(r.value_at_risk), 0))} hint={`${byStatus.fornec.length} item(s) em trânsito/análise`} tone="info" neon="56 189 248" />
+        <KPI label="Prejuízo (Perdido)" value={brl(byStatus.perdido.reduce((s, r) => s + Number(r.value_at_risk), 0))} hint={`${byStatus.perdido.length} produto(s) fora da prateleira`} tone="bad" neon="244 63 94" />
         <KPI
           label={<span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3 text-warning" />Margem em Risco</span>}
           value={brl(margemRisco)}
           hint="Lucro que pode deixar de ser realizado"
           tone="warning"
+          neon="167 139 250"
         />
       </div>
 
@@ -158,12 +159,16 @@ function TrocasPage() {
   );
 }
 
-function KPI({ label, value, hint, tone }: { label: React.ReactNode; value: string; hint?: string; tone?: "warning" | "info" | "bad" }) {
-  const cls = tone === "warning" ? "text-warning" : tone === "info" ? "text-blue-400" : tone === "bad" ? "text-destructive" : "";
+function KPI({ label, value, hint, tone, neon }: { label: React.ReactNode; value: string; hint?: string; tone?: "warning" | "info" | "bad"; neon?: string }) {
+  const fallback = tone === "warning" ? "text-warning" : tone === "info" ? "text-blue-400" : tone === "bad" ? "text-destructive" : "";
+  const style = neon ? ({ ["--neon-rgb" as any]: neon.replace(/\s+/g, ", ") } as React.CSSProperties) : undefined;
+  const valueStyle = neon
+    ? { color: `rgb(${neon.replace(/\s+/g, ", ")})`, textShadow: `0 0 12px rgba(${neon.replace(/\s+/g, ", ")}, 0.6)` }
+    : undefined;
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-elegant">
+    <div className="rounded-2xl border border-border bg-card p-4 card-neon card-neon-hover" style={style}>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-bold mt-1 ${cls}`}>{value}</div>
+      <div className={`text-2xl font-bold mt-1 ${neon ? "" : fallback}`} style={valueStyle}>{value}</div>
       {hint && <div className="text-[11px] text-muted-foreground mt-1">{hint}</div>}
     </div>
   );

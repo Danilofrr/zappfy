@@ -69,10 +69,10 @@ function DREPage() {
     >
       {/* Cards de topo */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <KPI label="Resultado Final" value={brl(dre.resultadoFinal)} hint="Após gastos pessoais" tone={dre.resultadoFinal >= 0 ? "good" : "bad"} />
-        <KPI label="Margem Líquida" value={pct(dre.lucroOperacional, dre.receita)} hint="EBITDA / receita" />
-        <KPI label="Margem Bruta" value={pct(dre.lucroBruto, dre.receita)} hint="Lucro bruto / receita" />
-        <KPI label="Receita Bruta" value={brl(dre.receita)} hint="Faturamento" />
+        <KPI label="Resultado Final" value={brl(dre.resultadoFinal)} hint="Após gastos pessoais" tone={dre.resultadoFinal >= 0 ? "good" : "bad"} neon="56 189 248" />
+        <KPI label="Margem Líquida" value={pct(dre.lucroOperacional, dre.receita)} hint="EBITDA / receita" neon="167 139 250" />
+        <KPI label="Margem Bruta" value={pct(dre.lucroBruto, dre.receita)} hint="Lucro bruto / receita" neon="251 191 36" />
+        <KPI label="Receita Bruta" value={brl(dre.receita)} hint="Faturamento" neon="236 72 153" />
       </div>
 
       {/* Demonstrativo */}
@@ -160,11 +160,20 @@ function computeDRE(state: any, start: Date, end: Date) {
   return { receita, cmv, lucroBruto, impostos, trafego, operacional, lucroOperacional, proLabore, resultadoFinal, totalGastos, taxRate };
 }
 
-function KPI({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "good" | "bad" }) {
+function KPI({ label, value, hint, tone, neon }: { label: string; value: string; hint?: string; tone?: "good" | "bad"; neon?: string }) {
+  const style = neon ? ({ ["--neon-rgb" as any]: neon.replace(/\s+/g, ", ") } as React.CSSProperties) : undefined;
+  const valueStyle = neon && tone !== "bad"
+    ? { color: `rgb(${neon.replace(/\s+/g, ", ")})`, textShadow: `0 0 12px rgba(${neon.replace(/\s+/g, ", ")}, 0.6)` }
+    : undefined;
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-elegant">
+    <div className="rounded-2xl border border-border bg-card p-4 card-neon card-neon-hover" style={style}>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-bold mt-1 ${tone === "good" ? "text-primary" : tone === "bad" ? "text-destructive" : ""}`}>{value}</div>
+      <div
+        className={`text-2xl font-bold mt-1 ${tone === "bad" ? "text-destructive" : !neon && tone === "good" ? "text-primary" : ""}`}
+        style={valueStyle}
+      >
+        {value}
+      </div>
       {hint && <div className="text-[11px] text-muted-foreground mt-1">{hint}</div>}
     </div>
   );

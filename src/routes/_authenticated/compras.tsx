@@ -96,9 +96,9 @@ function ComprasPage() {
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        <KPI label="Pedidos Pendentes" value={brl(totals.pend)} hint={`${orders.filter((o) => o.status === "pendente").length} pedido(s)`} tone="warning" />
-        <KPI label="Recebido (total)" value={brl(totals.rec)} hint={`${orders.filter((o) => o.status === "recebido").length} pedido(s)`} tone="success" />
-        <KPI label="Fornecedores" value={String(suppliers.length)} hint="cadastrados" />
+        <KPI label="Pedidos Pendentes" value={brl(totals.pend)} hint={`${orders.filter((o) => o.status === "pendente").length} pedido(s)`} tone="warning" neon="251 191 36" />
+        <KPI label="Recebido (total)" value={brl(totals.rec)} hint={`${orders.filter((o) => o.status === "recebido").length} pedido(s)`} tone="success" neon="56 189 248" />
+        <KPI label="Fornecedores" value={String(suppliers.length)} hint="cadastrados" neon="167 139 250" />
       </div>
 
       <div className="flex gap-2 mb-4">
@@ -204,11 +204,20 @@ function ComprasPage() {
   );
 }
 
-function KPI({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "success" | "warning" }) {
+function KPI({ label, value, hint, tone, neon }: { label: string; value: string; hint?: string; tone?: "success" | "warning"; neon?: string }) {
+  const style = neon ? ({ ["--neon-rgb" as any]: neon.replace(/\s+/g, ", ") } as React.CSSProperties) : undefined;
+  const valueStyle = neon
+    ? { color: `rgb(${neon.replace(/\s+/g, ", ")})`, textShadow: `0 0 12px rgba(${neon.replace(/\s+/g, ", ")}, 0.6)` }
+    : undefined;
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-elegant">
+    <div className="rounded-2xl border border-border bg-card p-4 card-neon card-neon-hover" style={style}>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-bold mt-1 ${tone === "success" ? "text-primary" : tone === "warning" ? "text-warning" : ""}`}>{value}</div>
+      <div
+        className={`text-2xl font-bold mt-1 ${!neon && tone === "success" ? "text-primary" : !neon && tone === "warning" ? "text-warning" : ""}`}
+        style={valueStyle}
+      >
+        {value}
+      </div>
       {hint && <div className="text-[11px] text-muted-foreground mt-1">{hint}</div>}
     </div>
   );
