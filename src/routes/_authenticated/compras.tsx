@@ -204,11 +204,20 @@ function ComprasPage() {
   );
 }
 
-function KPI({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "success" | "warning" }) {
+function KPI({ label, value, hint, tone, neon }: { label: string; value: string; hint?: string; tone?: "success" | "warning"; neon?: string }) {
+  const style = neon ? ({ ["--neon-rgb" as any]: neon.replace(/\s+/g, ", ") } as React.CSSProperties) : undefined;
+  const valueStyle = neon
+    ? { color: `rgb(${neon.replace(/\s+/g, ", ")})`, textShadow: `0 0 12px rgba(${neon.replace(/\s+/g, ", ")}, 0.6)` }
+    : undefined;
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-elegant">
+    <div className="rounded-2xl border border-border bg-card p-4 card-neon card-neon-hover" style={style}>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-bold mt-1 ${tone === "success" ? "text-primary" : tone === "warning" ? "text-warning" : ""}`}>{value}</div>
+      <div
+        className={`text-2xl font-bold mt-1 ${!neon && tone === "success" ? "text-primary" : !neon && tone === "warning" ? "text-warning" : ""}`}
+        style={valueStyle}
+      >
+        {value}
+      </div>
       {hint && <div className="text-[11px] text-muted-foreground mt-1">{hint}</div>}
     </div>
   );
