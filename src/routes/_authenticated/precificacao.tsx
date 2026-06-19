@@ -153,6 +153,9 @@ function Page() {
             <Field label="Custo de tráfego/ads (%)">
               <input className="input" inputMode="decimal" value={adsPct} onChange={(e) => setAdsPct(e.target.value)} placeholder="0" />
             </Field>
+            <Field label="Imposto sobre Ads (%)">
+              <input className="input" inputMode="decimal" value={adsTaxPct} onChange={(e) => setAdsTaxPct(e.target.value)} placeholder="17,65" />
+            </Field>
             <Field label="Outras taxas (%)">
               <input className="input" inputMode="decimal" value={otherPct} onChange={(e) => setOtherPct(e.target.value)} placeholder="0" />
             </Field>
