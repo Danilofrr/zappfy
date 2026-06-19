@@ -27,6 +27,7 @@ function Page() {
   const [cardPct, setCardPct] = useState("");
   const [platformPct, setPlatformPct] = useState("");
   const [adsPct, setAdsPct] = useState("");
+  const [adsTaxPct, setAdsTaxPct] = useState("17.65");
   const [otherPct, setOtherPct] = useState("");
 
   const [mode, setMode] = useState<Mode>("markup");
@@ -37,7 +38,8 @@ function Page() {
 
   const data = useMemo(() => {
     const realCost = num(cost) + num(freight) + num(packaging) + num(otherCost);
-    const variablePct = (num(taxPct) + num(cardPct) + num(platformPct) + num(adsPct) + num(otherPct)) / 100;
+    const adsEffectivePct = num(adsPct) * (1 + num(adsTaxPct) / 100);
+    const variablePct = (num(taxPct) + num(cardPct) + num(platformPct) + adsEffectivePct + num(otherPct)) / 100;
 
     let price = 0;
     if (mode === "markup") {
