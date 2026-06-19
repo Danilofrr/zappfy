@@ -102,6 +102,32 @@ function Page() {
           </Field>
         </Card>
 
+        <Card title="Remetente da etiqueta">
+          <p className="text-[11px] text-muted-foreground -mt-2">Esses dados aparecem na etiqueta de envio impressa em cada pedido.</p>
+          <Field label="Nome / razão social do remetente">
+            <Input value={sender.name} onChange={(e) => setSender({ ...sender, name: e.target.value })} placeholder={f.storeName || "Sua loja"} />
+          </Field>
+          <Field label="Endereço (rua, número, complemento)">
+            <Input value={sender.address} onChange={(e) => setSender({ ...sender, address: e.target.value })} placeholder="Av. Brasil, 1000 - Sala 2" />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Bairro">
+              <Input value={sender.district} onChange={(e) => setSender({ ...sender, district: e.target.value })} placeholder="Centro" />
+            </Field>
+            <Field label="CEP">
+              <Input value={sender.cep} onChange={(e) => setSender({ ...sender, cep: e.target.value })} placeholder="00000-000" />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Cidade - UF">
+              <Input value={sender.city} onChange={(e) => setSender({ ...sender, city: e.target.value })} placeholder="São Paulo - SP" />
+            </Field>
+            <Field label="CNPJ / CPF (opcional)">
+              <Input value={sender.cnpj} onChange={(e) => setSender({ ...sender, cnpj: e.target.value })} placeholder="00.000.000/0001-00" />
+            </Field>
+          </div>
+        </Card>
+
 
         <Card title="Metas e operação">
           <div className="grid grid-cols-2 gap-3">
