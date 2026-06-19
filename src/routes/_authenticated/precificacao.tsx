@@ -75,7 +75,7 @@ function Page() {
     setMarkup("2"); setMargin("30"); setManualPrice(""); setMode("markup");
   }
 
-  const profitTone = data.profit >= 0 ? "success" : "danger";
+  void targetMargin;
 
   return (
     <AppShell
