@@ -98,7 +98,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow">
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div className="leading-tight min-w-0 opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+              <div className="leading-tight min-w-0 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                 <div className="font-bold tracking-tight">ZappFy</div>
                 <div className="text-[11px] text-muted-foreground">Gestão para WhatsApp</div>
               </div>
