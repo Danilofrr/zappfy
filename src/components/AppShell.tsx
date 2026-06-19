@@ -121,7 +121,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                   src="/logo-bubble.png"
                   alt="Zappfy"
                   className={cn(
-                    "hidden h-12 w-12 max-h-none max-w-none shrink-0 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.55)]",
+                    "hidden h-12 w-auto max-h-none max-w-none shrink-0 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.55)]",
                     !sidebarHovered && "lg:block",
                   )}
                 />
