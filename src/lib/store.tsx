@@ -515,11 +515,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         setState((s) => ({
           ...s,
-          orders: [toOrder(data), ...s.orders],
+          orders: s.orders.some((o) => o.id === data.id)
+            ? s.orders.map((o) => (o.id === data.id ? toOrder(data) : o))
+            : [toOrder(data), ...s.orders],
           products: s.products.map((p) => updatedProducts.find((u) => u.id === p.id) ?? p),
         }));
       } else {
-        setState((s) => ({ ...s, orders: [toOrder(data), ...s.orders] }));
+        setState((s) => ({
+          ...s,
+          orders: s.orders.some((o) => o.id === data.id)
+            ? s.orders.map((o) => (o.id === data.id ? toOrder(data) : o))
+            : [toOrder(data), ...s.orders],
+        }));
       }
     },
     async updateOrder(id, patch) {
