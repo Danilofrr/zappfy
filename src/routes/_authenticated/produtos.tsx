@@ -121,35 +121,39 @@ function EstoquePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5">
         <KpiCard
           icon={<Wallet className="h-5 w-5" />}
-          iconBg="bg-violet-500/15 text-violet-400"
-          glow="from-violet-500/10"
+          iconBg="bg-violet-500/15 text-violet-300"
+          glow="from-violet-500/15"
+          neon="167 139 250"
           label="VALOR EM ESTOQUE"
           value={brl(totals.valorEstoque)}
-          valueClass="text-violet-400"
+          valueClass="text-violet-300"
         />
         <KpiCard
           icon={<DollarSign className="h-5 w-5" />}
-          iconBg="bg-emerald-500/15 text-emerald-400"
-          glow="from-emerald-500/10"
+          iconBg="bg-emerald-500/15 text-emerald-300"
+          glow="from-emerald-500/15"
+          neon="52 211 153"
           label="VALOR DE VENDA"
           value={brl(totals.valorVenda)}
-          valueClass="text-emerald-400"
+          valueClass="text-emerald-300"
         />
         <KpiCard
           icon={<AlertTriangle className="h-5 w-5" />}
-          iconBg="bg-orange-500/15 text-orange-400"
-          glow="from-orange-500/10"
+          iconBg="bg-orange-500/15 text-orange-300"
+          glow="from-orange-500/15"
+          neon="251 146 60"
           label="ABAIXO DO MÍNIMO"
           value={`${totals.abaixoMin} produto${totals.abaixoMin === 1 ? "" : "s"}`}
-          valueClass="text-orange-400"
+          valueClass="text-orange-300"
         />
         <KpiCard
           icon={<BarChart3 className="h-5 w-5" />}
-          iconBg="bg-sky-500/15 text-sky-400"
-          glow="from-sky-500/10"
+          iconBg="bg-sky-500/15 text-sky-300"
+          glow="from-sky-500/15"
+          neon="56 189 248"
           label="TOTAL DE SKUS"
           value={String(totals.skus)}
-          valueClass="text-sky-400"
+          valueClass="text-sky-300"
           hint="Produtos cadastrados"
         />
       </div>
