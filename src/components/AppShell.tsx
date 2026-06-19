@@ -82,10 +82,9 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         className="lg:hidden sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="flex items-center justify-between px-4 h-[72px]">
-          <Link to="/" className="flex items-center gap-2 min-w-0">
-            <img src="/logo-bubble.png" alt="" className="h-11 w-11 object-contain shrink-0" />
-            <span className="text-2xl font-bold tracking-tight">ZappFy</span>
+        <div className="flex items-center justify-between px-3 h-[72px]">
+          <Link to="/" className="flex items-center min-w-0">
+            <img src="/logo-full.png" alt="Zappfy" className="h-14 w-auto object-contain" />
           </Link>
           <ThemeToggle />
         </div>
@@ -105,24 +104,27 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         >
           <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0 overflow-hidden">
             <div className="relative flex items-center justify-between gap-2 px-4 h-[110px] border-b border-sidebar-border bg-gradient-to-b from-sidebar-accent/30 to-transparent">
-              <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-3 min-w-0 w-full">
+              <Link to="/" onClick={() => setOpen(false)} className="flex items-center justify-center min-w-0 w-full h-full">
                 <img
                   src="/logo-bubble.png"
-                  alt=""
-                  className="h-14 w-14 object-contain shrink-0 drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]"
-                />
-                <span
+                  alt="Zappfy"
                   className={cn(
-                    "text-[26px] font-bold tracking-tight text-sidebar-foreground whitespace-nowrap transition-opacity duration-200",
-                    "opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100",
+                    "hidden lg:block h-16 w-16 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)] transition-opacity duration-200",
+                    sidebarHovered ? "lg:hidden" : "lg:block",
                   )}
-                >
-                  ZappFy
-                </span>
+                />
+                <img
+                  src="/logo-full.png"
+                  alt="Zappfy"
+                  className={cn(
+                    "block lg:hidden h-[72px] w-auto max-w-full object-contain",
+                    sidebarHovered && "lg:block",
+                  )}
+                />
               </Link>
               <button
                 onClick={() => setOpen(false)}
-                className="lg:hidden grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-card"
+                className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-card"
                 aria-label="Fechar menu"
               >
                 <X className="h-5 w-5" />
