@@ -180,7 +180,7 @@ function PedidosPage() {
                 <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Produto</th>
                 <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Bairro</th>
                 <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Data</th>
-                <th className="text-right px-4 py-3 font-medium">Valor</th>
+                <th className="text-right px-4 py-3 font-medium">Valor / Lucro</th>
                 <th className="text-left px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3"></th>
               </tr>
