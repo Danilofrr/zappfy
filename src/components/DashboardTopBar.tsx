@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Link } from "@tanstack/react-router";
 import { brl as formatBRL } from "@/lib/format";
-import { ThemeToggle } from "@/lib/theme";
 
 export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   const { user, state } = useStore();
@@ -64,7 +63,7 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
           >
             <Eye className="h-4 w-4" />
           </Link>
-          <ThemeToggle />
+          
           <Link
             to="/configuracoes"
             className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
