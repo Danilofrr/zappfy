@@ -274,13 +274,13 @@ function AuthPage() {
       </aside>
 
       {/* RIGHT — Form */}
-      <div className="flex items-center justify-center px-4 py-10 lg:px-12 lg:py-12">
+      <div className="flex items-center justify-center px-4 py-8 lg:px-10 lg:py-6 lg:h-screen lg:overflow-y-auto">
         <div className="w-full max-w-md">
-          <Link to="/auth" className="flex items-center justify-center lg:justify-start mb-8">
-            <img src="/logo-full.png" alt="Zappfy" className="h-14 w-auto object-contain" />
+          <Link to="/auth" className="flex items-center justify-center lg:justify-start mb-5">
+            <img src="/logo-full.png" alt="Zappfy" className="h-12 w-auto object-contain" />
           </Link>
 
-          <Card className="p-6 lg:p-8 card-neon lg:border-border/60 lg:shadow-elegant">
+          <Card className="p-6 lg:p-7 card-neon lg:border-border/60 lg:shadow-elegant">
             <h1 className="text-2xl font-semibold tracking-tight">
               {mode === "login" ? "Entrar na sua conta" : "Criar conta grátis"}
             </h1>
