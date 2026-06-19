@@ -159,12 +159,16 @@ function TrocasPage() {
   );
 }
 
-function KPI({ label, value, hint, tone }: { label: React.ReactNode; value: string; hint?: string; tone?: "warning" | "info" | "bad" }) {
-  const cls = tone === "warning" ? "text-warning" : tone === "info" ? "text-blue-400" : tone === "bad" ? "text-destructive" : "";
+function KPI({ label, value, hint, tone, neon }: { label: React.ReactNode; value: string; hint?: string; tone?: "warning" | "info" | "bad"; neon?: string }) {
+  const fallback = tone === "warning" ? "text-warning" : tone === "info" ? "text-blue-400" : tone === "bad" ? "text-destructive" : "";
+  const style = neon ? ({ ["--neon-rgb" as any]: neon.replace(/\s+/g, ", ") } as React.CSSProperties) : undefined;
+  const valueStyle = neon
+    ? { color: `rgb(${neon.replace(/\s+/g, ", ")})`, textShadow: `0 0 12px rgba(${neon.replace(/\s+/g, ", ")}, 0.6)` }
+    : undefined;
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-elegant">
+    <div className="rounded-2xl border border-border bg-card p-4 card-neon card-neon-hover" style={style}>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-bold mt-1 ${cls}`}>{value}</div>
+      <div className={`text-2xl font-bold mt-1 ${neon ? "" : fallback}`} style={valueStyle}>{value}</div>
       {hint && <div className="text-[11px] text-muted-foreground mt-1">{hint}</div>}
     </div>
   );
