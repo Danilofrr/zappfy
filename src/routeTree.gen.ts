@@ -28,6 +28,7 @@ import { Route as AuthenticatedDreRouteImport } from './routes/_authenticated/dr
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticated/compras'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
 
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -127,6 +128,11 @@ const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiPublicSubmitOrderRoute = ApiPublicSubmitOrderRouteImport.update({
   id: '/api/public/submit-order',
   path: '/api/public/submit-order',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/admin': typeof AuthenticatedAdminRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/compras': typeof AuthenticatedComprasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/admin': typeof AuthenticatedAdminRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/compras': typeof AuthenticatedComprasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/_authenticated/compras': typeof AuthenticatedComprasRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/checkout'
+    | '/admin'
     | '/ads'
     | '/compras'
     | '/configuracoes'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/checkout'
+    | '/admin'
     | '/ads'
     | '/compras'
     | '/configuracoes'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/checkout'
+    | '/_authenticated/admin'
     | '/_authenticated/ads'
     | '/_authenticated/compras'
     | '/_authenticated/configuracoes'
@@ -408,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/submit-order': {
       id: '/api/public/submit-order'
       path: '/api/public/submit-order'
@@ -419,6 +438,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
   AuthenticatedComprasRoute: typeof AuthenticatedComprasRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
@@ -436,6 +456,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAdsRoute: AuthenticatedAdsRoute,
   AuthenticatedComprasRoute: AuthenticatedComprasRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
