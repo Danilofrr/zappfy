@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   ShoppingCart,
-  Package,
+  Boxes,
   Wallet,
   Megaphone,
   BarChart3,
