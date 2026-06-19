@@ -82,9 +82,9 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         className="lg:hidden sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="flex items-center justify-between px-4 h-14">
+        <div className="flex items-center justify-between px-4 h-16">
           <Link to="/" className="flex items-center min-w-0">
-            <img src="/logo-full.png" alt="Zappfy" className="h-9 w-auto object-contain" />
+            <img src="/logo-full.png" alt="Zappfy" className="h-12 w-auto object-contain" />
           </Link>
           <ThemeToggle />
         </div>
