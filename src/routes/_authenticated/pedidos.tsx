@@ -367,24 +367,69 @@ function Chip({ active, children, onClick }: { active: boolean; children: React.
   );
 }
 
+const PRODUCT_COLORS = [
+  "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  "bg-sky-500/15 text-sky-400 border-sky-500/30",
+  "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  "bg-pink-500/15 text-pink-400 border-pink-500/30",
+  "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+  "bg-lime-500/15 text-lime-400 border-lime-500/30",
+  "bg-orange-500/15 text-orange-400 border-orange-500/30",
+  "bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30",
+];
+function colorForProduct(id: string) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return PRODUCT_COLORS[h % PRODUCT_COLORS.length];
+}
+
+type CartLine = { productId: string; qty: number };
+
 function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (v: boolean) => void; onCreate: (o: Omit<Order, "id">) => void }) {
   const { state } = useStore();
   const [form, setForm] = useState({
     customer: "", phone: "", address: "", district: "", city: "",
-    productId: state.products[0]?.id ?? "", qty: 1, payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
+    payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
   });
-  const p = state.products.find((x) => x.id === form.productId);
-  const total = (p?.price ?? 0) * form.qty;
+  const [lines, setLines] = useState<CartLine[]>([]);
+  const [picker, setPicker] = useState<string>("");
+
+  const selectedIds = new Set(lines.map((l) => l.productId));
+  const available = state.products.filter((p) => !selectedIds.has(p.id));
+  const total = lines.reduce((sum, l) => {
+    const prod = state.products.find((p) => p.id === l.productId);
+    return sum + (prod?.price ?? 0) * l.qty;
+  }, 0);
+
+  function addLine(productId: string) {
+    if (!productId || selectedIds.has(productId)) return;
+    setLines((prev) => [...prev, { productId, qty: 1 }]);
+    setPicker("");
+  }
+  function updateQty(productId: string, qty: number) {
+    setLines((prev) => prev.map((l) => l.productId === productId ? { ...l, qty: Math.max(1, qty) } : l));
+  }
+  function removeLine(productId: string) {
+    setLines((prev) => prev.filter((l) => l.productId !== productId));
+  }
+
+  function reset() {
+    setForm({ customer: "", phone: "", address: "", district: "", city: "", payment: "pix", status: "aguardando", notes: "" });
+    setLines([]);
+    setPicker("");
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DialogTrigger asChild>
         <Button><Plus className="mr-2 h-4 w-4" />Novo Pedido</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo pedido</DialogTitle>
-          <DialogDescription>Registre manualmente um pedido recebido.</DialogDescription>
+          <DialogDescription>Registre manualmente um pedido recebido. Adicione um ou mais produtos.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
@@ -396,17 +441,74 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
             <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Produto">
-              <Select value={form.productId} onValueChange={(v) => setForm({...form, productId: v})}>
-                <SelectTrigger><SelectValue/></SelectTrigger>
-                <SelectContent>
-                  {state.products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Quantidade"><Input type="number" min={1} value={form.qty} onChange={(e) => setForm({...form, qty: Math.max(1, Number(e.target.value))})} /></Field>
+
+          {/* Produtos do pedido */}
+          <div className="space-y-2">
+            <Label className="text-xs">Produtos do pedido</Label>
+            <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-2">
+              {lines.length === 0 && (
+                <div className="text-xs text-muted-foreground py-2 text-center">Nenhum produto adicionado ainda.</div>
+              )}
+              {lines.map((l) => {
+                const prod = state.products.find((p) => p.id === l.productId);
+                if (!prod) return null;
+                const color = colorForProduct(prod.id);
+                const sub = prod.price * l.qty;
+                return (
+                  <div key={l.productId} className={`flex items-center gap-2 rounded-lg border p-2 ${color}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate text-foreground">{prod.name}</div>
+                      <div className="text-xs text-muted-foreground">{brl(prod.price)} · subtotal {brl(sub)}</div>
+                    </div>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={l.qty}
+                      onChange={(e) => updateQty(l.productId, Number(e.target.value))}
+                      className="h-8 w-16 text-center"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeLine(l.productId)}
+                      className="p-1 text-muted-foreground hover:text-destructive"
+                      title="Remover"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
+
+              {available.length > 0 ? (
+                <div className="flex gap-2 pt-1">
+                  <Select value={picker} onValueChange={addLine}>
+                    <SelectTrigger className="h-9 flex-1">
+                      <SelectValue placeholder="+ Adicionar produto..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {available.map((p) => {
+                        const color = colorForProduct(p.id);
+                        return (
+                          <SelectItem key={p.id} value={p.id}>
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-block h-2.5 w-2.5 rounded-full ${color.split(" ")[0]}`} />
+                              <span>{p.name}</span>
+                              <span className="text-xs text-muted-foreground ml-1">{brl(p.price)}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : state.products.length === 0 ? (
+                <div className="text-xs text-muted-foreground text-center pt-1">Cadastre produtos primeiro.</div>
+              ) : (
+                <div className="text-xs text-muted-foreground text-center pt-1">Todos os produtos já foram adicionados.</div>
+              )}
+            </div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <Field label="Pagamento">
               <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
@@ -433,20 +535,27 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button onClick={() => {
-            if (!p || !form.customer) { toast.error("Preencha cliente e produto"); return; }
+            if (!form.customer) { toast.error("Preencha o nome do cliente"); return; }
+            if (lines.length === 0) { toast.error("Adicione ao menos um produto"); return; }
+            const items = lines.map((l) => {
+              const prod = state.products.find((p) => p.id === l.productId)!;
+              return { productId: prod.id, name: prod.name, qty: l.qty, price: prod.price, cost: prod.cost };
+            });
             onCreate({
               customer: form.customer, phone: form.phone, address: form.address,
               district: form.district, city: form.city,
-              items: [{ productId: p.id, name: p.name, qty: form.qty, price: p.price, cost: p.cost }],
+              items,
               total, payment: form.payment, status: form.status, notes: form.notes,
               date: new Date().toISOString(),
             });
+            reset();
           }}>Salvar pedido</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
