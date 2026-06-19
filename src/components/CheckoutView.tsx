@@ -620,7 +620,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return <div className="flex justify-between opacity-80"><span className="truncate pr-2">{label}</span><span className="opacity-100">{value}</span></div>;
 }
 function StepCard({
-  n, title, state, neonColor, cardStyle, summary, onEdit, children,
+  n, title, state, neonColor, cardStyle, summary, onEdit, icon: Icon, children,
 }: {
   n: 1 | 2 | 3;
   title: string;
@@ -629,11 +629,12 @@ function StepCard({
   cardStyle: React.CSSProperties;
   summary?: string;
   onEdit?: () => void;
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   children: React.ReactNode;
 }) {
   const headerBadge = (
     <div
-      className="h-8 w-8 grid place-items-center rounded-full text-xs font-bold shrink-0"
+      className="h-9 w-9 grid place-items-center rounded-full text-sm font-bold shrink-0"
       style={{
         backgroundColor: state === "locked" ? "transparent" : neonColor,
         color: state === "locked" ? "currentColor" : "#fff",
@@ -648,12 +649,21 @@ function StepCard({
 
   if (state === "active") {
     return (
-      <div className="p-5" style={cardStyle}>
-        <div className="flex items-center gap-3 mb-4">
+      <div className="overflow-hidden" style={cardStyle}>
+        <div
+          className="px-5 py-3 flex items-center gap-3"
+          style={{ backgroundColor: `${neonColor}1a`, borderBottom: `1px solid ${neonColor}33` }}
+        >
           {headerBadge}
-          <h2 className="font-bold">{title}</h2>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-wider font-bold opacity-70">Etapa {n} de 3</div>
+            <h2 className="font-bold flex items-center gap-2">
+              {Icon && <Icon className="h-4 w-4" style={{ color: neonColor }} />}
+              {title}
+            </h2>
+          </div>
         </div>
-        {children}
+        <div className="p-5">{children}</div>
       </div>
     );
   }
@@ -668,13 +678,82 @@ function StepCard({
       style={{ ...cardStyle, opacity: state === "locked" ? 0.55 : 1, boxShadow: "none", border: `1px solid ${neonColor}22` }}
     >
       {headerBadge}
+      {Icon && <Icon className="h-4 w-4 shrink-0 opacity-70" style={{ color: neonColor }} />}
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-sm">{title}</div>
         {summary && <div className="text-xs opacity-70 truncate">{summary}</div>}
       </div>
       {state === "done" && (
-        <span className="text-xs font-medium" style={{ color: neonColor }}>Editar</span>
+        <span className="text-xs font-semibold" style={{ color: neonColor }}>Editar</span>
       )}
     </div>
   );
 }
+
+function ProgressBar({
+  step, neonColor, textColor, titles,
+}: {
+  step: 1 | 2 | 3;
+  neonColor: string;
+  textColor: string;
+  titles: [string, string, string];
+}) {
+  return (
+    <div className="flex items-center gap-2 sm:gap-3">
+      {titles.map((t, i) => {
+        const n = (i + 1) as 1 | 2 | 3;
+        const done = step > n;
+        const active = step === n;
+        const dim = !done && !active;
+        return (
+          <div key={n} className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+            <div
+              className="h-8 w-8 grid place-items-center rounded-full text-xs font-bold shrink-0 transition-all"
+              style={{
+                backgroundColor: dim ? "transparent" : neonColor,
+                color: dim ? textColor : "#fff",
+                border: `2px solid ${dim ? `${neonColor}55` : neonColor}`,
+                boxShadow: active ? `0 0 12px ${neonColor}` : "none",
+                opacity: dim ? 0.55 : 1,
+              }}
+            >
+              {done ? "✓" : n}
+            </div>
+            <div className="hidden sm:block min-w-0 flex-1">
+              <div
+                className="text-[10px] uppercase tracking-wider font-bold"
+                style={{ opacity: dim ? 0.5 : 0.7 }}
+              >Etapa {n}</div>
+              <div
+                className="text-sm font-semibold truncate"
+                style={{ opacity: dim ? 0.55 : 1, color: active ? neonColor : "inherit" }}
+              >{t}</div>
+            </div>
+            {i < 2 && (
+              <div
+                className="hidden sm:block h-px flex-1 min-w-[24px]"
+                style={{ backgroundColor: step > n ? neonColor : `${neonColor}33` }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TrustBadge({
+  icon: Icon, label, color,
+}: {
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  label: string;
+  color: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 px-1">
+      <Icon className="h-5 w-5" style={{ color }} />
+      <span className="text-[10px] font-semibold leading-tight opacity-80">{label}</span>
+    </div>
+  );
+}
+
