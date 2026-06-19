@@ -803,6 +803,8 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
     setFeeLabel(""); setFeeValue(0);
     setDiscountType("percent"); setDiscountValue(0); setCouponCode(""); setCouponApplied("");
     setSecondPayment("none"); setSecondPaymentValue(0);
+    const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    setOrderDate(d.toISOString().slice(0, 10));
   }
 
   const paymentOptions = [
