@@ -217,7 +217,21 @@ function PedidosPage() {
         </div>
       }
     >
-      {/* Filters */}
+      {/* Date filter */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        {dateOptions.map((d) => (
+          <Chip key={d.key} active={dateRange === d.key} onClick={() => setDateRange(d.key)}>{d.label}</Chip>
+        ))}
+        {dateRange === "custom" && (
+          <div className="flex items-center gap-2 ml-1">
+            <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="h-8 w-[150px]" />
+            <span className="text-xs text-muted-foreground">até</span>
+            <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="h-8 w-[150px]" />
+          </div>
+        )}
+      </div>
+
+      {/* Status filters */}
       <div className="flex flex-wrap gap-2 mb-5">
         <Chip active={filter === "all"} onClick={() => setFilter("all")}>Todos</Chip>
         {statusList.map((s) => (
