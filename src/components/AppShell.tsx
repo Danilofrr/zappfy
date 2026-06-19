@@ -59,49 +59,58 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
   const [open, setOpen] = useState(false);
   const { state, signOut, user } = useStore();
 
+  const primaryMobile = [
+    { to: "/", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/pedidos", label: "Pedidos", icon: ShoppingCart },
+    { to: "/produtos", label: "Estoque", icon: Boxes },
+    { to: "/financeiro", label: "Financeiro", icon: Wallet },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Mobile top bar */}
+      {/* Mobile top bar (logo only) */}
       <header
-        className="lg:hidden sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur"
+        className="lg:hidden sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="flex items-center justify-between px-4 h-16">
+        <div className="flex items-center justify-between px-4 h-14">
           <Link to="/" className="flex items-center gap-2 min-w-0">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow">
               <TrendingUp className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="font-bold tracking-tight text-lg truncate">ZappFy</span>
           </Link>
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-card hover:bg-secondary active:scale-95 transition"
-            aria-label="Menu"
-            aria-expanded={open}
-          >
-            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          <ThemeToggle />
         </div>
       </header>
 
       <div className="flex">
-        {/* Sidebar — collapses to icons; expands on hover (desktop) */}
+        {/* Sidebar — desktop collapses to icons; on mobile acts as drawer opened by bottom "Menu" button */}
         <aside
           className={cn(
-            "group/sidebar fixed lg:sticky top-0 left-0 z-40 h-screen shrink-0 border-r border-sidebar-border bg-sidebar transition-[transform,width] duration-300 ease-out",
+            "group/sidebar fixed lg:sticky top-0 left-0 z-50 h-screen shrink-0 border-r border-sidebar-border bg-sidebar transition-[transform,width] duration-300 ease-out",
             "w-64 lg:w-[4.5rem] lg:hover:w-64 lg:focus-within:w-64",
             open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
         >
-          <div className="flex h-full flex-col pt-[calc(env(safe-area-inset-top)+4rem)] lg:pt-0 overflow-hidden">
-            <div className="hidden lg:flex items-center gap-2 px-4 h-16 border-b border-sidebar-border">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow">
-                <TrendingUp className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0 overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-4 h-16 border-b border-sidebar-border">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow">
+                  <TrendingUp className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div className="leading-tight min-w-0 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                  <div className="font-bold tracking-tight">ZappFy</div>
+                  <div className="text-[11px] text-muted-foreground">Gestão para WhatsApp</div>
+                </div>
               </div>
-              <div className="leading-tight min-w-0 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                <div className="font-bold tracking-tight">ZappFy</div>
-                <div className="text-[11px] text-muted-foreground">Gestão para WhatsApp</div>
-              </div>
+              <button
+                onClick={() => setOpen(false)}
+                className="lg:hidden grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-card"
+                aria-label="Fechar menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-4">
@@ -158,14 +167,14 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
 
         {open && (
           <div
-            className="lg:hidden fixed inset-0 z-30 bg-black/60"
+            className="lg:hidden fixed inset-0 z-40 bg-black/60"
             onClick={() => setOpen(false)}
           />
         )}
 
         {/* Main */}
         <main className="flex-1 min-w-0">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 lg:py-8 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 mb-6 lg:mb-8">
               <div className="min-w-0">
                 <h1 className="truncate text-2xl lg:text-3xl font-bold tracking-tight">{title}</h1>
@@ -173,13 +182,50 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
               </div>
               <div className="shrink-0 flex items-center gap-2">
                 {actions}
-                <ThemeToggle />
+                <span className="hidden lg:block"><ThemeToggle /></span>
               </div>
             </div>
             {children}
           </div>
         </main>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="grid grid-cols-5 h-16">
+          {primaryMobile.map((item) => {
+            const Icon = item.icon;
+            const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_6px_rgba(34,197,94,0.9)]")} />
+                <span className="truncate max-w-full px-1">{item.label}</span>
+              </Link>
+            );
+          })}
+          <button
+            onClick={() => setOpen(true)}
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
+              open ? "text-primary" : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-label="Mais opções"
+          >
+            <Menu className="h-5 w-5" />
+            <span>Mais</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
