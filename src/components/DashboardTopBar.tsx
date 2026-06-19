@@ -13,6 +13,7 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   const { user, state } = useStore();
   const { revenue } = useFinance();
   const { on: privacy, toggle: togglePrivacy } = usePrivacy();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const prizeQ = useQuery({
     queryKey: ["public-prize"],
