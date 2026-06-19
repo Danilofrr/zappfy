@@ -459,7 +459,7 @@ function AuthPage() {
           >
             <span className="absolute inset-0 rounded-full bg-[#22c55e]/50 blur-xl opacity-70 animate-pulse -z-10" />
             <img
-              src="/__l5e/assets-v1/b6ac28d3-6b8a-4314-a587-446308c024de/whatsapp-support.png"
+              src="/__l5e/assets-v1/555ed482-0f3f-4b27-bff5-725a39539f20/whatsapp-support.png"
               alt="Suporte WhatsApp"
               className="h-full w-full object-contain"
             />
