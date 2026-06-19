@@ -496,6 +496,13 @@ function PedidosPage() {
                         <Receipt className="h-4 w-4" />
                       </button>
                       <button
+                        onClick={() => printLabel(o)}
+                        title="Gerar etiqueta de envio"
+                        className="text-muted-foreground hover:text-primary p-1"
+                      >
+                        <Tag className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => setMotoboyFor(o)}
                         title="Enviar endereço para o motoboy no WhatsApp"
                         className="text-muted-foreground hover:text-blue-500 p-1"
