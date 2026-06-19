@@ -515,7 +515,7 @@ function Page() {
       </div>
 
       <div className="mt-6 flex justify-end">
-        <Button onClick={() => { updateSettings(f); toast.success("Configurações salvas"); }}>Salvar alterações</Button>
+        <Button onClick={() => { updateSettings(f); saveSenderInfo(sender); toast.success("Configurações salvas"); }}>Salvar alterações</Button>
       </div>
     </AppShell>
   );
