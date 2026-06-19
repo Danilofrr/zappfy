@@ -15,11 +15,14 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
 import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
+import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as AuthenticatedDreRouteImport } from './routes/_authenticated/dre'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticated/compras'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
 
@@ -52,6 +55,11 @@ const CheckoutSlugRoute = CheckoutSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => CheckoutRoute,
 } as any)
+const AuthenticatedTrocasRoute = AuthenticatedTrocasRouteImport.update({
+  id: '/trocas',
+  path: '/trocas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
@@ -72,12 +80,22 @@ const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDreRoute = AuthenticatedDreRouteImport.update({
+  id: '/dre',
+  path: '/dre',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedConfiguracoesRoute =
   AuthenticatedConfiguracoesRouteImport.update({
     id: '/configuracoes',
     path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedComprasRoute = AuthenticatedComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
   id: '/ads',
   path: '/ads',
@@ -94,11 +112,14 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
+  '/compras': typeof AuthenticatedComprasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/trocas': typeof AuthenticatedTrocasRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
@@ -107,11 +128,14 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
+  '/compras': typeof AuthenticatedComprasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/trocas': typeof AuthenticatedTrocasRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/': typeof AuthenticatedIndexRoute
@@ -123,11 +147,14 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
+  '/_authenticated/compras': typeof AuthenticatedComprasRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/dre': typeof AuthenticatedDreRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/_authenticated/trocas': typeof AuthenticatedTrocasRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -140,11 +167,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/ads'
+    | '/compras'
     | '/configuracoes'
+    | '/dre'
     | '/financeiro'
     | '/pedidos'
     | '/produtos'
     | '/relatorios'
+    | '/trocas'
     | '/checkout/$slug'
     | '/loja/$slug'
     | '/api/public/submit-order'
@@ -153,11 +183,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/ads'
+    | '/compras'
     | '/configuracoes'
+    | '/dre'
     | '/financeiro'
     | '/pedidos'
     | '/produtos'
     | '/relatorios'
+    | '/trocas'
     | '/checkout/$slug'
     | '/loja/$slug'
     | '/'
@@ -168,11 +201,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/_authenticated/ads'
+    | '/_authenticated/compras'
     | '/_authenticated/configuracoes'
+    | '/_authenticated/dre'
     | '/_authenticated/financeiro'
     | '/_authenticated/pedidos'
     | '/_authenticated/produtos'
     | '/_authenticated/relatorios'
+    | '/_authenticated/trocas'
     | '/checkout/$slug'
     | '/loja/$slug'
     | '/_authenticated/'
@@ -231,6 +267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSlugRouteImport
       parentRoute: typeof CheckoutRoute
     }
+    '/_authenticated/trocas': {
+      id: '/_authenticated/trocas'
+      path: '/trocas'
+      fullPath: '/trocas'
+      preLoaderRoute: typeof AuthenticatedTrocasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/relatorios': {
       id: '/_authenticated/relatorios'
       path: '/relatorios'
@@ -259,11 +302,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dre': {
+      id: '/_authenticated/dre'
+      path: '/dre'
+      fullPath: '/dre'
+      preLoaderRoute: typeof AuthenticatedDreRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/configuracoes': {
       id: '/_authenticated/configuracoes'
       path: '/configuracoes'
       fullPath: '/configuracoes'
       preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/compras': {
+      id: '/_authenticated/compras'
+      path: '/compras'
+      fullPath: '/compras'
+      preLoaderRoute: typeof AuthenticatedComprasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ads': {
@@ -285,21 +342,27 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdsRoute: typeof AuthenticatedAdsRoute
+  AuthenticatedComprasRoute: typeof AuthenticatedComprasRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedDreRoute: typeof AuthenticatedDreRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+  AuthenticatedTrocasRoute: typeof AuthenticatedTrocasRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdsRoute: AuthenticatedAdsRoute,
+  AuthenticatedComprasRoute: AuthenticatedComprasRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedDreRoute: AuthenticatedDreRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+  AuthenticatedTrocasRoute: AuthenticatedTrocasRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 

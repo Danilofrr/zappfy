@@ -11,6 +11,9 @@ import {
   X,
   TrendingUp,
   LogOut,
+  FileBarChart,
+  Truck,
+  RotateCcw,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -23,6 +26,9 @@ const nav = [
   { to: "/produtos", label: "Produtos", icon: Package },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/ads", label: "Facebook Ads", icon: Megaphone },
+  { to: "/dre", label: "DRE", icon: FileBarChart },
+  { to: "/compras", label: "Compras", icon: Truck },
+  { to: "/trocas", label: "Trocas & Devoluções", icon: RotateCcw },
   { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/configuracoes", label: "Configurações", icon: Cog },
 ];
