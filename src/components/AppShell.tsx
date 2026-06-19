@@ -14,23 +14,44 @@ import {
   FileBarChart,
   Truck,
   RotateCcw,
+  Package,
+  Activity,
+  Target,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { ThemeToggle } from "@/lib/theme";
 
-const nav = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/pedidos", label: "Pedidos", icon: ShoppingCart },
-  { to: "/produtos", label: "Estoque", icon: Boxes },
-  { to: "/financeiro", label: "Financeiro", icon: Wallet },
-  { to: "/ads", label: "Facebook Ads", icon: Megaphone },
-  { to: "/dre", label: "DRE", icon: FileBarChart },
-  { to: "/compras", label: "Compras", icon: Truck },
-  { to: "/trocas", label: "Trocas & Devoluções", icon: RotateCcw },
-  { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
-  { to: "/configuracoes", label: "Configurações", icon: Cog },
+const navGroups: { label: string; items: { to: string; label: string; icon: any }[] }[] = [
+  {
+    label: "Principal",
+    items: [
+      { to: "/", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/pedidos", label: "Pedidos", icon: ShoppingCart },
+      { to: "/produtos", label: "Estoque", icon: Boxes },
+      { to: "/compras", label: "Compras", icon: Truck },
+      { to: "/trocas", label: "Trocas & Devoluções", icon: RotateCcw },
+    ],
+  },
+  {
+    label: "Relatórios",
+    items: [
+      { to: "/por-produto", label: "Por Produto", icon: Package },
+      { to: "/indicadores", label: "Indicadores", icon: Activity },
+      { to: "/metas", label: "Metas", icon: Target },
+      { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+      { to: "/dre", label: "DRE", icon: FileBarChart },
+    ],
+  },
+  {
+    label: "Gestão",
+    items: [
+      { to: "/financeiro", label: "Financeiro", icon: Wallet },
+      { to: "/ads", label: "Facebook Ads", icon: Megaphone },
+      { to: "/configuracoes", label: "Configurações", icon: Cog },
+    ],
+  },
 ];
 
 export function AppShell({ children, title, subtitle, actions }: { children: ReactNode; title: string; subtitle?: string; actions?: ReactNode }) {
@@ -83,30 +104,38 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
               </div>
             </div>
 
-            <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1">
-              {nav.map((item) => {
-                const Icon = item.icon;
-                const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setOpen(false)}
-                    title={item.label}
-                    className={cn(
-                      "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                      active
-                        ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(34,197,94,0.55),0_0_4px_rgba(34,197,94,0.9)_inset] ring-1 ring-primary/60"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                    )}
-                  >
-                    <Icon className={cn("h-5 w-5 shrink-0", active && "text-primary-foreground drop-shadow-[0_0_6px_rgba(34,197,94,0.9)]")} />
-                    <span className="truncate opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                      {item.label}
-                    </span>
-                  </Link>
-                );
-              })}
+            <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-4">
+              {navGroups.map((group) => (
+                <div key={group.label} className="space-y-1">
+                  <div className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45 opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                    {group.label}
+                  </div>
+                  <div className="hidden lg:block lg:group-hover/sidebar:hidden lg:group-focus-within/sidebar:hidden mx-2 my-1 h-px bg-sidebar-border/60" />
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setOpen(false)}
+                        title={item.label}
+                        className={cn(
+                          "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                          active
+                            ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(34,197,94,0.55),0_0_4px_rgba(34,197,94,0.9)_inset] ring-1 ring-primary/60"
+                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                        )}
+                      >
+                        <Icon className={cn("h-5 w-5 shrink-0", active && "text-primary-foreground drop-shadow-[0_0_6px_rgba(34,197,94,0.9)]")} />
+                        <span className="truncate opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                          {item.label}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
             </nav>
 
             <div className="border-t border-sidebar-border p-3 space-y-3">
