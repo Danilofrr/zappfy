@@ -14,6 +14,9 @@ import { SHIPPING_ICONS } from "@/lib/shipping-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NotificationsCard } from "@/components/NotificationsCard";
 import { getSenderInfo, saveSenderInfo, type SenderInfo } from "@/lib/sender-info";
+import { AvatarUploader } from "@/components/AvatarUploader";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — ZappFy" }] }),
@@ -67,7 +70,8 @@ function Page() {
         </Button>
       }
     >
-      <div className="grid lg:grid-cols-2 gap-6">
+      <ProfileCard />
+      <div className="grid lg:grid-cols-2 gap-6 mt-6">
         <Card title="Dados da loja">
           <Field label="Nome da Loja"><Input value={f.storeName} onChange={(e) => setF({ ...f, storeName: e.target.value })} /></Field>
           <Field label="WhatsApp (com DDI, só números)"><Input value={f.whatsapp} onChange={(e) => setF({ ...f, whatsapp: e.target.value })} placeholder="5581999990000" /></Field>
