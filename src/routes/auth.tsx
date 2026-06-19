@@ -102,9 +102,8 @@ function AuthPage() {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md">
-        <Link to="/auth" className="flex items-center justify-center gap-2 mb-6">
-          <img src="/logo-bubble.png" alt="Zappfy" className="h-10 w-10 object-contain" />
-          <span className="text-xl font-bold tracking-tight text-neon">ZappFy</span>
+        <Link to="/auth" className="flex items-center justify-center mb-6">
+          <img src="/logo-full.png" alt="Zappfy" className="h-16 w-auto object-contain" />
         </Link>
 
         <Card className="p-6 card-neon animate-neon-pulse">
