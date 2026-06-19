@@ -332,16 +332,16 @@ function AuthPage() {
                 </>
               )}
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm font-semibold">Email ou WhatsApp</Label>
+                <Label htmlFor="email" className="text-sm font-semibold">Email ou Usuário</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="Digite seu WhatsApp"
+                    placeholder="Digite seu email ou usuário"
                     className="h-12 pl-10 rounded-xl bg-background/60"
                   />
                 </div>
