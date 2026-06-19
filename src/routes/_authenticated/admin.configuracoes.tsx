@@ -109,6 +109,7 @@ function AdminSettings() {
           <TabsTrigger value="messages"><MessageSquare className="h-4 w-4 mr-1" />Mensagens</TabsTrigger>
           <TabsTrigger value="security"><Shield className="h-4 w-4 mr-1" />Segurança</TabsTrigger>
           <TabsTrigger value="appearance"><Palette className="h-4 w-4 mr-1" />Aparência</TabsTrigger>
+          <TabsTrigger value="prize"><Trophy className="h-4 w-4 mr-1" />Prêmios</TabsTrigger>
           <TabsTrigger value="integrations"><Plug className="h-4 w-4 mr-1" />Integrações</TabsTrigger>
         </TabsList>
 
