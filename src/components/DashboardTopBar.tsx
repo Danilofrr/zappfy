@@ -4,7 +4,7 @@ import { useStore, useFinance } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Link } from "@tanstack/react-router";
-import { formatBRL } from "@/lib/format";
+import { brl as formatBRL } from "@/lib/format";
 
 type PrizeCfg = { enabled?: boolean; goal?: number; reward?: string; period?: string };
 
