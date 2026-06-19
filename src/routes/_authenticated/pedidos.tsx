@@ -211,6 +211,99 @@ function PedidosPage() {
     w.document.open(); w.document.write(html); w.document.close();
   }
 
+  function printLabel(o: Order) {
+    const s = state.settings;
+    const storeName = s.storeName || "Loja";
+    const logoUrl = s.checkoutLogoUrl || "";
+    const escape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
+    const senderName = (s as any).senderName || storeName;
+    const senderAddress = (s as any).senderAddress || "";
+    const senderCity = (s as any).senderCity || "";
+    const totalQty = o.items.reduce((a, i) => a + i.qty, 0);
+    const itemsList = o.items.map((i) => `${i.qty}x ${escape(i.name)}`).join(" • ");
+    const cityUpper = (o.city || "").toUpperCase();
+    const districtUpper = (o.district || "").toUpperCase();
+    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/>
+<title>Etiqueta #${escape(o.id.slice(0, 8))}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#000;background:#e5e5e5;padding:20px}
+  .actions{max-width:480px;margin:0 auto 12px;display:flex;gap:8px;justify-content:flex-end}
+  .actions button{padding:8px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+  .actions .print{background:#111;color:#fff}
+  .actions .close{background:#eee;color:#111}
+  .label{width:480px;margin:0 auto;background:#fff;border:2px solid #000;font-size:13px}
+  .brand{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;border-bottom:2px solid #000;background:#fff;min-height:90px}
+  .brand img{max-height:60px;max-width:240px;object-fit:contain}
+  .brand .name{font-size:22px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+  .row{display:flex;border-bottom:2px solid #000}
+  .row > div{padding:10px 12px}
+  .row .lbl{font-size:9px;text-transform:uppercase;color:#444;letter-spacing:.8px;margin-bottom:2px}
+  .row .val{font-weight:700;font-size:14px}
+  .grow{flex:1}
+  .split > div + div{border-left:2px solid #000}
+  .dest-head{background:#000;color:#fff;padding:6px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;text-align:center}
+  .dest{padding:14px;border-bottom:2px solid #000}
+  .dest .name{font-size:17px;font-weight:800;text-transform:uppercase;margin-bottom:6px}
+  .dest .addr{font-size:14px;line-height:1.45}
+  .city-block{display:flex;border-bottom:2px solid #000}
+  .city-block .city{flex:1;padding:10px 12px;font-size:18px;font-weight:800;text-transform:uppercase}
+  .city-block .neigh{padding:10px 12px;font-size:12px;text-align:right;border-left:2px solid #000;min-width:140px}
+  .sender{padding:10px 12px;font-size:11px;background:#fafafa}
+  .sender .ttl{font-size:9px;text-transform:uppercase;color:#666;letter-spacing:.8px;margin-bottom:3px;font-weight:700}
+  .items{padding:10px 12px;font-size:11px;border-top:2px solid #000;background:#fafafa}
+  .items .ttl{font-size:9px;text-transform:uppercase;color:#666;letter-spacing:.8px;margin-bottom:3px;font-weight:700}
+  @media print{
+    body{background:#fff;padding:0}
+    .actions{display:none}
+    .label{margin:0;border-width:1px}
+    @page{size:auto;margin:8mm}
+  }
+</style></head><body>
+<div class="actions">
+  <button class="print" onclick="window.print()">Imprimir</button>
+  <button class="close" onclick="window.close()">Fechar</button>
+</div>
+<div class="label">
+  <div class="brand">
+    ${logoUrl ? `<img src="${escape(logoUrl)}" alt="${escape(storeName)}" onerror="this.style.display='none'"/>` : `<div class="name">${escape(storeName)}</div>`}
+  </div>
+  <div class="row split">
+    <div class="grow"><div class="lbl">Pedido</div><div class="val">#${escape(o.id.slice(0, 8).toUpperCase())}</div></div>
+    <div><div class="lbl">Data</div><div class="val">${escape(fmtDate(o.date))}</div></div>
+    <div><div class="lbl">Volumes</div><div class="val">1 / 1</div></div>
+  </div>
+  <div class="dest-head">Destinatário</div>
+  <div class="dest">
+    <div class="name">${escape(o.customer)}</div>
+    <div class="addr">
+      ${escape(o.address) || "—"}<br/>
+      ${o.phone ? `Tel: ${escape(o.phone)}` : ""}
+    </div>
+  </div>
+  <div class="city-block">
+    <div class="city">${escape(cityUpper) || "—"}</div>
+    <div class="neigh">${escape(districtUpper) || ""}</div>
+  </div>
+  <div class="sender">
+    <div class="ttl">Remetente</div>
+    <strong>${escape(senderName)}</strong><br/>
+    ${escape(senderAddress)}${senderCity ? " — " + escape(senderCity) : ""}
+  </div>
+  <div class="items">
+    <div class="ttl">Conteúdo (${totalQty} ${totalQty === 1 ? "item" : "itens"})</div>
+    ${escape(itemsList)}
+  </div>
+</div>
+<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script>
+</body></html>`;
+    const w = window.open("", "_blank", "width=560,height=820");
+    if (!w) { toast.error("Permita pop-ups para imprimir a etiqueta"); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+  }
+
+
+
 
   function handleStatusChange(o: Order, status: OrderStatus) {
     updateOrderStatus(o.id, status);
