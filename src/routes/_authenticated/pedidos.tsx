@@ -136,10 +136,64 @@ function PedidosPage() {
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [open, setOpen] = useState(false);
 
+  type DateRangeKey = "all" | "today" | "yesterday" | "7d" | "30d" | "month" | "custom";
+  const [dateRange, setDateRange] = useState<DateRangeKey>("all");
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
+
+  const dateBounds = useMemo(() => {
+    const now = new Date();
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    switch (dateRange) {
+      case "today":
+        return { from: startOfDay(now), to: endOfDay(now) };
+      case "yesterday": {
+        const y = new Date(now); y.setDate(y.getDate() - 1);
+        return { from: startOfDay(y), to: endOfDay(y) };
+      }
+      case "7d": {
+        const f = new Date(now); f.setDate(f.getDate() - 6);
+        return { from: startOfDay(f), to: endOfDay(now) };
+      }
+      case "30d": {
+        const f = new Date(now); f.setDate(f.getDate() - 29);
+        return { from: startOfDay(f), to: endOfDay(now) };
+      }
+      case "month":
+        return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: endOfDay(now) };
+      case "custom":
+        return {
+          from: customFrom ? startOfDay(new Date(customFrom + "T00:00:00")) : null,
+          to: customTo ? endOfDay(new Date(customTo + "T00:00:00")) : null,
+        };
+      default:
+        return { from: null, to: null };
+    }
+  }, [dateRange, customFrom, customTo]);
+
   const filtered = useMemo(
-    () => state.orders.filter((o) => filter === "all" || o.status === filter),
-    [state.orders, filter],
+    () => state.orders.filter((o) => {
+      if (filter !== "all" && o.status !== filter) return false;
+      if (dateBounds.from || dateBounds.to) {
+        const d = new Date(o.date);
+        if (dateBounds.from && d < dateBounds.from) return false;
+        if (dateBounds.to && d > dateBounds.to) return false;
+      }
+      return true;
+    }),
+    [state.orders, filter, dateBounds],
   );
+
+  const dateOptions: { key: DateRangeKey; label: string }[] = [
+    { key: "all", label: "Todo período" },
+    { key: "today", label: "Hoje" },
+    { key: "yesterday", label: "Ontem" },
+    { key: "7d", label: "7 dias" },
+    { key: "30d", label: "30 dias" },
+    { key: "month", label: "Mês" },
+    { key: "custom", label: "Personalizado" },
+  ];
 
   const checkoutLink =
     typeof window !== "undefined" ? `${window.location.origin}/checkout` : "/checkout";
@@ -163,7 +217,21 @@ function PedidosPage() {
         </div>
       }
     >
-      {/* Filters */}
+      {/* Date filter */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        {dateOptions.map((d) => (
+          <Chip key={d.key} active={dateRange === d.key} onClick={() => setDateRange(d.key)}>{d.label}</Chip>
+        ))}
+        {dateRange === "custom" && (
+          <div className="flex items-center gap-2 ml-1">
+            <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="h-8 w-[150px]" />
+            <span className="text-xs text-muted-foreground">até</span>
+            <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="h-8 w-[150px]" />
+          </div>
+        )}
+      </div>
+
+      {/* Status filters */}
       <div className="flex flex-wrap gap-2 mb-5">
         <Chip active={filter === "all"} onClick={() => setFilter("all")}>Todos</Chip>
         {statusList.map((s) => (
