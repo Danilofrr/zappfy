@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
+import { DashboardTopBar } from "@/components/DashboardTopBar";
 import { useFinance, useStore, monthRange } from "@/lib/store";
 import { brl, dateOnlyToLocalDate, pct } from "@/lib/format";
 import { useMemo, useState } from "react";
