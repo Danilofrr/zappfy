@@ -870,9 +870,7 @@ export type Database = {
     Views: {
       products_public: {
         Row: {
-          category: string | null
           created_at: string | null
-          description: string | null
           id: string | null
           image_url: string | null
           name: string | null
@@ -880,32 +878,11 @@ export type Database = {
           stock: number | null
           user_id: string | null
         }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          image_url?: string | null
-          name?: string | null
-          price?: number | null
-          stock?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          image_url?: string | null
-          name?: string | null
-          price?: number | null
-          stock?: number | null
-          user_id?: string | null
-        }
         Relationships: []
       }
       settings_public: {
         Row: {
+          address: string | null
           checkout_bg_color: string | null
           checkout_button_color: string | null
           checkout_button_label: string | null
@@ -943,6 +920,7 @@ export type Database = {
           checkout_theme: string | null
           delivery_fee: number | null
           delivery_label: string | null
+          motoboy_fee: number | null
           shipping_options: Json | null
           slug: string | null
           store_name: string | null
@@ -950,6 +928,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          address?: string | null
           checkout_bg_color?: string | null
           checkout_button_color?: string | null
           checkout_button_label?: string | null
@@ -987,6 +966,7 @@ export type Database = {
           checkout_theme?: string | null
           delivery_fee?: number | null
           delivery_label?: string | null
+          motoboy_fee?: number | null
           shipping_options?: Json | null
           slug?: string | null
           store_name?: string | null
@@ -994,6 +974,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          address?: string | null
           checkout_bg_color?: string | null
           checkout_button_color?: string | null
           checkout_button_label?: string | null
@@ -1031,6 +1012,7 @@ export type Database = {
           checkout_theme?: string | null
           delivery_fee?: number | null
           delivery_label?: string | null
+          motoboy_fee?: number | null
           shipping_options?: Json | null
           slug?: string | null
           store_name?: string | null
