@@ -133,6 +133,7 @@ function Dashboard() {
 
   return (
     <AppShell title="Dashboard" subtitle={`Saúde financeira — ${range.label}`}>
+      <DashboardTopBar subtitle="Principal" />
       {/* Period filter */}
       <div className="mb-5 rounded-2xl border border-border bg-card p-3 lg:p-4 shadow-elegant">
         <div className="flex flex-wrap items-center gap-2">
