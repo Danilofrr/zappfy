@@ -27,7 +27,7 @@ function Page() {
   const [cardPct, setCardPct] = useState("");
   const [platformPct, setPlatformPct] = useState("");
   const [adsPct, setAdsPct] = useState("");
-  const [adsTaxPct, setAdsTaxPct] = useState("17.65");
+  const [adsTaxPct, setAdsTaxPct] = useState("");
   const [otherPct, setOtherPct] = useState("");
 
   const [mode, setMode] = useState<Mode>("markup");
@@ -78,7 +78,7 @@ function Page() {
 
   function reset() {
     setName(""); setCost(""); setFreight(""); setPackaging(""); setOtherCost("");
-    setTaxPct(""); setCardPct(""); setPlatformPct(""); setAdsPct(""); setAdsTaxPct("17.65"); setOtherPct("");
+    setTaxPct(""); setCardPct(""); setPlatformPct(""); setAdsPct(""); setAdsTaxPct(""); setOtherPct("");
     setMarkup("2"); setMargin("30"); setManualPrice(""); setMode("markup"); setTargetMargin("20");
   }
 
