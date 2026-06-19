@@ -32,6 +32,7 @@ function AuthPage() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const [supportWhats, setSupportWhats] = useState<string | null>(null);
 
   useEffect(() => {
