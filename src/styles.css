@@ -49,6 +49,20 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  /* Override Tailwind green/emerald scales with vibrant Zappfy green
+     so dashboards that use bg-green-500 / text-emerald-400 inherit the
+     same vivid tone as the primary palette. */
+  --color-green-300: oklch(0.88 0.2 145);
+  --color-green-400: oklch(0.82 0.225 145);
+  --color-green-500: oklch(0.76 0.235 145);
+  --color-green-600: oklch(0.66 0.225 145);
+  --color-green-700: oklch(0.58 0.22 145);
+  --color-emerald-300: oklch(0.88 0.2 152);
+  --color-emerald-400: oklch(0.82 0.225 150);
+  --color-emerald-500: oklch(0.76 0.235 148);
+  --color-emerald-600: oklch(0.66 0.225 148);
+  --color-emerald-700: oklch(0.58 0.22 148);
 }
 
 /* ---------- DARK (default) ---------- */
