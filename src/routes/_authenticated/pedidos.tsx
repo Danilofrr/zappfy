@@ -1088,7 +1088,12 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 district: form.district, city: form.city,
                 items,
                 total, payment: form.payment, status: form.status, notes: finalNotes,
-                date: new Date().toISOString(),
+                date: (() => {
+                  const now = new Date();
+                  const [y, m, d] = orderDate.split("-").map(Number);
+                  const dt = new Date(y, (m || 1) - 1, d || 1, now.getHours(), now.getMinutes(), now.getSeconds());
+                  return dt.toISOString();
+                })(),
               });
               reset();
             }}>
