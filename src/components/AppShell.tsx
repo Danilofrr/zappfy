@@ -83,9 +83,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
       >
         <div className="flex items-center justify-between px-4 h-14">
           <Link to="/" className="flex items-center gap-2 min-w-0">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow">
-              <TrendingUp className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src="/logo-bubble.png" alt="Zappfy" className="h-9 w-9 shrink-0 object-contain" />
             <span className="font-bold tracking-tight text-lg truncate">ZappFy</span>
           </Link>
           <ThemeToggle />
