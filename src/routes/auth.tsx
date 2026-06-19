@@ -230,7 +230,7 @@ function AuthPage() {
             </div>
 
             {/* Compact feature row */}
-            <ul className="mt-12 grid grid-cols-2 gap-x-6 gap-y-4 max-w-lg">
+            <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 max-w-lg">
               {[
                 { icon: MessageCircle, title: "Pedidos do WhatsApp" },
                 { icon: BarChart3, title: "Relatórios e DRE" },
