@@ -72,7 +72,7 @@ function Page() {
   function reset() {
     setName(""); setCost(""); setFreight(""); setPackaging(""); setOtherCost("");
     setTaxPct(""); setCardPct(""); setPlatformPct(""); setAdsPct(""); setOtherPct("");
-    setMarkup("2"); setMargin("30"); setManualPrice(""); setMode("markup");
+    setMarkup("2"); setMargin("30"); setManualPrice(""); setMode("markup"); setTargetMargin("20");
   }
 
   
