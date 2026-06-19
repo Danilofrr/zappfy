@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -44,6 +45,11 @@ import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
 import { Route as AuthenticatedAdminAssinaturasRouteImport } from './routes/_authenticated/admin.assinaturas'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/ads': typeof AuthenticatedAdsRoute
   '/assinatura-bloqueada': typeof AuthenticatedAssinaturaBloqueadaRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/ads': typeof AuthenticatedAdsRoute
   '/assinatura-bloqueada': typeof AuthenticatedAssinaturaBloqueadaRoute
   '/compras': typeof AuthenticatedComprasRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/ads': typeof AuthenticatedAdsRoute
   '/_authenticated/assinatura-bloqueada': typeof AuthenticatedAssinaturaBloqueadaRoute
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/checkout'
+    | '/reset-password'
     | '/admin'
     | '/ads'
     | '/assinatura-bloqueada'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/checkout'
+    | '/reset-password'
     | '/ads'
     | '/assinatura-bloqueada'
     | '/compras'
@@ -408,6 +419,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/checkout'
+    | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/ads'
     | '/_authenticated/assinatura-bloqueada'
@@ -445,6 +457,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
   AtivarContaTokenRoute: typeof AtivarContaTokenRoute
   LojaSlugRoute: typeof LojaSlugRoute
   ApiPublicSubmitOrderRoute: typeof ApiPublicSubmitOrderRoute
@@ -452,6 +465,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/checkout': {
       id: '/checkout'
       path: '/checkout'
@@ -782,6 +802,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
   AtivarContaTokenRoute: AtivarContaTokenRoute,
   LojaSlugRoute: LojaSlugRoute,
   ApiPublicSubmitOrderRoute: ApiPublicSubmitOrderRoute,
