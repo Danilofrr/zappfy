@@ -256,6 +256,41 @@ export const generateActivationToken = createServerFn({ method: "POST" })
     return { token };
   });
 
+// ===== Senha do cliente =====
+export const setClientPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string; password: string }) =>
+    z.object({ userId: z.string().uuid(), password: z.string().min(6).max(72) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    await ensureAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, { password: data.password });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const sendClientPasswordReset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string; redirectTo?: string }) =>
+    z.object({ userId: z.string().uuid(), redirectTo: z.string().url().optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    await ensureAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: u, error: ue } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    if (ue || !u?.user?.email) throw new Error(ue?.message ?? "Cliente sem e-mail");
+    const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "recovery",
+      email: u.user.email,
+      options: { redirectTo: data.redirectTo },
+    });
+    if (error) throw new Error(error.message);
+    return { email: u.user.email, link: link?.properties?.action_link ?? null };
+  });
+
 // ===== Planos =====
 export const listPlans = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
