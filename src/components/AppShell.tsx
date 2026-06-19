@@ -82,12 +82,12 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         className="lg:hidden sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="flex items-center justify-between px-3 h-[64px]">
+        <div className="flex items-center justify-between px-3 h-[80px]">
           <Link to="/" className="flex items-center min-w-0">
             <img
               src="/logo-full.png"
               alt="Zappfy"
-              className="h-11 w-auto object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]"
+              className="h-14 w-auto object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]"
             />
           </Link>
           <ThemeToggle />
@@ -107,7 +107,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           )}
         >
           <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0 overflow-hidden">
-            <div className="relative flex items-center gap-3 px-4 h-[76px] border-b border-sidebar-border bg-gradient-to-b from-sidebar-accent/30 to-transparent">
+            <div className="relative flex items-center px-3 h-[80px] border-b border-sidebar-border bg-gradient-to-b from-sidebar-accent/30 to-transparent">
               <Link
                 to="/"
                 onClick={() => setOpen(false)}
@@ -121,7 +121,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                   src="/logo-bubble.png"
                   alt="Zappfy"
                   className={cn(
-                    "hidden h-12 w-12 shrink-0 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.5)]",
+                    "hidden h-14 w-14 shrink-0 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.55)]",
                     !sidebarHovered && "lg:block",
                   )}
                 />
@@ -130,7 +130,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                   src="/logo-full.png"
                   alt="Zappfy"
                   className={cn(
-                    "block h-12 w-auto max-w-full object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]",
+                    "block h-14 w-auto object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]",
                     sidebarHovered ? "lg:block" : "lg:hidden",
                   )}
                 />
