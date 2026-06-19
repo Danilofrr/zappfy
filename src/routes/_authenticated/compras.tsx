@@ -96,9 +96,9 @@ function ComprasPage() {
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        <KPI label="Pedidos Pendentes" value={brl(totals.pend)} hint={`${orders.filter((o) => o.status === "pendente").length} pedido(s)`} tone="warning" />
-        <KPI label="Recebido (total)" value={brl(totals.rec)} hint={`${orders.filter((o) => o.status === "recebido").length} pedido(s)`} tone="success" />
-        <KPI label="Fornecedores" value={String(suppliers.length)} hint="cadastrados" />
+        <KPI label="Pedidos Pendentes" value={brl(totals.pend)} hint={`${orders.filter((o) => o.status === "pendente").length} pedido(s)`} tone="warning" neon="251 191 36" />
+        <KPI label="Recebido (total)" value={brl(totals.rec)} hint={`${orders.filter((o) => o.status === "recebido").length} pedido(s)`} tone="success" neon="56 189 248" />
+        <KPI label="Fornecedores" value={String(suppliers.length)} hint="cadastrados" neon="167 139 250" />
       </div>
 
       <div className="flex gap-2 mb-4">
