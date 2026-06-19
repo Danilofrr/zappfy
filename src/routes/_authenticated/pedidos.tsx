@@ -188,7 +188,7 @@ function PedidosPage() {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
               )}
               {filtered.map((o) => (
                 <tr key={o.id} className="border-t border-border hover:bg-secondary/30">
