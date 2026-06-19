@@ -937,7 +937,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
           </div>
 
           {/* Desconto / Cupom */}
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
             <SectionLabel icon={Tag}>Desconto (opcional)</SectionLabel>
             <div className="grid grid-cols-3 gap-2">
               <Field label="TIPO">
