@@ -48,13 +48,26 @@ function ClientsPage() {
   const planFn = useServerFn(changeClientPlan);
   const trialFn = useServerFn(addTrialDays);
   const tokenFn = useServerFn(generateActivationToken);
+  const setPwdFn = useServerFn(setClientPassword);
+  const resetPwdFn = useServerFn(sendClientPasswordReset);
 
   const { data: clients = [], isLoading } = useQuery({ queryKey: ["admin-clients"], queryFn: () => listFn() });
   const { data: plans = [] } = useQuery({ queryKey: ["admin-plans"], queryFn: () => plansFn() });
 
   const [openCreate, setOpenCreate] = useState(false);
   const [activationLink, setActivationLink] = useState<string | null>(null);
+  const [pwdClient, setPwdClient] = useState<{ id: string; email: string } | null>(null);
+  const [newPwd, setNewPwd] = useState("");
+  const [savingPwd, setSavingPwd] = useState(false);
+  const [resetLink, setResetLink] = useState<string | null>(null);
   const [form, setForm] = useState({ email: "", fullName: "", storeName: "", whatsapp: "", planId: "", trialDays: "7" });
+
+  const genPwd = () => {
+    const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let s = "";
+    for (let i = 0; i < 10; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    setNewPwd(s);
+  };
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-clients"] });
 
