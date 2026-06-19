@@ -566,8 +566,13 @@ export const saveSystemSettings = createServerFn({ method: "POST" })
 
 // ===== Suporte público (sem auth) — usado na tela de login =====
 export const getPublicSupport = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabasePublic = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+  );
+  const { data } = await supabasePublic
     .from("admin_settings")
     .select("value")
     .eq("key", "system")
