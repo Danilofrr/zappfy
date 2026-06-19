@@ -128,7 +128,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                         )}
                       >
                         <Icon className={cn("h-5 w-5 shrink-0", active && "text-primary-foreground drop-shadow-[0_0_6px_rgba(34,197,94,0.9)]")} />
-                        <span className="truncate opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                        <span className="truncate opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                           {item.label}
                         </span>
                       </Link>
