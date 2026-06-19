@@ -29,6 +29,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { usePrivacy, mask } from "@/hooks/use-privacy";
 
 import { redirect } from "@tanstack/react-router";
 
@@ -79,6 +80,8 @@ function rangeFor(period: Period, customStart?: string, customEnd?: string): { s
 
 function Dashboard() {
   const { state } = useStore();
+  const { on: privacy } = usePrivacy();
+  const m = (v: string) => mask(v, privacy);
   const [period, setPeriod] = useState<Period>("today");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -218,12 +221,12 @@ function Dashboard() {
       {/* KPI grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
 
-        <StatCard label="Faturamento" value={brl(fin.revenue)} hint={range.label} icon={DollarSign} />
-        <StatCard label="Lucro Líquido" value={brl(fin.profit)} hint={range.label} icon={TrendingUp} tone="success" />
-        <StatCard label="Total Gastos" value={brl(fin.cogs + fin.adsSpend + fin.opEx + fin.motoboyCost)} hint={range.label} icon={TrendingDown} tone="danger" />
-        <StatCard label="Saldo em Caixa" value={brl(fin.cash)} hint="acumulado" icon={Wallet} />
+        <StatCard label="Faturamento" value={m(brl(fin.revenue))} hint={range.label} icon={DollarSign} />
+        <StatCard label="Lucro Líquido" value={m(brl(fin.profit))} hint={range.label} icon={TrendingUp} tone="success" />
+        <StatCard label="Total Gastos" value={m(brl(fin.cogs + fin.adsSpend + fin.opEx + fin.motoboyCost))} hint={range.label} icon={TrendingDown} tone="danger" />
+        <StatCard label="Saldo em Caixa" value={m(brl(fin.cash))} hint="acumulado" icon={Wallet} />
         <StatCard label="Pedidos" value={String(fin.ordersCount)} hint={range.label} icon={ShoppingCart} />
-        <StatCard label="Meta" value={pct(goalPct)} hint={brl(goalRev)} icon={Target} tone="warning" />
+        <StatCard label="Meta" value={pct(goalPct)} hint={m(brl(goalRev))} icon={Target} tone="warning" />
       </div>
 
 
@@ -234,17 +237,17 @@ function Dashboard() {
             <span className="text-xs uppercase tracking-wider text-muted-foreground">Lucro Real do Mês</span>
             <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2.5 py-1">Indicador principal</span>
           </div>
-          <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{brl(fin.profit)}</div>
+          <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{m(brl(fin.profit))}</div>
 
           <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <Row label="Faturamento Total" value={brl(fin.revenue)} positive />
-            <Row label="(-) Custos dos Produtos" value={`- ${brl(fin.cogs)}`} />
-            <Row label="(-) Facebook Ads" value={`- ${brl(fin.adsSpend)}`} />
-            <Row label="(-) Despesas Operacionais" value={`- ${brl(fin.opEx)}`} />
-            <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${brl(fin.motoboyCost)}`} />
+            <Row label="Faturamento Total" value={m(brl(fin.revenue))} positive />
+            <Row label="(-) Custos dos Produtos" value={`- ${m(brl(fin.cogs))}`} />
+            <Row label="(-) Facebook Ads" value={`- ${m(brl(fin.adsSpend))}`} />
+            <Row label="(-) Despesas Operacionais" value={`- ${m(brl(fin.opEx))}`} />
+            <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${m(brl(fin.motoboyCost))}`} />
             <div className="sm:col-span-2 border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold">(=) Lucro Líquido</span>
-              <span className="text-primary font-bold text-lg">{brl(fin.profit)}</span>
+              <span className="text-primary font-bold text-lg">{m(brl(fin.profit))}</span>
             </div>
           </div>
         </div>
@@ -255,14 +258,14 @@ function Dashboard() {
             <span className="text-xs uppercase tracking-wider text-muted-foreground">Facebook Ads</span>
             <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
           </div>
-          <div className="text-2xl font-bold">{brl(adsInvested)}</div>
+          <div className="text-2xl font-bold">{m(brl(adsInvested))}</div>
           <div className="text-xs text-muted-foreground">Investido — {range.label}</div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <Mini label="ROAS" value={`${adsRoas.toFixed(2)}x`} />
-            <Mini label="CPA" value={brl(adsCpa)} />
+            <Mini label="CPA" value={m(brl(adsCpa))} />
             <Mini label="Compras" value={String(adsPurchases)} />
-            <Mini label="Faturamento" value={brl(adsRevenue)} />
+            <Mini label="Faturamento" value={m(brl(adsRevenue))} />
           </div>
         </div>
       </div>
@@ -311,7 +314,7 @@ function Dashboard() {
                 <div className="text-xs text-muted-foreground truncate">{o.items[0]?.name} · {o.district}</div>
               </div>
               <div className="text-right shrink-0">
-                <div className="font-semibold">{brl(o.total)}</div>
+                <div className="font-semibold">{m(brl(o.total))}</div>
                 <div className="text-[11px] text-muted-foreground capitalize">{o.status}</div>
               </div>
             </div>
