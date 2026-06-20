@@ -75,11 +75,26 @@ function PedidosPage() {
   const [editing, setEditing] = useState<Order | null>(null);
   const [motoboyFor, setMotoboyFor] = useState<Order | null>(null);
 
+  function extractFromNotes(notes: string | undefined, label: RegExp): string {
+    if (!notes) return "";
+    const line = notes.split(/\r?\n/).find((l) => label.test(l));
+    if (!line) return "";
+    return line.replace(label, "").trim();
+  }
+
   function buildMotoboyText(o: Order) {
     const itemsTxt = o.items.map((i) => `• ${i.qty}x ${i.name}`).join("\n");
     const produto = o.items.map((i) => `${i.qty}x ${i.name}`).join(", ");
-    const enderecoCompleto = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
+    const referencia = extractFromNotes(o.notes, /^\s*Ponto de refer[êe]ncia:\s*/i);
+    const cep = extractFromNotes(o.notes, /^\s*CEP:\s*/i);
+    const enderecoCompleto = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}${cep ? " - CEP " + cep : ""}${referencia ? " (Ref.: " + referencia + ")" : ""}`;
     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`;
+    // Observações sem as linhas auto-injetadas (CEP / Ponto de referência), já incluídas no endereço.
+    const observacoesLimpas = (o.notes || "")
+      .split(/\r?\n/)
+      .filter((l) => !/^\s*(CEP:|Ponto de refer[êe]ncia:)/i.test(l))
+      .join("\n")
+      .trim();
     const savedM = state.settings.motoboyMessageTemplate || "";
     const tpl = savedM && /\p{Extended_Pictographic}/u.test(savedM) ? savedM : DEFAULT_MOTOBOY_TEMPLATE;
     return applyTemplate(tpl, {
@@ -87,11 +102,13 @@ function PedidosPage() {
       telefone: o.phone,
       produto,
       endereco: enderecoCompleto,
+      referencia,
+      cep,
       mapa: mapsLink,
       itens: itemsTxt,
       pagamento: o.payment.toUpperCase(),
       total: brl(o.total),
-      observacoes: o.notes || "",
+      observacoes: observacoesLimpas,
       loja: state.settings.storeName || "",
     });
   }
