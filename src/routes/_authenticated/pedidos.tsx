@@ -652,10 +652,9 @@ function EditOrderDialog({
   const suggested = Math.round((itemsSubtotal + shipping) * 100) / 100;
 
   // Auto-atualiza total se usuário não editou manualmente
-  if (!totalEdited && order && Math.abs(total - suggested) > 0.001) {
-    // defer to avoid setState in render
-    setTimeout(() => setTotal(suggested), 0);
-  }
+  useEffect(() => {
+    if (!totalEdited) setTotal(suggested);
+  }, [suggested, totalEdited]);
 
   const updateItem = (idx: number, patch: any) => {
     setItems((prev) => prev.map((it, i) => i === idx ? { ...it, ...patch } : it));
