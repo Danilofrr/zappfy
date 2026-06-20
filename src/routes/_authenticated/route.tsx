@@ -15,6 +15,11 @@ export const Route = createFileRoute("/_authenticated")({
     ]);
     const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
 
+    // Admin nunca acessa telas de cliente — sempre redireciona para o painel admin
+    if (isAdmin && !location.pathname.startsWith("/admin")) {
+      throw redirect({ to: "/admin" });
+    }
+
     // Cliente com assinatura vencida/bloqueada → tela de bloqueio
     if (!isAdmin && sub && (sub.status === "vencido" || sub.status === "bloqueado")) {
       if (!location.pathname.startsWith("/assinatura-bloqueada")) {

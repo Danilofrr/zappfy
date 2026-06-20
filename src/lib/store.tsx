@@ -423,8 +423,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
-      setUser(u);
-      if (event === "SIGNED_IN" && u && loadedFor.current !== u.id) {
+      setUser((prev) => {
+        // Se trocou de usuário sem signOut, limpa estado antes de recarregar
+        if (prev && u && prev.id !== u.id) {
+          loadedFor.current = null;
+          setState(emptyState);
+        }
+        return u;
+      });
+      if ((event === "SIGNED_IN" || event === "USER_UPDATED") && u && loadedFor.current !== u.id) {
         loadedFor.current = u.id;
         loadAll(u.id);
       }
