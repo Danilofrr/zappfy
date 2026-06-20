@@ -27,9 +27,7 @@ function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [storeName, setStoreName] = useState("");
   const [fullName, setFullName] = useState("");
-  const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -81,21 +79,15 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { data: signUpData, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: fullName, store_name: storeName || "Minha Loja" },
+            data: { full_name: fullName },
           },
         });
         if (error) throw error;
-        // Tenta salvar avatar imediatamente (funciona se confirmação automática estiver ligada)
-        if (avatar && signUpData?.user?.id) {
-          await supabase
-            .from("profiles")
-            .upsert({ id: signUpData.user.id, full_name: fullName, avatar_url: avatar });
-        }
         toast.success("Conta criada! Você já pode entrar.");
         setMode("login");
       } else {
@@ -325,17 +317,6 @@ function AuthPage() {
                       <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="João Silva" className="h-12 pl-10 rounded-xl bg-background/60" />
                     </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="storeName" className="text-sm font-semibold">Nome da loja</Label>
-                    <div className="relative">
-                      <StoreIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="storeName" value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="TechShop Recife" className="h-12 pl-10 rounded-xl bg-background/60" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-semibold">Foto de perfil (opcional)</Label>
-                    <AvatarUploader value={avatar} onChange={setAvatar} name={fullName} email={email} size={64} />
                   </div>
                 </>
               )}
