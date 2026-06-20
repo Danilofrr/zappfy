@@ -323,7 +323,7 @@ type Ctx = {
   updateProduct: (id: string, p: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   addOrder: (o: Omit<Order, "id">) => Promise<void>;
-  updateOrder: (id: string, patch: Partial<Omit<Order, "id" | "items">>) => Promise<void>;
+  updateOrder: (id: string, patch: Partial<Omit<Order, "id">>) => Promise<void>;
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   addExpense: (e: Omit<Expense, "id">) => Promise<void>;
@@ -546,6 +546,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (patch.notes !== undefined) body.notes = patch.notes;
       if (patch.payment !== undefined) body.payment = patch.payment;
       if (patch.status !== undefined) body.status = patch.status;
+      if (patch.items !== undefined) body.items = patch.items;
+      if (patch.total !== undefined) body.total = patch.total;
       const { data, error } = await supabase.from("orders").update(body).eq("id", id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));

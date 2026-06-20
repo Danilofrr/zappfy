@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
 
@@ -623,14 +623,16 @@ function EditOrderDialog({
 }: {
   order: Order | null;
   onClose: () => void;
-  onSave: (patch: Partial<Omit<Order, "id" | "items">>) => void;
+  onSave: (patch: Partial<Omit<Order, "id">>) => void;
 }) {
   const [form, setForm] = useState({
     customer: "", phone: "", address: "", district: "", city: "",
-    payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
+    payment: "pix" as any, status: "aguardando" as OrderStatus, notes: "",
   });
+  const [items, setItems] = useState<any[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [totalEdited, setTotalEdited] = useState(false);
 
-  // Sincroniza ao abrir
   useMemo(() => {
     if (order) {
       setForm({
@@ -638,15 +640,32 @@ function EditOrderDialog({
         district: order.district, city: order.city,
         payment: order.payment as any, status: order.status, notes: order.notes ?? "",
       });
+      setItems(order.items.map((it) => ({ ...it })));
+      setTotal(order.total);
+      setTotalEdited(false);
     }
   }, [order]);
 
+  // Soma sugerida (itens + frete embutido no primeiro item, se houver)
+  const itemsSubtotal = items.reduce((acc, it) => acc + (Number(it.price) || 0) * (Number(it.qty) || 0), 0);
+  const shipping = Number((items[0] as any)?.shipping ?? 0) || 0;
+  const suggested = Math.round((itemsSubtotal + shipping) * 100) / 100;
+
+  // Auto-atualiza total se usuário não editou manualmente
+  useEffect(() => {
+    if (!totalEdited) setTotal(suggested);
+  }, [suggested, totalEdited]);
+
+  const updateItem = (idx: number, patch: any) => {
+    setItems((prev) => prev.map((it, i) => i === idx ? { ...it, ...patch } : it));
+  };
+
   return (
     <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar pedido</DialogTitle>
-          <DialogDescription>Altere os dados do cliente, endereço e status.</DialogDescription>
+          <DialogDescription>Altere dados do cliente, itens, valores e pagamento.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
@@ -658,6 +677,35 @@ function EditOrderDialog({
             <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
             <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
           </div>
+
+          <div className="rounded-lg border border-border p-3 space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground">Itens do pedido</div>
+            {items.map((it, idx) => (
+              <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-6">
+                  <Field label={idx === 0 ? "Produto" : ""}>
+                    <Input value={it.name ?? ""} onChange={(e) => updateItem(idx, { name: e.target.value })} />
+                  </Field>
+                </div>
+                <div className="col-span-2">
+                  <Field label={idx === 0 ? "Qtd" : ""}>
+                    <Input type="number" min={1} value={it.qty}
+                      onChange={(e) => updateItem(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
+                  </Field>
+                </div>
+                <div className="col-span-4">
+                  <Field label={idx === 0 ? "Valor unit. (R$)" : ""}>
+                    <Input type="number" step="0.01" min={0} value={it.price}
+                      onChange={(e) => updateItem(idx, { price: Math.max(0, Number(e.target.value) || 0) })} />
+                  </Field>
+                </div>
+              </div>
+            ))}
+            {shipping > 0 && (
+              <div className="text-xs text-muted-foreground">Entrega: R$ {shipping.toFixed(2)}</div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <Field label="Pagamento">
               <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
@@ -678,11 +726,25 @@ function EditOrderDialog({
               </Select>
             </Field>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={`Total (R$)${totalEdited ? " — manual" : ""}`}>
+              <Input type="number" step="0.01" min={0} value={total}
+                onChange={(e) => { setTotalEdited(true); setTotal(Math.max(0, Number(e.target.value) || 0)); }} />
+            </Field>
+            <div className="flex items-end">
+              <Button type="button" variant="outline" size="sm"
+                onClick={() => { setTotalEdited(false); setTotal(suggested); }}>
+                Recalcular ({suggested.toFixed(2)})
+              </Button>
+            </div>
+          </div>
+
           <Field label="Observações"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} /></Field>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Salvar alterações</Button>
+          <Button onClick={() => onSave({ ...form, items, total })}>Salvar alterações</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
