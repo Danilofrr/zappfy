@@ -79,21 +79,15 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { data: signUpData, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: fullName, store_name: storeName || "Minha Loja" },
+            data: { full_name: fullName },
           },
         });
         if (error) throw error;
-        // Tenta salvar avatar imediatamente (funciona se confirmação automática estiver ligada)
-        if (avatar && signUpData?.user?.id) {
-          await supabase
-            .from("profiles")
-            .upsert({ id: signUpData.user.id, full_name: fullName, avatar_url: avatar });
-        }
         toast.success("Conta criada! Você já pode entrar.");
         setMode("login");
       } else {
