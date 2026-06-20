@@ -318,17 +318,6 @@ function AuthPage() {
                       <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="João Silva" className="h-12 pl-10 rounded-xl bg-background/60" />
                     </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="storeName" className="text-sm font-semibold">Nome da loja</Label>
-                    <div className="relative">
-                      <StoreIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="storeName" value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="TechShop Recife" className="h-12 pl-10 rounded-xl bg-background/60" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-semibold">Foto de perfil (opcional)</Label>
-                    <AvatarUploader value={avatar} onChange={setAvatar} name={fullName} email={email} size={64} />
-                  </div>
                 </>
               )}
               <div className="space-y-1.5">
