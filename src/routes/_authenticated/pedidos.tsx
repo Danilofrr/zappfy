@@ -659,6 +659,20 @@ function EditOrderDialog({
   const updateItem = (idx: number, patch: any) => {
     setItems((prev) => prev.map((it, i) => i === idx ? { ...it, ...patch } : it));
   };
+  const removeItem = (idx: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const { state } = useStore();
+  const [addProductId, setAddProductId] = useState<string>("");
+  const addProductToOrder = () => {
+    const p = state.products.find((x) => x.id === addProductId);
+    if (!p) { toast.error("Selecione um produto"); return; }
+    setItems((prev) => [...prev, {
+      productId: p.id, name: p.name, qty: 1, price: Number(p.price) || 0, cost: Number(p.cost) || 0,
+    }]);
+    setAddProductId("");
+  };
 
   return (
     <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
@@ -682,7 +696,7 @@ function EditOrderDialog({
             <div className="text-xs font-semibold text-muted-foreground">Itens do pedido</div>
             {items.map((it, idx) => (
               <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                <div className="col-span-6">
+                <div className="col-span-5">
                   <Field label={idx === 0 ? "Produto" : ""}>
                     <Input value={it.name ?? ""} onChange={(e) => updateItem(idx, { name: e.target.value })} />
                   </Field>
@@ -699,8 +713,37 @@ function EditOrderDialog({
                       onChange={(e) => updateItem(idx, { price: Math.max(0, Number(e.target.value) || 0) })} />
                   </Field>
                 </div>
+                <div className="col-span-1 flex justify-end">
+                  <Button type="button" variant="ghost" size="icon"
+                    onClick={() => removeItem(idx)}
+                    disabled={items.length <= 1}
+                    title="Remover item">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </div>
             ))}
+
+            <div className="flex gap-2 items-end pt-2 border-t border-border">
+              <div className="flex-1">
+                <Field label="Adicionar produto">
+                  <Select value={addProductId} onValueChange={setAddProductId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione um produto..." /></SelectTrigger>
+                    <SelectContent>
+                      {state.products.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} — R$ {Number(p.price).toFixed(2)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+              <Button type="button" onClick={addProductToOrder} disabled={!addProductId}>
+                <Plus className="h-4 w-4" /> Adicionar
+              </Button>
+            </div>
+
             {shipping > 0 && (
               <div className="text-xs text-muted-foreground">Entrega: R$ {shipping.toFixed(2)}</div>
             )}
