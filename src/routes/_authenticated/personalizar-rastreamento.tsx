@@ -782,6 +782,9 @@ type CourierTheme = {
   button_color: string;
   icon_color: string;
   footer_text: string;
+  header_height: number;
+  header_logo_size: number;
+  header_logo_align: "left" | "center" | "right";
 };
 
 function resolveCourierTheme(f: Settings): CourierTheme {
