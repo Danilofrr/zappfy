@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp } from "lucide-react";
+import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
@@ -74,6 +75,7 @@ function PedidosPage() {
   const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
   const [editing, setEditing] = useState<Order | null>(null);
   const [motoboyFor, setMotoboyFor] = useState<Order | null>(null);
+  const [trackingOpen, setTrackingOpen] = useState<Record<string, boolean>>({});
 
   function extractFromNotes(notes: string | undefined, label: RegExp): string {
     if (!notes) return "";
