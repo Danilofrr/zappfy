@@ -209,7 +209,7 @@ function RastreioPage() {
   const message = messages[displayStatus];
   const cardBg = s.card_color || s.secondary_color;
   const timelineColor = s.timeline_color || s.primary_color;
-  const statusColor = s.status_color || s.primary_color;
+  
   const titleColor = s.title_color || s.text_color;
   const isGradientBg = typeof s.background_color === "string" && s.background_color.includes("gradient");
   const cs = cardStyle({
