@@ -27,6 +27,7 @@ import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt,
 import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
+import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
