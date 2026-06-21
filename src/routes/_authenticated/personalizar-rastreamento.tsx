@@ -289,7 +289,9 @@ function Page() {
   }
 
   return (
-    <AppShell
+  const Shell = isAdmin ? AdminShell : AppShell;
+  return (
+    <Shell
       title="Página de Rastreamento"
       subtitle={isAdmin ? "Admin Master — controle total da personalização" : "Personalize a página que seu cliente acompanha"}
       actions={
