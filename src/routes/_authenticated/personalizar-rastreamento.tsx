@@ -202,6 +202,7 @@ function Page() {
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [storeName, setStoreName] = useState<string>("Sua Loja");
 
   useEffect(() => {
     (async () => {
@@ -209,11 +210,13 @@ function Page() {
       const uid = u.user?.id ?? null;
       setUserId(uid);
       if (!uid) { setLoading(false); return; }
-      const [{ data: roles }, { data }] = await Promise.all([
+      const [{ data: roles }, { data }, { data: st }] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", uid),
         supabase.from("delivery_tracking_settings").select("*").eq("store_id", uid).maybeSingle(),
+        supabase.from("settings").select("store_name").eq("user_id", uid).maybeSingle(),
       ]);
       setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
+      if (st?.store_name && st.store_name.trim()) setStoreName(st.store_name.trim());
       if (data) {
         const clean: Partial<Settings> = {};
         for (const k of Object.keys(DEFAULTS) as (keyof Settings)[]) {
@@ -228,6 +231,7 @@ function Page() {
       setLoading(false);
     })();
   }, []);
+
 
   async function save() {
     if (!userId) return;
@@ -600,14 +604,14 @@ function Page() {
         <div className="lg:sticky lg:top-4 self-start">
           <div className="rounded-2xl border border-border bg-card p-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2"><Eye className="h-3.5 w-3.5" /> Pré-visualização em tempo real</div>
-            <Preview f={effective} />
+            <Preview f={effective} storeName={storeName} />
           </div>
         </div>
       </div>
         </TabsContent>
 
         <TabsContent value="motoboy" className="mt-4">
-          <MotoboyTab f={f} up={up} isAdmin={isAdmin} />
+          <MotoboyTab f={f} up={up} isAdmin={isAdmin} storeName={storeName} />
         </TabsContent>
       </Tabs>
     </Shell>
@@ -720,7 +724,7 @@ function ToggleRow({ label, value, onChange }: { label: string; value: boolean; 
   );
 }
 
-function Preview({ f }: { f: Settings }) {
+function Preview({ f, storeName }: { f: Settings; storeName: string }) {
   const status: DeliveryStatus = "saiu_para_entrega";
   const info = STATUS_INFO[status];
   const def = STATUS_BADGE_DEFAULTS[status];
@@ -756,7 +760,7 @@ function Preview({ f }: { f: Settings }) {
       })()}
 
       <div className="px-4 pt-5 pb-3 text-center">
-        <div className="text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>Zappfy</div>
+        <div className="text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>{storeName || "Sua Loja"}</div>
         <div className="text-sm font-semibold mt-1" style={{ color: f.title_color, opacity: 0.95 }}>{f.tracking_page_title}</div>
         <div className="text-xs opacity-70 mt-0.5">{f.tracking_page_subtitle}</div>
         <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
@@ -884,7 +888,7 @@ function resolveCourierTheme(f: Settings): CourierTheme {
   };
 }
 
-function MotoboyTab({ f, up, isAdmin }: { f: Settings; up: <K extends keyof Settings>(k: K, v: Settings[K]) => void; isAdmin: boolean }) {
+function MotoboyTab({ f, up, isAdmin, storeName }: { f: Settings; up: <K extends keyof Settings>(k: K, v: Settings[K]) => void; isAdmin: boolean; storeName: string }) {
   const disabled = f.courier_inherit_client;
   const theme = resolveCourierTheme(f);
   return (
@@ -984,14 +988,14 @@ function MotoboyTab({ f, up, isAdmin }: { f: Settings; up: <K extends keyof Sett
             <Eye className="h-3.5 w-3.5" /> Pré-visualização — página do motoboy
             {f.courier_inherit_client && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary">Herdado do cliente</span>}
           </div>
-          <CourierPreview t={theme} />
+          <CourierPreview t={theme} storeName={storeName} />
         </div>
       </div>
     </div>
   );
 }
 
-function CourierPreview({ t }: { t: CourierTheme }) {
+function CourierPreview({ t, storeName }: { t: CourierTheme; storeName: string }) {
   const cardCss: React.CSSProperties = {
     background: t.card_color,
     border: `1px solid ${t.card_border_color}`,
@@ -1010,7 +1014,7 @@ function CourierPreview({ t }: { t: CourierTheme }) {
           : <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: 0.5 }}>LOGO</div>}
       </div>
       <div className="px-4 pt-4 pb-2 text-center space-y-1.5">
-        <div className="text-base font-extrabold" style={{ color: t.title_color }}>Zappfy</div>
+        <div className="text-base font-extrabold" style={{ color: t.title_color }}>{storeName || "Sua Loja"}</div>
         <div className="text-[11px] opacity-70">Pedido #A1B2C3D4</div>
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style={{ background: `${t.primary_color}22`, color: t.primary_color }}>
           <Bike className="h-3.5 w-3.5" /> Saiu para Entrega

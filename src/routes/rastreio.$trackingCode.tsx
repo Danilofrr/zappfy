@@ -442,7 +442,7 @@ function RastreioPage() {
       </main>
 
       <footer className="text-center text-[11px] opacity-50 mt-8">
-        Rastreamento fornecido por <strong>{data.store.name || "Zappfy"}</strong>
+        Rastreamento fornecido por <strong>{data.store.name || "Sua Loja"}</strong>
       </footer>
     </div>
   );
