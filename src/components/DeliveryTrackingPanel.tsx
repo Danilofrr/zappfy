@@ -53,13 +53,15 @@ type Tracking = {
 type Props = {
   orderId: string;
   customerPhone?: string;
+  orderAddress?: string;
 };
 
-export function DeliveryTrackingPanel({ orderId, customerPhone }: Props) {
+export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: Props) {
   const { state } = useStore();
   const [tracking, setTracking] = useState<Tracking | null>(null);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", notes: "" });
   const [creating, setCreating] = useState(false);
 
