@@ -107,7 +107,7 @@ const DEFAULTS: Settings = {
   pin_color: "verde",
   pin_custom_url: "",
   msg_aguardando: "Recebemos seu pedido e já estamos preparando tudo.",
-  msg_preparando: "Seu pedido está sendo preparado com carinho.",
+  msg_preparando: "Seu pedido está sendo separado e preparado para envio.",
   msg_saiu: "Seu pedido já saiu para entrega e está a caminho.",
   msg_chegando: "Seu entregador está próximo do destino.",
   msg_entregue: "Pedido entregue com sucesso. Obrigado pela preferência.",
