@@ -401,30 +401,48 @@ function Page() {
           </Card>
 
           <Card title="Ícone do entregador">
-            <div className="space-y-2">
-              <Label className="text-xs">Selecione o veículo</Label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {VEHICLE_OPTIONS.map((opt) => {
-                  const selected = !f.vehicle_custom_url && f.vehicle_type === opt.type && f.vehicle_color === opt.color;
-                  return (
-                    <button
-                      key={`${opt.type}-${opt.color}`}
-                      type="button"
-                      onClick={() => { up("vehicle_type", opt.type as any); up("vehicle_color", opt.color); up("vehicle_custom_url", ""); }}
-                      className={`rounded-xl border p-2 flex flex-col items-center gap-1 text-[10px] transition ${selected ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"}`}
-                      title={opt.label}
-                    >
-                      <VehicleSwatch type={opt.type as any} color={opt.color} />
-                      <span className="leading-tight text-center">{opt.label}</span>
-                    </button>
-                  );
-                })}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Biblioteca de veículos</Label>
+                <span className="text-[10px] text-muted-foreground">{VEHICLE_LIBRARY.length} modelos premium</span>
               </div>
-              <Input
-                value={f.vehicle_custom_url || ""}
-                onChange={(e) => up("vehicle_custom_url", e.target.value)}
-                placeholder="URL de PNG personalizado"
-              />
+
+              {(["moto", "carro"] as const).map((cat) => (
+                <div key={cat} className="space-y-2">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    {cat === "moto" ? "Motos" : "Carros"}
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {VEHICLE_LIBRARY.filter((v) => v.category === cat).map((v) => {
+                      const selected = f.vehicle_custom_url === v.src;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => { up("vehicle_custom_url", v.src); up("vehicle_type", v.category); }}
+                          className={`group relative rounded-xl border p-2 flex flex-col items-center gap-1.5 text-[10px] transition bg-gradient-to-b from-white/[0.04] to-transparent ${selected ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/50 hover:-translate-y-0.5"}`}
+                          title={v.label}
+                        >
+                          <div className="w-full aspect-square rounded-lg bg-white/95 flex items-center justify-center overflow-hidden shadow-sm">
+                            <img src={v.src} alt={v.label} loading="lazy" className="w-full h-full object-contain p-1.5" />
+                          </div>
+                          <span className="leading-tight text-center font-medium line-clamp-2">{v.label}</span>
+                          {selected && <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary shadow" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              <div className="space-y-1 pt-2 border-t border-border">
+                <Label className="text-xs">Ou use uma imagem personalizada (URL)</Label>
+                <Input
+                  value={f.vehicle_custom_url && !findVehicleBySrc(f.vehicle_custom_url) ? f.vehicle_custom_url : ""}
+                  onChange={(e) => up("vehicle_custom_url", e.target.value)}
+                  placeholder="https://exemplo.com/veiculo.png"
+                />
+              </div>
             </div>
 
             <div className="space-y-2 pt-3">
