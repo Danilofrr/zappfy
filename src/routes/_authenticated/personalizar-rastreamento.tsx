@@ -546,11 +546,18 @@ export function cardStyle(f: {
   return style;
 }
 
-function VehicleSwatch({ type, color }: { type: "moto" | "carro"; color: string }) {
+function VehicleSwatch({ type, color, customUrl, size = 56 }: { type: "moto" | "carro"; color: string; customUrl?: string | null; size?: number }) {
+  if (customUrl) {
+    return (
+      <div style={{ width: size, height: size }} className="rounded-full bg-white/95 flex items-center justify-center shadow-md ring-1 ring-black/5">
+        <img src={customUrl} alt="" style={{ width: size - 6, height: size - 6 }} className="object-contain" />
+      </div>
+    );
+  }
   const hex = VEHICLE_COLORS[color] ?? "#10b981";
   return (
-    <div style={{ width: 40, height: 40, borderRadius: "50%", background: hex, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${hex}55` }}>
-      <svg viewBox="0 0 24 24" width="26" height="26" dangerouslySetInnerHTML={{ __html: vehicleSvgPath(type) }} />
+    <div style={{ width: size, height: size, borderRadius: "50%", background: hex, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 6px 16px ${hex}55` }}>
+      <svg viewBox="0 0 24 24" width={Math.round(size * 0.65)} height={Math.round(size * 0.65)} dangerouslySetInnerHTML={{ __html: vehicleSvgPath(type) }} />
     </div>
   );
 }
