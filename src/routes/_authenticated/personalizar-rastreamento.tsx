@@ -202,6 +202,7 @@ function Page() {
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [storeName, setStoreName] = useState<string>("Sua Loja");
 
   useEffect(() => {
     (async () => {
@@ -209,11 +210,13 @@ function Page() {
       const uid = u.user?.id ?? null;
       setUserId(uid);
       if (!uid) { setLoading(false); return; }
-      const [{ data: roles }, { data }] = await Promise.all([
+      const [{ data: roles }, { data }, { data: st }] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", uid),
         supabase.from("delivery_tracking_settings").select("*").eq("store_id", uid).maybeSingle(),
+        supabase.from("settings").select("store_name").eq("user_id", uid).maybeSingle(),
       ]);
       setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
+      if (st?.store_name && st.store_name.trim()) setStoreName(st.store_name.trim());
       if (data) {
         const clean: Partial<Settings> = {};
         for (const k of Object.keys(DEFAULTS) as (keyof Settings)[]) {
@@ -228,6 +231,7 @@ function Page() {
       setLoading(false);
     })();
   }, []);
+
 
   async function save() {
     if (!userId) return;
