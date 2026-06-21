@@ -359,85 +359,94 @@ function Page() {
           </Card>
 
           <Card title="Cores da página">
-            <div className="space-y-1">
-              <Label className="text-xs">Cor do fundo da página</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {BG_PRESETS.map((p) => (
-                  <button
-                    key={p.name}
-                    type="button"
-                    onClick={() => up("background_color", p.color)}
-                    className={`h-9 px-3 rounded-lg text-xs border transition ${f.background_color === p.color ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"}`}
-                    style={{ background: p.color, color: p.color === "#ffffff" ? "#000" : "#fff" }}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <input type="color" value={f.background_color.startsWith("#") ? f.background_color : "#0b1220"} onChange={(e) => up("background_color", e.target.value)} className="h-9 w-12 rounded border border-border bg-transparent cursor-pointer" />
-                <Input value={f.background_color} onChange={(e) => up("background_color", e.target.value)} className="h-9" placeholder="#020817 ou linear-gradient(...)" />
-              </div>
-            </div>
+            {isAdmin && (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs">Cor do fundo da página</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {BG_PRESETS.map((p) => (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => up("background_color", p.color)}
+                        className={`h-9 px-3 rounded-lg text-xs border transition ${f.background_color === p.color ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"}`}
+                        style={{ background: p.color, color: p.color === "#ffffff" ? "#000" : "#fff" }}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={f.background_color.startsWith("#") ? f.background_color : "#0b1220"} onChange={(e) => up("background_color", e.target.value)} className="h-9 w-12 rounded border border-border bg-transparent cursor-pointer" />
+                    <Input value={f.background_color} onChange={(e) => up("background_color", e.target.value)} className="h-9" placeholder="#020817 ou linear-gradient(...)" />
+                  </div>
+                </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-border">
-              <div>
-                <div className="text-sm font-medium">Usar cor diferente para os cards</div>
-                <div className="text-xs text-muted-foreground">Diferencia o fundo da página dos cartões internos</div>
-              </div>
-              <Switch checked={useSeparateCard} onCheckedChange={setUseSeparateCard} />
-            </div>
+                <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <div>
+                    <div className="text-sm font-medium">Usar cor diferente para os cards</div>
+                    <div className="text-xs text-muted-foreground">Diferencia o fundo da página dos cartões internos</div>
+                  </div>
+                  <Switch checked={useSeparateCard} onCheckedChange={setUseSeparateCard} />
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <ColorField label="Cor dos títulos" value={f.title_color} onChange={(v) => up("title_color", v)} />
-              <ColorField label="Cor dos textos" value={f.text_color} onChange={(v) => up("text_color", v)} />
+              {isAdmin && <ColorField label="Cor dos títulos" value={f.title_color} onChange={(v) => up("title_color", v)} />}
+              {isAdmin && <ColorField label="Cor dos textos" value={f.text_color} onChange={(v) => up("text_color", v)} />}
               <ColorField label="Cor da timeline" value={f.timeline_color} onChange={(v) => up("timeline_color", v)} />
             </div>
           </Card>
 
-          <Card title="Cards (independente do fundo)">
-            <p className="text-xs text-muted-foreground -mt-2 mb-1">
-              Estas configurações alteram apenas os cards internos (pedido, timeline, endereço, motoboy). Não afetam o fundo da página, badges ou botões.
-            </p>
+          <Card title={isAdmin ? "Cards (independente do fundo)" : "Cards"}>
+            {isAdmin && (
+              <p className="text-xs text-muted-foreground -mt-2 mb-1">
+                Estas configurações alteram apenas os cards internos (pedido, timeline, endereço, motoboy). Não afetam o fundo da página, badges ou botões.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3">
-              <ColorField label="Cor de fundo do card" value={f.card_color} onChange={(v) => up("card_color", v)} />
+              {isAdmin && <ColorField label="Cor de fundo do card" value={f.card_color} onChange={(v) => up("card_color", v)} />}
               <ColorField label="Cor da borda" value={f.card_border_color} onChange={(v) => up("card_border_color", v)} />
-              <ColorField label="Cor da sombra" value={f.card_shadow_color} onChange={(v) => up("card_shadow_color", v)} />
+              {isAdmin && <ColorField label="Cor da sombra" value={f.card_shadow_color} onChange={(v) => up("card_shadow_color", v)} />}
             </div>
 
+            {isAdmin && (
+              <>
+                <SliderField label={`Arredondamento dos cantos: ${f.card_radius}px`} min={0} max={32} step={1}
+                  value={f.card_radius} onChange={(v) => up("card_radius", v)} />
 
-            <SliderField label={`Arredondamento dos cantos: ${f.card_radius}px`} min={0} max={32} step={1}
-              value={f.card_radius} onChange={(v) => up("card_radius", v)} />
+                <SliderField label={`Transparência dos cards: ${Math.round(f.card_opacity * 100)}%`} min={20} max={100} step={5}
+                  value={Math.round(f.card_opacity * 100)} onChange={(v) => up("card_opacity", v / 100)} />
 
-            <SliderField label={`Transparência dos cards: ${Math.round(f.card_opacity * 100)}%`} min={20} max={100} step={5}
-              value={Math.round(f.card_opacity * 100)} onChange={(v) => up("card_opacity", v / 100)} />
+                <SliderField label={`Intensidade da borda: ${Math.round(f.border_intensity * 100)}%`} min={0} max={200} step={10}
+                  value={Math.round(f.border_intensity * 100)} onChange={(v) => up("border_intensity", v / 100)} />
 
-            <SliderField label={`Intensidade da borda: ${Math.round(f.border_intensity * 100)}%`} min={0} max={200} step={10}
-              value={Math.round(f.border_intensity * 100)} onChange={(v) => up("border_intensity", v / 100)} />
+                <div className="flex items-center justify-between pt-2">
+                  <div>
+                    <div className="text-sm font-medium">Glassmorphism</div>
+                    <div className="text-xs text-muted-foreground">Vidro fosco translúcido</div>
+                  </div>
+                  <Switch checked={f.card_glass} onCheckedChange={(v) => up("card_glass", v)} />
+                </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <div>
-                <div className="text-sm font-medium">Glassmorphism</div>
-                <div className="text-xs text-muted-foreground">Vidro fosco translúcido</div>
-              </div>
-              <Switch checked={f.card_glass} onCheckedChange={(v) => up("card_glass", v)} />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Intensidade da sombra</Label>
-              <div className="grid grid-cols-5 gap-2">
-                {SHADOW_OPTIONS.map((s) => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => up("card_shadow", s.value)}
-                    className={`h-9 rounded-lg text-xs border transition ${f.card_shadow === s.value ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Intensidade da sombra</Label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {SHADOW_OPTIONS.map((s) => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => up("card_shadow", s.value)}
+                        className={`h-9 rounded-lg text-xs border transition ${f.card_shadow === s.value ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
 
           <Card title="Badges por Status">
