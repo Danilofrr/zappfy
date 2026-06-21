@@ -71,8 +71,9 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
       .from("delivery_tracking")
       .select("*")
       .eq("order_id", orderId)
-      .maybeSingle();
-    if (!error) setTracking(data as Tracking | null);
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (!error) setTracking((data?.[0] as Tracking | undefined) ?? null);
     setLoading(false);
   }
 
@@ -169,16 +170,34 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     );
   }
 
-  if (!tracking) {
+  if (!tracking || tracking.status === "cancelado") {
+    const isCancelled = tracking?.status === "cancelado";
     return (
       <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center gap-2 mb-1 text-sm font-semibold"><Bike className="h-4 w-4 text-primary" /> Rastreamento da Entrega</div>
-        <p className="text-xs text-muted-foreground mb-3">Gere um link para o motoboy compartilhar a localização em tempo real com o cliente.</p>
-        <Button size="sm" onClick={() => setCreateOpen(true)}><Bike className="h-4 w-4 mr-1.5" />Gerar Rastreamento</Button>
+        <div className="flex items-center gap-2 mb-1 text-sm font-semibold">
+          <Bike className="h-4 w-4 text-primary" /> Rastreamento da Entrega
+        </div>
+        {isCancelled ? (
+          <div className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs flex items-start gap-2">
+            <X className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+            <div>
+              <div className="font-semibold text-destructive">Rastreamento cancelado</div>
+              <div className="text-muted-foreground mt-0.5">Os links anteriores foram desativados. Gere um novo rastreamento para continuar.</div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground mb-3">Gere um link para o motoboy compartilhar a localização em tempo real com o cliente.</p>
+        )}
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Bike className="h-4 w-4 mr-1.5" />{isCancelled ? "Gerar novo rastreamento" : "Gerar Rastreamento"}
+        </Button>
         <CreateDialog open={createOpen} onOpenChange={setCreateOpen} form={form} setForm={setForm} onSubmit={handleCreate} loading={creating} />
       </div>
     );
   }
+
+
+
 
   const info = STATUS_INFO[tracking.status];
   const courierPos = tracking.latitude != null && tracking.longitude != null
@@ -211,7 +230,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${info.bg} ${info.color}`}>{info.label}</span>
       </div>
 
-      {!destination && tracking.status !== "cancelado" && tracking.status !== "entregue" && (
+      {!destination && tracking.status !== "entregue" && (
         <div className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <div className="flex-1">
@@ -270,7 +289,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
         <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={sendCourier}>
           <Send className="h-3.5 w-3.5 mr-1" /> Enviar motoboy
         </Button>
-        {tracking.status !== "cancelado" && tracking.status !== "entregue" && (
+        {tracking.status !== "entregue" && (
           <Button size="sm" variant="destructive" onClick={handleCancel}>
             <X className="h-3.5 w-3.5 mr-1" /> Cancelar
           </Button>

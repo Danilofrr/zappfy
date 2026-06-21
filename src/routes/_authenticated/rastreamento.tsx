@@ -39,10 +39,11 @@ function RastreamentoPage() {
     if (!uid) { setLoading(false); return; }
     const { data } = await supabase
       .from("delivery_tracking")
-      .select("order_id,status,courier_name,last_updated_at")
-      .eq("store_id", uid);
+      .select("order_id,status,courier_name,last_updated_at,created_at")
+      .eq("store_id", uid)
+      .order("created_at", { ascending: false });
     const map: Record<string, TrackingRow> = {};
-    (data ?? []).forEach((r: any) => { map[r.order_id] = r; });
+    (data ?? []).forEach((r: any) => { if (!map[r.order_id]) map[r.order_id] = r; });
     setTrackings(map);
     setLoading(false);
   }
