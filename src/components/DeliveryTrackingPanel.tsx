@@ -196,12 +196,8 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     );
   }
 
-  if (false) {
-    return (
-      <div />
-    );
-    );
-  }
+
+
 
   const info = STATUS_INFO[tracking.status];
   const courierPos = tracking.latitude != null && tracking.longitude != null
