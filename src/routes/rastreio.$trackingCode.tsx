@@ -9,8 +9,6 @@ import {
   deriveDisplayStatus,
   distanceMeters,
   etaMinutes,
-  formatDistance,
-  formatRelative,
   orderShortNumber,
   whatsappLink,
   type DeliveryStatus,
