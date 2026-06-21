@@ -292,8 +292,6 @@ function CourierPage() {
           </div>
         </section>
 
-
-      <main className="max-w-md mx-auto px-4 space-y-4 mt-4">
         {/* Address */}
         <section className="rounded-2xl p-4" style={cardStyle}>
           <div className="flex items-start gap-2">
