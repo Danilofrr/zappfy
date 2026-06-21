@@ -276,6 +276,7 @@ function RastreioPage() {
             )}
           </div>
         </div>
+        {/* 2. Order card */}
         <section className="rounded-2xl p-5 animate-fade-in" style={cs}>
           <div className="text-xs uppercase opacity-60 tracking-wider">Pedido</div>
           <div className="text-lg font-bold" style={{ color: titleColor }}>#{orderShortNumber(data.order.id)}</div>
@@ -287,21 +288,13 @@ function RastreioPage() {
           )}
         </section>
 
-        {displayStatus !== "cancelado" && (
-          <section className="grid grid-cols-2 gap-3">
-            {s.show_distance && (
-              <InfoCard color={s.primary_color} style={cs} label="Distância" value={distance != null ? formatDistance(distance) : "—"} />
-            )}
-            {s.show_estimated_time && (
-              <InfoCard color={s.primary_color} style={cs} label="Chegada estimada" value={eta != null ? `${eta} min` : "—"} />
-            )}
-            <InfoCard color={s.primary_color} style={cs} label="Última atualização" value={formatRelative(data.last_updated_at)} />
-            {s.show_courier_name && data.courier.name && (
-              <InfoCard color={s.primary_color} style={cs} label="Entregador" value={data.courier.name} />
-            )}
-          </section>
-        )}
+        {/* 3. Timeline card */}
+        <section className="rounded-2xl p-5" style={cs}>
+          <h3 className="text-sm font-semibold mb-4" style={{ color: titleColor }}>Acompanhamento</h3>
+          <Timeline status={displayStatus} primary={timelineColor} textColor={s.text_color} />
+        </section>
 
+        {/* 4. Map card */}
         {displayStatus !== "cancelado" && (
           <section className="rounded-2xl overflow-hidden relative" style={cs}>
             <div className="relative">
@@ -312,7 +305,7 @@ function RastreioPage() {
                 primaryColor={s.primary_color}
                 vehicle={{ type: s.vehicle_type, color: s.vehicle_color, customUrl: s.vehicle_custom_url }}
                 pin={{ color: s.pin_color, customUrl: s.pin_custom_url }}
-                height={320}
+                height={380}
               />
               {!courierPos && !isFinished && (
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur" style={{ background: hexWithAlpha(s.card_color || "#0f172a", 0.92), color: s.text_color, border: `1px solid ${hexWithAlpha(s.primary_color, 0.4)}` }}>
@@ -339,11 +332,19 @@ function RastreioPage() {
           </section>
         )}
 
-        <section className="rounded-2xl p-5" style={cs}>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: titleColor }}>Acompanhamento</h3>
-          <Timeline status={displayStatus} primary={timelineColor} textColor={s.text_color} />
-        </section>
+        {/* 5. Small info cards under the map */}
+        {displayStatus !== "cancelado" && (s.show_estimated_time || (s.show_courier_name && data.courier.name)) && (
+          <section className="grid grid-cols-2 gap-3">
+            {s.show_estimated_time && (
+              <InfoCard color={s.primary_color} style={cs} label="Chegada estimada" value={eta != null ? `${eta} min` : "—"} />
+            )}
+            {s.show_courier_name && data.courier.name && (
+              <InfoCard color={s.primary_color} style={cs} label="Entregador" value={data.courier.name} />
+            )}
+          </section>
+        )}
 
+        {/* 6. Delivery address */}
         <section className="rounded-2xl p-4 text-sm" style={cs}>
           <div className="flex items-start gap-2">
             <MapPin className="h-4 w-4 mt-0.5" style={{ color: s.primary_color }} />
@@ -354,6 +355,7 @@ function RastreioPage() {
           </div>
         </section>
 
+        {/* 7. WhatsApp button */}
         {s.support_whatsapp && (
           <a
             href={whatsappLink(s.support_whatsapp, `Olá! Sobre o meu pedido #${orderShortNumber(data.order.id)}`)}
