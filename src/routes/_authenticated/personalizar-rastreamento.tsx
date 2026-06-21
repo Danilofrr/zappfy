@@ -544,6 +544,8 @@ function Page() {
             <ToggleRow label="Mostrar telefone do motoboy" value={f.show_courier_phone} onChange={(v) => up("show_courier_phone", v)} />
             <ToggleRow label="Mostrar tempo estimado" value={f.show_estimated_time} onChange={(v) => up("show_estimated_time", v)} />
             <ToggleRow label="Mostrar distância" value={f.show_distance} onChange={(v) => up("show_distance", v)} />
+            <ToggleRow label="Mostrar produtos do pedido" value={f.show_products} onChange={(v) => up("show_products", v)} />
+            <ToggleRow label="Mostrar valor dos produtos" value={f.show_product_price} onChange={(v) => up("show_product_price", v)} />
           </Card>
         </div>
 
