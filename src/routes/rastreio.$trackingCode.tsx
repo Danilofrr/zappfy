@@ -250,13 +250,13 @@ function RastreioPage() {
         <p className="text-sm opacity-80 mt-1">{s.tracking_page_subtitle}</p>
         <div
           className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-all"
-          style={{ background: hexWithAlpha(statusColor, 0.15), color: statusColor, border: `1px solid ${hexWithAlpha(statusColor, 0.35)}` }}
+          style={{ background: badge.bg, color: badge.text, border: `1px solid ${badge.border}` }}
           key={displayStatus}
         >
-          <span aria-hidden>{info.emoji}</span>
+          <BadgeIcon className="h-4 w-4" style={{ color: badge.icon }} />
           <span>{info.label}</span>
           {!isFinished && (
-            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: statusColor }} />
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: badge.icon }} />
           )}
         </div>
       </header>
