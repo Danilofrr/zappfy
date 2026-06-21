@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp } from "lucide-react";
 import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
 
@@ -498,7 +498,8 @@ function PedidosPage() {
                 <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
               )}
               {filtered.map((o) => (
-                <tr key={o.id} className="border-t border-border hover:bg-secondary/30">
+                <Fragment key={o.id}>
+                <tr className="border-t border-border hover:bg-secondary/30">
                   <td className="px-4 py-3">
                     <div className="font-medium">{o.customer}</div>
                     <div className="text-xs text-muted-foreground">{o.phone}</div>
@@ -599,6 +600,7 @@ function PedidosPage() {
                     </td>
                   </tr>
                 )}
+                </Fragment>
               ))}
             </tbody>
           </table>
