@@ -321,6 +321,11 @@ function RastreioPage() {
                   Aguardando localização do entregador...
                 </div>
               )}
+              {!destination && !isFinished && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur" style={{ background: hexWithAlpha(s.card_color || "#0f172a", 0.92), color: s.text_color, border: `1px solid ${hexWithAlpha("#f59e0b", 0.6)}` }}>
+                  📍 Destino ainda não localizado no mapa
+                </div>
+              )}
               {isFinished && (
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg" style={{ background: "#10b981", color: "#fff" }}>
                   ✓ Pedido entregue
