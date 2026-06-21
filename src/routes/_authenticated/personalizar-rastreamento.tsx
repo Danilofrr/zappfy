@@ -93,6 +93,9 @@ type Settings = {
   courier_button_color: string;
   courier_icon_color: string;
   courier_footer_text: string;
+  courier_header_height: number;
+  courier_header_logo_size: number;
+  courier_header_logo_align: "left" | "center" | "right";
 };
 
 const DEFAULTS: Settings = {
