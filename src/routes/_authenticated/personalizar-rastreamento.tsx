@@ -605,7 +605,7 @@ function Page() {
           <MotoboyTab f={f} up={up} isAdmin={isAdmin} />
         </TabsContent>
       </Tabs>
-    </AppShell>
+    </Shell>
   );
 }
 
