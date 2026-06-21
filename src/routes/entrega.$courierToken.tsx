@@ -77,6 +77,9 @@ const DEFAULT_THEME: CourierTheme = {
   button_color: "#10b981",
   icon_color: "#10b981",
   footer_text: "Powered by Zappfy",
+  header_height: 110,
+  header_logo_size: 56,
+  header_logo_align: "center",
 };
 
 function CourierPage() {
