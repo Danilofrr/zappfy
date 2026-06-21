@@ -166,7 +166,11 @@ function CourierPage() {
   }
 
   async function handleStart() {
-    if (!watching) startWatch();
+    try {
+      if (!watching) await startWatch();
+    } catch {
+      return; // permission denied or error; keep button available
+    }
     if (data?.status === "aguardando_motoboy" || data?.status === "preparando") {
       await changeStatus("saiu_para_entrega");
     }
