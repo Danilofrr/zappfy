@@ -329,8 +329,8 @@ function RastreioPage() {
                 </div>
               )}
               {!destination && !isFinished && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur" style={{ background: hexWithAlpha(s.card_color || "#0f172a", 0.92), color: s.text_color, border: `1px solid ${hexWithAlpha("#f59e0b", 0.6)}` }}>
-                  📍 Destino ainda não localizado no mapa
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur text-center max-w-[90%]" style={{ background: hexWithAlpha(s.card_color || "#0f172a", 0.92), color: s.text_color, border: `1px solid ${hexWithAlpha("#f59e0b", 0.6)}` }}>
+                  📍 Destino ainda não localizado. A loja pode ajustar o ponto de entrega.
                 </div>
               )}
               {isFinished && (
