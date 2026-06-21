@@ -279,11 +279,15 @@ function Page() {
           </Card>
 
           <Card title="Cards (independente do fundo)">
-            <div className={`grid grid-cols-2 gap-3 transition-opacity ${useSeparateCard ? "" : "opacity-40 pointer-events-none"}`}>
+            <p className="text-xs text-muted-foreground -mt-2 mb-1">
+              Estas configurações alteram apenas os cards internos (pedido, timeline, endereço, motoboy). Não afetam o fundo da página, badges ou botões.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
               <ColorField label="Cor de fundo do card" value={f.card_color} onChange={(v) => up("card_color", v)} />
               <ColorField label="Cor da borda" value={f.card_border_color} onChange={(v) => up("card_border_color", v)} />
               <ColorField label="Cor da sombra" value={f.card_shadow_color} onChange={(v) => up("card_shadow_color", v)} />
             </div>
+
 
             <SliderField label={`Arredondamento dos cantos: ${f.card_radius}px`} min={0} max={32} step={1}
               value={f.card_radius} onChange={(v) => up("card_radius", v)} />
