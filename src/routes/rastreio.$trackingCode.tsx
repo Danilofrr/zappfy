@@ -43,7 +43,14 @@ type Payload = {
     background_color: string;
     button_color: string;
     text_color: string;
+    title_color: string;
     card_color: string;
+    card_border_color: string;
+    card_opacity: number;
+    card_glass: boolean;
+    card_shadow: string;
+    border_intensity: number;
+    status_color: string;
     timeline_color: string;
     tracking_page_title: string;
     tracking_page_subtitle: string;
