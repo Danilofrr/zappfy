@@ -604,7 +604,7 @@ function Page() {
         <div className="lg:sticky lg:top-4 self-start">
           <div className="rounded-2xl border border-border bg-card p-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2"><Eye className="h-3.5 w-3.5" /> Pré-visualização em tempo real</div>
-            <Preview f={effective} />
+            <Preview f={effective} storeName={storeName} />
           </div>
         </div>
       </div>
