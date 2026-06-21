@@ -308,6 +308,53 @@ function RastreioPage() {
           )}
         </section>
 
+        {/* 3. Products card */}
+        {s.show_products && Array.isArray(data.order.items) && data.order.items.length > 0 && (
+          <section className="rounded-2xl p-5" style={cs}>
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: titleColor }}>
+              <Package className="h-4 w-4" style={{ color: s.primary_color }} />
+              Produtos do pedido
+            </h3>
+            <ul className="space-y-3">
+              {data.order.items.map((it, idx) => {
+                const variation = [it.variation, it.color, it.size].filter(Boolean).join(" · ");
+                const qty = it.qty ?? 1;
+                const price = typeof it.price === "number" ? it.price : null;
+                const subtotal = price != null ? price * qty : null;
+                return (
+                  <li key={idx} className="flex gap-3 items-start">
+                    <div
+                      className="flex-shrink-0 h-14 w-14 rounded-lg overflow-hidden flex items-center justify-center"
+                      style={{ background: hexWithAlpha(s.primary_color, 0.12), border: `1px solid ${hexWithAlpha(s.card_border_color || "#1e293b", 0.6)}` }}
+                    >
+                      {it.image_url ? (
+                        <img src={it.image_url} alt={it.name ?? "Produto"} className="h-full w-full object-cover" />
+                      ) : (
+                        <Package className="h-6 w-6 opacity-60" style={{ color: s.primary_color }} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate" style={{ color: titleColor }}>{it.name ?? "Produto"}</div>
+                      <div className="text-xs opacity-75 mt-0.5">Quantidade: {qty}</div>
+                      {variation && <div className="text-xs opacity-75">{variation}</div>}
+                      {s.show_product_price && price != null && (
+                        <div className="text-xs opacity-80 mt-1">
+                          {qty > 1 && <span>{qty} × R$ {price.toFixed(2).replace(".", ",")} · </span>}
+                          <span className="font-semibold" style={{ color: s.primary_color }}>
+                            R$ {(subtotal ?? price).toFixed(2).replace(".", ",")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
+
+
         {/* 3. Timeline card */}
         <section className="rounded-2xl p-5" style={cs}>
           <h3 className="text-sm font-semibold mb-4" style={{ color: titleColor }}>Acompanhamento</h3>
