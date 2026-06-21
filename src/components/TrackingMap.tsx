@@ -115,7 +115,18 @@ export function TrackingMap({
   // animate courier marker smoothly between positions
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !courier) return;
+    if (!map) return;
+    if (!courier) {
+      if (courierMarkerRef.current) {
+        courierMarkerRef.current.remove();
+        courierMarkerRef.current = null;
+      }
+      lastPosRef.current = null;
+      if (follow && destination) {
+        map.setView([destination.lat, destination.lng], 15, { animate: true });
+      }
+      return;
+    }
     const icon = makeVehicleIcon(vehicle, primaryColor, heading ?? null);
 
     if (!courierMarkerRef.current) {
@@ -156,7 +167,7 @@ export function TrackingMap({
           [courier.lat, courier.lng],
           [destination.lat, destination.lng],
         ]);
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
       } else {
         map.panTo([courier.lat, courier.lng], { animate: true });
       }

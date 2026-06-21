@@ -287,23 +287,28 @@ function RastreioPage() {
           )}
         </section>
 
-        {!isFinished && (displayStatus === "saiu_para_entrega" || displayStatus === "chegando") && (
+        {!isFinished && destination && (
           <section className="rounded-2xl overflow-hidden" style={cs}>
-            {courierPos ? (
-              <TrackingMap
-                courier={courierPos}
-                destination={destination}
-                heading={data.heading}
-                primaryColor={s.primary_color}
-                vehicle={{ type: s.vehicle_type, color: s.vehicle_color, customUrl: s.vehicle_custom_url }}
-                pin={{ color: s.pin_color, customUrl: s.pin_custom_url }}
-                height={320}
-              />
-            ) : (
-              <div className="h-[260px] flex items-center justify-center text-sm opacity-70">
-                <Bike className="h-5 w-5 mr-2" /> Aguardando o entregador iniciar a entrega…
-              </div>
-            )}
+            <TrackingMap
+              courier={courierPos}
+              destination={destination}
+              heading={data.heading}
+              primaryColor={s.primary_color}
+              vehicle={{ type: s.vehicle_type, color: s.vehicle_color, customUrl: s.vehicle_custom_url }}
+              pin={{ color: s.pin_color, customUrl: s.pin_custom_url }}
+              height={320}
+            />
+            <div className="flex items-center justify-center gap-5 px-4 py-3 text-xs" style={{ color: s.text_color }}>
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden>🛵</span>
+                <span className="font-medium">Entregador</span>
+                {!courierPos && <span className="opacity-60">(aguardando)</span>}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden>📍</span>
+                <span className="font-medium">Destino</span>
+              </span>
+            </div>
           </section>
         )}
 
