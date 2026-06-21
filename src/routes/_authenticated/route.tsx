@@ -16,7 +16,10 @@ export const Route = createFileRoute("/_authenticated")({
     const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
 
     // Admin nunca acessa telas de cliente — sempre redireciona para o painel admin
-    if (isAdmin && !location.pathname.startsWith("/admin")) {
+    // Exceções: páginas de personalização que o admin master também precisa acessar
+    const adminWhitelist = ["/personalizar-rastreamento"];
+    const isWhitelisted = adminWhitelist.some((p) => location.pathname.startsWith(p));
+    if (isAdmin && !location.pathname.startsWith("/admin") && !isWhitelisted) {
       throw redirect({ to: "/admin" });
     }
 
