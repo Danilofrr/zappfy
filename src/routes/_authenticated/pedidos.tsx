@@ -569,6 +569,13 @@ function PedidosPage() {
                         <Bike className="h-4 w-4" />
                       </button>
                       <button
+                        onClick={() => setTrackingOpen((p) => ({ ...p, [o.id]: !p[o.id] }))}
+                        title="Rastreamento em tempo real"
+                        className={`p-1 ${trackingOpen[o.id] ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+                      >
+                        <MapPin className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => notifyDelivery(o)}
                         title="Avisar cliente no WhatsApp que o pedido saiu para entrega"
                         className="text-muted-foreground hover:text-green-500 p-1"
@@ -585,6 +592,13 @@ function PedidosPage() {
                   </td>
 
                 </tr>
+                {trackingOpen[o.id] && (
+                  <tr key={`${o.id}-tracking`} className="border-t border-border bg-secondary/10">
+                    <td colSpan={8} className="px-4 py-3">
+                      <DeliveryTrackingPanel orderId={o.id} customerPhone={o.phone} />
+                    </td>
+                  </tr>
+                )}
               ))}
             </tbody>
           </table>
