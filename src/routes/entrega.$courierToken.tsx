@@ -103,35 +103,52 @@ function CourierPage() {
     }
   }
 
-  function startWatch() {
-    if (!("geolocation" in navigator)) {
-      setPermError("Seu navegador não suporta geolocalização.");
-      return;
-    }
-    setPermError(null);
-    const id = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const now = Date.now();
-        const last = lastPosRef.current;
-        const movedEnough =
-          !last ||
-          now - last.t > 8000 ||
-          Math.hypot(latitude - last.lat, longitude - last.lng) * 111_000 > 15;
-        if (movedEnough) {
-          lastPosRef.current = { lat: latitude, lng: longitude, t: now };
-          sendLocation(pos);
-        }
-      },
-      (err) => {
-        setPermError(err.code === 1 ? "Permissão de localização negada. Permita no navegador e tente novamente." : err.message);
-        stopWatch();
-      },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
-    );
-    watchIdRef.current = id;
-    setWatching(true);
-    requestWakeLock();
+  function startWatch(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      if (!("geolocation" in navigator)) {
+        const msg = "Seu navegador não suporta geolocalização.";
+        setPermError(msg);
+        reject(new Error(msg));
+        return;
+      }
+      setPermError(null);
+      let resolved = false;
+      const id = navigator.geolocation.watchPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          const now = Date.now();
+          const last = lastPosRef.current;
+          const movedEnough =
+            !last ||
+            now - last.t > 8000 ||
+            Math.hypot(latitude - last.lat, longitude - last.lng) * 111_000 > 15;
+          if (movedEnough) {
+            lastPosRef.current = { lat: latitude, lng: longitude, t: now };
+            sendLocation(pos);
+          }
+          if (!resolved) {
+            resolved = true;
+            setWatching(true);
+            requestWakeLock();
+            resolve(pos);
+          }
+        },
+        (err) => {
+          setPermError(
+            err.code === 1
+              ? "Permissão de localização negada. Permita a localização no navegador e tente novamente."
+              : err.message,
+          );
+          stopWatch();
+          if (!resolved) {
+            resolved = true;
+            reject(err);
+          }
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
+      );
+      watchIdRef.current = id;
+    });
   }
 
   async function changeStatus(newStatus: "saiu_para_entrega" | "chegando" | "entregue") {
@@ -149,7 +166,11 @@ function CourierPage() {
   }
 
   async function handleStart() {
-    if (!watching) startWatch();
+    try {
+      if (!watching) await startWatch();
+    } catch {
+      return; // permission denied or error; keep button available
+    }
     if (data?.status === "aguardando_motoboy" || data?.status === "preparando") {
       await changeStatus("saiu_para_entrega");
     }
