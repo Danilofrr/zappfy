@@ -599,7 +599,7 @@ function Page() {
         </TabsContent>
 
         <TabsContent value="motoboy" className="mt-4">
-          <MotoboyTab f={f} up={up} />
+          <MotoboyTab f={f} up={up} isAdmin={isAdmin} />
         </TabsContent>
       </Tabs>
     </AppShell>
@@ -876,7 +876,7 @@ function resolveCourierTheme(f: Settings): CourierTheme {
   };
 }
 
-function MotoboyTab({ f, up }: { f: Settings; up: <K extends keyof Settings>(k: K, v: Settings[K]) => void }) {
+function MotoboyTab({ f, up, isAdmin }: { f: Settings; up: <K extends keyof Settings>(k: K, v: Settings[K]) => void; isAdmin: boolean }) {
   const disabled = f.courier_inherit_client;
   const theme = resolveCourierTheme(f);
   return (
@@ -892,70 +892,82 @@ function MotoboyTab({ f, up }: { f: Settings; up: <K extends keyof Settings>(k: 
 
         <div className={disabled ? "pointer-events-none opacity-50 space-y-6" : "space-y-6"}>
           <Card title="Identidade visual">
-            <Field label="URL da logo">
-              <Input value={f.courier_logo_url || ""} onChange={(e) => up("courier_logo_url", e.target.value)} placeholder="https://… (opcional)" />
-            </Field>
+            {isAdmin && (
+              <Field label="URL da logo">
+                <Input value={f.courier_logo_url || ""} onChange={(e) => up("courier_logo_url", e.target.value)} placeholder="https://… (opcional)" />
+              </Field>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <ColorField label="Cor principal" value={f.courier_primary_color} onChange={(v) => up("courier_primary_color", v)} />
-              <ColorField label="Cor secundária" value={f.courier_secondary_color} onChange={(v) => up("courier_secondary_color", v)} />
-              <ColorField label="Cor dos botões" value={f.courier_button_color} onChange={(v) => up("courier_button_color", v)} />
-              <ColorField label="Cor dos ícones" value={f.courier_icon_color} onChange={(v) => up("courier_icon_color", v)} />
+              {isAdmin && <ColorField label="Cor secundária" value={f.courier_secondary_color} onChange={(v) => up("courier_secondary_color", v)} />}
+              {isAdmin && <ColorField label="Cor dos botões" value={f.courier_button_color} onChange={(v) => up("courier_button_color", v)} />}
+              {isAdmin && <ColorField label="Cor dos ícones" value={f.courier_icon_color} onChange={(v) => up("courier_icon_color", v)} />}
             </div>
+            {!isAdmin && <p className="text-[11px] text-muted-foreground">A cor principal é usada em ícones, botões e destaques visuais.</p>}
           </Card>
 
           <Card title="Cabeçalho">
-            <p className="text-xs text-muted-foreground -mt-2 mb-1">
-              Faixa sólida apenas com a logo, no estilo dos apps profissionais. Os demais elementos (nome da loja, número do pedido, status) ficam no corpo da página.
-            </p>
+            {isAdmin && (
+              <p className="text-xs text-muted-foreground -mt-2 mb-1">
+                Faixa sólida apenas com a logo, no estilo dos apps profissionais. Os demais elementos (nome da loja, número do pedido, status) ficam no corpo da página.
+              </p>
+            )}
             <ColorField label="Cor do cabeçalho" value={f.courier_header_color} onChange={(v) => up("courier_header_color", v)} />
-            <SliderField
-              label={`Altura do cabeçalho: ${f.courier_header_height}px`}
-              min={70} max={140} step={2}
-              value={f.courier_header_height}
-              onChange={(v) => up("courier_header_height", v)}
-            />
-            <SliderField
-              label={`Tamanho da logo: ${f.courier_header_logo_size}px`}
-              min={28} max={110} step={2}
-              value={f.courier_header_logo_size}
-              onChange={(v) => up("courier_header_logo_size", v)}
-            />
-            <div className="space-y-1">
-              <Label className="text-xs">Alinhamento da logo</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["left","center","right"] as const).map((opt) => (
-                  <button key={opt} type="button" onClick={() => up("courier_header_logo_align", opt)}
-                    className={`h-9 rounded-lg text-xs border transition ${f.courier_header_logo_align === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
-                    {opt === "left" ? "Esquerda" : opt === "right" ? "Direita" : "Centro"}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {isAdmin && (
+              <>
+                <SliderField
+                  label={`Altura do cabeçalho: ${f.courier_header_height}px`}
+                  min={70} max={140} step={2}
+                  value={f.courier_header_height}
+                  onChange={(v) => up("courier_header_height", v)}
+                />
+                <SliderField
+                  label={`Tamanho da logo: ${f.courier_header_logo_size}px`}
+                  min={28} max={110} step={2}
+                  value={f.courier_header_logo_size}
+                  onChange={(v) => up("courier_header_logo_size", v)}
+                />
+                <div className="space-y-1">
+                  <Label className="text-xs">Alinhamento da logo</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["left","center","right"] as const).map((opt) => (
+                      <button key={opt} type="button" onClick={() => up("courier_header_logo_align", opt)}
+                        className={`h-9 rounded-lg text-xs border transition ${f.courier_header_logo_align === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                        {opt === "left" ? "Esquerda" : opt === "right" ? "Direita" : "Centro"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
 
 
           <Card title="Cores da página">
             <div className="grid grid-cols-2 gap-3">
-              <ColorField label="Cor de fundo da página" value={f.courier_background_color} onChange={(v) => up("courier_background_color", v)} />
-              <ColorField label="Cor dos títulos" value={f.courier_title_color} onChange={(v) => up("courier_title_color", v)} />
-              <ColorField label="Cor dos textos" value={f.courier_text_color} onChange={(v) => up("courier_text_color", v)} />
+              {isAdmin && <ColorField label="Cor de fundo da página" value={f.courier_background_color} onChange={(v) => up("courier_background_color", v)} />}
+              {isAdmin && <ColorField label="Cor dos títulos" value={f.courier_title_color} onChange={(v) => up("courier_title_color", v)} />}
+              {isAdmin && <ColorField label="Cor dos textos" value={f.courier_text_color} onChange={(v) => up("courier_text_color", v)} />}
+              {!isAdmin && <p className="col-span-2 text-[11px] text-muted-foreground">As cores de fundo e textos seguem o tema oficial Zappfy.</p>}
             </div>
           </Card>
 
           <Card title="Cards">
             <div className="grid grid-cols-2 gap-3">
-              <ColorField label="Cor dos cards" value={f.courier_card_color} onChange={(v) => up("courier_card_color", v)} />
+              {isAdmin && <ColorField label="Cor dos cards" value={f.courier_card_color} onChange={(v) => up("courier_card_color", v)} />}
               <ColorField label="Cor da borda" value={f.courier_card_border_color} onChange={(v) => up("courier_card_border_color", v)} />
-              <ColorField label="Cor da sombra" value={f.courier_card_shadow_color} onChange={(v) => up("courier_card_shadow_color", v)} />
+              {isAdmin && <ColorField label="Cor da sombra" value={f.courier_card_shadow_color} onChange={(v) => up("courier_card_shadow_color", v)} />}
             </div>
           </Card>
         </div>
 
-        <Card title="Rodapé">
-          <Field label="Texto do rodapé">
-            <Input value={f.courier_footer_text} onChange={(e) => up("courier_footer_text", e.target.value)} placeholder="Powered by Zappfy" />
-          </Field>
-        </Card>
+        {isAdmin && (
+          <Card title="Rodapé">
+            <Field label="Texto do rodapé">
+              <Input value={f.courier_footer_text} onChange={(e) => up("courier_footer_text", e.target.value)} placeholder="Powered by Zappfy" />
+            </Field>
+          </Card>
+        )}
       </div>
 
       <div className="lg:sticky lg:top-4 self-start">
