@@ -598,11 +598,9 @@ function Page() {
       </div>
         </TabsContent>
 
-        {isAdmin && (
         <TabsContent value="motoboy" className="mt-4">
           <MotoboyTab f={f} up={up} />
         </TabsContent>
-        )}
       </Tabs>
     </AppShell>
   );
