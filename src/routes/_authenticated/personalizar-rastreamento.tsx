@@ -61,6 +61,8 @@ type Settings = {
   show_courier_phone: boolean;
   show_estimated_time: boolean;
   show_distance: boolean;
+  show_products: boolean;
+  show_product_price: boolean;
   vehicle_type: "moto" | "carro";
   vehicle_color: string;
   vehicle_custom_url: string | null;
