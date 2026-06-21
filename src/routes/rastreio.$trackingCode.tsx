@@ -145,10 +145,15 @@ function RastreioPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.order_id]);
 
-  // geocode destination
+  // Prefer persisted destination coords from the database; geocode + persist as a fallback
   useEffect(() => {
-    if (!data?.order?.address || destination) return;
-    const fullAddress = [data.order.address, data.order.district, data.order.city].filter(Boolean).join(", ");
+    if (!data) return;
+    if (data.delivery_latitude != null && data.delivery_longitude != null) {
+      setDestination({ lat: data.delivery_latitude, lng: data.delivery_longitude });
+      return;
+    }
+    if (destination) return;
+    const fullAddress = [data.order?.address, data.order?.district, data.order?.city].filter(Boolean).join(", ");
     if (!fullAddress) return;
     const ctrl = new AbortController();
     fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(fullAddress)}`, {
@@ -158,12 +163,15 @@ function RastreioPage() {
       .then((r) => r.json())
       .then((arr) => {
         if (Array.isArray(arr) && arr[0]) {
-          setDestination({ lat: parseFloat(arr[0].lat), lng: parseFloat(arr[0].lon) });
+          const lat = parseFloat(arr[0].lat);
+          const lng = parseFloat(arr[0].lon);
+          setDestination({ lat, lng });
+          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: lat, _lng: lng }).then(() => {});
         }
       })
       .catch(() => {});
     return () => ctrl.abort();
-  }, [data?.order?.address, data?.order?.district, data?.order?.city, destination]);
+  }, [data, destination, trackingCode]);
 
   const courierPos = useMemo(
     () => (data?.latitude != null && data?.longitude != null ? { lat: data.latitude, lng: data.longitude } : null),
