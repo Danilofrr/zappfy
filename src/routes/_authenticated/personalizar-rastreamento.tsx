@@ -751,7 +751,7 @@ function Preview({ f }: { f: Settings }) {
       })()}
 
       <div className="px-4 pt-5 pb-3 text-center">
-        <div className="text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>Esparta Imports</div>
+        <div className="text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>Zappfy</div>
         <div className="text-sm font-semibold mt-1" style={{ color: f.title_color, opacity: 0.95 }}>{f.tracking_page_title}</div>
         <div className="text-xs opacity-70 mt-0.5">{f.tracking_page_subtitle}</div>
         <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
@@ -1005,7 +1005,7 @@ function CourierPreview({ t }: { t: CourierTheme }) {
           : <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: 0.5 }}>LOGO</div>}
       </div>
       <div className="px-4 pt-4 pb-2 text-center space-y-1.5">
-        <div className="text-base font-extrabold" style={{ color: t.title_color }}>Esparta Imports</div>
+        <div className="text-base font-extrabold" style={{ color: t.title_color }}>Zappfy</div>
         <div className="text-[11px] opacity-70">Pedido #A1B2C3D4</div>
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style={{ background: `${t.primary_color}22`, color: t.primary_color }}>
           <Bike className="h-3.5 w-3.5" /> Saiu para Entrega
