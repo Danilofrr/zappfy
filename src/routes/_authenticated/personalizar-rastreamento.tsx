@@ -724,7 +724,7 @@ function ToggleRow({ label, value, onChange }: { label: string; value: boolean; 
   );
 }
 
-function Preview({ f }: { f: Settings }) {
+function Preview({ f, storeName }: { f: Settings; storeName: string }) {
   const status: DeliveryStatus = "saiu_para_entrega";
   const info = STATUS_INFO[status];
   const def = STATUS_BADGE_DEFAULTS[status];
