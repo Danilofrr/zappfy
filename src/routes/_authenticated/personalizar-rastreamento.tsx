@@ -129,6 +129,8 @@ const DEFAULTS: Settings = {
   show_courier_phone: false,
   show_estimated_time: true,
   show_distance: true,
+  show_products: true,
+  show_product_price: true,
   vehicle_type: "moto",
   vehicle_color: "verde",
   vehicle_custom_url: "",
