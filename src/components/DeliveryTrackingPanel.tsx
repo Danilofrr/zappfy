@@ -71,8 +71,9 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
       .from("delivery_tracking")
       .select("*")
       .eq("order_id", orderId)
-      .maybeSingle();
-    if (!error) setTracking(data as Tracking | null);
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (!error) setTracking((data?.[0] as Tracking | undefined) ?? null);
     setLoading(false);
   }
 
