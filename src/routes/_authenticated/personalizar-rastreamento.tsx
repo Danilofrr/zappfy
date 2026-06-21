@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Save, Loader2, Eye, MapPin, Bike, Phone, Navigation, CheckCircle2, Truck, User } from "lucide-react";
+import { Save, Loader2, Eye, MapPin, Bike, Phone, Navigation, CheckCircle2, Truck, User, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -167,6 +167,9 @@ const DEFAULTS: Settings = {
   courier_header_logo_align: "center",
 };
 
+// Tema oficial Zappfy — aplicado pelo Admin Master e atribuído a novos clientes
+export const ZAPPFY_THEME: Settings = { ...DEFAULTS };
+
 const BG_PRESETS = [
   { name: "Preto", color: "#020817" },
   { name: "Azul escuro", color: "#0c1d3b" },
@@ -197,6 +200,7 @@ function Page() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -204,11 +208,11 @@ function Page() {
       const uid = u.user?.id ?? null;
       setUserId(uid);
       if (!uid) { setLoading(false); return; }
-      const { data } = await supabase
-        .from("delivery_tracking_settings")
-        .select("*")
-        .eq("store_id", uid)
-        .maybeSingle();
+      const [{ data: roles }, { data }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+        supabase.from("delivery_tracking_settings").select("*").eq("store_id", uid).maybeSingle(),
+      ]);
+      setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
       if (data) {
         const clean: Partial<Settings> = {};
         for (const k of Object.keys(DEFAULTS) as (keyof Settings)[]) {
@@ -276,18 +280,34 @@ function Page() {
 
   const effective: Settings = useSeparateCard ? f : { ...f, card_color: f.background_color };
 
+  function applyZappfyTheme() {
+    setF(ZAPPFY_THEME);
+    setUseSeparateCard(ZAPPFY_THEME.card_color.trim().toLowerCase() !== ZAPPFY_THEME.background_color.trim().toLowerCase());
+    toast.success("Tema Oficial Zappfy aplicado. Salve para confirmar.");
+  }
+
   return (
     <AppShell
       title="Página de Rastreamento"
-      subtitle="Personalize a experiência do cliente e do motoboy"
-      actions={<Button onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />} Salvar</Button>}
+      subtitle={isAdmin ? "Admin Master — controle total da personalização" : "Personalize a página que seu cliente acompanha"}
+      actions={
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button variant="outline" onClick={applyZappfyTheme}>
+              <Sparkles className="h-4 w-4 mr-1" /> Aplicar Tema Oficial Zappfy
+            </Button>
+          )}
+          <Button onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />} Salvar</Button>
+        </div>
+      }
     >
       <Tabs defaultValue="cliente" className="space-y-4">
         <TabsList className="h-11 p-1 bg-card border border-border w-full sm:w-auto">
           <TabsTrigger value="cliente" className="gap-2 h-9 px-4"><User className="h-4 w-4" /> Rastreamento Cliente</TabsTrigger>
-          <TabsTrigger value="motoboy" className="gap-2 h-9 px-4"><Truck className="h-4 w-4" /> Rastreamento Motoboy</TabsTrigger>
+          {isAdmin && <TabsTrigger value="motoboy" className="gap-2 h-9 px-4"><Truck className="h-4 w-4" /> Rastreamento Motoboy</TabsTrigger>}
         </TabsList>
         <TabsContent value="cliente" className="mt-4">
+
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-6">
           <Card title="Identidade visual">
@@ -296,123 +316,140 @@ function Page() {
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <ColorField label="Cor principal" value={f.primary_color} onChange={(v) => up("primary_color", v)} />
-              <ColorField label="Cor secundária" value={f.secondary_color} onChange={(v) => up("secondary_color", v)} />
-              <ColorField label="Cor dos botões" value={f.button_color} onChange={(v) => up("button_color", v)} />
+              {isAdmin && <ColorField label="Cor secundária" value={f.secondary_color} onChange={(v) => up("secondary_color", v)} />}
+              {isAdmin && <ColorField label="Cor dos botões" value={f.button_color} onChange={(v) => up("button_color", v)} />}
             </div>
+            {!isAdmin && <p className="text-[11px] text-muted-foreground">A cor principal é usada em ícones, timeline e destaques visuais.</p>}
           </Card>
 
           <Card title="Cabeçalho">
-            <div className="space-y-1">
-              <Label className="text-xs">Tipo de cabeçalho</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["solid","gradient"] as const).map((opt) => (
-                  <button key={opt} type="button" onClick={() => up("header_style", opt)}
-                    className={`h-9 rounded-lg text-xs border transition ${f.header_style === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
-                    {opt === "solid" ? "Cor sólida" : "Gradiente"}
-                  </button>
-                ))}
+            {isAdmin && (
+              <div className="space-y-1">
+                <Label className="text-xs">Tipo de cabeçalho</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["solid","gradient"] as const).map((opt) => (
+                    <button key={opt} type="button" onClick={() => up("header_style", opt)}
+                      className={`h-9 rounded-lg text-xs border transition ${f.header_style === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                      {opt === "solid" ? "Cor sólida" : "Gradiente"}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
             <ColorField label="Cor do cabeçalho" value={f.header_color} onChange={(v) => up("header_color", v)} />
-            <SliderField label={`Altura do cabeçalho: ${f.header_height}px`} min={60} max={200} step={5}
-              value={f.header_height} onChange={(v) => up("header_height", v)} />
-            <SliderField label={`Tamanho da logo: ${f.header_logo_size}px`} min={28} max={140} step={2}
-              value={f.header_logo_size} onChange={(v) => up("header_logo_size", v)} />
-            <div className="space-y-1">
-              <Label className="text-xs">Alinhamento da logo</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["left","center","right"] as const).map((opt) => (
-                  <button key={opt} type="button" onClick={() => up("header_logo_align", opt)}
-                    className={`h-9 rounded-lg text-xs border transition capitalize ${f.header_logo_align === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
-                    {opt === "left" ? "Esquerda" : opt === "right" ? "Direita" : "Centro"}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {isAdmin && (
+              <>
+                <SliderField label={`Altura do cabeçalho: ${f.header_height}px`} min={60} max={200} step={5}
+                  value={f.header_height} onChange={(v) => up("header_height", v)} />
+                <SliderField label={`Tamanho da logo: ${f.header_logo_size}px`} min={28} max={140} step={2}
+                  value={f.header_logo_size} onChange={(v) => up("header_logo_size", v)} />
+                <div className="space-y-1">
+                  <Label className="text-xs">Alinhamento da logo</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["left","center","right"] as const).map((opt) => (
+                      <button key={opt} type="button" onClick={() => up("header_logo_align", opt)}
+                        className={`h-9 rounded-lg text-xs border transition capitalize ${f.header_logo_align === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                        {opt === "left" ? "Esquerda" : opt === "right" ? "Direita" : "Centro"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
 
           <Card title="Cores da página">
-            <div className="space-y-1">
-              <Label className="text-xs">Cor do fundo da página</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {BG_PRESETS.map((p) => (
-                  <button
-                    key={p.name}
-                    type="button"
-                    onClick={() => up("background_color", p.color)}
-                    className={`h-9 px-3 rounded-lg text-xs border transition ${f.background_color === p.color ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"}`}
-                    style={{ background: p.color, color: p.color === "#ffffff" ? "#000" : "#fff" }}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <input type="color" value={f.background_color.startsWith("#") ? f.background_color : "#0b1220"} onChange={(e) => up("background_color", e.target.value)} className="h-9 w-12 rounded border border-border bg-transparent cursor-pointer" />
-                <Input value={f.background_color} onChange={(e) => up("background_color", e.target.value)} className="h-9" placeholder="#020817 ou linear-gradient(...)" />
-              </div>
-            </div>
+            {isAdmin && (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs">Cor do fundo da página</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {BG_PRESETS.map((p) => (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => up("background_color", p.color)}
+                        className={`h-9 px-3 rounded-lg text-xs border transition ${f.background_color === p.color ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"}`}
+                        style={{ background: p.color, color: p.color === "#ffffff" ? "#000" : "#fff" }}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={f.background_color.startsWith("#") ? f.background_color : "#0b1220"} onChange={(e) => up("background_color", e.target.value)} className="h-9 w-12 rounded border border-border bg-transparent cursor-pointer" />
+                    <Input value={f.background_color} onChange={(e) => up("background_color", e.target.value)} className="h-9" placeholder="#020817 ou linear-gradient(...)" />
+                  </div>
+                </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-border">
-              <div>
-                <div className="text-sm font-medium">Usar cor diferente para os cards</div>
-                <div className="text-xs text-muted-foreground">Diferencia o fundo da página dos cartões internos</div>
-              </div>
-              <Switch checked={useSeparateCard} onCheckedChange={setUseSeparateCard} />
-            </div>
+                <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <div>
+                    <div className="text-sm font-medium">Usar cor diferente para os cards</div>
+                    <div className="text-xs text-muted-foreground">Diferencia o fundo da página dos cartões internos</div>
+                  </div>
+                  <Switch checked={useSeparateCard} onCheckedChange={setUseSeparateCard} />
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <ColorField label="Cor dos títulos" value={f.title_color} onChange={(v) => up("title_color", v)} />
-              <ColorField label="Cor dos textos" value={f.text_color} onChange={(v) => up("text_color", v)} />
+              {isAdmin && <ColorField label="Cor dos títulos" value={f.title_color} onChange={(v) => up("title_color", v)} />}
+              {isAdmin && <ColorField label="Cor dos textos" value={f.text_color} onChange={(v) => up("text_color", v)} />}
               <ColorField label="Cor da timeline" value={f.timeline_color} onChange={(v) => up("timeline_color", v)} />
             </div>
           </Card>
 
-          <Card title="Cards (independente do fundo)">
-            <p className="text-xs text-muted-foreground -mt-2 mb-1">
-              Estas configurações alteram apenas os cards internos (pedido, timeline, endereço, motoboy). Não afetam o fundo da página, badges ou botões.
-            </p>
+          <Card title={isAdmin ? "Cards (independente do fundo)" : "Cards"}>
+            {isAdmin && (
+              <p className="text-xs text-muted-foreground -mt-2 mb-1">
+                Estas configurações alteram apenas os cards internos (pedido, timeline, endereço, motoboy). Não afetam o fundo da página, badges ou botões.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3">
-              <ColorField label="Cor de fundo do card" value={f.card_color} onChange={(v) => up("card_color", v)} />
+              {isAdmin && <ColorField label="Cor de fundo do card" value={f.card_color} onChange={(v) => up("card_color", v)} />}
               <ColorField label="Cor da borda" value={f.card_border_color} onChange={(v) => up("card_border_color", v)} />
-              <ColorField label="Cor da sombra" value={f.card_shadow_color} onChange={(v) => up("card_shadow_color", v)} />
+              {isAdmin && <ColorField label="Cor da sombra" value={f.card_shadow_color} onChange={(v) => up("card_shadow_color", v)} />}
             </div>
 
+            {isAdmin && (
+              <>
+                <SliderField label={`Arredondamento dos cantos: ${f.card_radius}px`} min={0} max={32} step={1}
+                  value={f.card_radius} onChange={(v) => up("card_radius", v)} />
 
-            <SliderField label={`Arredondamento dos cantos: ${f.card_radius}px`} min={0} max={32} step={1}
-              value={f.card_radius} onChange={(v) => up("card_radius", v)} />
+                <SliderField label={`Transparência dos cards: ${Math.round(f.card_opacity * 100)}%`} min={20} max={100} step={5}
+                  value={Math.round(f.card_opacity * 100)} onChange={(v) => up("card_opacity", v / 100)} />
 
-            <SliderField label={`Transparência dos cards: ${Math.round(f.card_opacity * 100)}%`} min={20} max={100} step={5}
-              value={Math.round(f.card_opacity * 100)} onChange={(v) => up("card_opacity", v / 100)} />
+                <SliderField label={`Intensidade da borda: ${Math.round(f.border_intensity * 100)}%`} min={0} max={200} step={10}
+                  value={Math.round(f.border_intensity * 100)} onChange={(v) => up("border_intensity", v / 100)} />
 
-            <SliderField label={`Intensidade da borda: ${Math.round(f.border_intensity * 100)}%`} min={0} max={200} step={10}
-              value={Math.round(f.border_intensity * 100)} onChange={(v) => up("border_intensity", v / 100)} />
+                <div className="flex items-center justify-between pt-2">
+                  <div>
+                    <div className="text-sm font-medium">Glassmorphism</div>
+                    <div className="text-xs text-muted-foreground">Vidro fosco translúcido</div>
+                  </div>
+                  <Switch checked={f.card_glass} onCheckedChange={(v) => up("card_glass", v)} />
+                </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <div>
-                <div className="text-sm font-medium">Glassmorphism</div>
-                <div className="text-xs text-muted-foreground">Vidro fosco translúcido</div>
-              </div>
-              <Switch checked={f.card_glass} onCheckedChange={(v) => up("card_glass", v)} />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Intensidade da sombra</Label>
-              <div className="grid grid-cols-5 gap-2">
-                {SHADOW_OPTIONS.map((s) => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => up("card_shadow", s.value)}
-                    className={`h-9 rounded-lg text-xs border transition ${f.card_shadow === s.value ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Intensidade da sombra</Label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {SHADOW_OPTIONS.map((s) => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => up("card_shadow", s.value)}
+                        className={`h-9 rounded-lg text-xs border transition ${f.card_shadow === s.value ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
 
+          {isAdmin && (
           <Card title="Badges por Status">
             <p className="text-xs text-muted-foreground -mt-2 mb-1">
               Cada status tem identidade visual própria — fundo, borda, texto e ícone são configurados separadamente.
@@ -448,6 +485,7 @@ function Page() {
               );
             })}
           </Card>
+          )}
 
           <Card title="Ícone do entregador">
             <div className="space-y-3">
@@ -522,13 +560,14 @@ function Page() {
           </Card>
 
           <Card title="Textos da página">
-            <Field label="Título"><Input value={f.tracking_page_title} onChange={(e) => up("tracking_page_title", e.target.value)} /></Field>
-            <Field label="Subtítulo"><Input value={f.tracking_page_subtitle} onChange={(e) => up("tracking_page_subtitle", e.target.value)} /></Field>
+            {isAdmin && <Field label="Título"><Input value={f.tracking_page_title} onChange={(e) => up("tracking_page_title", e.target.value)} /></Field>}
+            {isAdmin && <Field label="Subtítulo"><Input value={f.tracking_page_subtitle} onChange={(e) => up("tracking_page_subtitle", e.target.value)} /></Field>}
             <Field label="WhatsApp de suporte (com DDI)">
               <Input value={f.support_whatsapp || ""} onChange={(e) => up("support_whatsapp", e.target.value)} placeholder="5581999990000" />
             </Field>
           </Card>
 
+          {isAdmin && (
           <Card title="Mensagens por status">
             <Field label="📦 Pedido Recebido"><Textarea rows={2} value={f.msg_aguardando} onChange={(e) => up("msg_aguardando", e.target.value)} /></Field>
             <Field label="📦 Separando Pedido"><Textarea rows={2} value={f.msg_preparando} onChange={(e) => up("msg_preparando", e.target.value)} /></Field>
@@ -537,6 +576,7 @@ function Page() {
             <Field label="✅ Entregue"><Textarea rows={2} value={f.msg_entregue} onChange={(e) => up("msg_entregue", e.target.value)} /></Field>
             <Field label="❌ Cancelado"><Textarea rows={2} value={f.msg_cancelado} onChange={(e) => up("msg_cancelado", e.target.value)} /></Field>
           </Card>
+          )}
 
           <Card title="O que mostrar ao cliente">
             <ToggleRow label="Mostrar logo da loja" value={f.show_store_logo} onChange={(v) => up("show_store_logo", v)} />
@@ -558,9 +598,11 @@ function Page() {
       </div>
         </TabsContent>
 
+        {isAdmin && (
         <TabsContent value="motoboy" className="mt-4">
           <MotoboyTab f={f} up={up} />
         </TabsContent>
+        )}
       </Tabs>
     </AppShell>
   );
