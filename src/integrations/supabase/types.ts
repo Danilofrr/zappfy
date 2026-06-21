@@ -253,7 +253,9 @@ export type Database = {
           card_color: string
           card_glass: boolean
           card_opacity: number
+          card_radius: number
           card_shadow: string
+          card_shadow_color: string
           created_at: string
           delivered_message: string | null
           id: string
@@ -274,6 +276,7 @@ export type Database = {
           show_estimated_time: boolean
           show_store_logo: boolean
           status_color: string
+          status_styles: Json
           store_id: string
           support_whatsapp: string | null
           text_color: string | null
@@ -295,7 +298,9 @@ export type Database = {
           card_color?: string
           card_glass?: boolean
           card_opacity?: number
+          card_radius?: number
           card_shadow?: string
+          card_shadow_color?: string
           created_at?: string
           delivered_message?: string | null
           id?: string
@@ -316,6 +321,7 @@ export type Database = {
           show_estimated_time?: boolean
           show_store_logo?: boolean
           status_color?: string
+          status_styles?: Json
           store_id: string
           support_whatsapp?: string | null
           text_color?: string | null
@@ -337,7 +343,9 @@ export type Database = {
           card_color?: string
           card_glass?: boolean
           card_opacity?: number
+          card_radius?: number
           card_shadow?: string
+          card_shadow_color?: string
           created_at?: string
           delivered_message?: string | null
           id?: string
@@ -358,6 +366,7 @@ export type Database = {
           show_estimated_time?: boolean
           show_store_logo?: boolean
           status_color?: string
+          status_styles?: Json
           store_id?: string
           support_whatsapp?: string | null
           text_color?: string | null

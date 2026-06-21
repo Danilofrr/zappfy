@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrackingMap } from "@/components/TrackingMap";
 import {
+  STATUS_BADGE_DEFAULTS,
   STATUS_INFO,
   TIMELINE_STEPS,
   deriveDisplayStatus,
@@ -13,6 +14,7 @@ import {
   orderShortNumber,
   whatsappLink,
   type DeliveryStatus,
+  type StatusBadgeStyle,
 } from "@/lib/tracking";
 import { Check, Clock, MapPin, MessageCircle, Bike, Loader2 } from "lucide-react";
 
@@ -49,8 +51,11 @@ type Payload = {
     card_opacity: number;
     card_glass: boolean;
     card_shadow: string;
+    card_shadow_color: string;
+    card_radius: number;
     border_intensity: number;
     status_color: string;
+    status_styles: Partial<Record<DeliveryStatus, Partial<StatusBadgeStyle>>>;
     timeline_color: string;
     tracking_page_title: string;
     tracking_page_subtitle: string;
@@ -204,7 +209,7 @@ function RastreioPage() {
   const message = messages[displayStatus];
   const cardBg = s.card_color || s.secondary_color;
   const timelineColor = s.timeline_color || s.primary_color;
-  const statusColor = s.status_color || s.primary_color;
+  
   const titleColor = s.title_color || s.text_color;
   const isGradientBg = typeof s.background_color === "string" && s.background_color.includes("gradient");
   const cs = cardStyle({
@@ -213,8 +218,19 @@ function RastreioPage() {
     card_opacity: s.card_opacity ?? 1,
     card_glass: !!s.card_glass,
     card_shadow: s.card_shadow || "md",
+    card_shadow_color: s.card_shadow_color || "#000000",
+    card_radius: s.card_radius ?? 16,
     border_intensity: s.border_intensity ?? 1,
   });
+  const badgeDef = STATUS_BADGE_DEFAULTS[displayStatus];
+  const badgeOverride = s.status_styles?.[displayStatus] ?? {};
+  const badge: StatusBadgeStyle = {
+    bg: badgeOverride.bg || badgeDef.bg,
+    border: badgeOverride.border || badgeDef.border,
+    text: badgeOverride.text || badgeDef.text,
+    icon: badgeOverride.icon || badgeDef.icon,
+  };
+  const BadgeIcon = info.Icon;
 
   return (
     <div
@@ -234,13 +250,13 @@ function RastreioPage() {
         <p className="text-sm opacity-80 mt-1">{s.tracking_page_subtitle}</p>
         <div
           className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-all"
-          style={{ background: hexWithAlpha(statusColor, 0.15), color: statusColor, border: `1px solid ${hexWithAlpha(statusColor, 0.35)}` }}
+          style={{ background: badge.bg, color: badge.text, border: `1px solid ${badge.border}` }}
           key={displayStatus}
         >
-          <span aria-hidden>{info.emoji}</span>
+          <BadgeIcon className="h-4 w-4" style={{ color: badge.icon }} />
           <span>{info.label}</span>
           {!isFinished && (
-            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: statusColor }} />
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: badge.icon }} />
           )}
         </div>
       </header>
@@ -332,25 +348,28 @@ function hexWithAlpha(hex: string, alpha: number): string {
   const a = Math.max(0, Math.min(255, Math.round(alpha * 255)));
   return hex + a.toString(16).padStart(2, "0");
 }
-function shadowFor(level: string): string {
+function shadowFor(level: string, color: string): string {
+  const c = color || "#000000";
   switch (level) {
     case "none": return "none";
-    case "sm": return "0 2px 8px rgba(0,0,0,0.18)";
-    case "lg": return "0 18px 40px -10px rgba(0,0,0,0.55)";
-    case "xl": return "0 30px 60px -16px rgba(0,0,0,0.7)";
-    default: return "0 10px 24px -8px rgba(0,0,0,0.4)";
+    case "sm": return `0 2px 8px ${hexWithAlpha(c, 0.18)}`;
+    case "lg": return `0 18px 40px -10px ${hexWithAlpha(c, 0.55)}`;
+    case "xl": return `0 30px 60px -16px ${hexWithAlpha(c, 0.7)}`;
+    default: return `0 10px 24px -8px ${hexWithAlpha(c, 0.4)}`;
   }
 }
 function cardStyle(f: {
   card_color: string; card_border_color: string; card_opacity: number;
   card_glass: boolean; card_shadow: string; border_intensity: number;
+  card_shadow_color?: string; card_radius?: number;
 }): React.CSSProperties {
   const bg = f.card_glass ? hexWithAlpha(f.card_color, Math.min(f.card_opacity, 0.6)) : hexWithAlpha(f.card_color, f.card_opacity);
   const borderAlpha = Math.max(0, Math.min(1, f.border_intensity));
   const style: React.CSSProperties = {
     background: bg,
     border: `1px solid ${hexWithAlpha(f.card_border_color, borderAlpha)}`,
-    boxShadow: shadowFor(f.card_shadow),
+    boxShadow: shadowFor(f.card_shadow, f.card_shadow_color || "#000000"),
+    borderRadius: (f.card_radius ?? 16) + "px",
   };
   if (f.card_glass) {
     (style as any).backdropFilter = "blur(20px) saturate(140%)";

@@ -13,17 +13,22 @@ import { toast } from "sonner";
 import {
   PIN_COLORS,
   PIN_OPTIONS,
+  STATUS_BADGE_DEFAULTS,
   STATUS_INFO,
   TIMELINE_STEPS,
   VEHICLE_COLORS,
   VEHICLE_OPTIONS,
   vehicleSvgPath,
+  type DeliveryStatus,
+  type StatusBadgeStyle,
 } from "@/lib/tracking";
 
 export const Route = createFileRoute("/_authenticated/personalizar-rastreamento")({
   head: () => ({ meta: [{ title: "Página de Rastreamento — ZappFy" }] }),
   component: Page,
 });
+
+type StatusStylesMap = Partial<Record<DeliveryStatus, Partial<StatusBadgeStyle>>>;
 
 type Settings = {
   logo_url: string | null;
@@ -38,8 +43,11 @@ type Settings = {
   card_opacity: number;
   card_glass: boolean;
   card_shadow: "none" | "sm" | "md" | "lg" | "xl";
+  card_shadow_color: string;
+  card_radius: number;
   border_intensity: number;
   status_color: string;
+  status_styles: StatusStylesMap;
   timeline_color: string;
   tracking_page_title: string;
   tracking_page_subtitle: string;
@@ -77,8 +85,11 @@ const DEFAULTS: Settings = {
   card_opacity: 1,
   card_glass: false,
   card_shadow: "md",
+  card_shadow_color: "#000000",
+  card_radius: 16,
   border_intensity: 1,
   status_color: "#10b981",
+  status_styles: {},
   timeline_color: "#10b981",
   tracking_page_title: "Acompanhe sua entrega",
   tracking_page_subtitle: "Veja em tempo real onde está seu pedido",
@@ -119,6 +130,14 @@ const SHADOW_OPTIONS = [
   { value: "xl", label: "Intensa" },
 ] as const;
 
+const BADGE_STATUSES: DeliveryStatus[] = [
+  "aguardando_motoboy",
+  "preparando",
+  "saiu_para_entrega",
+  "chegando",
+  "entregue",
+];
+
 function Page() {
   const [f, setF] = useState<Settings>(DEFAULTS);
   const [useSeparateCard, setUseSeparateCard] = useState(true);
@@ -144,6 +163,7 @@ function Page() {
           if (v !== null && v !== undefined) (clean as any)[k] = v;
         }
         const merged = { ...DEFAULTS, ...clean };
+        if (!merged.status_styles || typeof merged.status_styles !== "object") merged.status_styles = {};
         setF(merged);
         setUseSeparateCard(merged.card_color.trim().toLowerCase() !== merged.background_color.trim().toLowerCase());
       }
@@ -162,6 +182,7 @@ function Page() {
       support_whatsapp: f.support_whatsapp || null,
       vehicle_custom_url: f.vehicle_custom_url || null,
       pin_custom_url: f.pin_custom_url || null,
+      status_styles: f.status_styles ?? {},
     };
     const { error } = await supabase
       .from("delivery_tracking_settings")
@@ -172,6 +193,24 @@ function Page() {
   }
 
   function up<K extends keyof Settings>(key: K, value: Settings[K]) { setF((p) => ({ ...p, [key]: value })); }
+
+  function upBadge(status: DeliveryStatus, part: keyof StatusBadgeStyle, value: string) {
+    setF((p) => ({
+      ...p,
+      status_styles: {
+        ...p.status_styles,
+        [status]: { ...(p.status_styles?.[status] ?? {}), [part]: value },
+      },
+    }));
+  }
+
+  function resetBadge(status: DeliveryStatus) {
+    setF((p) => {
+      const next = { ...(p.status_styles ?? {}) };
+      delete next[status];
+      return { ...p, status_styles: next };
+    });
+  }
 
   if (loading) {
     return (
@@ -232,27 +271,22 @@ function Page() {
               <Switch checked={useSeparateCard} onCheckedChange={setUseSeparateCard} />
             </div>
 
-            <div className={`grid grid-cols-2 gap-3 transition-opacity ${useSeparateCard ? "" : "opacity-40 pointer-events-none"}`}>
-              <ColorField label="Cor dos cards" value={f.card_color} onChange={(v) => up("card_color", v)} />
-              <ColorField label="Borda dos cards" value={f.card_border_color} onChange={(v) => up("card_border_color", v)} />
-            </div>
-
             <div className="grid grid-cols-2 gap-3 pt-1">
               <ColorField label="Cor dos títulos" value={f.title_color} onChange={(v) => up("title_color", v)} />
               <ColorField label="Cor dos textos" value={f.text_color} onChange={(v) => up("text_color", v)} />
-              <ColorField label="Cor dos badges de status" value={f.status_color} onChange={(v) => up("status_color", v)} />
               <ColorField label="Cor da timeline" value={f.timeline_color} onChange={(v) => up("timeline_color", v)} />
             </div>
           </Card>
 
-          <Card title="Efeitos Premium dos cards">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">Glassmorphism (vidro fosco)</div>
-                <div className="text-xs text-muted-foreground">Efeito desfocado translúcido nos cards</div>
-              </div>
-              <Switch checked={f.card_glass} onCheckedChange={(v) => up("card_glass", v)} />
+          <Card title="Cards (independente do fundo)">
+            <div className={`grid grid-cols-2 gap-3 transition-opacity ${useSeparateCard ? "" : "opacity-40 pointer-events-none"}`}>
+              <ColorField label="Cor de fundo do card" value={f.card_color} onChange={(v) => up("card_color", v)} />
+              <ColorField label="Cor da borda" value={f.card_border_color} onChange={(v) => up("card_border_color", v)} />
+              <ColorField label="Cor da sombra" value={f.card_shadow_color} onChange={(v) => up("card_shadow_color", v)} />
             </div>
+
+            <SliderField label={`Arredondamento dos cantos: ${f.card_radius}px`} min={0} max={32} step={1}
+              value={f.card_radius} onChange={(v) => up("card_radius", v)} />
 
             <SliderField label={`Transparência dos cards: ${Math.round(f.card_opacity * 100)}%`} min={20} max={100} step={5}
               value={Math.round(f.card_opacity * 100)} onChange={(v) => up("card_opacity", v / 100)} />
@@ -260,8 +294,16 @@ function Page() {
             <SliderField label={`Intensidade da borda: ${Math.round(f.border_intensity * 100)}%`} min={0} max={200} step={10}
               value={Math.round(f.border_intensity * 100)} onChange={(v) => up("border_intensity", v / 100)} />
 
+            <div className="flex items-center justify-between pt-2">
+              <div>
+                <div className="text-sm font-medium">Glassmorphism</div>
+                <div className="text-xs text-muted-foreground">Vidro fosco translúcido</div>
+              </div>
+              <Switch checked={f.card_glass} onCheckedChange={(v) => up("card_glass", v)} />
+            </div>
+
             <div className="space-y-1">
-              <Label className="text-xs">Sombra dos cards</Label>
+              <Label className="text-xs">Intensidade da sombra</Label>
               <div className="grid grid-cols-5 gap-2">
                 {SHADOW_OPTIONS.map((s) => (
                   <button
@@ -277,9 +319,45 @@ function Page() {
             </div>
           </Card>
 
-          <Card title="Personalização do Mapa">
+          <Card title="Badges por Status">
+            <p className="text-xs text-muted-foreground -mt-2 mb-1">
+              Cada status tem identidade visual própria — fundo, borda, texto e ícone são configurados separadamente.
+            </p>
+            {BADGE_STATUSES.map((s) => {
+              const info = STATUS_INFO[s];
+              const def = STATUS_BADGE_DEFAULTS[s];
+              const cur = f.status_styles?.[s] ?? {};
+              const style: StatusBadgeStyle = {
+                bg: cur.bg || def.bg,
+                border: cur.border || def.border,
+                text: cur.text || def.text,
+                icon: cur.icon || def.icon,
+              };
+              const Icon = info.Icon;
+              return (
+                <div key={s} className="rounded-xl border border-border p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold"
+                      style={{ background: style.bg, color: style.text, border: `1px solid ${style.border}` }}>
+                      <Icon className="h-3.5 w-3.5" style={{ color: style.icon }} />
+                      {info.label}
+                    </div>
+                    <button type="button" onClick={() => resetBadge(s)} className="text-[11px] text-muted-foreground hover:text-foreground underline">Restaurar</button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <ColorField label="Fundo" value={style.bg} onChange={(v) => upBadge(s, "bg", v)} />
+                    <ColorField label="Borda" value={style.border} onChange={(v) => upBadge(s, "border", v)} />
+                    <ColorField label="Texto" value={style.text} onChange={(v) => upBadge(s, "text", v)} />
+                    <ColorField label="Ícone" value={style.icon} onChange={(v) => upBadge(s, "icon", v)} />
+                  </div>
+                </div>
+              );
+            })}
+          </Card>
+
+          <Card title="Ícone do entregador">
             <div className="space-y-2">
-              <Label className="text-xs">Veículo do entregador</Label>
+              <Label className="text-xs">Selecione o veículo</Label>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {VEHICLE_OPTIONS.map((opt) => {
                   const selected = !f.vehicle_custom_url && f.vehicle_type === opt.type && f.vehicle_color === opt.color;
@@ -300,13 +378,13 @@ function Page() {
               <Input
                 value={f.vehicle_custom_url || ""}
                 onChange={(e) => up("vehicle_custom_url", e.target.value)}
-                placeholder="URL de ícone personalizado (PNG)"
+                placeholder="URL de PNG personalizado"
               />
             </div>
 
             <div className="space-y-2 pt-3">
               <Label className="text-xs">Marcador de destino</Label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {PIN_OPTIONS.map((opt) => {
                   const selected = !f.pin_custom_url && f.pin_color === opt.color;
                   return (
@@ -340,8 +418,8 @@ function Page() {
           </Card>
 
           <Card title="Mensagens por status">
-            <Field label="🟡 Pedido Recebido"><Textarea rows={2} value={f.msg_aguardando} onChange={(e) => up("msg_aguardando", e.target.value)} /></Field>
-            <Field label="🟠 Preparando Pedido"><Textarea rows={2} value={f.msg_preparando} onChange={(e) => up("msg_preparando", e.target.value)} /></Field>
+            <Field label="📦 Pedido Recebido"><Textarea rows={2} value={f.msg_aguardando} onChange={(e) => up("msg_aguardando", e.target.value)} /></Field>
+            <Field label="👨‍🍳 Preparando Pedido"><Textarea rows={2} value={f.msg_preparando} onChange={(e) => up("msg_preparando", e.target.value)} /></Field>
             <Field label="🛵 Saiu para Entrega"><Textarea rows={2} value={f.msg_saiu} onChange={(e) => up("msg_saiu", e.target.value)} /></Field>
             <Field label="📍 Chegando"><Textarea rows={2} value={f.msg_chegando} onChange={(e) => up("msg_chegando", e.target.value)} /></Field>
             <Field label="✅ Entregue"><Textarea rows={2} value={f.msg_entregue} onChange={(e) => up("msg_entregue", e.target.value)} /></Field>
@@ -370,31 +448,34 @@ function Page() {
 
 // ---------- Card style helpers (shared with rastreio public page) ----------
 function hexWithAlpha(hex: string, alpha: number): string {
-  if (!hex.startsWith("#")) return hex;
+  if (!hex || !hex.startsWith("#")) return hex;
   const a = Math.max(0, Math.min(255, Math.round(alpha * 255)));
   const suffix = a.toString(16).padStart(2, "0");
   if (hex.length === 7) return hex + suffix;
   return hex;
 }
-function shadowFor(level: string): string {
+function shadowFor(level: string, color: string): string {
+  const c = color || "#000000";
   switch (level) {
     case "none": return "none";
-    case "sm": return "0 2px 8px rgba(0,0,0,0.18)";
-    case "lg": return "0 18px 40px -10px rgba(0,0,0,0.55)";
-    case "xl": return "0 30px 60px -16px rgba(0,0,0,0.7)";
-    default: return "0 10px 24px -8px rgba(0,0,0,0.4)";
+    case "sm": return `0 2px 8px ${hexWithAlpha(c, 0.18)}`;
+    case "lg": return `0 18px 40px -10px ${hexWithAlpha(c, 0.55)}`;
+    case "xl": return `0 30px 60px -16px ${hexWithAlpha(c, 0.7)}`;
+    default: return `0 10px 24px -8px ${hexWithAlpha(c, 0.4)}`;
   }
 }
 export function cardStyle(f: {
   card_color: string; card_border_color: string; card_opacity: number;
   card_glass: boolean; card_shadow: string; border_intensity: number;
+  card_shadow_color?: string; card_radius?: number;
 }): React.CSSProperties {
   const bg = f.card_glass ? hexWithAlpha(f.card_color, Math.min(f.card_opacity, 0.6)) : hexWithAlpha(f.card_color, f.card_opacity);
   const borderAlpha = Math.max(0, Math.min(1, f.border_intensity));
   const style: React.CSSProperties = {
     background: bg,
     border: `1px solid ${hexWithAlpha(f.card_border_color, borderAlpha)}`,
-    boxShadow: shadowFor(f.card_shadow),
+    boxShadow: shadowFor(f.card_shadow, f.card_shadow_color || "#000000"),
+    borderRadius: (f.card_radius ?? 16) + "px",
   };
   if (f.card_glass) {
     (style as any).backdropFilter = "blur(20px) saturate(140%)";
@@ -405,8 +486,8 @@ export function cardStyle(f: {
 function VehicleSwatch({ type, color }: { type: "moto" | "carro"; color: string }) {
   const hex = VEHICLE_COLORS[color] ?? "#10b981";
   return (
-    <div style={{ width: 36, height: 36, borderRadius: "50%", background: hex, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${hex}55` }}>
-      <svg viewBox="0 0 24 24" width="22" height="22" dangerouslySetInnerHTML={{ __html: vehicleSvgPath(type) }} />
+    <div style={{ width: 40, height: 40, borderRadius: "50%", background: hex, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${hex}55` }}>
+      <svg viewBox="0 0 24 24" width="26" height="26" dangerouslySetInnerHTML={{ __html: vehicleSvgPath(type) }} />
     </div>
   );
 }
@@ -439,7 +520,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
       <div className="flex items-center gap-2">
-        <input type="color" value={value.startsWith("#") ? value : "#000000"} onChange={(e) => onChange(e.target.value)} className="h-9 w-12 rounded border border-border bg-transparent cursor-pointer" />
+        <input type="color" value={value && value.startsWith("#") ? value : "#000000"} onChange={(e) => onChange(e.target.value)} className="h-9 w-12 rounded border border-border bg-transparent cursor-pointer" />
         <Input value={value} onChange={(e) => onChange(e.target.value)} className="h-9" />
       </div>
     </div>
@@ -465,9 +546,14 @@ function ToggleRow({ label, value, onChange }: { label: string; value: boolean; 
 }
 
 function Preview({ f }: { f: Settings }) {
-  const info = STATUS_INFO.saiu_para_entrega;
+  const status: DeliveryStatus = "saiu_para_entrega";
+  const info = STATUS_INFO[status];
+  const def = STATUS_BADGE_DEFAULTS[status];
+  const cur = f.status_styles?.[status] ?? {};
+  const badge: StatusBadgeStyle = { bg: cur.bg || def.bg, border: cur.border || def.border, text: cur.text || def.text, icon: cur.icon || def.icon };
   const cs = useMemo(() => cardStyle(f), [f]);
   const isGradient = f.background_color.includes("gradient");
+  const BadgeIcon = info.Icon;
   return (
     <div
       className="rounded-2xl overflow-hidden transition-colors"
@@ -482,18 +568,18 @@ function Preview({ f }: { f: Settings }) {
         {f.show_store_logo && f.logo_url && <img src={f.logo_url} alt="logo" className="h-12 w-auto mx-auto mb-2 object-contain" />}
         <div className="text-base font-bold" style={{ color: f.title_color }}>{f.tracking_page_title}</div>
         <div className="text-xs opacity-70">{f.tracking_page_subtitle}</div>
-        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: hexWithAlpha(f.status_color, 0.15), color: f.status_color, border: `1px solid ${hexWithAlpha(f.status_color, 0.35)}` }}>
-          <span>{info.emoji}</span> {info.label}
-          <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: f.status_color }} />
+        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+          style={{ background: badge.bg, color: badge.text, border: `1px solid ${badge.border}` }}>
+          <BadgeIcon className="h-3.5 w-3.5" style={{ color: badge.icon }} /> {info.label}
         </div>
       </div>
       <div className="px-4 space-y-3">
-        <div className="rounded-xl p-4" style={cs}>
+        <div className="p-4" style={cs}>
           <div className="text-[10px] uppercase opacity-60">Pedido</div>
           <div className="font-bold" style={{ color: f.title_color }}>#A1B2C3D4</div>
           <p className="text-xs mt-2" style={{ color: f.text_color }}>{f.msg_saiu}</p>
         </div>
-        <div className="rounded-xl p-4 flex items-center justify-around" style={cs}>
+        <div className="p-4 flex items-center justify-around" style={cs}>
           <div className="flex flex-col items-center gap-1">
             <VehicleSwatch type={f.vehicle_type} color={f.vehicle_color} />
             <span className="text-[10px] opacity-70">Entregador</span>
@@ -504,7 +590,7 @@ function Preview({ f }: { f: Settings }) {
             <span className="text-[10px] opacity-70">Destino</span>
           </div>
         </div>
-        <div className="rounded-xl p-4" style={cs}>
+        <div className="p-4" style={cs}>
           <div className="text-xs font-semibold mb-3" style={{ color: f.title_color }}>Acompanhamento</div>
           <ol className="relative space-y-3 pl-6">
             <span className="absolute left-2.5 top-2 bottom-2 w-px" style={{ background: hexWithAlpha(f.timeline_color, 0.2) }} />
@@ -519,21 +605,21 @@ function Preview({ f }: { f: Settings }) {
             })}
           </ol>
         </div>
-        <div className="rounded-xl p-3 flex items-start gap-2 text-xs" style={cs}>
+        <div className="p-3 flex items-start gap-2 text-xs" style={cs}>
           <MapPin className="h-3.5 w-3.5 mt-0.5" style={{ color: f.primary_color }} />
           <div>
             <div className="font-medium" style={{ color: f.title_color }}>Endereço de entrega</div>
             <div className="opacity-80">Rua Exemplo, 123 — Centro</div>
           </div>
         </div>
-        <div className="rounded-xl p-3 flex items-center gap-3 text-xs" style={cs}>
+        <div className="p-3 flex items-center gap-3 text-xs" style={cs}>
           <Bike className="h-4 w-4" style={{ color: f.primary_color }} />
           <div className="flex-1">
             <div className="font-medium" style={{ color: f.title_color }}>João Motoboy</div>
             <div className="opacity-70 flex items-center gap-1"><Phone className="h-3 w-3" /> (81) 99999-0000</div>
           </div>
         </div>
-        <div className="rounded-xl p-3 text-center text-xs font-semibold" style={{ background: f.button_color, color: "#fff" }}>
+        <div className="p-3 text-center text-xs font-semibold" style={{ background: f.button_color, color: "#fff", borderRadius: (f.card_radius ?? 16) + "px" }}>
           Falar com a loja
         </div>
       </div>
