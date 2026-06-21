@@ -995,7 +995,7 @@ function MotoboyTab({ f, up, isAdmin, storeName }: { f: Settings; up: <K extends
   );
 }
 
-function CourierPreview({ t }: { t: CourierTheme }) {
+function CourierPreview({ t, storeName }: { t: CourierTheme; storeName: string }) {
   const cardCss: React.CSSProperties = {
     background: t.card_color,
     border: `1px solid ${t.card_border_color}`,
