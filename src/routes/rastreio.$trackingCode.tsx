@@ -218,8 +218,19 @@ function RastreioPage() {
     card_opacity: s.card_opacity ?? 1,
     card_glass: !!s.card_glass,
     card_shadow: s.card_shadow || "md",
+    card_shadow_color: s.card_shadow_color || "#000000",
+    card_radius: s.card_radius ?? 16,
     border_intensity: s.border_intensity ?? 1,
   });
+  const badgeDef = STATUS_BADGE_DEFAULTS[displayStatus];
+  const badgeOverride = s.status_styles?.[displayStatus] ?? {};
+  const badge: StatusBadgeStyle = {
+    bg: badgeOverride.bg || badgeDef.bg,
+    border: badgeOverride.border || badgeDef.border,
+    text: badgeOverride.text || badgeDef.text,
+    icon: badgeOverride.icon || badgeDef.icon,
+  };
+  const BadgeIcon = info.Icon;
 
   return (
     <div
