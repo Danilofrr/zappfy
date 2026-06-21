@@ -51,8 +51,11 @@ type Payload = {
     card_opacity: number;
     card_glass: boolean;
     card_shadow: string;
+    card_shadow_color: string;
+    card_radius: number;
     border_intensity: number;
     status_color: string;
+    status_styles: Partial<Record<DeliveryStatus, Partial<StatusBadgeStyle>>>;
     timeline_color: string;
     tracking_page_title: string;
     tracking_page_subtitle: string;
