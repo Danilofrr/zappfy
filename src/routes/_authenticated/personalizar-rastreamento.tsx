@@ -70,8 +70,14 @@ function Page() {
         .select("*")
         .eq("store_id", uid)
         .maybeSingle();
-      if (data) setF({ ...DEFAULTS, ...data });
-      setLoading(false);
+      if (data) {
+        const clean: Partial<Settings> = {};
+        for (const k of Object.keys(DEFAULTS) as (keyof Settings)[]) {
+          const v = (data as any)[k];
+          if (v !== null && v !== undefined) (clean as any)[k] = v;
+        }
+        setF({ ...DEFAULTS, ...clean });
+      }
     })();
   }, []);
 

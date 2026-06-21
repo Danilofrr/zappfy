@@ -24,6 +24,7 @@ import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
 import { Route as AuthenticatedPorProdutoRouteImport } from './routes/_authenticated/por-produto'
+import { Route as AuthenticatedPersonalizarRastreamentoRouteImport } from './routes/_authenticated/personalizar-rastreamento'
 import { Route as AuthenticatedPersonalizarCheckoutRouteImport } from './routes/_authenticated/personalizar-checkout'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedMinhaAssinaturaRouteImport } from './routes/_authenticated/minha-assinatura'
@@ -122,6 +123,12 @@ const AuthenticatedPorProdutoRoute = AuthenticatedPorProdutoRouteImport.update({
   path: '/por-produto',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPersonalizarRastreamentoRoute =
+  AuthenticatedPersonalizarRastreamentoRouteImport.update({
+    id: '/personalizar-rastreamento',
+    path: '/personalizar-rastreamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPersonalizarCheckoutRoute =
   AuthenticatedPersonalizarCheckoutRouteImport.update({
     id: '/personalizar-checkout',
@@ -262,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
+  '/personalizar-rastreamento': typeof AuthenticatedPersonalizarRastreamentoRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -298,6 +306,7 @@ export interface FileRoutesByTo {
   '/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
+  '/personalizar-rastreamento': typeof AuthenticatedPersonalizarRastreamentoRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -338,6 +347,7 @@ export interface FileRoutesById {
   '/_authenticated/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
+  '/_authenticated/personalizar-rastreamento': typeof AuthenticatedPersonalizarRastreamentoRoute
   '/_authenticated/por-produto': typeof AuthenticatedPorProdutoRoute
   '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
     | '/minha-assinatura'
     | '/pedidos'
     | '/personalizar-checkout'
+    | '/personalizar-rastreamento'
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
@@ -415,6 +426,7 @@ export interface FileRouteTypes {
     | '/minha-assinatura'
     | '/pedidos'
     | '/personalizar-checkout'
+    | '/personalizar-rastreamento'
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
@@ -454,6 +466,7 @@ export interface FileRouteTypes {
     | '/_authenticated/minha-assinatura'
     | '/_authenticated/pedidos'
     | '/_authenticated/personalizar-checkout'
+    | '/_authenticated/personalizar-rastreamento'
     | '/_authenticated/por-produto'
     | '/_authenticated/precificacao'
     | '/_authenticated/produtos'
@@ -594,6 +607,13 @@ declare module '@tanstack/react-router' {
       path: '/por-produto'
       fullPath: '/por-produto'
       preLoaderRoute: typeof AuthenticatedPorProdutoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/personalizar-rastreamento': {
+      id: '/_authenticated/personalizar-rastreamento'
+      path: '/personalizar-rastreamento'
+      fullPath: '/personalizar-rastreamento'
+      preLoaderRoute: typeof AuthenticatedPersonalizarRastreamentoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/personalizar-checkout': {
@@ -793,6 +813,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMinhaAssinaturaRoute: typeof AuthenticatedMinhaAssinaturaRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedPersonalizarCheckoutRoute: typeof AuthenticatedPersonalizarCheckoutRoute
+  AuthenticatedPersonalizarRastreamentoRoute: typeof AuthenticatedPersonalizarRastreamentoRoute
   AuthenticatedPorProdutoRoute: typeof AuthenticatedPorProdutoRoute
   AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
@@ -815,6 +836,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedPersonalizarCheckoutRoute:
     AuthenticatedPersonalizarCheckoutRoute,
+  AuthenticatedPersonalizarRastreamentoRoute:
+    AuthenticatedPersonalizarRastreamentoRoute,
   AuthenticatedPorProdutoRoute: AuthenticatedPorProdutoRoute,
   AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
