@@ -38,7 +38,10 @@ type Payload = {
   last_updated_at: string | null;
   started_at: string | null;
   completed_at: string | null;
-  order: { id: string; customer: string; address: string; district: string; city: string; total: number; status: string; date: string };
+  order: {
+    id: string; customer: string; address: string; district: string; city: string; total: number; status: string; date: string;
+    items?: Array<{ productId?: string; name?: string; qty?: number; price?: number; variation?: string; color?: string; size?: string; image_url?: string | null }>;
+  };
   store: { name: string; whatsapp: string; logo_url: string | null };
   settings: {
     primary_color: string;
