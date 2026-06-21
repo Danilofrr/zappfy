@@ -858,19 +858,35 @@ function MotoboyTab({ f, up }: { f: Settings; up: <K extends keyof Settings>(k: 
           </Card>
 
           <Card title="Cabeçalho">
+            <p className="text-xs text-muted-foreground -mt-2 mb-1">
+              Faixa sólida apenas com a logo, no estilo dos apps profissionais. Os demais elementos (nome da loja, número do pedido, status) ficam no corpo da página.
+            </p>
+            <ColorField label="Cor do cabeçalho" value={f.courier_header_color} onChange={(v) => up("courier_header_color", v)} />
+            <SliderField
+              label={`Altura do cabeçalho: ${f.courier_header_height}px`}
+              min={70} max={140} step={2}
+              value={f.courier_header_height}
+              onChange={(v) => up("courier_header_height", v)}
+            />
+            <SliderField
+              label={`Tamanho da logo: ${f.courier_header_logo_size}px`}
+              min={28} max={110} step={2}
+              value={f.courier_header_logo_size}
+              onChange={(v) => up("courier_header_logo_size", v)}
+            />
             <div className="space-y-1">
-              <Label className="text-xs">Tipo de cabeçalho</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["solid","gradient"] as const).map((opt) => (
-                  <button key={opt} type="button" onClick={() => up("courier_header_style", opt)}
-                    className={`h-9 rounded-lg text-xs border transition ${f.courier_header_style === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
-                    {opt === "solid" ? "Cor sólida" : "Gradiente"}
+              <Label className="text-xs">Alinhamento da logo</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["left","center","right"] as const).map((opt) => (
+                  <button key={opt} type="button" onClick={() => up("courier_header_logo_align", opt)}
+                    className={`h-9 rounded-lg text-xs border transition ${f.courier_header_logo_align === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                    {opt === "left" ? "Esquerda" : opt === "right" ? "Direita" : "Centro"}
                   </button>
                 ))}
               </div>
             </div>
-            <ColorField label="Cor do cabeçalho" value={f.courier_header_color} onChange={(v) => up("courier_header_color", v)} />
           </Card>
+
 
           <Card title="Cores da página">
             <div className="grid grid-cols-2 gap-3">
