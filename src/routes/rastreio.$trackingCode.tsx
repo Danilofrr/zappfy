@@ -390,7 +390,7 @@ function Timeline({ status, primary, textColor }: { status: DeliveryStatus; prim
               {done && <Check className="h-3 w-3 text-white" />}
               {isCurrent && <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />}
             </span>
-            <div className={`text-sm ${filled ? "font-semibold" : "opacity-60"}`} style={filled ? { color: primary } : {}}>
+            <div className={`text-sm ${filled ? "font-semibold" : "opacity-60"}`} style={{ color: filled ? primary : textColor }}>
               {step.label}
             </div>
           </li>
