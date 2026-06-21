@@ -988,7 +988,7 @@ function MotoboyTab({ f, up, isAdmin, storeName }: { f: Settings; up: <K extends
             <Eye className="h-3.5 w-3.5" /> Pré-visualização — página do motoboy
             {f.courier_inherit_client && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary">Herdado do cliente</span>}
           </div>
-          <CourierPreview t={theme} />
+          <CourierPreview t={theme} storeName={storeName} />
         </div>
       </div>
     </div>
