@@ -323,33 +323,39 @@ function Page() {
           </Card>
 
           <Card title="Cabeçalho">
-            <div className="space-y-1">
-              <Label className="text-xs">Tipo de cabeçalho</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["solid","gradient"] as const).map((opt) => (
-                  <button key={opt} type="button" onClick={() => up("header_style", opt)}
-                    className={`h-9 rounded-lg text-xs border transition ${f.header_style === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
-                    {opt === "solid" ? "Cor sólida" : "Gradiente"}
-                  </button>
-                ))}
+            {isAdmin && (
+              <div className="space-y-1">
+                <Label className="text-xs">Tipo de cabeçalho</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["solid","gradient"] as const).map((opt) => (
+                    <button key={opt} type="button" onClick={() => up("header_style", opt)}
+                      className={`h-9 rounded-lg text-xs border transition ${f.header_style === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                      {opt === "solid" ? "Cor sólida" : "Gradiente"}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
             <ColorField label="Cor do cabeçalho" value={f.header_color} onChange={(v) => up("header_color", v)} />
-            <SliderField label={`Altura do cabeçalho: ${f.header_height}px`} min={60} max={200} step={5}
-              value={f.header_height} onChange={(v) => up("header_height", v)} />
-            <SliderField label={`Tamanho da logo: ${f.header_logo_size}px`} min={28} max={140} step={2}
-              value={f.header_logo_size} onChange={(v) => up("header_logo_size", v)} />
-            <div className="space-y-1">
-              <Label className="text-xs">Alinhamento da logo</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["left","center","right"] as const).map((opt) => (
-                  <button key={opt} type="button" onClick={() => up("header_logo_align", opt)}
-                    className={`h-9 rounded-lg text-xs border transition capitalize ${f.header_logo_align === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
-                    {opt === "left" ? "Esquerda" : opt === "right" ? "Direita" : "Centro"}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {isAdmin && (
+              <>
+                <SliderField label={`Altura do cabeçalho: ${f.header_height}px`} min={60} max={200} step={5}
+                  value={f.header_height} onChange={(v) => up("header_height", v)} />
+                <SliderField label={`Tamanho da logo: ${f.header_logo_size}px`} min={28} max={140} step={2}
+                  value={f.header_logo_size} onChange={(v) => up("header_logo_size", v)} />
+                <div className="space-y-1">
+                  <Label className="text-xs">Alinhamento da logo</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["left","center","right"] as const).map((opt) => (
+                      <button key={opt} type="button" onClick={() => up("header_logo_align", opt)}
+                        className={`h-9 rounded-lg text-xs border transition capitalize ${f.header_logo_align === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                        {opt === "left" ? "Esquerda" : opt === "right" ? "Direita" : "Centro"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
 
           <Card title="Cores da página">
