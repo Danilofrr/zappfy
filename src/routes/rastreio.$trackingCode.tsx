@@ -287,32 +287,7 @@ function RastreioPage() {
           )}
         </section>
 
-        {!isFinished && destination && (
-          <section className="rounded-2xl overflow-hidden" style={cs}>
-            <TrackingMap
-              courier={courierPos}
-              destination={destination}
-              heading={data.heading}
-              primaryColor={s.primary_color}
-              vehicle={{ type: s.vehicle_type, color: s.vehicle_color, customUrl: s.vehicle_custom_url }}
-              pin={{ color: s.pin_color, customUrl: s.pin_custom_url }}
-              height={320}
-            />
-            <div className="flex items-center justify-center gap-5 px-4 py-3 text-xs" style={{ color: s.text_color }}>
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden>🛵</span>
-                <span className="font-medium">Entregador</span>
-                {!courierPos && <span className="opacity-60">(aguardando)</span>}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden>📍</span>
-                <span className="font-medium">Destino</span>
-              </span>
-            </div>
-          </section>
-        )}
-
-        {!isFinished && (displayStatus === "saiu_para_entrega" || displayStatus === "chegando") && (
+        {displayStatus !== "cancelado" && (
           <section className="grid grid-cols-2 gap-3">
             {s.show_distance && (
               <InfoCard color={s.primary_color} style={cs} label="Distância" value={distance != null ? formatDistance(distance) : "—"} />
@@ -324,6 +299,43 @@ function RastreioPage() {
             {s.show_courier_name && data.courier.name && (
               <InfoCard color={s.primary_color} style={cs} label="Entregador" value={data.courier.name} />
             )}
+          </section>
+        )}
+
+        {displayStatus !== "cancelado" && (
+          <section className="rounded-2xl overflow-hidden relative" style={cs}>
+            <div className="relative">
+              <TrackingMap
+                courier={courierPos}
+                destination={destination}
+                heading={data.heading}
+                primaryColor={s.primary_color}
+                vehicle={{ type: s.vehicle_type, color: s.vehicle_color, customUrl: s.vehicle_custom_url }}
+                pin={{ color: s.pin_color, customUrl: s.pin_custom_url }}
+                height={320}
+              />
+              {!courierPos && !isFinished && (
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur" style={{ background: hexWithAlpha(s.card_color || "#0f172a", 0.92), color: s.text_color, border: `1px solid ${hexWithAlpha(s.primary_color, 0.4)}` }}>
+                  <Loader2 className="inline h-3 w-3 mr-1.5 animate-spin" />
+                  Aguardando localização do entregador...
+                </div>
+              )}
+              {isFinished && (
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg" style={{ background: "#10b981", color: "#fff" }}>
+                  ✓ Pedido entregue
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-center gap-5 px-4 py-3 text-xs" style={{ color: s.text_color }}>
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden>🛵</span>
+                <span className="font-medium">Entregador</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden>📍</span>
+                <span className="font-medium">Destino</span>
+              </span>
+            </div>
           </section>
         )}
 
