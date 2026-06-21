@@ -423,7 +423,7 @@ function Page() {
 
           <Card title="Mensagens por status">
             <Field label="📦 Pedido Recebido"><Textarea rows={2} value={f.msg_aguardando} onChange={(e) => up("msg_aguardando", e.target.value)} /></Field>
-            <Field label="👨‍🍳 Preparando Pedido"><Textarea rows={2} value={f.msg_preparando} onChange={(e) => up("msg_preparando", e.target.value)} /></Field>
+            <Field label="📦 Separando Pedido"><Textarea rows={2} value={f.msg_preparando} onChange={(e) => up("msg_preparando", e.target.value)} /></Field>
             <Field label="🛵 Saiu para Entrega"><Textarea rows={2} value={f.msg_saiu} onChange={(e) => up("msg_saiu", e.target.value)} /></Field>
             <Field label="📍 Chegando"><Textarea rows={2} value={f.msg_chegando} onChange={(e) => up("msg_chegando", e.target.value)} /></Field>
             <Field label="✅ Entregue"><Textarea rows={2} value={f.msg_entregue} onChange={(e) => up("msg_entregue", e.target.value)} /></Field>
