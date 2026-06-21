@@ -21,6 +21,7 @@ import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
 import { Route as AtivarContaTokenRouteImport } from './routes/ativar-conta.$token'
 import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
+import { Route as AuthenticatedRastreamentoRouteImport } from './routes/_authenticated/rastreamento'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
 import { Route as AuthenticatedPorProdutoRouteImport } from './routes/_authenticated/por-produto'
@@ -107,6 +108,12 @@ const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
   path: '/relatorios',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRastreamentoRoute =
+  AuthenticatedRastreamentoRouteImport.update({
+    id: '/rastreamento',
+    path: '/rastreamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
@@ -273,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
+  '/rastreamento': typeof AuthenticatedRastreamentoRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
@@ -310,6 +318,7 @@ export interface FileRoutesByTo {
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
+  '/rastreamento': typeof AuthenticatedRastreamentoRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
@@ -351,6 +360,7 @@ export interface FileRoutesById {
   '/_authenticated/por-produto': typeof AuthenticatedPorProdutoRoute
   '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
+  '/_authenticated/rastreamento': typeof AuthenticatedRastreamentoRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
+    | '/rastreamento'
     | '/relatorios'
     | '/trocas'
     | '/ativar-conta/$token'
@@ -430,6 +441,7 @@ export interface FileRouteTypes {
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
+    | '/rastreamento'
     | '/relatorios'
     | '/trocas'
     | '/ativar-conta/$token'
@@ -470,6 +482,7 @@ export interface FileRouteTypes {
     | '/_authenticated/por-produto'
     | '/_authenticated/precificacao'
     | '/_authenticated/produtos'
+    | '/_authenticated/rastreamento'
     | '/_authenticated/relatorios'
     | '/_authenticated/trocas'
     | '/ativar-conta/$token'
@@ -586,6 +599,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios'
       fullPath: '/relatorios'
       preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rastreamento': {
+      id: '/_authenticated/rastreamento'
+      path: '/rastreamento'
+      fullPath: '/rastreamento'
+      preLoaderRoute: typeof AuthenticatedRastreamentoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/produtos': {
@@ -817,6 +837,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPorProdutoRoute: typeof AuthenticatedPorProdutoRoute
   AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
+  AuthenticatedRastreamentoRoute: typeof AuthenticatedRastreamentoRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedTrocasRoute: typeof AuthenticatedTrocasRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -841,6 +862,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPorProdutoRoute: AuthenticatedPorProdutoRoute,
   AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
+  AuthenticatedRastreamentoRoute: AuthenticatedRastreamentoRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedTrocasRoute: AuthenticatedTrocasRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

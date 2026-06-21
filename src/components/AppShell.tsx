@@ -19,6 +19,7 @@ import {
   Target,
   Calculator,
   Palette,
+  MapPin,
 
 
 
@@ -34,6 +35,7 @@ const navGroups: { label: string; items: { to: string; label: string; icon: any 
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard },
       { to: "/pedidos", label: "Pedidos", icon: ShoppingCart },
+      { to: "/rastreamento", label: "Rastreamento", icon: MapPin },
       { to: "/produtos", label: "Estoque", icon: Boxes },
       { to: "/compras", label: "Compras", icon: Truck },
       { to: "/trocas", label: "Trocas & Devoluções", icon: RotateCcw },
