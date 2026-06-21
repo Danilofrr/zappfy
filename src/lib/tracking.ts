@@ -1,6 +1,6 @@
 // Helpers for the delivery tracking module
 import type { LucideIcon } from "lucide-react";
-import { Package, UtensilsCrossed, Bike, MapPin, CheckCircle2, XCircle } from "lucide-react";
+import { Package, Bike, MapPin, CheckCircle2, XCircle } from "lucide-react";
 
 export type DeliveryStatus =
   | "preparando"
