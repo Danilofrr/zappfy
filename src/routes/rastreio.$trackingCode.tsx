@@ -153,6 +153,9 @@ function RastreioPage() {
       return;
     }
     if (destination) return;
+    // Do not retry geocoding if the merchant or a previous attempt already failed —
+    // they need to set the destination manually from the dashboard.
+    if (data.delivery_geocoding_status === "failed") return;
     const fullAddress = [data.order?.address, data.order?.district, data.order?.city].filter(Boolean).join(", ");
     if (!fullAddress) return;
     const ctrl = new AbortController();
@@ -166,7 +169,10 @@ function RastreioPage() {
           const lat = parseFloat(arr[0].lat);
           const lng = parseFloat(arr[0].lon);
           setDestination({ lat, lng });
-          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: lat, _lng: lng }).then(() => {});
+          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: lat, _lng: lng, _address: fullAddress, _status: "success" }).then(() => {});
+        } else {
+          // record the failure so the merchant sees the alert
+          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: null, _lng: null, _address: fullAddress, _status: "failed" }).then(() => {});
         }
       })
       .catch(() => {});
