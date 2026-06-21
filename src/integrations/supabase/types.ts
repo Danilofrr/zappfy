@@ -256,6 +256,21 @@ export type Database = {
           card_radius: number
           card_shadow: string
           card_shadow_color: string
+          courier_background_color: string | null
+          courier_button_color: string | null
+          courier_card_border_color: string | null
+          courier_card_color: string | null
+          courier_card_shadow_color: string | null
+          courier_footer_text: string | null
+          courier_header_color: string | null
+          courier_header_style: string | null
+          courier_icon_color: string | null
+          courier_inherit_client: boolean | null
+          courier_logo_url: string | null
+          courier_primary_color: string | null
+          courier_secondary_color: string | null
+          courier_text_color: string | null
+          courier_title_color: string | null
           created_at: string
           delivered_message: string | null
           header_color: string
@@ -306,6 +321,21 @@ export type Database = {
           card_radius?: number
           card_shadow?: string
           card_shadow_color?: string
+          courier_background_color?: string | null
+          courier_button_color?: string | null
+          courier_card_border_color?: string | null
+          courier_card_color?: string | null
+          courier_card_shadow_color?: string | null
+          courier_footer_text?: string | null
+          courier_header_color?: string | null
+          courier_header_style?: string | null
+          courier_icon_color?: string | null
+          courier_inherit_client?: boolean | null
+          courier_logo_url?: string | null
+          courier_primary_color?: string | null
+          courier_secondary_color?: string | null
+          courier_text_color?: string | null
+          courier_title_color?: string | null
           created_at?: string
           delivered_message?: string | null
           header_color?: string
@@ -356,6 +386,21 @@ export type Database = {
           card_radius?: number
           card_shadow?: string
           card_shadow_color?: string
+          courier_background_color?: string | null
+          courier_button_color?: string | null
+          courier_card_border_color?: string | null
+          courier_card_color?: string | null
+          courier_card_shadow_color?: string | null
+          courier_footer_text?: string | null
+          courier_header_color?: string | null
+          courier_header_style?: string | null
+          courier_icon_color?: string | null
+          courier_inherit_client?: boolean | null
+          courier_logo_url?: string | null
+          courier_primary_color?: string | null
+          courier_secondary_color?: string | null
+          courier_text_color?: string | null
+          courier_title_color?: string | null
           created_at?: string
           delivered_message?: string | null
           header_color?: string
