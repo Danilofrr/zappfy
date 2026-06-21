@@ -288,7 +288,6 @@ function Page() {
     toast.success("Tema Oficial Zappfy aplicado. Salve para confirmar.");
   }
 
-  return (
   const Shell = isAdmin ? AdminShell : AppShell;
   return (
     <Shell
