@@ -668,7 +668,7 @@ function Preview({ f }: { f: Settings }) {
         </div>
         <div className="p-4 flex items-center justify-around" style={cs}>
           <div className="flex flex-col items-center gap-1">
-            <VehicleSwatch type={f.vehicle_type} color={f.vehicle_color} />
+            <VehicleSwatch type={f.vehicle_type} color={f.vehicle_color} customUrl={f.vehicle_custom_url} size={64} />
             <span className="text-[10px] opacity-70">Entregador</span>
           </div>
           <div className="opacity-40 text-2xl">→</div>
