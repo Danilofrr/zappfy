@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Save, Loader2, Eye, MapPin, Bike, Phone, Navigation, CheckCircle2, Truck, User, Sparkles } from "lucide-react";
+import { Save, Loader2, Eye, MapPin, Bike, Phone, Navigation, CheckCircle2, Truck, User } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -246,10 +246,25 @@ function Page() {
     const { error } = await supabase
       .from("delivery_tracking_settings")
       .upsert(payload, { onConflict: "store_id" });
+    if (error) { setSaving(false); toast.error(error.message); return; }
+
+    // Admin Master: persistir como tema padrão para novos cadastros
+    if (isAdmin) {
+      const { error: adminErr } = await supabase
+        .from("admin_settings")
+        .upsert({ key: "tracking_default_theme", value: payload as any }, { onConflict: "key" });
+      if (adminErr) {
+        setSaving(false);
+        toast.error("Salvo, mas falhou ao definir como padrão: " + adminErr.message);
+        return;
+      }
+      toast.success("Salvo! Esse design será o padrão para todos os novos clientes.");
+    } else {
+      toast.success("Personalização salva!");
+    }
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Personalização salva!");
   }
+
 
   function up<K extends keyof Settings>(key: K, value: Settings[K]) { setF((p) => ({ ...p, [key]: value })); }
 
@@ -282,28 +297,18 @@ function Page() {
 
   const effective: Settings = useSeparateCard ? f : { ...f, card_color: f.background_color };
 
-  function applyZappfyTheme() {
-    setF(ZAPPFY_THEME);
-    setUseSeparateCard(ZAPPFY_THEME.card_color.trim().toLowerCase() !== ZAPPFY_THEME.background_color.trim().toLowerCase());
-    toast.success("Tema Oficial Zappfy aplicado. Salve para confirmar.");
-  }
-
   const Shell = isAdmin ? AdminShell : AppShell;
   return (
     <Shell
       title="Página de Rastreamento"
-      subtitle={isAdmin ? "Admin Master — controle total da personalização" : "Personalize a página que seu cliente acompanha"}
+      subtitle={isAdmin ? "Admin Master — o que você salvar aqui vira o padrão de todos os novos clientes" : "Personalize a página que seu cliente acompanha"}
       actions={
         <div className="flex items-center gap-2">
-          {isAdmin && (
-            <Button variant="outline" onClick={applyZappfyTheme}>
-              <Sparkles className="h-4 w-4 mr-1" /> Aplicar Tema Oficial Zappfy
-            </Button>
-          )}
           <Button onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />} Salvar</Button>
         </div>
       }
     >
+
       <Tabs defaultValue="cliente" className="space-y-4">
         <TabsList className="h-11 p-1 bg-card border border-border w-full sm:w-auto">
           <TabsTrigger value="cliente" className="gap-2 h-9 px-4"><User className="h-4 w-4" /> Rastreamento Cliente</TabsTrigger>

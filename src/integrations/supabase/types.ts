@@ -1350,6 +1350,10 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      apply_tracking_default_for_user: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       get_courier_view: { Args: { _token: string }; Returns: Json }
       get_tracking_public: { Args: { _code: string }; Returns: Json }
       has_role: {
