@@ -269,9 +269,15 @@ function Page() {
   return (
     <AppShell
       title="Página de Rastreamento"
-      subtitle="Personalize cores, textos, ícones e o que aparece para o cliente"
+      subtitle="Personalize a experiência do cliente e do motoboy"
       actions={<Button onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />} Salvar</Button>}
     >
+      <Tabs defaultValue="cliente" className="space-y-4">
+        <TabsList className="h-11 p-1 bg-card border border-border w-full sm:w-auto">
+          <TabsTrigger value="cliente" className="gap-2 h-9 px-4"><User className="h-4 w-4" /> Rastreamento Cliente</TabsTrigger>
+          <TabsTrigger value="motoboy" className="gap-2 h-9 px-4"><Truck className="h-4 w-4" /> Rastreamento Motoboy</TabsTrigger>
+        </TabsList>
+        <TabsContent value="cliente" className="mt-4">
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-6">
           <Card title="Identidade visual">
