@@ -32,6 +32,7 @@ type Payload = {
   longitude: number | null;
   delivery_latitude: number | null;
   delivery_longitude: number | null;
+  delivery_geocoding_status: string | null;
   heading: number | null;
   speed: number | null;
   last_updated_at: string | null;
@@ -153,6 +154,9 @@ function RastreioPage() {
       return;
     }
     if (destination) return;
+    // Do not retry geocoding if the merchant or a previous attempt already failed —
+    // they need to set the destination manually from the dashboard.
+    if (data.delivery_geocoding_status === "failed") return;
     const fullAddress = [data.order?.address, data.order?.district, data.order?.city].filter(Boolean).join(", ");
     if (!fullAddress) return;
     const ctrl = new AbortController();
@@ -166,7 +170,10 @@ function RastreioPage() {
           const lat = parseFloat(arr[0].lat);
           const lng = parseFloat(arr[0].lon);
           setDestination({ lat, lng });
-          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: lat, _lng: lng }).then(() => {});
+          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: lat, _lng: lng, _address: fullAddress, _status: "success" }).then(() => {});
+        } else {
+          // record the failure so the merchant sees the alert
+          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: null as unknown as number, _lng: null as unknown as number, _address: fullAddress, _status: "failed" }).then(() => {});
         }
       })
       .catch(() => {});
@@ -322,8 +329,8 @@ function RastreioPage() {
                 </div>
               )}
               {!destination && !isFinished && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur" style={{ background: hexWithAlpha(s.card_color || "#0f172a", 0.92), color: s.text_color, border: `1px solid ${hexWithAlpha("#f59e0b", 0.6)}` }}>
-                  📍 Destino ainda não localizado no mapa
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur text-center max-w-[90%]" style={{ background: hexWithAlpha(s.card_color || "#0f172a", 0.92), color: s.text_color, border: `1px solid ${hexWithAlpha("#f59e0b", 0.6)}` }}>
+                  📍 Destino ainda não localizado. A loja pode ajustar o ponto de entrega.
                 </div>
               )}
               {isFinished && (

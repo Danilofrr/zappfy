@@ -173,6 +173,8 @@ export type Database = {
           courier_token: string
           created_at: string
           customer_view_count: number
+          delivery_geocoded_address: string | null
+          delivery_geocoding_status: string
           delivery_latitude: number | null
           delivery_longitude: number | null
           estimated_arrival: string | null
@@ -198,6 +200,8 @@ export type Database = {
           courier_token: string
           created_at?: string
           customer_view_count?: number
+          delivery_geocoded_address?: string | null
+          delivery_geocoding_status?: string
           delivery_latitude?: number | null
           delivery_longitude?: number | null
           estimated_arrival?: string | null
@@ -223,6 +227,8 @@ export type Database = {
           courier_token?: string
           created_at?: string
           customer_view_count?: number
+          delivery_geocoded_address?: string | null
+          delivery_geocoding_status?: string
           delivery_latitude?: number | null
           delivery_longitude?: number | null
           estimated_arrival?: string | null
@@ -1348,10 +1354,21 @@ export type Database = {
         Returns: boolean
       }
       increment_tracking_view: { Args: { _code: string }; Returns: undefined }
-      set_tracking_destination: {
-        Args: { _code: string; _lat: number; _lng: number }
-        Returns: boolean
-      }
+      set_tracking_destination:
+        | {
+            Args: { _code: string; _lat: number; _lng: number }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              _address?: string
+              _code: string
+              _lat: number
+              _lng: number
+              _status?: string
+            }
+            Returns: boolean
+          }
       submit_public_order: {
         Args: {
           _address: string

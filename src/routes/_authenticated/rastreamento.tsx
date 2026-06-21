@@ -151,7 +151,11 @@ function RastreamentoPage() {
                   </button>
                   {isOpen && (
                     <div className="border-t border-border bg-secondary/10 p-4">
-                      <DeliveryTrackingPanel orderId={o.id} customerPhone={o.phone} />
+                      <DeliveryTrackingPanel
+                        orderId={o.id}
+                        customerPhone={o.phone}
+                        orderAddress={[o.address, o.district, o.city].filter(Boolean).join(", ")}
+                      />
                     </div>
                   )}
                 </div>
