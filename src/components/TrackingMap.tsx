@@ -1,40 +1,65 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { PIN_COLORS, VEHICLE_COLORS, vehicleSvgPath } from "@/lib/tracking";
 
 export type LatLng = { lat: number; lng: number };
+
+export type VehicleConfig = {
+  type?: "moto" | "carro";
+  color?: string; // key in VEHICLE_COLORS
+  customUrl?: string | null;
+};
+
+export type PinConfig = {
+  color?: string; // key in PIN_COLORS
+  customUrl?: string | null;
+};
 
 type Props = {
   courier: LatLng | null;
   destination?: LatLng | null;
   heading?: number | null;
   primaryColor?: string;
+  vehicle?: VehicleConfig;
+  pin?: PinConfig;
   className?: string;
   height?: number | string;
   follow?: boolean;
 };
 
-function makeBikeIcon(color: string, heading: number | null | undefined) {
+function makeVehicleIcon(vehicle: VehicleConfig | undefined, fallbackColor: string, heading: number | null | undefined) {
   const rot = typeof heading === "number" && !Number.isNaN(heading) ? heading : 0;
-  const html = `
-    <div style="transform: rotate(${rot}deg); transform-origin: center;">
+  const type = (vehicle?.type ?? "moto") as "moto" | "carro";
+  const color = vehicle?.color ? (VEHICLE_COLORS[vehicle.color] ?? fallbackColor) : fallbackColor;
+
+  let inner: string;
+  if (vehicle?.customUrl) {
+    inner = `<img src="${vehicle.customUrl}" style="width:36px;height:36px;object-fit:contain;" alt="" />`;
+  } else {
+    inner = `
       <div style="width:46px;height:46px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px ${color}aa, 0 0 0 4px ${color}33;">
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="white" xmlns="http://www.w3.org/2000/svg">
-          <path d="M5 18a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm14 0a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM14.12 4l1.42 2H19l-1 2h-3.34l1 2H17l2 4h-2a4.99 4.99 0 0 0-3.46 1.4l-2.04-4.08L13.6 9l-2.6-2.6L8 9H5V7h2.59L11 3.59 14.12 4Z"/>
+        <svg viewBox="0 0 24 24" width="26" height="26" xmlns="http://www.w3.org/2000/svg">
+          ${vehicleSvgPath(type)}
         </svg>
-      </div>
-    </div>`;
-  return L.divIcon({ html, className: "tracking-bike-icon", iconSize: [46, 46], iconAnchor: [23, 23] });
+      </div>`;
+  }
+  const html = `<div style="transform: rotate(${rot}deg); transform-origin: center; display:flex;align-items:center;justify-content:center;">${inner}</div>`;
+  return L.divIcon({ html, className: "tracking-vehicle-icon", iconSize: [46, 46], iconAnchor: [23, 23] });
 }
 
-function makePinIcon(color: string) {
-  const html = `
-    <div style="width:30px;height:38px;position:relative;">
+function makePinIcon(pin: PinConfig | undefined, fallbackColor: string) {
+  const color = pin?.color ? (PIN_COLORS[pin.color] ?? fallbackColor) : fallbackColor;
+  let html: string;
+  if (pin?.customUrl) {
+    html = `<img src="${pin.customUrl}" style="width:36px;height:42px;object-fit:contain;" alt="" />`;
+  } else {
+    html = `
       <svg viewBox="0 0 24 32" width="30" height="38" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 0C5.4 0 0 5.3 0 11.8 0 21 12 32 12 32s12-11 12-20.2C24 5.3 18.6 0 12 0Z" fill="${color}"/>
         <circle cx="12" cy="11.5" r="4.5" fill="white"/>
-      </svg>
-    </div>`;
+      </svg>`;
+  }
   return L.divIcon({ html, className: "tracking-pin-icon", iconSize: [30, 38], iconAnchor: [15, 36] });
 }
 
@@ -43,6 +68,8 @@ export function TrackingMap({
   destination,
   heading,
   primaryColor = "#10b981",
+  vehicle,
+  pin,
   className,
   height = 320,
   follow = true,
@@ -52,6 +79,8 @@ export function TrackingMap({
   const courierMarkerRef = useRef<L.Marker | null>(null);
   const destMarkerRef = useRef<L.Marker | null>(null);
   const routeLineRef = useRef<L.Polyline | null>(null);
+  const animRef = useRef<number | null>(null);
+  const lastPosRef = useRef<LatLng | null>(null);
 
   // init map once
   useEffect(() => {
@@ -69,6 +98,7 @@ export function TrackingMap({
     }).addTo(map);
     mapRef.current = map;
     return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
       map.remove();
       mapRef.current = null;
       courierMarkerRef.current = null;
@@ -78,17 +108,44 @@ export function TrackingMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // courier marker
+  // animate courier marker smoothly between positions
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !courier) return;
-    const icon = makeBikeIcon(primaryColor, heading ?? null);
+    const icon = makeVehicleIcon(vehicle, primaryColor, heading ?? null);
+
     if (!courierMarkerRef.current) {
       courierMarkerRef.current = L.marker([courier.lat, courier.lng], { icon }).addTo(map);
+      lastPosRef.current = { ...courier };
     } else {
-      courierMarkerRef.current.setLatLng([courier.lat, courier.lng]);
       courierMarkerRef.current.setIcon(icon);
+      const from = lastPosRef.current ?? courier;
+      const to = courier;
+      const sameSpot = Math.abs(from.lat - to.lat) < 1e-7 && Math.abs(from.lng - to.lng) < 1e-7;
+      if (sameSpot) {
+        courierMarkerRef.current.setLatLng([to.lat, to.lng]);
+      } else {
+        if (animRef.current) cancelAnimationFrame(animRef.current);
+        const start = performance.now();
+        const duration = 1200;
+        const step = (t: number) => {
+          const k = Math.min(1, (t - start) / duration);
+          const ease = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+          const lat = from.lat + (to.lat - from.lat) * ease;
+          const lng = from.lng + (to.lng - from.lng) * ease;
+          courierMarkerRef.current?.setLatLng([lat, lng]);
+          if (k < 1) {
+            animRef.current = requestAnimationFrame(step);
+          } else {
+            lastPosRef.current = { ...to };
+            animRef.current = null;
+          }
+        };
+        animRef.current = requestAnimationFrame(step);
+      }
+      lastPosRef.current = { ...to };
     }
+
     if (follow) {
       if (destination) {
         const bounds = L.latLngBounds([
@@ -100,24 +157,25 @@ export function TrackingMap({
         map.panTo([courier.lat, courier.lng], { animate: true });
       }
     }
-  }, [courier?.lat, courier?.lng, heading, primaryColor, follow, destination?.lat, destination?.lng]);
+  }, [courier?.lat, courier?.lng, heading, primaryColor, follow, destination?.lat, destination?.lng, vehicle?.type, vehicle?.color, vehicle?.customUrl]);
 
   // destination marker
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     if (destination) {
-      const icon = makePinIcon(primaryColor);
+      const icon = makePinIcon(pin, primaryColor);
       if (!destMarkerRef.current) {
         destMarkerRef.current = L.marker([destination.lat, destination.lng], { icon }).addTo(map);
       } else {
         destMarkerRef.current.setLatLng([destination.lat, destination.lng]);
+        destMarkerRef.current.setIcon(icon);
       }
     } else if (destMarkerRef.current) {
       destMarkerRef.current.remove();
       destMarkerRef.current = null;
     }
-  }, [destination?.lat, destination?.lng, primaryColor]);
+  }, [destination?.lat, destination?.lng, primaryColor, pin?.color, pin?.customUrl]);
 
   // route line
   useEffect(() => {

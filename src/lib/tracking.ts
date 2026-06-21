@@ -8,55 +8,123 @@ export type DeliveryStatus =
   | "entregue"
   | "cancelado";
 
-export const STATUS_INFO: Record<DeliveryStatus, { label: string; message: string; color: string; bg: string }> = {
-  preparando: {
-    label: "Preparando",
-    message: "Seu pedido está sendo preparado com carinho.",
-    color: "text-amber-400",
-    bg: "bg-amber-500/15",
-  },
+export const STATUS_INFO: Record<DeliveryStatus, { label: string; message: string; color: string; bg: string; emoji: string }> = {
   aguardando_motoboy: {
-    label: "Aguardando entregador",
-    message: "Estamos aguardando o entregador chegar para retirar seu pedido.",
-    color: "text-blue-400",
-    bg: "bg-blue-500/15",
+    label: "Pedido Recebido",
+    message: "Recebemos seu pedido e já estamos preparando tudo.",
+    color: "text-yellow-400",
+    bg: "bg-yellow-500/15",
+    emoji: "🟡",
+  },
+  preparando: {
+    label: "Preparando Pedido",
+    message: "Seu pedido está sendo preparado com carinho.",
+    color: "text-orange-400",
+    bg: "bg-orange-500/15",
+    emoji: "🟠",
   },
   saiu_para_entrega: {
-    label: "Saiu para entrega",
-    message: "Seu pedido saiu para entrega! Acompanhe em tempo real.",
+    label: "Saiu para Entrega",
+    message: "Seu pedido já saiu para entrega e está a caminho.",
     color: "text-emerald-400",
     bg: "bg-emerald-500/15",
+    emoji: "🛵",
   },
   chegando: {
-    label: "Chegando!",
-    message: "O entregador está chegando até você. Fique atento!",
+    label: "Chegando",
+    message: "Seu entregador está próximo do destino.",
     color: "text-purple-400",
     bg: "bg-purple-500/15",
+    emoji: "📍",
   },
   entregue: {
     label: "Entregue",
-    message: "Pedido entregue com sucesso. Obrigado pela preferência!",
+    message: "Pedido entregue com sucesso. Obrigado pela preferência.",
     color: "text-emerald-500",
     bg: "bg-emerald-500/20",
+    emoji: "✅",
   },
   cancelado: {
     label: "Cancelado",
-    message: "Este rastreamento foi cancelado.",
+    message: "Este pedido foi cancelado.",
     color: "text-destructive",
     bg: "bg-destructive/15",
+    emoji: "❌",
   },
 };
 
 export const TIMELINE_STEPS: { key: DeliveryStatus; label: string }[] = [
-  { key: "aguardando_motoboy", label: "Pedido confirmado" },
-  { key: "preparando", label: "Preparando" },
-  { key: "saiu_para_entrega", label: "Saiu para entrega" },
+  { key: "aguardando_motoboy", label: "Pedido Recebido" },
+  { key: "preparando", label: "Preparando Pedido" },
+  { key: "saiu_para_entrega", label: "Saiu para Entrega" },
   { key: "chegando", label: "Chegando" },
   { key: "entregue", label: "Entregue" },
 ];
 
+// Map common Portuguese order.status strings to a DeliveryStatus for the public page
+export function deriveDisplayStatus(
+  trackingStatus: DeliveryStatus,
+  orderStatus?: string | null,
+): DeliveryStatus {
+  // Once tracking is moving, tracking wins
+  if (["saiu_para_entrega", "chegando", "entregue", "cancelado"].includes(trackingStatus)) {
+    return trackingStatus;
+  }
+  const s = (orderStatus || "").toLowerCase();
+  if (s === "entregue") return "entregue";
+  if (s === "cancelado" || s === "cancelada") return "cancelado";
+  if (s === "saiu" || s === "saiu_para_entrega" || s === "em_entrega") return "saiu_para_entrega";
+  if (s === "preparando" || s === "em_preparo" || s === "producao") return "preparando";
+  if (s === "aguardando" || s === "novo" || s === "pendente" || s === "recebido") return "aguardando_motoboy";
+  return trackingStatus;
+}
+
+// ---------- Map icon catalog ----------
+export const VEHICLE_COLORS: Record<string, string> = {
+  verde: "#10b981",
+  vermelho: "#ef4444",
+  azul: "#3b82f6",
+  preto: "#111827",
+  laranja: "#f97316",
+};
+
+export const PIN_COLORS: Record<string, string> = {
+  verde: "#10b981",
+  vermelho: "#ef4444",
+  azul: "#3b82f6",
+  preto: "#111827",
+  laranja: "#f97316",
+};
+
+export const VEHICLE_OPTIONS = [
+  { type: "moto", color: "verde", label: "Moto Verde" },
+  { type: "moto", color: "vermelho", label: "Moto Vermelha" },
+  { type: "moto", color: "azul", label: "Moto Azul" },
+  { type: "moto", color: "preto", label: "Moto Preta" },
+  { type: "moto", color: "laranja", label: "Moto Laranja" },
+  { type: "carro", color: "verde", label: "Carro Verde" },
+  { type: "carro", color: "vermelho", label: "Carro Vermelho" },
+  { type: "carro", color: "azul", label: "Carro Azul" },
+  { type: "carro", color: "preto", label: "Carro Preto" },
+] as const;
+
+export const PIN_OPTIONS = [
+  { color: "verde", label: "Pino Verde" },
+  { color: "vermelho", label: "Pino Vermelho" },
+  { color: "azul", label: "Pino Azul" },
+  { color: "preto", label: "Pino Preto" },
+  { color: "laranja", label: "Pino Laranja" },
+] as const;
+
+export function vehicleSvgPath(type: "moto" | "carro"): string {
+  if (type === "carro") {
+    return `<path d="M5 16a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm14 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm-1.5-9h-11l-2 5h15l-2-5Zm3.5 5-2-5.5A2 2 0 0 0 17.1 5H6.9a2 2 0 0 0-1.9 1.5L3 12v5a1 1 0 0 0 1 1h2v-1h12v1h2a1 1 0 0 0 1-1v-5Z" fill="white"/>`;
+  }
+  // moto
+  return `<path d="M5 18a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm14 0a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM14.12 4l1.42 2H19l-1 2h-3.34l1 2H17l2 4h-2a4.99 4.99 0 0 0-3.46 1.4l-2.04-4.08L13.6 9l-2.6-2.6L8 9H5V7h2.59L11 3.59 14.12 4Z" fill="white"/>`;
+}
+
 export function generateToken(prefix = ""): string {
-  // 12-char base36 (uniqueness enforced by DB UNIQUE)
   const a = Math.random().toString(36).slice(2, 10);
   const b = Date.now().toString(36).slice(-4);
   return `${prefix}${a}${b}`;
@@ -73,7 +141,6 @@ export function orderShortNumber(orderId: string): string {
   return orderId.slice(0, 8).toUpperCase();
 }
 
-// Haversine distance in meters between two points
 export function distanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -124,6 +191,6 @@ export function googleMapsRouteUrl(address: string): string {
 
 export function etaMinutes(distanceM: number, speedMps: number | null | undefined): number | null {
   if (!Number.isFinite(distanceM) || distanceM <= 0) return null;
-  const effective = speedMps && speedMps > 1 ? speedMps : 6; // ~22 km/h default
+  const effective = speedMps && speedMps > 1 ? speedMps : 6;
   return Math.max(1, Math.round(distanceM / effective / 60));
 }

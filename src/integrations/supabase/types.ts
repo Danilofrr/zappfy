@@ -248,10 +248,19 @@ export type Database = {
         Row: {
           background_color: string | null
           button_color: string | null
+          card_color: string
           created_at: string
           delivered_message: string | null
           id: string
           logo_url: string | null
+          msg_aguardando: string
+          msg_cancelado: string
+          msg_chegando: string
+          msg_entregue: string
+          msg_preparando: string
+          msg_saiu: string
+          pin_color: string
+          pin_custom_url: string | null
           primary_color: string | null
           secondary_color: string | null
           show_courier_name: boolean
@@ -262,18 +271,31 @@ export type Database = {
           store_id: string
           support_whatsapp: string | null
           text_color: string | null
+          timeline_color: string
           tracking_page_subtitle: string | null
           tracking_page_title: string | null
           updated_at: string
+          vehicle_color: string
+          vehicle_custom_url: string | null
+          vehicle_type: string
           welcome_message: string | null
         }
         Insert: {
           background_color?: string | null
           button_color?: string | null
+          card_color?: string
           created_at?: string
           delivered_message?: string | null
           id?: string
           logo_url?: string | null
+          msg_aguardando?: string
+          msg_cancelado?: string
+          msg_chegando?: string
+          msg_entregue?: string
+          msg_preparando?: string
+          msg_saiu?: string
+          pin_color?: string
+          pin_custom_url?: string | null
           primary_color?: string | null
           secondary_color?: string | null
           show_courier_name?: boolean
@@ -284,18 +306,31 @@ export type Database = {
           store_id: string
           support_whatsapp?: string | null
           text_color?: string | null
+          timeline_color?: string
           tracking_page_subtitle?: string | null
           tracking_page_title?: string | null
           updated_at?: string
+          vehicle_color?: string
+          vehicle_custom_url?: string | null
+          vehicle_type?: string
           welcome_message?: string | null
         }
         Update: {
           background_color?: string | null
           button_color?: string | null
+          card_color?: string
           created_at?: string
           delivered_message?: string | null
           id?: string
           logo_url?: string | null
+          msg_aguardando?: string
+          msg_cancelado?: string
+          msg_chegando?: string
+          msg_entregue?: string
+          msg_preparando?: string
+          msg_saiu?: string
+          pin_color?: string
+          pin_custom_url?: string | null
           primary_color?: string | null
           secondary_color?: string | null
           show_courier_name?: boolean
@@ -306,9 +341,13 @@ export type Database = {
           store_id?: string
           support_whatsapp?: string | null
           text_color?: string | null
+          timeline_color?: string
           tracking_page_subtitle?: string | null
           tracking_page_title?: string | null
           updated_at?: string
+          vehicle_color?: string
+          vehicle_custom_url?: string | null
+          vehicle_type?: string
           welcome_message?: string | null
         }
         Relationships: []
