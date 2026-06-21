@@ -568,15 +568,25 @@ function Preview({ f }: { f: Settings }) {
         minHeight: 560,
       }}
     >
-      <div className="px-5 pt-6 pb-5 text-center" style={{ background: `linear-gradient(180deg, ${hexWithAlpha(f.secondary_color, 0.5)}, transparent)` }}>
-        {f.show_store_logo && f.logo_url && <img src={f.logo_url} alt="logo" className="h-12 w-auto mx-auto mb-2 object-contain" />}
-        <div className="text-base font-bold" style={{ color: f.title_color }}>{f.tracking_page_title}</div>
-        <div className="text-xs opacity-70">{f.tracking_page_subtitle}</div>
-        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-          style={{ background: badge.bg, color: badge.text, border: `1px solid ${badge.border}` }}>
+      <div
+        className="relative px-5 pt-8 pb-10 text-center overflow-hidden"
+        style={{ background: `linear-gradient(135deg, ${hexWithAlpha(f.primary_color, 0.22)} 0%, ${hexWithAlpha(f.secondary_color, 0.55)} 60%, transparent 100%)` }}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -bottom-16 h-32 blur-3xl opacity-40"
+          style={{ background: `radial-gradient(60% 60% at 50% 0%, ${f.primary_color}, transparent)` }}
+        />
+        {f.show_store_logo && f.logo_url && <img src={f.logo_url} alt="logo" className="relative h-12 w-auto mx-auto mb-2 object-contain" />}
+        <div className="relative text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>Esparta Imports</div>
+        <div className="relative text-sm font-semibold mt-1" style={{ color: f.title_color, opacity: 0.95 }}>{f.tracking_page_title}</div>
+        <div className="relative text-xs opacity-70 mt-0.5">{f.tracking_page_subtitle}</div>
+        <div className="relative mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
+          style={{ background: badge.bg, color: badge.text, border: `1px solid ${badge.border}`, boxShadow: `0 8px 24px -8px ${hexWithAlpha(badge.icon, 0.5)}` }}>
           <BadgeIcon className="h-3.5 w-3.5" style={{ color: badge.icon }} /> {info.label}
         </div>
       </div>
+
       <div className="px-4 space-y-3">
         <div className="p-4" style={cs}>
           <div className="text-[10px] uppercase opacity-60">Pedido</div>
