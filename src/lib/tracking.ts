@@ -22,8 +22,8 @@ export const STATUS_BADGE_DEFAULTS: Record<DeliveryStatus, StatusBadgeStyle> = {
 };
 
 export const STATUS_INFO: Record<DeliveryStatus, { label: string; message: string; emoji: string; Icon: LucideIcon; bg: string; color: string }> = {
-  aguardando_motoboy: { label: "Pedido Recebido",    message: "Recebemos seu pedido e já estamos preparando tudo.", emoji: "📦", Icon: Package,        bg: "bg-yellow-500/15",  color: "text-yellow-400" },
-  preparando:         { label: "Preparando Pedido",  message: "Seu pedido está sendo preparado com carinho.",        emoji: "👨‍🍳", Icon: UtensilsCrossed, bg: "bg-orange-500/15",  color: "text-orange-400" },
+  aguardando_motoboy: { label: "Pedido Recebido",    message: "Recebemos seu pedido e já estamos preparando tudo.", emoji: "✅", Icon: CheckCircle2,    bg: "bg-emerald-500/15", color: "text-emerald-400" },
+  preparando:         { label: "Separando Pedido",   message: "Seu pedido está sendo separado e preparado para envio.", emoji: "📦", Icon: Package,        bg: "bg-orange-500/15",  color: "text-orange-400" },
   saiu_para_entrega:  { label: "Saiu para Entrega",  message: "Seu pedido já saiu para entrega e está a caminho.",   emoji: "🛵", Icon: Bike,           bg: "bg-emerald-500/15", color: "text-emerald-400" },
   chegando:           { label: "Chegando",           message: "Seu entregador está próximo do destino.",             emoji: "📍", Icon: MapPin,         bg: "bg-purple-500/15",  color: "text-purple-400" },
   entregue:           { label: "Entregue",           message: "Pedido entregue com sucesso. Obrigado pela preferência.", emoji: "✅", Icon: CheckCircle2,   bg: "bg-emerald-500/20", color: "text-emerald-500" },
@@ -38,7 +38,7 @@ export function getBadgeStyle(status: DeliveryStatus, overrides?: Partial<Record
 
 export const TIMELINE_STEPS: { key: DeliveryStatus; label: string }[] = [
   { key: "aguardando_motoboy", label: "Pedido Recebido" },
-  { key: "preparando", label: "Preparando Pedido" },
+  { key: "preparando", label: "Separando Pedido" },
   { key: "saiu_para_entrega", label: "Saiu para Entrega" },
   { key: "chegando", label: "Chegando" },
   { key: "entregue", label: "Entregue" },
@@ -50,8 +50,8 @@ export function deriveDisplayStatus(trackingStatus: DeliveryStatus, orderStatus?
   if (s === "entregue") return "entregue";
   if (s === "cancelado" || s === "cancelada") return "cancelado";
   if (s === "saiu" || s === "saiu_para_entrega" || s === "em_entrega") return "saiu_para_entrega";
-  if (s === "preparando" || s === "em_preparo" || s === "producao") return "preparando";
-  if (s === "aguardando" || s === "novo" || s === "pendente" || s === "recebido") return "aguardando_motoboy";
+  if (s === "separando" || s === "separacao" || s === "separação" || s === "preparando" || s === "em_preparo" || s === "producao") return "preparando";
+  if (s === "aguardando" || s === "aguardando_pagamento" || s === "pago" || s === "novo" || s === "pendente" || s === "recebido") return "aguardando_motoboy";
   return trackingStatus;
 }
 
