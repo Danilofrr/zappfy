@@ -926,23 +926,27 @@ function MotoboyTab({ f, up }: { f: Settings; up: <K extends keyof Settings>(k: 
 }
 
 function CourierPreview({ t }: { t: CourierTheme }) {
-  const headerBg = t.header_style === "gradient"
-    ? `linear-gradient(135deg, ${t.header_color} 0%, ${t.secondary_color} 100%)`
-    : t.header_color;
   const cardCss: React.CSSProperties = {
     background: t.card_color,
     border: `1px solid ${t.card_border_color}`,
     boxShadow: `0 8px 22px -10px ${t.card_shadow_color}88`,
     borderRadius: 16,
   };
+  const justify = t.header_logo_align === "left" ? "flex-start" : t.header_logo_align === "right" ? "flex-end" : "center";
+  const previewH = Math.max(48, Math.round(t.header_height * 0.78));
+  const previewLogo = Math.max(20, Math.round(t.header_logo_size * 0.78));
+  const padX = t.header_logo_align === "center" ? 20 : 24;
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: t.background_color, color: t.text_color, minHeight: 560 }}>
-      <div className="px-5 py-4 text-center" style={{ background: headerBg }}>
+      <div className="flex items-center" style={{ background: t.header_color, height: previewH, justifyContent: justify, paddingLeft: padX, paddingRight: padX }}>
         {t.logo_url
-          ? <img src={t.logo_url} alt="logo" className="h-10 mx-auto object-contain" />
-          : <div className="font-extrabold text-white text-lg">LOGO</div>}
-        <div className="text-xs mt-2 text-white/85">Pedido #A1B2C3D4</div>
-        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style={{ background: `${t.primary_color}22`, color: t.primary_color }}>
+          ? <img src={t.logo_url} alt="logo" style={{ height: previewLogo, width: "auto", maxHeight: "80%" }} className="object-contain" />
+          : <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: 0.5 }}>LOGO</div>}
+      </div>
+      <div className="px-4 pt-4 pb-2 text-center space-y-1.5">
+        <div className="text-base font-extrabold" style={{ color: t.title_color }}>Esparta Imports</div>
+        <div className="text-[11px] opacity-70">Pedido #A1B2C3D4</div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style={{ background: `${t.primary_color}22`, color: t.primary_color }}>
           <Bike className="h-3.5 w-3.5" /> Saiu para Entrega
         </div>
       </div>
