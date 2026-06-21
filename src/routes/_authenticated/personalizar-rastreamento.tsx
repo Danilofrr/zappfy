@@ -611,7 +611,7 @@ function Page() {
         </TabsContent>
 
         <TabsContent value="motoboy" className="mt-4">
-          <MotoboyTab f={f} up={up} isAdmin={isAdmin} />
+          <MotoboyTab f={f} up={up} isAdmin={isAdmin} storeName={storeName} />
         </TabsContent>
       </Tabs>
     </Shell>
