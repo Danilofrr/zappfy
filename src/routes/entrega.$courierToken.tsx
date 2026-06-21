@@ -254,7 +254,9 @@ function CourierPage() {
 
   return (
     <div className="min-h-screen pb-10" style={{ background: t.background_color, color: t.text_color }}>
+      <style>{`@media (min-width: 768px){ header[data-courier-hdr]{ height: var(--hdr-h) !important; } header[data-courier-hdr] img{ height: var(--hdr-logo) !important; max-height: 80% !important; } }`}</style>
       <header
+        data-courier-hdr
         className="w-full flex items-center"
         style={{
           background: t.header_color,
@@ -262,14 +264,10 @@ function CourierPage() {
           paddingLeft: t.header_logo_align === "center" ? 20 : 24,
           paddingRight: t.header_logo_align === "center" ? 20 : 24,
           ['--hdr-h' as any]: `${t.header_height}px`,
-          ['--hdr-h-m' as any]: `${headerMobileH}px`,
           ['--hdr-logo' as any]: `${t.header_logo_size}px`,
-          ['--hdr-logo-m' as any]: `${headerLogoMobile}px`,
-          height: `var(--hdr-h-m)`,
+          height: `${headerMobileH}px`,
         }}
       >
-        <style>{`@media (min-width: 768px){ header[data-courier-hdr]{ height: var(--hdr-h) !important; } header[data-courier-hdr] img{ height: var(--hdr-logo) !important; } }`}</style>
-        <span data-courier-hdr style={{ display: "contents" }} />
         {data.store.logo_url ? (
           <img
             src={data.store.logo_url}
