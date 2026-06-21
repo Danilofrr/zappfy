@@ -30,6 +30,8 @@ type Payload = {
   order_status: string | null;
   latitude: number | null;
   longitude: number | null;
+  delivery_latitude: number | null;
+  delivery_longitude: number | null;
   heading: number | null;
   speed: number | null;
   last_updated_at: string | null;
@@ -143,10 +145,15 @@ function RastreioPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.order_id]);
 
-  // geocode destination
+  // Prefer persisted destination coords from the database; geocode + persist as a fallback
   useEffect(() => {
-    if (!data?.order?.address || destination) return;
-    const fullAddress = [data.order.address, data.order.district, data.order.city].filter(Boolean).join(", ");
+    if (!data) return;
+    if (data.delivery_latitude != null && data.delivery_longitude != null) {
+      setDestination({ lat: data.delivery_latitude, lng: data.delivery_longitude });
+      return;
+    }
+    if (destination) return;
+    const fullAddress = [data.order?.address, data.order?.district, data.order?.city].filter(Boolean).join(", ");
     if (!fullAddress) return;
     const ctrl = new AbortController();
     fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(fullAddress)}`, {
@@ -156,12 +163,15 @@ function RastreioPage() {
       .then((r) => r.json())
       .then((arr) => {
         if (Array.isArray(arr) && arr[0]) {
-          setDestination({ lat: parseFloat(arr[0].lat), lng: parseFloat(arr[0].lon) });
+          const lat = parseFloat(arr[0].lat);
+          const lng = parseFloat(arr[0].lon);
+          setDestination({ lat, lng });
+          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: lat, _lng: lng }).then(() => {});
         }
       })
       .catch(() => {});
     return () => ctrl.abort();
-  }, [data?.order?.address, data?.order?.district, data?.order?.city, destination]);
+  }, [data, destination, trackingCode]);
 
   const courierPos = useMemo(
     () => (data?.latitude != null && data?.longitude != null ? { lat: data.latitude, lng: data.longitude } : null),
@@ -309,6 +319,11 @@ function RastreioPage() {
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur" style={{ background: hexWithAlpha(s.card_color || "#0f172a", 0.92), color: s.text_color, border: `1px solid ${hexWithAlpha(s.primary_color, 0.4)}` }}>
                   <Loader2 className="inline h-3 w-3 mr-1.5 animate-spin" />
                   Aguardando localização do entregador...
+                </div>
+              )}
+              {!destination && !isFinished && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur" style={{ background: hexWithAlpha(s.card_color || "#0f172a", 0.92), color: s.text_color, border: `1px solid ${hexWithAlpha("#f59e0b", 0.6)}` }}>
+                  📍 Destino ainda não localizado no mapa
                 </div>
               )}
               {isFinished && (
