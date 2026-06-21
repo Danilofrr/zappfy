@@ -225,6 +225,7 @@ function Page() {
       support_whatsapp: f.support_whatsapp || null,
       vehicle_custom_url: f.vehicle_custom_url || null,
       pin_custom_url: f.pin_custom_url || null,
+      courier_logo_url: f.courier_logo_url || null,
       status_styles: f.status_styles ?? {},
     };
     const { error } = await supabase
