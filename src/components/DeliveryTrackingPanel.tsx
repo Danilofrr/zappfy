@@ -170,14 +170,36 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     );
   }
 
-  if (!tracking) {
+  if (!tracking || tracking.status === "cancelado") {
+    const isCancelled = tracking?.status === "cancelado";
     return (
       <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center gap-2 mb-1 text-sm font-semibold"><Bike className="h-4 w-4 text-primary" /> Rastreamento da Entrega</div>
-        <p className="text-xs text-muted-foreground mb-3">Gere um link para o motoboy compartilhar a localização em tempo real com o cliente.</p>
-        <Button size="sm" onClick={() => setCreateOpen(true)}><Bike className="h-4 w-4 mr-1.5" />Gerar Rastreamento</Button>
+        <div className="flex items-center gap-2 mb-1 text-sm font-semibold">
+          <Bike className="h-4 w-4 text-primary" /> Rastreamento da Entrega
+        </div>
+        {isCancelled ? (
+          <div className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs flex items-start gap-2">
+            <X className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+            <div>
+              <div className="font-semibold text-destructive">Rastreamento cancelado</div>
+              <div className="text-muted-foreground mt-0.5">Os links anteriores foram desativados. Gere um novo rastreamento para continuar.</div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground mb-3">Gere um link para o motoboy compartilhar a localização em tempo real com o cliente.</p>
+        )}
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Bike className="h-4 w-4 mr-1.5" />{isCancelled ? "Gerar novo rastreamento" : "Gerar Rastreamento"}
+        </Button>
         <CreateDialog open={createOpen} onOpenChange={setCreateOpen} form={form} setForm={setForm} onSubmit={handleCreate} loading={creating} />
       </div>
+    );
+  }
+
+  if (false) {
+    return (
+      <div />
+    );
     );
   }
 
