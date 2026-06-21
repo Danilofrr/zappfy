@@ -804,6 +804,9 @@ function resolveCourierTheme(f: Settings): CourierTheme {
       button_color: f.button_color,
       icon_color: f.primary_color,
       footer_text: f.courier_footer_text,
+      header_height: f.header_height,
+      header_logo_size: f.header_logo_size,
+      header_logo_align: f.header_logo_align,
     };
   }
   return {
@@ -821,6 +824,9 @@ function resolveCourierTheme(f: Settings): CourierTheme {
     button_color: f.courier_button_color,
     icon_color: f.courier_icon_color,
     footer_text: f.courier_footer_text,
+    header_height: f.courier_header_height,
+    header_logo_size: f.courier_header_logo_size,
+    header_logo_align: f.courier_header_logo_align,
   };
 }
 
