@@ -75,7 +75,6 @@ function PedidosPage() {
   const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
   const [editing, setEditing] = useState<Order | null>(null);
   const [motoboyFor, setMotoboyFor] = useState<Order | null>(null);
-  const [trackingOpen, setTrackingOpen] = useState<Record<string, boolean>>({});
 
   function extractFromNotes(notes: string | undefined, label: RegExp): string {
     if (!notes) return "";
