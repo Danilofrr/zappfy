@@ -164,6 +164,155 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_tracking: {
+        Row: {
+          accuracy: number | null
+          completed_at: string | null
+          courier_name: string | null
+          courier_phone: string | null
+          courier_token: string
+          created_at: string
+          customer_view_count: number
+          estimated_arrival: string | null
+          heading: number | null
+          id: string
+          last_updated_at: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          order_id: string
+          speed: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["delivery_status"]
+          store_id: string
+          tracking_code: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy?: number | null
+          completed_at?: string | null
+          courier_name?: string | null
+          courier_phone?: string | null
+          courier_token: string
+          created_at?: string
+          customer_view_count?: number
+          estimated_arrival?: string | null
+          heading?: number | null
+          id?: string
+          last_updated_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          order_id: string
+          speed?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          store_id: string
+          tracking_code: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy?: number | null
+          completed_at?: string | null
+          courier_name?: string | null
+          courier_phone?: string | null
+          courier_token?: string
+          created_at?: string
+          customer_view_count?: number
+          estimated_arrival?: string | null
+          heading?: number | null
+          id?: string
+          last_updated_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          order_id?: string
+          speed?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          store_id?: string
+          tracking_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_tracking_settings: {
+        Row: {
+          background_color: string | null
+          button_color: string | null
+          created_at: string
+          delivered_message: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          show_courier_name: boolean
+          show_courier_phone: boolean
+          show_distance: boolean
+          show_estimated_time: boolean
+          show_store_logo: boolean
+          store_id: string
+          support_whatsapp: string | null
+          text_color: string | null
+          tracking_page_subtitle: string | null
+          tracking_page_title: string | null
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          background_color?: string | null
+          button_color?: string | null
+          created_at?: string
+          delivered_message?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          show_courier_name?: boolean
+          show_courier_phone?: boolean
+          show_distance?: boolean
+          show_estimated_time?: boolean
+          show_store_logo?: boolean
+          store_id: string
+          support_whatsapp?: string | null
+          text_color?: string | null
+          tracking_page_subtitle?: string | null
+          tracking_page_title?: string | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          background_color?: string | null
+          button_color?: string | null
+          created_at?: string
+          delivered_message?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          show_courier_name?: boolean
+          show_courier_phone?: boolean
+          show_distance?: boolean
+          show_estimated_time?: boolean
+          show_store_logo?: boolean
+          store_id?: string
+          support_whatsapp?: string | null
+          text_color?: string | null
+          tracking_page_subtitle?: string | null
+          tracking_page_title?: string | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -1045,6 +1194,8 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      get_courier_view: { Args: { _token: string }; Returns: Json }
+      get_tracking_public: { Args: { _code: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1052,6 +1203,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_tracking_view: { Args: { _code: string }; Returns: undefined }
       submit_public_order: {
         Args: {
           _address: string
@@ -1072,9 +1224,31 @@ export type Database = {
         }
         Returns: string
       }
+      update_courier_location: {
+        Args: {
+          _accuracy?: number
+          _heading?: number
+          _lat: number
+          _lng: number
+          _speed?: number
+          _token: string
+        }
+        Returns: boolean
+      }
+      update_courier_status: {
+        Args: { _status: string; _token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "cliente"
+      delivery_status:
+        | "preparando"
+        | "aguardando_motoboy"
+        | "saiu_para_entrega"
+        | "chegando"
+        | "entregue"
+        | "cancelado"
       payment_status: "pago" | "pendente" | "vencido" | "cancelado"
       subscription_status:
         | "ativo"
@@ -1210,6 +1384,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "cliente"],
+      delivery_status: [
+        "preparando",
+        "aguardando_motoboy",
+        "saiu_para_entrega",
+        "chegando",
+        "entregue",
+        "cancelado",
+      ],
       payment_status: ["pago", "pendente", "vencido", "cancelado"],
       subscription_status: [
         "ativo",
