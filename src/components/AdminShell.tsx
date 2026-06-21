@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  MapPin,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const adminNav = [
   { to: "/admin/cupons", label: "Cupons", icon: Ticket },
   { to: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/admin/configuracoes", label: "Configurações", icon: Cog },
+  { to: "/personalizar-rastreamento", label: "Personalizar Rastreamento", icon: MapPin },
   { to: "/admin/logs", label: "Logs do Sistema", icon: ScrollText },
 ];
 

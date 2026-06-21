@@ -304,7 +304,7 @@ function Page() {
       <Tabs defaultValue="cliente" className="space-y-4">
         <TabsList className="h-11 p-1 bg-card border border-border w-full sm:w-auto">
           <TabsTrigger value="cliente" className="gap-2 h-9 px-4"><User className="h-4 w-4" /> Rastreamento Cliente</TabsTrigger>
-          {isAdmin && <TabsTrigger value="motoboy" className="gap-2 h-9 px-4"><Truck className="h-4 w-4" /> Rastreamento Motoboy</TabsTrigger>}
+          <TabsTrigger value="motoboy" className="gap-2 h-9 px-4"><Truck className="h-4 w-4" /> Rastreamento Motoboy</TabsTrigger>
         </TabsList>
         <TabsContent value="cliente" className="mt-4">
 
@@ -598,11 +598,9 @@ function Page() {
       </div>
         </TabsContent>
 
-        {isAdmin && (
         <TabsContent value="motoboy" className="mt-4">
           <MotoboyTab f={f} up={up} />
         </TabsContent>
-        )}
       </Tabs>
     </AppShell>
   );
