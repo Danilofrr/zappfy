@@ -289,7 +289,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
         <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={sendCourier}>
           <Send className="h-3.5 w-3.5 mr-1" /> Enviar motoboy
         </Button>
-        {tracking.status !== "cancelado" && tracking.status !== "entregue" && (
+        {tracking.status !== "entregue" && (
           <Button size="sm" variant="destructive" onClick={handleCancel}>
             <X className="h-3.5 w-3.5 mr-1" /> Cancelar
           </Button>
