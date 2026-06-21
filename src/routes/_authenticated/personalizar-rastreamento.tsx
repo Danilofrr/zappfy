@@ -167,6 +167,9 @@ const DEFAULTS: Settings = {
   courier_header_logo_align: "center",
 };
 
+// Tema oficial Zappfy — aplicado pelo Admin Master e atribuído a novos clientes
+export const ZAPPFY_THEME: Settings = { ...DEFAULTS };
+
 const BG_PRESETS = [
   { name: "Preto", color: "#020817" },
   { name: "Azul escuro", color: "#0c1d3b" },
