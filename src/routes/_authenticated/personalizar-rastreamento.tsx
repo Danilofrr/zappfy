@@ -560,13 +560,14 @@ function Page() {
           </Card>
 
           <Card title="Textos da página">
-            <Field label="Título"><Input value={f.tracking_page_title} onChange={(e) => up("tracking_page_title", e.target.value)} /></Field>
-            <Field label="Subtítulo"><Input value={f.tracking_page_subtitle} onChange={(e) => up("tracking_page_subtitle", e.target.value)} /></Field>
+            {isAdmin && <Field label="Título"><Input value={f.tracking_page_title} onChange={(e) => up("tracking_page_title", e.target.value)} /></Field>}
+            {isAdmin && <Field label="Subtítulo"><Input value={f.tracking_page_subtitle} onChange={(e) => up("tracking_page_subtitle", e.target.value)} /></Field>}
             <Field label="WhatsApp de suporte (com DDI)">
               <Input value={f.support_whatsapp || ""} onChange={(e) => up("support_whatsapp", e.target.value)} placeholder="5581999990000" />
             </Field>
           </Card>
 
+          {isAdmin && (
           <Card title="Mensagens por status">
             <Field label="📦 Pedido Recebido"><Textarea rows={2} value={f.msg_aguardando} onChange={(e) => up("msg_aguardando", e.target.value)} /></Field>
             <Field label="📦 Separando Pedido"><Textarea rows={2} value={f.msg_preparando} onChange={(e) => up("msg_preparando", e.target.value)} /></Field>
@@ -575,6 +576,7 @@ function Page() {
             <Field label="✅ Entregue"><Textarea rows={2} value={f.msg_entregue} onChange={(e) => up("msg_entregue", e.target.value)} /></Field>
             <Field label="❌ Cancelado"><Textarea rows={2} value={f.msg_cancelado} onChange={(e) => up("msg_cancelado", e.target.value)} /></Field>
           </Card>
+          )}
 
           <Card title="O que mostrar ao cliente">
             <ToggleRow label="Mostrar logo da loja" value={f.show_store_logo} onChange={(v) => up("show_store_logo", v)} />
