@@ -1,4 +1,6 @@
 // Helpers for the delivery tracking module
+import type { LucideIcon } from "lucide-react";
+import { Package, UtensilsCrossed, Bike, MapPin, CheckCircle2, XCircle } from "lucide-react";
 
 export type DeliveryStatus =
   | "preparando"
@@ -8,50 +10,31 @@ export type DeliveryStatus =
   | "entregue"
   | "cancelado";
 
-export const STATUS_INFO: Record<DeliveryStatus, { label: string; message: string; color: string; bg: string; emoji: string }> = {
-  aguardando_motoboy: {
-    label: "Pedido Recebido",
-    message: "Recebemos seu pedido e já estamos preparando tudo.",
-    color: "text-yellow-400",
-    bg: "bg-yellow-500/15",
-    emoji: "🟡",
-  },
-  preparando: {
-    label: "Preparando Pedido",
-    message: "Seu pedido está sendo preparado com carinho.",
-    color: "text-orange-400",
-    bg: "bg-orange-500/15",
-    emoji: "🟠",
-  },
-  saiu_para_entrega: {
-    label: "Saiu para Entrega",
-    message: "Seu pedido já saiu para entrega e está a caminho.",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/15",
-    emoji: "🛵",
-  },
-  chegando: {
-    label: "Chegando",
-    message: "Seu entregador está próximo do destino.",
-    color: "text-purple-400",
-    bg: "bg-purple-500/15",
-    emoji: "📍",
-  },
-  entregue: {
-    label: "Entregue",
-    message: "Pedido entregue com sucesso. Obrigado pela preferência.",
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/20",
-    emoji: "✅",
-  },
-  cancelado: {
-    label: "Cancelado",
-    message: "Este pedido foi cancelado.",
-    color: "text-destructive",
-    bg: "bg-destructive/15",
-    emoji: "❌",
-  },
+export type StatusBadgeStyle = { bg: string; border: string; text: string; icon: string };
+
+export const STATUS_BADGE_DEFAULTS: Record<DeliveryStatus, StatusBadgeStyle> = {
+  aguardando_motoboy: { bg: "#fef9c3", border: "#facc15", text: "#713f12", icon: "#ca8a04" },
+  preparando:         { bg: "#ffedd5", border: "#fb923c", text: "#7c2d12", icon: "#ea580c" },
+  saiu_para_entrega:  { bg: "#d1fae5", border: "#10b981", text: "#064e3b", icon: "#059669" },
+  chegando:           { bg: "#ede9fe", border: "#a78bfa", text: "#4c1d95", icon: "#7c3aed" },
+  entregue:           { bg: "#dcfce7", border: "#22c55e", text: "#14532d", icon: "#16a34a" },
+  cancelado:          { bg: "#fee2e2", border: "#ef4444", text: "#7f1d1d", icon: "#dc2626" },
 };
+
+export const STATUS_INFO: Record<DeliveryStatus, { label: string; message: string; emoji: string; Icon: LucideIcon }> = {
+  aguardando_motoboy: { label: "Pedido Recebido",    message: "Recebemos seu pedido e já estamos preparando tudo.", emoji: "📦", Icon: Package },
+  preparando:         { label: "Preparando Pedido",  message: "Seu pedido está sendo preparado com carinho.",        emoji: "👨‍🍳", Icon: UtensilsCrossed },
+  saiu_para_entrega:  { label: "Saiu para Entrega",  message: "Seu pedido já saiu para entrega e está a caminho.",   emoji: "🛵", Icon: Bike },
+  chegando:           { label: "Chegando",           message: "Seu entregador está próximo do destino.",             emoji: "📍", Icon: MapPin },
+  entregue:           { label: "Entregue",           message: "Pedido entregue com sucesso. Obrigado pela preferência.", emoji: "✅", Icon: CheckCircle2 },
+  cancelado:          { label: "Cancelado",          message: "Este pedido foi cancelado.",                          emoji: "❌", Icon: XCircle },
+};
+
+export function getBadgeStyle(status: DeliveryStatus, overrides?: Partial<Record<DeliveryStatus, Partial<StatusBadgeStyle>>>): StatusBadgeStyle {
+  const d = STATUS_BADGE_DEFAULTS[status];
+  const o = overrides?.[status] || {};
+  return { bg: o.bg || d.bg, border: o.border || d.border, text: o.text || d.text, icon: o.icon || d.icon };
+}
 
 export const TIMELINE_STEPS: { key: DeliveryStatus; label: string }[] = [
   { key: "aguardando_motoboy", label: "Pedido Recebido" },
@@ -61,15 +44,8 @@ export const TIMELINE_STEPS: { key: DeliveryStatus; label: string }[] = [
   { key: "entregue", label: "Entregue" },
 ];
 
-// Map common Portuguese order.status strings to a DeliveryStatus for the public page
-export function deriveDisplayStatus(
-  trackingStatus: DeliveryStatus,
-  orderStatus?: string | null,
-): DeliveryStatus {
-  // Once tracking is moving, tracking wins
-  if (["saiu_para_entrega", "chegando", "entregue", "cancelado"].includes(trackingStatus)) {
-    return trackingStatus;
-  }
+export function deriveDisplayStatus(trackingStatus: DeliveryStatus, orderStatus?: string | null): DeliveryStatus {
+  if (["saiu_para_entrega", "chegando", "entregue", "cancelado"].includes(trackingStatus)) return trackingStatus;
   const s = (orderStatus || "").toLowerCase();
   if (s === "entregue") return "entregue";
   if (s === "cancelado" || s === "cancelada") return "cancelado";
@@ -86,6 +62,7 @@ export const VEHICLE_COLORS: Record<string, string> = {
   azul: "#3b82f6",
   preto: "#111827",
   laranja: "#f97316",
+  roxa: "#a855f7",
 };
 
 export const PIN_COLORS: Record<string, string> = {
@@ -94,18 +71,20 @@ export const PIN_COLORS: Record<string, string> = {
   azul: "#3b82f6",
   preto: "#111827",
   laranja: "#f97316",
+  roxa: "#a855f7",
 };
 
 export const VEHICLE_OPTIONS = [
-  { type: "moto", color: "verde", label: "Moto Verde" },
-  { type: "moto", color: "vermelho", label: "Moto Vermelha" },
-  { type: "moto", color: "azul", label: "Moto Azul" },
-  { type: "moto", color: "preto", label: "Moto Preta" },
-  { type: "moto", color: "laranja", label: "Moto Laranja" },
-  { type: "carro", color: "verde", label: "Carro Verde" },
+  { type: "moto", color: "vermelho", label: "Moto Delivery Vermelha" },
+  { type: "moto", color: "verde",    label: "Moto Delivery Verde" },
+  { type: "moto", color: "azul",     label: "Moto Delivery Azul" },
+  { type: "moto", color: "preto",    label: "Moto Delivery Preta" },
+  { type: "moto", color: "laranja",  label: "Moto Delivery Laranja" },
+  { type: "moto", color: "roxa",     label: "Moto Delivery Roxa" },
   { type: "carro", color: "vermelho", label: "Carro Vermelho" },
-  { type: "carro", color: "azul", label: "Carro Azul" },
-  { type: "carro", color: "preto", label: "Carro Preto" },
+  { type: "carro", color: "verde",    label: "Carro Verde" },
+  { type: "carro", color: "azul",     label: "Carro Azul" },
+  { type: "carro", color: "preto",    label: "Carro Preto" },
 ] as const;
 
 export const PIN_OPTIONS = [
@@ -114,14 +93,44 @@ export const PIN_OPTIONS = [
   { color: "azul", label: "Pino Azul" },
   { color: "preto", label: "Pino Preto" },
   { color: "laranja", label: "Pino Laranja" },
+  { color: "roxa", label: "Pino Roxa" },
 ] as const;
 
+/**
+ * Returns the inner SVG markup for a delivery-style vehicle icon (24x24 viewBox).
+ * - moto: scooter side-view with a top delivery box (baú)
+ * - carro: classic car silhouette
+ * All shapes use `currentColor` strokes/fills filled in white so the colored badge background reads as the vehicle color.
+ */
 export function vehicleSvgPath(type: "moto" | "carro"): string {
   if (type === "carro") {
-    return `<path d="M5 16a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm14 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm-1.5-9h-11l-2 5h15l-2-5Zm3.5 5-2-5.5A2 2 0 0 0 17.1 5H6.9a2 2 0 0 0-1.9 1.5L3 12v5a1 1 0 0 0 1 1h2v-1h12v1h2a1 1 0 0 0 1-1v-5Z" fill="white"/>`;
+    return `
+      <g fill="white">
+        <path d="M3.5 13.5 5 9.2A2 2 0 0 1 6.9 8h10.2a2 2 0 0 1 1.9 1.2l1.5 4.3v3.3a.8.8 0 0 1-.8.8h-1.4a2.4 2.4 0 0 1-4.8 0H9.5a2.4 2.4 0 0 1-4.8 0H3.3a.8.8 0 0 1-.8-.8v-3.3Z"/>
+        <circle cx="7.1" cy="17.4" r="1.1" fill="#111"/>
+        <circle cx="16.9" cy="17.4" r="1.1" fill="#111"/>
+        <rect x="6" y="10" width="5" height="2.6" rx=".4" fill="rgba(0,0,0,.18)"/>
+        <rect x="12.5" y="10" width="5" height="2.6" rx=".4" fill="rgba(0,0,0,.18)"/>
+      </g>`;
   }
-  // moto
-  return `<path d="M5 18a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm14 0a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM14.12 4l1.42 2H19l-1 2h-3.34l1 2H17l2 4h-2a4.99 4.99 0 0 0-3.46 1.4l-2.04-4.08L13.6 9l-2.6-2.6L8 9H5V7h2.59L11 3.59 14.12 4Z" fill="white"/>`;
+  // Delivery scooter with top box
+  return `
+    <g fill="white" stroke="white" stroke-linejoin="round" stroke-width="0.6">
+      <!-- top delivery box (baú) -->
+      <rect x="3.2" y="5" width="6.2" height="5" rx="0.8" fill="white" stroke="white"/>
+      <rect x="5.4" y="6.7" width="1.8" height="1.6" rx="0.2" fill="rgba(0,0,0,.25)" stroke="none"/>
+      <!-- rear rack -->
+      <path d="M4.5 10h5l-.5 2.2H5z" fill="white"/>
+      <!-- body / seat -->
+      <path d="M6 12.2h6.5l1.6-2.6h2.6a1 1 0 0 1 .9.55l1.3 2.55H21l-.6 2.4h-1.6a2.6 2.6 0 1 1-5.2 0H9a2.6 2.6 0 1 1-5.2 0H2.5l.8-2.4H6Z"/>
+      <!-- handlebar -->
+      <path d="M17 8h2.2v1.4h-2.2z" fill="white"/>
+      <!-- wheels -->
+      <circle cx="6.4" cy="17" r="2.4" fill="#111" stroke="white" stroke-width="0.7"/>
+      <circle cx="6.4" cy="17" r="0.9" fill="white" stroke="none"/>
+      <circle cx="16.6" cy="17" r="2.4" fill="#111" stroke="white" stroke-width="0.7"/>
+      <circle cx="16.6" cy="17" r="0.9" fill="white" stroke="none"/>
+    </g>`;
 }
 
 export function generateToken(prefix = ""): string {
