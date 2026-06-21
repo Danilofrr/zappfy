@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Bike, Copy, MessageCircle, MapPin, RefreshCw, X, Send, Loader2 } from "lucide-react";
+import { Bike, Copy, MessageCircle, MapPin, RefreshCw, X, Send, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildCourierMessage,
@@ -26,6 +26,7 @@ import {
   type DeliveryStatus,
 } from "@/lib/tracking";
 import { TrackingMap } from "./TrackingMap";
+import { DestinationPicker } from "./DestinationPicker";
 import { useStore } from "@/lib/store";
 
 type Tracking = {
@@ -39,6 +40,10 @@ type Tracking = {
   status: DeliveryStatus;
   latitude: number | null;
   longitude: number | null;
+  delivery_latitude: number | null;
+  delivery_longitude: number | null;
+  delivery_geocoded_address: string | null;
+  delivery_geocoding_status: string | null;
   heading: number | null;
   last_updated_at: string | null;
   started_at: string | null;
