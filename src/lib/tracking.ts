@@ -74,17 +74,57 @@ export const PIN_COLORS: Record<string, string> = {
   roxa: "#a855f7",
 };
 
+// Premium 3D-style icon library. Add new entries here — no other code changes required.
+import moto3dVermelho from "@/assets/vehicles/moto-3d-vermelho.png";
+import moto3dVerde from "@/assets/vehicles/moto-3d-verde.png";
+import moto3dAzul from "@/assets/vehicles/moto-3d-azul.png";
+import moto3dPreto from "@/assets/vehicles/moto-3d-preto.png";
+import motoCartoonVermelho from "@/assets/vehicles/moto-cartoon-vermelho.png";
+import motoCartoonVerde from "@/assets/vehicles/moto-cartoon-verde.png";
+import motoCartoonAzul from "@/assets/vehicles/moto-cartoon-azul.png";
+import scooterDelivery from "@/assets/vehicles/scooter-delivery.png";
+import motoEsportiva from "@/assets/vehicles/moto-esportiva.png";
+import carro3dVermelho from "@/assets/vehicles/carro-3d-vermelho.png";
+import carro3dVerde from "@/assets/vehicles/carro-3d-verde.png";
+import carro3dAzul from "@/assets/vehicles/carro-3d-azul.png";
+import vanDelivery from "@/assets/vehicles/van-delivery.png";
+import furgaoDelivery from "@/assets/vehicles/furgao-delivery.png";
+
+export type VehicleLibraryEntry = {
+  id: string;
+  category: "moto" | "carro";
+  label: string;
+  src: string;
+};
+
+export const VEHICLE_LIBRARY: VehicleLibraryEntry[] = [
+  { id: "moto-3d-vermelho",      category: "moto",  label: "Motoboy 3D Vermelho",  src: moto3dVermelho },
+  { id: "moto-3d-verde",         category: "moto",  label: "Motoboy 3D Verde",     src: moto3dVerde },
+  { id: "moto-3d-azul",          category: "moto",  label: "Motoboy 3D Azul",      src: moto3dAzul },
+  { id: "moto-3d-preto",         category: "moto",  label: "Motoboy 3D Preto",     src: moto3dPreto },
+  { id: "moto-cartoon-vermelho", category: "moto",  label: "Cartoon Vermelho",     src: motoCartoonVermelho },
+  { id: "moto-cartoon-verde",    category: "moto",  label: "Cartoon Verde",        src: motoCartoonVerde },
+  { id: "moto-cartoon-azul",     category: "moto",  label: "Cartoon Azul",         src: motoCartoonAzul },
+  { id: "scooter-delivery",      category: "moto",  label: "Scooter Premium",      src: scooterDelivery },
+  { id: "moto-esportiva",        category: "moto",  label: "Moto Esportiva",       src: motoEsportiva },
+  { id: "carro-3d-vermelho",     category: "carro", label: "Carro 3D Vermelho",    src: carro3dVermelho },
+  { id: "carro-3d-verde",        category: "carro", label: "Carro 3D Verde",       src: carro3dVerde },
+  { id: "carro-3d-azul",         category: "carro", label: "Carro 3D Azul",        src: carro3dAzul },
+  { id: "van-delivery",          category: "carro", label: "Van Delivery",         src: vanDelivery },
+  { id: "furgao-delivery",       category: "carro", label: "Furgão de Entrega",    src: furgaoDelivery },
+];
+
+export function findVehicleBySrc(src: string | null | undefined): VehicleLibraryEntry | undefined {
+  if (!src) return undefined;
+  return VEHICLE_LIBRARY.find((v) => v.src === src);
+}
+
+// Legacy color swatches kept for backwards compatibility with old saved settings.
 export const VEHICLE_OPTIONS = [
   { type: "moto", color: "vermelho", label: "Moto Delivery Vermelha" },
   { type: "moto", color: "verde",    label: "Moto Delivery Verde" },
   { type: "moto", color: "azul",     label: "Moto Delivery Azul" },
   { type: "moto", color: "preto",    label: "Moto Delivery Preta" },
-  { type: "moto", color: "laranja",  label: "Moto Delivery Laranja" },
-  { type: "moto", color: "roxa",     label: "Moto Delivery Roxa" },
-  { type: "carro", color: "vermelho", label: "Carro Vermelho" },
-  { type: "carro", color: "verde",    label: "Carro Verde" },
-  { type: "carro", color: "azul",     label: "Carro Azul" },
-  { type: "carro", color: "preto",    label: "Carro Preto" },
 ] as const;
 
 export const PIN_OPTIONS = [

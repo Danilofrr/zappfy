@@ -17,7 +17,8 @@ import {
   STATUS_INFO,
   TIMELINE_STEPS,
   VEHICLE_COLORS,
-  VEHICLE_OPTIONS,
+  VEHICLE_LIBRARY,
+  findVehicleBySrc,
   vehicleSvgPath,
   type DeliveryStatus,
   type StatusBadgeStyle,
@@ -400,30 +401,48 @@ function Page() {
           </Card>
 
           <Card title="Ícone do entregador">
-            <div className="space-y-2">
-              <Label className="text-xs">Selecione o veículo</Label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {VEHICLE_OPTIONS.map((opt) => {
-                  const selected = !f.vehicle_custom_url && f.vehicle_type === opt.type && f.vehicle_color === opt.color;
-                  return (
-                    <button
-                      key={`${opt.type}-${opt.color}`}
-                      type="button"
-                      onClick={() => { up("vehicle_type", opt.type as any); up("vehicle_color", opt.color); up("vehicle_custom_url", ""); }}
-                      className={`rounded-xl border p-2 flex flex-col items-center gap-1 text-[10px] transition ${selected ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"}`}
-                      title={opt.label}
-                    >
-                      <VehicleSwatch type={opt.type as any} color={opt.color} />
-                      <span className="leading-tight text-center">{opt.label}</span>
-                    </button>
-                  );
-                })}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Biblioteca de veículos</Label>
+                <span className="text-[10px] text-muted-foreground">{VEHICLE_LIBRARY.length} modelos premium</span>
               </div>
-              <Input
-                value={f.vehicle_custom_url || ""}
-                onChange={(e) => up("vehicle_custom_url", e.target.value)}
-                placeholder="URL de PNG personalizado"
-              />
+
+              {(["moto", "carro"] as const).map((cat) => (
+                <div key={cat} className="space-y-2">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    {cat === "moto" ? "Motos" : "Carros"}
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {VEHICLE_LIBRARY.filter((v) => v.category === cat).map((v) => {
+                      const selected = f.vehicle_custom_url === v.src;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => { up("vehicle_custom_url", v.src); up("vehicle_type", v.category); }}
+                          className={`group relative rounded-xl border p-2 flex flex-col items-center gap-1.5 text-[10px] transition bg-gradient-to-b from-white/[0.04] to-transparent ${selected ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/50 hover:-translate-y-0.5"}`}
+                          title={v.label}
+                        >
+                          <div className="w-full aspect-square rounded-lg bg-white/95 flex items-center justify-center overflow-hidden shadow-sm">
+                            <img src={v.src} alt={v.label} loading="lazy" className="w-full h-full object-contain p-1.5" />
+                          </div>
+                          <span className="leading-tight text-center font-medium line-clamp-2">{v.label}</span>
+                          {selected && <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary shadow" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              <div className="space-y-1 pt-2 border-t border-border">
+                <Label className="text-xs">Ou use uma imagem personalizada (URL)</Label>
+                <Input
+                  value={f.vehicle_custom_url && !findVehicleBySrc(f.vehicle_custom_url) ? f.vehicle_custom_url : ""}
+                  onChange={(e) => up("vehicle_custom_url", e.target.value)}
+                  placeholder="https://exemplo.com/veiculo.png"
+                />
+              </div>
             </div>
 
             <div className="space-y-2 pt-3">
@@ -527,11 +546,18 @@ export function cardStyle(f: {
   return style;
 }
 
-function VehicleSwatch({ type, color }: { type: "moto" | "carro"; color: string }) {
+function VehicleSwatch({ type, color, customUrl, size = 56 }: { type: "moto" | "carro"; color: string; customUrl?: string | null; size?: number }) {
+  if (customUrl) {
+    return (
+      <div style={{ width: size, height: size }} className="rounded-full bg-white/95 flex items-center justify-center shadow-md ring-1 ring-black/5">
+        <img src={customUrl} alt="" style={{ width: size - 6, height: size - 6 }} className="object-contain" />
+      </div>
+    );
+  }
   const hex = VEHICLE_COLORS[color] ?? "#10b981";
   return (
-    <div style={{ width: 40, height: 40, borderRadius: "50%", background: hex, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${hex}55` }}>
-      <svg viewBox="0 0 24 24" width="26" height="26" dangerouslySetInnerHTML={{ __html: vehicleSvgPath(type) }} />
+    <div style={{ width: size, height: size, borderRadius: "50%", background: hex, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 6px 16px ${hex}55` }}>
+      <svg viewBox="0 0 24 24" width={Math.round(size * 0.65)} height={Math.round(size * 0.65)} dangerouslySetInnerHTML={{ __html: vehicleSvgPath(type) }} />
     </div>
   );
 }
@@ -642,7 +668,7 @@ function Preview({ f }: { f: Settings }) {
         </div>
         <div className="p-4 flex items-center justify-around" style={cs}>
           <div className="flex flex-col items-center gap-1">
-            <VehicleSwatch type={f.vehicle_type} color={f.vehicle_color} />
+            <VehicleSwatch type={f.vehicle_type} color={f.vehicle_color} customUrl={f.vehicle_custom_url} size={64} />
             <span className="text-[10px] opacity-70">Entregador</span>
           </div>
           <div className="opacity-40 text-2xl">→</div>

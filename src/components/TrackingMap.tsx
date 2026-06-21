@@ -34,8 +34,12 @@ function makeVehicleIcon(vehicle: VehicleConfig | undefined, fallbackColor: stri
   const color = vehicle?.color ? (VEHICLE_COLORS[vehicle.color] ?? fallbackColor) : fallbackColor;
 
   let inner: string;
+  let size = 46;
   if (vehicle?.customUrl) {
-    inner = `<img src="${vehicle.customUrl}" style="width:36px;height:36px;object-fit:contain;" alt="" />`;
+    size = 58;
+    // Premium 3D image: drop-shadow gives it weight on the map, no colored circle so the
+    // illustration reads cleanly. Rotation is applied to the wrapper for direction.
+    inner = `<img src="${vehicle.customUrl}" style="width:${size}px;height:${size}px;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,0.35));" alt="" />`;
   } else {
     inner = `
       <div style="width:46px;height:46px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px ${color}aa, 0 0 0 4px ${color}33;">
@@ -44,8 +48,8 @@ function makeVehicleIcon(vehicle: VehicleConfig | undefined, fallbackColor: stri
         </svg>
       </div>`;
   }
-  const html = `<div style="transform: rotate(${rot}deg); transform-origin: center; display:flex;align-items:center;justify-content:center;">${inner}</div>`;
-  return L.divIcon({ html, className: "tracking-vehicle-icon", iconSize: [46, 46], iconAnchor: [23, 23] });
+  const html = `<div style="transform: rotate(${rot}deg); transform-origin: center; display:flex;align-items:center;justify-content:center;transition: transform 0.6s ease;">${inner}</div>`;
+  return L.divIcon({ html, className: "tracking-vehicle-icon", iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
 }
 
 function makePinIcon(pin: PinConfig | undefined, fallbackColor: string) {
