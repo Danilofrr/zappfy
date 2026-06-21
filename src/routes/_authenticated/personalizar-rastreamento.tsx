@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Save, Loader2, Eye, MapPin, Bike, Phone, Navigation, CheckCircle2, Truck, User } from "lucide-react";
+import { Save, Loader2, Eye, MapPin, Bike, Phone, Navigation, CheckCircle2, Truck, User, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
