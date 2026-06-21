@@ -246,10 +246,25 @@ function Page() {
     const { error } = await supabase
       .from("delivery_tracking_settings")
       .upsert(payload, { onConflict: "store_id" });
+    if (error) { setSaving(false); toast.error(error.message); return; }
+
+    // Admin Master: persistir como tema padrão para novos cadastros
+    if (isAdmin) {
+      const { error: adminErr } = await supabase
+        .from("admin_settings")
+        .upsert({ key: "tracking_default_theme", value: payload as any }, { onConflict: "key" });
+      if (adminErr) {
+        setSaving(false);
+        toast.error("Salvo, mas falhou ao definir como padrão: " + adminErr.message);
+        return;
+      }
+      toast.success("Salvo! Esse design será o padrão para todos os novos clientes.");
+    } else {
+      toast.success("Personalização salva!");
+    }
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Personalização salva!");
   }
+
 
   function up<K extends keyof Settings>(key: K, value: Settings[K]) { setF((p) => ({ ...p, [key]: value })); }
 
