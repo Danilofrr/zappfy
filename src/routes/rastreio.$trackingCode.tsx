@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrackingMap } from "@/components/TrackingMap";
 import {
+  STATUS_BADGE_DEFAULTS,
   STATUS_INFO,
   TIMELINE_STEPS,
   deriveDisplayStatus,
@@ -13,6 +14,7 @@ import {
   orderShortNumber,
   whatsappLink,
   type DeliveryStatus,
+  type StatusBadgeStyle,
 } from "@/lib/tracking";
 import { Check, Clock, MapPin, MessageCircle, Bike, Loader2 } from "lucide-react";
 
