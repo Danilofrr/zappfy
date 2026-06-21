@@ -30,6 +30,8 @@ type Payload = {
   order_status: string | null;
   latitude: number | null;
   longitude: number | null;
+  delivery_latitude: number | null;
+  delivery_longitude: number | null;
   heading: number | null;
   speed: number | null;
   last_updated_at: string | null;
