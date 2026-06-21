@@ -32,6 +32,7 @@ type Payload = {
   longitude: number | null;
   delivery_latitude: number | null;
   delivery_longitude: number | null;
+  delivery_geocoding_status: string | null;
   heading: number | null;
   speed: number | null;
   last_updated_at: string | null;
