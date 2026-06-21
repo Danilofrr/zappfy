@@ -348,25 +348,28 @@ function hexWithAlpha(hex: string, alpha: number): string {
   const a = Math.max(0, Math.min(255, Math.round(alpha * 255)));
   return hex + a.toString(16).padStart(2, "0");
 }
-function shadowFor(level: string): string {
+function shadowFor(level: string, color: string): string {
+  const c = color || "#000000";
   switch (level) {
     case "none": return "none";
-    case "sm": return "0 2px 8px rgba(0,0,0,0.18)";
-    case "lg": return "0 18px 40px -10px rgba(0,0,0,0.55)";
-    case "xl": return "0 30px 60px -16px rgba(0,0,0,0.7)";
-    default: return "0 10px 24px -8px rgba(0,0,0,0.4)";
+    case "sm": return `0 2px 8px ${hexWithAlpha(c, 0.18)}`;
+    case "lg": return `0 18px 40px -10px ${hexWithAlpha(c, 0.55)}`;
+    case "xl": return `0 30px 60px -16px ${hexWithAlpha(c, 0.7)}`;
+    default: return `0 10px 24px -8px ${hexWithAlpha(c, 0.4)}`;
   }
 }
 function cardStyle(f: {
   card_color: string; card_border_color: string; card_opacity: number;
   card_glass: boolean; card_shadow: string; border_intensity: number;
+  card_shadow_color?: string; card_radius?: number;
 }): React.CSSProperties {
   const bg = f.card_glass ? hexWithAlpha(f.card_color, Math.min(f.card_opacity, 0.6)) : hexWithAlpha(f.card_color, f.card_opacity);
   const borderAlpha = Math.max(0, Math.min(1, f.border_intensity));
   const style: React.CSSProperties = {
     background: bg,
     border: `1px solid ${hexWithAlpha(f.card_border_color, borderAlpha)}`,
-    boxShadow: shadowFor(f.card_shadow),
+    boxShadow: shadowFor(f.card_shadow, f.card_shadow_color || "#000000"),
+    borderRadius: (f.card_radius ?? 16) + "px",
   };
   if (f.card_glass) {
     (style as any).backdropFilter = "blur(20px) saturate(140%)";
