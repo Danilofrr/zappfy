@@ -28,7 +28,7 @@ const adminNav = [
   { to: "/admin/cupons", label: "Cupons", icon: Ticket },
   { to: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/admin/configuracoes", label: "Configurações", icon: Cog },
-  { to: "/personalizar-rastreamento", label: "Personalizar Rastreamento", icon: MapPin },
+  { to: "/personalizar-rastreamento", label: "Rastreamento", icon: MapPin },
   { to: "/admin/logs", label: "Logs do Sistema", icon: ScrollText },
 ];
 
