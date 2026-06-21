@@ -165,7 +165,7 @@ const emptySettings: Settings = {
     { id: "sedex", label: "Correios SEDEX", price: 34.9, icon: "rocket" },
   ],
   checkoutFooterEnabled: true,
-  checkoutFooterBrand: "Esparta Imports",
+  checkoutFooterBrand: "Zappfy",
   checkoutFooterCopyright: "© 2026 VILIES NEGOCIOS DIGITAIS CNPJ: 50.888.578/0001-02",
   checkoutFooterEmail: "suporte@espartaimports.com.br",
   checkoutFooterPayments: "pix,visa,mastercard,elo,amex,hipercard",
