@@ -77,6 +77,22 @@ type Settings = {
   msg_chegando: string;
   msg_entregue: string;
   msg_cancelado: string;
+  // Courier (motoboy) personalization
+  courier_inherit_client: boolean;
+  courier_logo_url: string | null;
+  courier_primary_color: string;
+  courier_secondary_color: string;
+  courier_header_style: "solid" | "gradient";
+  courier_header_color: string;
+  courier_background_color: string;
+  courier_card_color: string;
+  courier_card_border_color: string;
+  courier_card_shadow_color: string;
+  courier_text_color: string;
+  courier_title_color: string;
+  courier_button_color: string;
+  courier_icon_color: string;
+  courier_footer_text: string;
 };
 
 const DEFAULTS: Settings = {
