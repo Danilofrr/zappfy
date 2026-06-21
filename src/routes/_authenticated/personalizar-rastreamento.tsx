@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Save, Loader2, Eye } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Save, Loader2, Eye, MapPin, Bike, Phone } from "lucide-react";
 import { toast } from "sonner";
 import {
   PIN_COLORS,
@@ -31,7 +32,14 @@ type Settings = {
   background_color: string;
   button_color: string;
   text_color: string;
+  title_color: string;
   card_color: string;
+  card_border_color: string;
+  card_opacity: number;
+  card_glass: boolean;
+  card_shadow: "none" | "sm" | "md" | "lg" | "xl";
+  border_intensity: number;
+  status_color: string;
   timeline_color: string;
   tracking_page_title: string;
   tracking_page_subtitle: string;
@@ -60,10 +68,17 @@ const DEFAULTS: Settings = {
   logo_url: "",
   primary_color: "#10b981",
   secondary_color: "#0b1220",
-  background_color: "#0b1220",
+  background_color: "#020817",
   button_color: "#10b981",
-  text_color: "#ffffff",
-  card_color: "#0b1220",
+  text_color: "#e5e7eb",
+  title_color: "#ffffff",
+  card_color: "#0f172a",
+  card_border_color: "#1e293b",
+  card_opacity: 1,
+  card_glass: false,
+  card_shadow: "md",
+  border_intensity: 1,
+  status_color: "#10b981",
   timeline_color: "#10b981",
   tracking_page_title: "Acompanhe sua entrega",
   tracking_page_subtitle: "Veja em tempo real onde está seu pedido",
@@ -88,8 +103,25 @@ const DEFAULTS: Settings = {
   msg_cancelado: "Este pedido foi cancelado.",
 };
 
+const BG_PRESETS = [
+  { name: "Preto", color: "#020817" },
+  { name: "Azul escuro", color: "#0c1d3b" },
+  { name: "Cinza", color: "#1f2937" },
+  { name: "Branco", color: "#ffffff" },
+  { name: "Gradiente", color: "linear-gradient(180deg,#0b1220 0%,#1a2a4a 100%)" },
+];
+
+const SHADOW_OPTIONS = [
+  { value: "none", label: "Sem" },
+  { value: "sm", label: "Sutil" },
+  { value: "md", label: "Média" },
+  { value: "lg", label: "Forte" },
+  { value: "xl", label: "Intensa" },
+] as const;
+
 function Page() {
   const [f, setF] = useState<Settings>(DEFAULTS);
+  const [useSeparateCard, setUseSeparateCard] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -111,7 +143,9 @@ function Page() {
           const v = (data as any)[k];
           if (v !== null && v !== undefined) (clean as any)[k] = v;
         }
-        setF({ ...DEFAULTS, ...clean });
+        const merged = { ...DEFAULTS, ...clean };
+        setF(merged);
+        setUseSeparateCard(merged.card_color.trim().toLowerCase() !== merged.background_color.trim().toLowerCase());
       }
       setLoading(false);
     })();
@@ -120,8 +154,9 @@ function Page() {
   async function save() {
     if (!userId) return;
     setSaving(true);
+    const effective = useSeparateCard ? f : { ...f, card_color: f.background_color };
     const payload = {
-      ...f,
+      ...effective,
       store_id: userId,
       logo_url: f.logo_url || null,
       support_whatsapp: f.support_whatsapp || null,
@@ -146,6 +181,8 @@ function Page() {
     );
   }
 
+  const effective: Settings = useSeparateCard ? f : { ...f, card_color: f.background_color };
+
   return (
     <AppShell
       title="Página de Rastreamento"
@@ -161,11 +198,82 @@ function Page() {
             <div className="grid grid-cols-2 gap-3">
               <ColorField label="Cor principal" value={f.primary_color} onChange={(v) => up("primary_color", v)} />
               <ColorField label="Cor secundária" value={f.secondary_color} onChange={(v) => up("secondary_color", v)} />
-              <ColorField label="Cor de fundo" value={f.background_color} onChange={(v) => up("background_color", v)} />
-              <ColorField label="Cor dos cards" value={f.card_color} onChange={(v) => up("card_color", v)} />
               <ColorField label="Cor dos botões" value={f.button_color} onChange={(v) => up("button_color", v)} />
-              <ColorField label="Cor do texto" value={f.text_color} onChange={(v) => up("text_color", v)} />
+            </div>
+          </Card>
+
+          <Card title="Cores da página">
+            <div className="space-y-1">
+              <Label className="text-xs">Cor do fundo da página</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {BG_PRESETS.map((p) => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => up("background_color", p.color)}
+                    className={`h-9 px-3 rounded-lg text-xs border transition ${f.background_color === p.color ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"}`}
+                    style={{ background: p.color, color: p.color === "#ffffff" ? "#000" : "#fff" }}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="color" value={f.background_color.startsWith("#") ? f.background_color : "#0b1220"} onChange={(e) => up("background_color", e.target.value)} className="h-9 w-12 rounded border border-border bg-transparent cursor-pointer" />
+                <Input value={f.background_color} onChange={(e) => up("background_color", e.target.value)} className="h-9" placeholder="#020817 ou linear-gradient(...)" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-border">
+              <div>
+                <div className="text-sm font-medium">Usar cor diferente para os cards</div>
+                <div className="text-xs text-muted-foreground">Diferencia o fundo da página dos cartões internos</div>
+              </div>
+              <Switch checked={useSeparateCard} onCheckedChange={setUseSeparateCard} />
+            </div>
+
+            <div className={`grid grid-cols-2 gap-3 transition-opacity ${useSeparateCard ? "" : "opacity-40 pointer-events-none"}`}>
+              <ColorField label="Cor dos cards" value={f.card_color} onChange={(v) => up("card_color", v)} />
+              <ColorField label="Borda dos cards" value={f.card_border_color} onChange={(v) => up("card_border_color", v)} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <ColorField label="Cor dos títulos" value={f.title_color} onChange={(v) => up("title_color", v)} />
+              <ColorField label="Cor dos textos" value={f.text_color} onChange={(v) => up("text_color", v)} />
+              <ColorField label="Cor dos badges de status" value={f.status_color} onChange={(v) => up("status_color", v)} />
               <ColorField label="Cor da timeline" value={f.timeline_color} onChange={(v) => up("timeline_color", v)} />
+            </div>
+          </Card>
+
+          <Card title="Efeitos Premium dos cards">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Glassmorphism (vidro fosco)</div>
+                <div className="text-xs text-muted-foreground">Efeito desfocado translúcido nos cards</div>
+              </div>
+              <Switch checked={f.card_glass} onCheckedChange={(v) => up("card_glass", v)} />
+            </div>
+
+            <SliderField label={`Transparência dos cards: ${Math.round(f.card_opacity * 100)}%`} min={20} max={100} step={5}
+              value={Math.round(f.card_opacity * 100)} onChange={(v) => up("card_opacity", v / 100)} />
+
+            <SliderField label={`Intensidade da borda: ${Math.round(f.border_intensity * 100)}%`} min={0} max={200} step={10}
+              value={Math.round(f.border_intensity * 100)} onChange={(v) => up("border_intensity", v / 100)} />
+
+            <div className="space-y-1">
+              <Label className="text-xs">Sombra dos cards</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {SHADOW_OPTIONS.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => up("card_shadow", s.value)}
+                    className={`h-9 rounded-lg text-xs border transition ${f.card_shadow === s.value ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </Card>
 
@@ -189,13 +297,11 @@ function Page() {
                   );
                 })}
               </div>
-              <div className="flex items-center gap-2 pt-2">
-                <Input
-                  value={f.vehicle_custom_url || ""}
-                  onChange={(e) => up("vehicle_custom_url", e.target.value)}
-                  placeholder="URL de ícone personalizado (PNG)"
-                />
-              </div>
+              <Input
+                value={f.vehicle_custom_url || ""}
+                onChange={(e) => up("vehicle_custom_url", e.target.value)}
+                placeholder="URL de ícone personalizado (PNG)"
+              />
             </div>
 
             <div className="space-y-2 pt-3">
@@ -217,13 +323,11 @@ function Page() {
                   );
                 })}
               </div>
-              <div className="flex items-center gap-2 pt-2">
-                <Input
-                  value={f.pin_custom_url || ""}
-                  onChange={(e) => up("pin_custom_url", e.target.value)}
-                  placeholder="URL de pino personalizado (PNG)"
-                />
-              </div>
+              <Input
+                value={f.pin_custom_url || ""}
+                onChange={(e) => up("pin_custom_url", e.target.value)}
+                placeholder="URL de pino personalizado (PNG)"
+              />
             </div>
           </Card>
 
@@ -255,13 +359,47 @@ function Page() {
 
         <div className="lg:sticky lg:top-4 self-start">
           <div className="rounded-2xl border border-border bg-card p-3">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2"><Eye className="h-3.5 w-3.5" /> Pré-visualização</div>
-            <Preview f={f} />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2"><Eye className="h-3.5 w-3.5" /> Pré-visualização em tempo real</div>
+            <Preview f={effective} />
           </div>
         </div>
       </div>
     </AppShell>
   );
+}
+
+// ---------- Card style helpers (shared with rastreio public page) ----------
+function hexWithAlpha(hex: string, alpha: number): string {
+  if (!hex.startsWith("#")) return hex;
+  const a = Math.max(0, Math.min(255, Math.round(alpha * 255)));
+  const suffix = a.toString(16).padStart(2, "0");
+  if (hex.length === 7) return hex + suffix;
+  return hex;
+}
+function shadowFor(level: string): string {
+  switch (level) {
+    case "none": return "none";
+    case "sm": return "0 2px 8px rgba(0,0,0,0.18)";
+    case "lg": return "0 18px 40px -10px rgba(0,0,0,0.55)";
+    case "xl": return "0 30px 60px -16px rgba(0,0,0,0.7)";
+    default: return "0 10px 24px -8px rgba(0,0,0,0.4)";
+  }
+}
+export function cardStyle(f: {
+  card_color: string; card_border_color: string; card_opacity: number;
+  card_glass: boolean; card_shadow: string; border_intensity: number;
+}): React.CSSProperties {
+  const bg = f.card_glass ? hexWithAlpha(f.card_color, Math.min(f.card_opacity, 0.6)) : hexWithAlpha(f.card_color, f.card_opacity);
+  const borderAlpha = Math.max(0, Math.min(1, f.border_intensity));
+  const style: React.CSSProperties = {
+    background: bg,
+    border: `1px solid ${hexWithAlpha(f.card_border_color, borderAlpha)}`,
+    boxShadow: shadowFor(f.card_shadow),
+  };
+  if (f.card_glass) {
+    (style as any).backdropFilter = "blur(20px) saturate(140%)";
+  }
+  return style;
 }
 
 function VehicleSwatch({ type, color }: { type: "moto" | "carro"; color: string }) {
@@ -301,9 +439,18 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
       <div className="flex items-center gap-2">
-        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="h-9 w-12 rounded border border-border bg-transparent cursor-pointer" />
+        <input type="color" value={value.startsWith("#") ? value : "#000000"} onChange={(e) => onChange(e.target.value)} className="h-9 w-12 rounded border border-border bg-transparent cursor-pointer" />
         <Input value={value} onChange={(e) => onChange(e.target.value)} className="h-9" />
       </div>
+    </div>
+  );
+}
+
+function SliderField({ label, min, max, step, value, onChange }: { label: string; min: number; max: number; step: number; value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs">{label}</Label>
+      <Slider min={min} max={max} step={step} value={[value]} onValueChange={(v) => onChange(v[0])} />
     </div>
   );
 }
@@ -319,25 +466,34 @@ function ToggleRow({ label, value, onChange }: { label: string; value: boolean; 
 
 function Preview({ f }: { f: Settings }) {
   const info = STATUS_INFO.saiu_para_entrega;
-  const cardBg = f.card_color || f.secondary_color;
+  const cs = useMemo(() => cardStyle(f), [f]);
+  const isGradient = f.background_color.includes("gradient");
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: f.background_color, color: f.text_color, minHeight: 520 }}>
-      <div className="px-5 pt-6 pb-5 text-center" style={{ background: `linear-gradient(180deg, ${f.secondary_color}, transparent)` }}>
+    <div
+      className="rounded-2xl overflow-hidden transition-colors"
+      style={{
+        background: f.background_color,
+        backgroundImage: isGradient ? f.background_color : undefined,
+        color: f.text_color,
+        minHeight: 560,
+      }}
+    >
+      <div className="px-5 pt-6 pb-5 text-center" style={{ background: `linear-gradient(180deg, ${hexWithAlpha(f.secondary_color, 0.5)}, transparent)` }}>
         {f.show_store_logo && f.logo_url && <img src={f.logo_url} alt="logo" className="h-12 w-auto mx-auto mb-2 object-contain" />}
-        <div className="text-base font-bold">{f.tracking_page_title}</div>
+        <div className="text-base font-bold" style={{ color: f.title_color }}>{f.tracking_page_title}</div>
         <div className="text-xs opacity-70">{f.tracking_page_subtitle}</div>
-        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: `${f.primary_color}22`, color: f.primary_color, border: `1px solid ${f.primary_color}55` }}>
+        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: hexWithAlpha(f.status_color, 0.15), color: f.status_color, border: `1px solid ${hexWithAlpha(f.status_color, 0.35)}` }}>
           <span>{info.emoji}</span> {info.label}
-          <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: f.primary_color }} />
+          <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: f.status_color }} />
         </div>
       </div>
       <div className="px-4 space-y-3">
-        <div className="rounded-xl p-4" style={{ background: cardBg, border: `1px solid ${f.primary_color}33` }}>
+        <div className="rounded-xl p-4" style={cs}>
           <div className="text-[10px] uppercase opacity-60">Pedido</div>
-          <div className="font-bold">#A1B2C3D4</div>
-          <p className="text-xs opacity-90 mt-2">{f.msg_saiu}</p>
+          <div className="font-bold" style={{ color: f.title_color }}>#A1B2C3D4</div>
+          <p className="text-xs mt-2" style={{ color: f.text_color }}>{f.msg_saiu}</p>
         </div>
-        <div className="rounded-xl p-4 flex items-center justify-around" style={{ background: cardBg, border: `1px solid ${f.primary_color}22` }}>
+        <div className="rounded-xl p-4 flex items-center justify-around" style={cs}>
           <div className="flex flex-col items-center gap-1">
             <VehicleSwatch type={f.vehicle_type} color={f.vehicle_color} />
             <span className="text-[10px] opacity-70">Entregador</span>
@@ -348,20 +504,34 @@ function Preview({ f }: { f: Settings }) {
             <span className="text-[10px] opacity-70">Destino</span>
           </div>
         </div>
-        <div className="rounded-xl p-4" style={{ background: cardBg, border: `1px solid ${f.primary_color}22` }}>
-          <div className="text-xs font-semibold mb-3">Acompanhamento</div>
+        <div className="rounded-xl p-4" style={cs}>
+          <div className="text-xs font-semibold mb-3" style={{ color: f.title_color }}>Acompanhamento</div>
           <ol className="relative space-y-3 pl-6">
-            <span className="absolute left-2.5 top-2 bottom-2 w-px" style={{ background: `${f.timeline_color}33` }} />
+            <span className="absolute left-2.5 top-2 bottom-2 w-px" style={{ background: hexWithAlpha(f.timeline_color, 0.2) }} />
             {TIMELINE_STEPS.map((step, i) => {
               const filled = i <= 2;
               return (
                 <li key={step.key} className="relative">
-                  <span className="absolute -left-[22px] top-0.5 h-4 w-4 rounded-full" style={{ background: filled ? f.timeline_color : "transparent", border: `2px solid ${filled ? f.timeline_color : `${f.timeline_color}55`}` }} />
-                  <div className="text-[11px]" style={{ color: filled ? f.timeline_color : undefined, opacity: filled ? 1 : 0.6 }}>{step.label}</div>
+                  <span className="absolute -left-[22px] top-0.5 h-4 w-4 rounded-full" style={{ background: filled ? f.timeline_color : "transparent", border: `2px solid ${filled ? f.timeline_color : hexWithAlpha(f.timeline_color, 0.35)}` }} />
+                  <div className="text-[11px]" style={{ color: filled ? f.timeline_color : f.text_color, opacity: filled ? 1 : 0.6 }}>{step.label}</div>
                 </li>
               );
             })}
           </ol>
+        </div>
+        <div className="rounded-xl p-3 flex items-start gap-2 text-xs" style={cs}>
+          <MapPin className="h-3.5 w-3.5 mt-0.5" style={{ color: f.primary_color }} />
+          <div>
+            <div className="font-medium" style={{ color: f.title_color }}>Endereço de entrega</div>
+            <div className="opacity-80">Rua Exemplo, 123 — Centro</div>
+          </div>
+        </div>
+        <div className="rounded-xl p-3 flex items-center gap-3 text-xs" style={cs}>
+          <Bike className="h-4 w-4" style={{ color: f.primary_color }} />
+          <div className="flex-1">
+            <div className="font-medium" style={{ color: f.title_color }}>João Motoboy</div>
+            <div className="opacity-70 flex items-center gap-1"><Phone className="h-3 w-3" /> (81) 99999-0000</div>
+          </div>
         </div>
         <div className="rounded-xl p-3 text-center text-xs font-semibold" style={{ background: f.button_color, color: "#fff" }}>
           Falar com a loja
