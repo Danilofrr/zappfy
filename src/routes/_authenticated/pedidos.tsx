@@ -597,7 +597,11 @@ function PedidosPage() {
                 {trackingOpen === o.id && (
                   <tr className="border-t border-border bg-secondary/10">
                     <td colSpan={8} className="px-4 py-4">
-                      <DeliveryTrackingPanel orderId={o.id} customerPhone={o.phone} />
+                      <DeliveryTrackingPanel
+                        orderId={o.id}
+                        customerPhone={o.phone}
+                        orderAddress={[o.address, o.district, o.city].filter(Boolean).join(", ")}
+                      />
                     </td>
                   </tr>
                 )}
