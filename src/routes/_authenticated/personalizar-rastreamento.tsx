@@ -208,11 +208,11 @@ function Page() {
       const uid = u.user?.id ?? null;
       setUserId(uid);
       if (!uid) { setLoading(false); return; }
-      const { data } = await supabase
-        .from("delivery_tracking_settings")
-        .select("*")
-        .eq("store_id", uid)
-        .maybeSingle();
+      const [{ data: roles }, { data }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+        supabase.from("delivery_tracking_settings").select("*").eq("store_id", uid).maybeSingle(),
+      ]);
+      setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
       if (data) {
         const clean: Partial<Settings> = {};
         for (const k of Object.keys(DEFAULTS) as (keyof Settings)[]) {
