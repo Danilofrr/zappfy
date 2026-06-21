@@ -374,6 +374,7 @@ function PedidosPage() {
 
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [open, setOpen] = useState(false);
+  const [trackingOpen, setTrackingOpen] = useState<string | null>(null);
 
   type DateRangeKey = "all" | "today" | "yesterday" | "7d" | "30d" | "month" | "custom";
   const [dateRange, setDateRange] = useState<DateRangeKey>("all");
