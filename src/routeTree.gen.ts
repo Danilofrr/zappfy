@@ -14,7 +14,9 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as RastreioTrackingCodeRouteImport } from './routes/rastreio.$trackingCode'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
+import { Route as EntregaCourierTokenRouteImport } from './routes/entrega.$courierToken'
 import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
 import { Route as AtivarContaTokenRouteImport } from './routes/ativar-conta.$token'
 import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
@@ -69,9 +71,19 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const RastreioTrackingCodeRoute = RastreioTrackingCodeRouteImport.update({
+  id: '/rastreio/$trackingCode',
+  path: '/rastreio/$trackingCode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LojaSlugRoute = LojaSlugRouteImport.update({
   id: '/loja/$slug',
   path: '/loja/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregaCourierTokenRoute = EntregaCourierTokenRouteImport.update({
+  id: '/entrega/$courierToken',
+  path: '/entrega/$courierToken',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutSlugRoute = CheckoutSlugRouteImport.update({
@@ -257,7 +269,9 @@ export interface FileRoutesByFullPath {
   '/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
+  '/entrega/$courierToken': typeof EntregaCourierTokenRoute
   '/loja/$slug': typeof LojaSlugRoute
+  '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
@@ -291,7 +305,9 @@ export interface FileRoutesByTo {
   '/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
+  '/entrega/$courierToken': typeof EntregaCourierTokenRoute
   '/loja/$slug': typeof LojaSlugRoute
+  '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
@@ -329,7 +345,9 @@ export interface FileRoutesById {
   '/_authenticated/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
+  '/entrega/$courierToken': typeof EntregaCourierTokenRoute
   '/loja/$slug': typeof LojaSlugRoute
+  '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
@@ -368,7 +386,9 @@ export interface FileRouteTypes {
     | '/trocas'
     | '/ativar-conta/$token'
     | '/checkout/$slug'
+    | '/entrega/$courierToken'
     | '/loja/$slug'
+    | '/rastreio/$trackingCode'
     | '/admin/assinaturas'
     | '/admin/clientes'
     | '/admin/configuracoes'
@@ -402,7 +422,9 @@ export interface FileRouteTypes {
     | '/trocas'
     | '/ativar-conta/$token'
     | '/checkout/$slug'
+    | '/entrega/$courierToken'
     | '/loja/$slug'
+    | '/rastreio/$trackingCode'
     | '/'
     | '/admin/assinaturas'
     | '/admin/clientes'
@@ -439,7 +461,9 @@ export interface FileRouteTypes {
     | '/_authenticated/trocas'
     | '/ativar-conta/$token'
     | '/checkout/$slug'
+    | '/entrega/$courierToken'
     | '/loja/$slug'
+    | '/rastreio/$trackingCode'
     | '/_authenticated/'
     | '/_authenticated/admin/assinaturas'
     | '/_authenticated/admin/clientes'
@@ -459,7 +483,9 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   AtivarContaTokenRoute: typeof AtivarContaTokenRoute
+  EntregaCourierTokenRoute: typeof EntregaCourierTokenRoute
   LojaSlugRoute: typeof LojaSlugRoute
+  RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
   ApiPublicSubmitOrderRoute: typeof ApiPublicSubmitOrderRoute
 }
 
@@ -500,11 +526,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/rastreio/$trackingCode': {
+      id: '/rastreio/$trackingCode'
+      path: '/rastreio/$trackingCode'
+      fullPath: '/rastreio/$trackingCode'
+      preLoaderRoute: typeof RastreioTrackingCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/loja/$slug': {
       id: '/loja/$slug'
       path: '/loja/$slug'
       fullPath: '/loja/$slug'
       preLoaderRoute: typeof LojaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrega/$courierToken': {
+      id: '/entrega/$courierToken'
+      path: '/entrega/$courierToken'
+      fullPath: '/entrega/$courierToken'
+      preLoaderRoute: typeof EntregaCourierTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout/$slug': {
@@ -804,7 +844,9 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   AtivarContaTokenRoute: AtivarContaTokenRoute,
+  EntregaCourierTokenRoute: EntregaCourierTokenRoute,
   LojaSlugRoute: LojaSlugRoute,
+  RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
   ApiPublicSubmitOrderRoute: ApiPublicSubmitOrderRoute,
 }
 export const routeTree = rootRouteImport

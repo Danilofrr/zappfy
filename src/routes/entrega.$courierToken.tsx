@@ -91,9 +91,9 @@ function CourierPage() {
       _token: courierToken,
       _lat: latitude,
       _lng: longitude,
-      _speed: speed ?? null,
-      _heading: heading ?? null,
-      _accuracy: accuracy ?? null,
+      _speed: speed ?? undefined,
+      _heading: heading ?? undefined,
+      _accuracy: accuracy ?? undefined,
     });
     setSending(false);
     if (error) {
