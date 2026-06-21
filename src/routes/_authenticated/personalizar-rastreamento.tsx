@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { AdminShell } from "@/components/AdminShell";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -271,10 +272,11 @@ function Page() {
   }
 
   if (loading) {
+    const Shell = isAdmin ? AdminShell : AppShell;
     return (
-      <AppShell title="Página de Rastreamento" subtitle="Personalize a página que o cliente vê">
+      <Shell title="Página de Rastreamento" subtitle="Personalize a página que o cliente vê">
         <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando…</div>
-      </AppShell>
+      </Shell>
     );
   }
 
@@ -286,8 +288,9 @@ function Page() {
     toast.success("Tema Oficial Zappfy aplicado. Salve para confirmar.");
   }
 
+  const Shell = isAdmin ? AdminShell : AppShell;
   return (
-    <AppShell
+    <Shell
       title="Página de Rastreamento"
       subtitle={isAdmin ? "Admin Master — controle total da personalização" : "Personalize a página que seu cliente acompanha"}
       actions={
@@ -602,7 +605,7 @@ function Page() {
           <MotoboyTab f={f} up={up} isAdmin={isAdmin} />
         </TabsContent>
       </Tabs>
-    </AppShell>
+    </Shell>
   );
 }
 
