@@ -61,6 +61,8 @@ type Settings = {
   show_courier_phone: boolean;
   show_estimated_time: boolean;
   show_distance: boolean;
+  show_products: boolean;
+  show_product_price: boolean;
   vehicle_type: "moto" | "carro";
   vehicle_color: string;
   vehicle_custom_url: string | null;
@@ -127,6 +129,8 @@ const DEFAULTS: Settings = {
   show_courier_phone: false,
   show_estimated_time: true,
   show_distance: true,
+  show_products: true,
+  show_product_price: true,
   vehicle_type: "moto",
   vehicle_color: "verde",
   vehicle_custom_url: "",
@@ -540,6 +544,8 @@ function Page() {
             <ToggleRow label="Mostrar telefone do motoboy" value={f.show_courier_phone} onChange={(v) => up("show_courier_phone", v)} />
             <ToggleRow label="Mostrar tempo estimado" value={f.show_estimated_time} onChange={(v) => up("show_estimated_time", v)} />
             <ToggleRow label="Mostrar distância" value={f.show_distance} onChange={(v) => up("show_distance", v)} />
+            <ToggleRow label="Mostrar produtos do pedido" value={f.show_products} onChange={(v) => up("show_products", v)} />
+            <ToggleRow label="Mostrar valor dos produtos" value={f.show_product_price} onChange={(v) => up("show_product_price", v)} />
           </Card>
         </div>
 

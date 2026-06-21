@@ -309,6 +309,8 @@ export type Database = {
           show_courier_phone: boolean
           show_distance: boolean
           show_estimated_time: boolean
+          show_product_price: boolean
+          show_products: boolean
           show_store_logo: boolean
           status_color: string
           status_styles: Json
@@ -377,6 +379,8 @@ export type Database = {
           show_courier_phone?: boolean
           show_distance?: boolean
           show_estimated_time?: boolean
+          show_product_price?: boolean
+          show_products?: boolean
           show_store_logo?: boolean
           status_color?: string
           status_styles?: Json
@@ -445,6 +449,8 @@ export type Database = {
           show_courier_phone?: boolean
           show_distance?: boolean
           show_estimated_time?: boolean
+          show_product_price?: boolean
+          show_products?: boolean
           show_store_logo?: boolean
           status_color?: string
           status_styles?: Json
