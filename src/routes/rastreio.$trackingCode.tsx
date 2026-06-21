@@ -173,7 +173,7 @@ function RastreioPage() {
           supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: lat, _lng: lng, _address: fullAddress, _status: "success" }).then(() => {});
         } else {
           // record the failure so the merchant sees the alert
-          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: null, _lng: null, _address: fullAddress, _status: "failed" }).then(() => {});
+          supabase.rpc("set_tracking_destination", { _code: trackingCode, _lat: null as unknown as number, _lng: null as unknown as number, _address: fullAddress, _status: "failed" }).then(() => {});
         }
       })
       .catch(() => {});
