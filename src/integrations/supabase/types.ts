@@ -247,8 +247,13 @@ export type Database = {
       delivery_tracking_settings: {
         Row: {
           background_color: string | null
+          border_intensity: number
           button_color: string | null
+          card_border_color: string
           card_color: string
+          card_glass: boolean
+          card_opacity: number
+          card_shadow: string
           created_at: string
           delivered_message: string | null
           id: string
@@ -268,10 +273,12 @@ export type Database = {
           show_distance: boolean
           show_estimated_time: boolean
           show_store_logo: boolean
+          status_color: string
           store_id: string
           support_whatsapp: string | null
           text_color: string | null
           timeline_color: string
+          title_color: string
           tracking_page_subtitle: string | null
           tracking_page_title: string | null
           updated_at: string
@@ -282,8 +289,13 @@ export type Database = {
         }
         Insert: {
           background_color?: string | null
+          border_intensity?: number
           button_color?: string | null
+          card_border_color?: string
           card_color?: string
+          card_glass?: boolean
+          card_opacity?: number
+          card_shadow?: string
           created_at?: string
           delivered_message?: string | null
           id?: string
@@ -303,10 +315,12 @@ export type Database = {
           show_distance?: boolean
           show_estimated_time?: boolean
           show_store_logo?: boolean
+          status_color?: string
           store_id: string
           support_whatsapp?: string | null
           text_color?: string | null
           timeline_color?: string
+          title_color?: string
           tracking_page_subtitle?: string | null
           tracking_page_title?: string | null
           updated_at?: string
@@ -317,8 +331,13 @@ export type Database = {
         }
         Update: {
           background_color?: string | null
+          border_intensity?: number
           button_color?: string | null
+          card_border_color?: string
           card_color?: string
+          card_glass?: boolean
+          card_opacity?: number
+          card_shadow?: string
           created_at?: string
           delivered_message?: string | null
           id?: string
@@ -338,10 +357,12 @@ export type Database = {
           show_distance?: boolean
           show_estimated_time?: boolean
           show_store_logo?: boolean
+          status_color?: string
           store_id?: string
           support_whatsapp?: string | null
           text_color?: string | null
           timeline_color?: string
+          title_color?: string
           tracking_page_subtitle?: string | null
           tracking_page_title?: string | null
           updated_at?: string

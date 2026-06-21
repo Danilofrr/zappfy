@@ -43,7 +43,14 @@ type Payload = {
     background_color: string;
     button_color: string;
     text_color: string;
+    title_color: string;
     card_color: string;
+    card_border_color: string;
+    card_opacity: number;
+    card_glass: boolean;
+    card_shadow: string;
+    border_intensity: number;
+    status_color: string;
     timeline_color: string;
     tracking_page_title: string;
     tracking_page_subtitle: string;
@@ -197,36 +204,52 @@ function RastreioPage() {
   const message = messages[displayStatus];
   const cardBg = s.card_color || s.secondary_color;
   const timelineColor = s.timeline_color || s.primary_color;
+  const statusColor = s.status_color || s.primary_color;
+  const titleColor = s.title_color || s.text_color;
+  const isGradientBg = typeof s.background_color === "string" && s.background_color.includes("gradient");
+  const cs = cardStyle({
+    card_color: cardBg,
+    card_border_color: s.card_border_color || "#1e293b",
+    card_opacity: s.card_opacity ?? 1,
+    card_glass: !!s.card_glass,
+    card_shadow: s.card_shadow || "md",
+    border_intensity: s.border_intensity ?? 1,
+  });
 
   return (
     <div
       className="min-h-screen pb-12"
-      style={{ background: s.background_color, color: s.text_color, fontFamily: "system-ui, sans-serif" }}
+      style={{
+        background: isGradientBg ? undefined : s.background_color,
+        backgroundImage: isGradientBg ? s.background_color : undefined,
+        color: s.text_color,
+        fontFamily: "system-ui, sans-serif",
+      }}
     >
-      <header className="px-5 pt-8 pb-6 text-center" style={{ background: `linear-gradient(180deg, ${s.secondary_color}, transparent)` }}>
+      <header className="px-5 pt-8 pb-6 text-center" style={{ background: `linear-gradient(180deg, ${hexWithAlpha(s.secondary_color, 0.5)}, transparent)` }}>
         {s.show_store_logo && data.store.logo_url && (
           <img src={data.store.logo_url} alt={data.store.name} className="mx-auto h-16 w-auto object-contain mb-3" />
         )}
-        <h1 className="text-xl font-bold">{data.store.name}</h1>
+        <h1 className="text-xl font-bold" style={{ color: titleColor }}>{data.store.name}</h1>
         <p className="text-sm opacity-80 mt-1">{s.tracking_page_subtitle}</p>
         <div
           className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-all"
-          style={{ background: `${s.primary_color}22`, color: s.primary_color, border: `1px solid ${s.primary_color}55` }}
+          style={{ background: hexWithAlpha(statusColor, 0.15), color: statusColor, border: `1px solid ${hexWithAlpha(statusColor, 0.35)}` }}
           key={displayStatus}
         >
           <span aria-hidden>{info.emoji}</span>
           <span>{info.label}</span>
           {!isFinished && (
-            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: s.primary_color }} />
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: statusColor }} />
           )}
         </div>
       </header>
 
       <main className="max-w-md mx-auto px-4 space-y-4">
-        <section className="rounded-2xl p-5 shadow-xl animate-fade-in" style={{ background: cardBg, border: `1px solid ${s.primary_color}33` }}>
+        <section className="rounded-2xl p-5 animate-fade-in" style={cs}>
           <div className="text-xs uppercase opacity-60 tracking-wider">Pedido</div>
-          <div className="text-lg font-bold">#{orderShortNumber(data.order.id)}</div>
-          <p className="mt-3 text-sm leading-relaxed opacity-90">{message}</p>
+          <div className="text-lg font-bold" style={{ color: titleColor }}>#{orderShortNumber(data.order.id)}</div>
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: s.text_color }}>{message}</p>
           {stale && (
             <div className="mt-3 text-xs rounded-lg px-3 py-2" style={{ background: "#f59e0b22", color: "#f59e0b" }}>
               <Clock className="inline h-3.5 w-3.5 mr-1" /> Aguardando nova atualização do entregador…
@@ -235,7 +258,7 @@ function RastreioPage() {
         </section>
 
         {!isFinished && (displayStatus === "saiu_para_entrega" || displayStatus === "chegando") && (
-          <section className="rounded-2xl overflow-hidden shadow-xl" style={{ border: `1px solid ${s.primary_color}33` }}>
+          <section className="rounded-2xl overflow-hidden" style={cs}>
             {courierPos ? (
               <TrackingMap
                 courier={courierPos}
@@ -247,7 +270,7 @@ function RastreioPage() {
                 height={320}
               />
             ) : (
-              <div className="h-[260px] flex items-center justify-center text-sm opacity-70" style={{ background: cardBg }}>
+              <div className="h-[260px] flex items-center justify-center text-sm opacity-70">
                 <Bike className="h-5 w-5 mr-2" /> Aguardando o entregador iniciar a entrega…
               </div>
             )}
@@ -257,28 +280,28 @@ function RastreioPage() {
         {!isFinished && (displayStatus === "saiu_para_entrega" || displayStatus === "chegando") && (
           <section className="grid grid-cols-2 gap-3">
             {s.show_distance && (
-              <InfoCard color={s.primary_color} bg={cardBg} label="Distância" value={distance != null ? formatDistance(distance) : "—"} />
+              <InfoCard color={s.primary_color} style={cs} label="Distância" value={distance != null ? formatDistance(distance) : "—"} />
             )}
             {s.show_estimated_time && (
-              <InfoCard color={s.primary_color} bg={cardBg} label="Chegada estimada" value={eta != null ? `${eta} min` : "—"} />
+              <InfoCard color={s.primary_color} style={cs} label="Chegada estimada" value={eta != null ? `${eta} min` : "—"} />
             )}
-            <InfoCard color={s.primary_color} bg={cardBg} label="Última atualização" value={formatRelative(data.last_updated_at)} />
+            <InfoCard color={s.primary_color} style={cs} label="Última atualização" value={formatRelative(data.last_updated_at)} />
             {s.show_courier_name && data.courier.name && (
-              <InfoCard color={s.primary_color} bg={cardBg} label="Entregador" value={data.courier.name} />
+              <InfoCard color={s.primary_color} style={cs} label="Entregador" value={data.courier.name} />
             )}
           </section>
         )}
 
-        <section className="rounded-2xl p-5" style={{ background: cardBg, border: `1px solid ${s.primary_color}22` }}>
-          <h3 className="text-sm font-semibold mb-4">Acompanhamento</h3>
-          <Timeline status={displayStatus} primary={timelineColor} />
+        <section className="rounded-2xl p-5" style={cs}>
+          <h3 className="text-sm font-semibold mb-4" style={{ color: titleColor }}>Acompanhamento</h3>
+          <Timeline status={displayStatus} primary={timelineColor} textColor={s.text_color} />
         </section>
 
-        <section className="rounded-2xl p-4 text-sm" style={{ background: cardBg, border: `1px solid ${s.primary_color}22` }}>
+        <section className="rounded-2xl p-4 text-sm" style={cs}>
           <div className="flex items-start gap-2">
             <MapPin className="h-4 w-4 mt-0.5" style={{ color: s.primary_color }} />
             <div>
-              <div className="font-medium">Endereço de entrega</div>
+              <div className="font-medium" style={{ color: titleColor }}>Endereço de entrega</div>
               <div className="opacity-80">{data.order.address}{data.order.district ? `, ${data.order.district}` : ""}{data.order.city ? ` — ${data.order.city}` : ""}</div>
             </div>
           </div>
@@ -304,21 +327,52 @@ function RastreioPage() {
   );
 }
 
-function InfoCard({ label, value, color, bg }: { label: string; value: string; color: string; bg: string }) {
+function hexWithAlpha(hex: string, alpha: number): string {
+  if (!hex || !hex.startsWith("#") || hex.length !== 7) return hex;
+  const a = Math.max(0, Math.min(255, Math.round(alpha * 255)));
+  return hex + a.toString(16).padStart(2, "0");
+}
+function shadowFor(level: string): string {
+  switch (level) {
+    case "none": return "none";
+    case "sm": return "0 2px 8px rgba(0,0,0,0.18)";
+    case "lg": return "0 18px 40px -10px rgba(0,0,0,0.55)";
+    case "xl": return "0 30px 60px -16px rgba(0,0,0,0.7)";
+    default: return "0 10px 24px -8px rgba(0,0,0,0.4)";
+  }
+}
+function cardStyle(f: {
+  card_color: string; card_border_color: string; card_opacity: number;
+  card_glass: boolean; card_shadow: string; border_intensity: number;
+}): React.CSSProperties {
+  const bg = f.card_glass ? hexWithAlpha(f.card_color, Math.min(f.card_opacity, 0.6)) : hexWithAlpha(f.card_color, f.card_opacity);
+  const borderAlpha = Math.max(0, Math.min(1, f.border_intensity));
+  const style: React.CSSProperties = {
+    background: bg,
+    border: `1px solid ${hexWithAlpha(f.card_border_color, borderAlpha)}`,
+    boxShadow: shadowFor(f.card_shadow),
+  };
+  if (f.card_glass) {
+    (style as any).backdropFilter = "blur(20px) saturate(140%)";
+  }
+  return style;
+}
+
+function InfoCard({ label, value, color, style }: { label: string; value: string; color: string; style: React.CSSProperties }) {
   return (
-    <div className="rounded-xl p-3" style={{ background: bg, border: `1px solid ${color}22` }}>
+    <div className="rounded-xl p-3" style={style}>
       <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
       <div className="text-base font-semibold mt-0.5" style={{ color }}>{value}</div>
     </div>
   );
 }
 
-function Timeline({ status, primary }: { status: DeliveryStatus; primary: string }) {
+function Timeline({ status, primary, textColor }: { status: DeliveryStatus; primary: string; textColor?: string }) {
   const order: DeliveryStatus[] = ["aguardando_motoboy", "preparando", "saiu_para_entrega", "chegando", "entregue"];
   const currentIdx = status === "cancelado" ? -1 : order.indexOf(status);
   return (
     <ol className="relative space-y-4 pl-7">
-      <span className="absolute left-3 top-2 bottom-2 w-px" style={{ background: `${primary}33` }} />
+      <span className="absolute left-3 top-2 bottom-2 w-px" style={{ background: hexWithAlpha(primary, 0.2) }} />
       {TIMELINE_STEPS.map((step, i) => {
         const done = i < currentIdx;
         const isCurrent = i === currentIdx;
@@ -329,14 +383,14 @@ function Timeline({ status, primary }: { status: DeliveryStatus; primary: string
               className="absolute -left-[26px] top-1 h-5 w-5 rounded-full flex items-center justify-center transition-all"
               style={{
                 background: filled ? primary : "transparent",
-                border: `2px solid ${filled ? primary : `${primary}55`}`,
-                boxShadow: isCurrent ? `0 0 0 6px ${primary}33` : "none",
+                border: `2px solid ${filled ? primary : hexWithAlpha(primary, 0.35)}`,
+                boxShadow: isCurrent ? `0 0 0 6px ${hexWithAlpha(primary, 0.2)}` : "none",
               }}
             >
               {done && <Check className="h-3 w-3 text-white" />}
               {isCurrent && <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />}
             </span>
-            <div className={`text-sm ${filled ? "font-semibold" : "opacity-60"}`} style={filled ? { color: primary } : {}}>
+            <div className={`text-sm ${filled ? "font-semibold" : "opacity-60"}`} style={{ color: filled ? primary : textColor }}>
               {step.label}
             </div>
           </li>
