@@ -181,7 +181,28 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   }
 
   const info = STATUS_INFO[tracking.status];
-  const hasPosition = tracking.latitude != null && tracking.longitude != null;
+  const courierPos = tracking.latitude != null && tracking.longitude != null
+    ? { lat: tracking.latitude, lng: tracking.longitude }
+    : null;
+  const destination = tracking.delivery_latitude != null && tracking.delivery_longitude != null
+    ? { lat: tracking.delivery_latitude, lng: tracking.delivery_longitude }
+    : null;
+  const hasMapAnything = courierPos || destination;
+
+  async function handleSaveDestination(coords: { lat: number; lng: number }) {
+    const { error } = await supabase.rpc("set_tracking_destination", {
+      _code: tracking!.tracking_code,
+      _lat: coords.lat,
+      _lng: coords.lng,
+      _address: orderAddress ?? null,
+      _status: "manual",
+    });
+    if (error) { toast.error(error.message); return; }
+    // optimistic update + refresh
+    setTracking((t) => t ? { ...t, delivery_latitude: coords.lat, delivery_longitude: coords.lng, delivery_geocoding_status: "manual" } : t);
+    toast.success("Localização do destino salva!");
+    load();
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
@@ -190,25 +211,44 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${info.bg} ${info.color}`}>{info.label}</span>
       </div>
 
+      {!destination && tracking.status !== "cancelado" && tracking.status !== "entregue" && (
+        <div className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <div className="font-semibold text-amber-600 dark:text-amber-400">Defina a localização do destino para exibir o pino no mapa.</div>
+            <div className="text-muted-foreground mt-0.5">O endereço do pedido não foi localizado automaticamente. Ajuste o ponto manualmente abaixo.</div>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setPickerOpen(true)}>
+            <MapPin className="h-3.5 w-3.5 mr-1" /> Definir
+          </Button>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 gap-3 mb-3">
         <div className="text-xs space-y-1">
           <div><span className="text-muted-foreground">Motoboy:</span> <strong>{tracking.courier_name || "—"}</strong></div>
           {tracking.courier_phone && <div><span className="text-muted-foreground">Telefone:</span> {tracking.courier_phone}</div>}
           <div><span className="text-muted-foreground">Última atualização:</span> {formatRelative(tracking.last_updated_at)}</div>
           {tracking.notes && <div className="text-muted-foreground italic">Obs: {tracking.notes}</div>}
+          <div className="pt-1">
+            <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setPickerOpen(true)}>
+              <MapPin className="h-3 w-3 mr-1" /> {destination ? "Ajustar destino no mapa" : "Definir localização no mapa"}
+            </Button>
+          </div>
         </div>
         <div className="rounded-xl overflow-hidden">
-          {hasPosition ? (
+          {hasMapAnything ? (
             <TrackingMap
-              courier={{ lat: tracking.latitude!, lng: tracking.longitude! }}
+              courier={courierPos}
+              destination={destination}
               heading={tracking.heading}
-              height={140}
+              height={160}
               primaryColor={state.settings.checkoutNeonColor || "#10b981"}
               follow
             />
           ) : (
-            <div className="h-[140px] rounded-xl border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 mr-1" /> Aguardando posição do motoboy…
+            <div className="h-[160px] rounded-xl border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground text-center px-3">
+              <MapPin className="h-3.5 w-3.5 mr-1 shrink-0" /> Aguardando posição do motoboy e localização do destino…
             </div>
           )}
         </div>
@@ -236,6 +276,14 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
           </Button>
         )}
       </div>
+
+      <DestinationPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        initial={destination}
+        fallbackAddress={orderAddress ?? tracking.delivery_geocoded_address ?? ""}
+        onSave={handleSaveDestination}
+      />
     </div>
   );
 }
