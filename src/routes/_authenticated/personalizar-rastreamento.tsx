@@ -316,9 +316,10 @@ function Page() {
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <ColorField label="Cor principal" value={f.primary_color} onChange={(v) => up("primary_color", v)} />
-              <ColorField label="Cor secundária" value={f.secondary_color} onChange={(v) => up("secondary_color", v)} />
-              <ColorField label="Cor dos botões" value={f.button_color} onChange={(v) => up("button_color", v)} />
+              {isAdmin && <ColorField label="Cor secundária" value={f.secondary_color} onChange={(v) => up("secondary_color", v)} />}
+              {isAdmin && <ColorField label="Cor dos botões" value={f.button_color} onChange={(v) => up("button_color", v)} />}
             </div>
+            {!isAdmin && <p className="text-[11px] text-muted-foreground">A cor principal é usada em ícones, timeline e destaques visuais.</p>}
           </Card>
 
           <Card title="Cabeçalho">
