@@ -230,7 +230,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${info.bg} ${info.color}`}>{info.label}</span>
       </div>
 
-      {!destination && tracking.status !== "cancelado" && tracking.status !== "entregue" && (
+      {!destination && tracking.status !== "entregue" && (
         <div className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <div className="flex-1">
