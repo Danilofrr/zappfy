@@ -14,7 +14,9 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as RastreioTrackingCodeRouteImport } from './routes/rastreio.$trackingCode'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
+import { Route as EntregaCourierTokenRouteImport } from './routes/entrega.$courierToken'
 import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
 import { Route as AtivarContaTokenRouteImport } from './routes/ativar-conta.$token'
 import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
@@ -22,6 +24,7 @@ import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
 import { Route as AuthenticatedPorProdutoRouteImport } from './routes/_authenticated/por-produto'
+import { Route as AuthenticatedPersonalizarRastreamentoRouteImport } from './routes/_authenticated/personalizar-rastreamento'
 import { Route as AuthenticatedPersonalizarCheckoutRouteImport } from './routes/_authenticated/personalizar-checkout'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedMinhaAssinaturaRouteImport } from './routes/_authenticated/minha-assinatura'
@@ -69,9 +72,19 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const RastreioTrackingCodeRoute = RastreioTrackingCodeRouteImport.update({
+  id: '/rastreio/$trackingCode',
+  path: '/rastreio/$trackingCode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LojaSlugRoute = LojaSlugRouteImport.update({
   id: '/loja/$slug',
   path: '/loja/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregaCourierTokenRoute = EntregaCourierTokenRouteImport.update({
+  id: '/entrega/$courierToken',
+  path: '/entrega/$courierToken',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutSlugRoute = CheckoutSlugRouteImport.update({
@@ -110,6 +123,12 @@ const AuthenticatedPorProdutoRoute = AuthenticatedPorProdutoRouteImport.update({
   path: '/por-produto',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPersonalizarRastreamentoRoute =
+  AuthenticatedPersonalizarRastreamentoRouteImport.update({
+    id: '/personalizar-rastreamento',
+    path: '/personalizar-rastreamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPersonalizarCheckoutRoute =
   AuthenticatedPersonalizarCheckoutRouteImport.update({
     id: '/personalizar-checkout',
@@ -250,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
+  '/personalizar-rastreamento': typeof AuthenticatedPersonalizarRastreamentoRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -257,7 +277,9 @@ export interface FileRoutesByFullPath {
   '/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
+  '/entrega/$courierToken': typeof EntregaCourierTokenRoute
   '/loja/$slug': typeof LojaSlugRoute
+  '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
@@ -284,6 +306,7 @@ export interface FileRoutesByTo {
   '/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
+  '/personalizar-rastreamento': typeof AuthenticatedPersonalizarRastreamentoRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -291,7 +314,9 @@ export interface FileRoutesByTo {
   '/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
+  '/entrega/$courierToken': typeof EntregaCourierTokenRoute
   '/loja/$slug': typeof LojaSlugRoute
+  '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
@@ -322,6 +347,7 @@ export interface FileRoutesById {
   '/_authenticated/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
+  '/_authenticated/personalizar-rastreamento': typeof AuthenticatedPersonalizarRastreamentoRoute
   '/_authenticated/por-produto': typeof AuthenticatedPorProdutoRoute
   '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
@@ -329,7 +355,9 @@ export interface FileRoutesById {
   '/_authenticated/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
+  '/entrega/$courierToken': typeof EntregaCourierTokenRoute
   '/loja/$slug': typeof LojaSlugRoute
+  '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
@@ -361,6 +389,7 @@ export interface FileRouteTypes {
     | '/minha-assinatura'
     | '/pedidos'
     | '/personalizar-checkout'
+    | '/personalizar-rastreamento'
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
@@ -368,7 +397,9 @@ export interface FileRouteTypes {
     | '/trocas'
     | '/ativar-conta/$token'
     | '/checkout/$slug'
+    | '/entrega/$courierToken'
     | '/loja/$slug'
+    | '/rastreio/$trackingCode'
     | '/admin/assinaturas'
     | '/admin/clientes'
     | '/admin/configuracoes'
@@ -395,6 +426,7 @@ export interface FileRouteTypes {
     | '/minha-assinatura'
     | '/pedidos'
     | '/personalizar-checkout'
+    | '/personalizar-rastreamento'
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
@@ -402,7 +434,9 @@ export interface FileRouteTypes {
     | '/trocas'
     | '/ativar-conta/$token'
     | '/checkout/$slug'
+    | '/entrega/$courierToken'
     | '/loja/$slug'
+    | '/rastreio/$trackingCode'
     | '/'
     | '/admin/assinaturas'
     | '/admin/clientes'
@@ -432,6 +466,7 @@ export interface FileRouteTypes {
     | '/_authenticated/minha-assinatura'
     | '/_authenticated/pedidos'
     | '/_authenticated/personalizar-checkout'
+    | '/_authenticated/personalizar-rastreamento'
     | '/_authenticated/por-produto'
     | '/_authenticated/precificacao'
     | '/_authenticated/produtos'
@@ -439,7 +474,9 @@ export interface FileRouteTypes {
     | '/_authenticated/trocas'
     | '/ativar-conta/$token'
     | '/checkout/$slug'
+    | '/entrega/$courierToken'
     | '/loja/$slug'
+    | '/rastreio/$trackingCode'
     | '/_authenticated/'
     | '/_authenticated/admin/assinaturas'
     | '/_authenticated/admin/clientes'
@@ -459,7 +496,9 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   AtivarContaTokenRoute: typeof AtivarContaTokenRoute
+  EntregaCourierTokenRoute: typeof EntregaCourierTokenRoute
   LojaSlugRoute: typeof LojaSlugRoute
+  RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
   ApiPublicSubmitOrderRoute: typeof ApiPublicSubmitOrderRoute
 }
 
@@ -500,11 +539,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/rastreio/$trackingCode': {
+      id: '/rastreio/$trackingCode'
+      path: '/rastreio/$trackingCode'
+      fullPath: '/rastreio/$trackingCode'
+      preLoaderRoute: typeof RastreioTrackingCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/loja/$slug': {
       id: '/loja/$slug'
       path: '/loja/$slug'
       fullPath: '/loja/$slug'
       preLoaderRoute: typeof LojaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrega/$courierToken': {
+      id: '/entrega/$courierToken'
+      path: '/entrega/$courierToken'
+      fullPath: '/entrega/$courierToken'
+      preLoaderRoute: typeof EntregaCourierTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout/$slug': {
@@ -554,6 +607,13 @@ declare module '@tanstack/react-router' {
       path: '/por-produto'
       fullPath: '/por-produto'
       preLoaderRoute: typeof AuthenticatedPorProdutoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/personalizar-rastreamento': {
+      id: '/_authenticated/personalizar-rastreamento'
+      path: '/personalizar-rastreamento'
+      fullPath: '/personalizar-rastreamento'
+      preLoaderRoute: typeof AuthenticatedPersonalizarRastreamentoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/personalizar-checkout': {
@@ -753,6 +813,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMinhaAssinaturaRoute: typeof AuthenticatedMinhaAssinaturaRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedPersonalizarCheckoutRoute: typeof AuthenticatedPersonalizarCheckoutRoute
+  AuthenticatedPersonalizarRastreamentoRoute: typeof AuthenticatedPersonalizarRastreamentoRoute
   AuthenticatedPorProdutoRoute: typeof AuthenticatedPorProdutoRoute
   AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
@@ -775,6 +836,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedPersonalizarCheckoutRoute:
     AuthenticatedPersonalizarCheckoutRoute,
+  AuthenticatedPersonalizarRastreamentoRoute:
+    AuthenticatedPersonalizarRastreamentoRoute,
   AuthenticatedPorProdutoRoute: AuthenticatedPorProdutoRoute,
   AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
@@ -804,7 +867,9 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   AtivarContaTokenRoute: AtivarContaTokenRoute,
+  EntregaCourierTokenRoute: EntregaCourierTokenRoute,
   LojaSlugRoute: LojaSlugRoute,
+  RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
   ApiPublicSubmitOrderRoute: ApiPublicSubmitOrderRoute,
 }
 export const routeTree = rootRouteImport
