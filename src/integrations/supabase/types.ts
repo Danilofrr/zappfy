@@ -258,6 +258,11 @@ export type Database = {
           card_shadow_color: string
           created_at: string
           delivered_message: string | null
+          header_color: string
+          header_height: number
+          header_logo_align: string
+          header_logo_size: number
+          header_style: string
           id: string
           logo_url: string | null
           msg_aguardando: string
@@ -303,6 +308,11 @@ export type Database = {
           card_shadow_color?: string
           created_at?: string
           delivered_message?: string | null
+          header_color?: string
+          header_height?: number
+          header_logo_align?: string
+          header_logo_size?: number
+          header_style?: string
           id?: string
           logo_url?: string | null
           msg_aguardando?: string
@@ -348,6 +358,11 @@ export type Database = {
           card_shadow_color?: string
           created_at?: string
           delivered_message?: string | null
+          header_color?: string
+          header_height?: number
+          header_logo_align?: string
+          header_logo_size?: number
+          header_style?: string
           id?: string
           logo_url?: string | null
           msg_aguardando?: string

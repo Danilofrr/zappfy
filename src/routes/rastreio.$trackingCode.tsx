@@ -72,6 +72,11 @@ type Payload = {
     vehicle_custom_url: string | null;
     pin_color: string;
     pin_custom_url: string | null;
+    header_style: "solid" | "gradient";
+    header_color: string;
+    header_height: number;
+    header_logo_size: number;
+    header_logo_align: "left" | "center" | "right";
     msg_aguardando: string;
     msg_preparando: string;
     msg_saiu: string;
@@ -242,38 +247,35 @@ function RastreioPage() {
         fontFamily: "system-ui, sans-serif",
       }}
     >
-      <header
-        className="relative px-5 pt-10 pb-12 text-center overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${hexWithAlpha(s.primary_color, 0.22)} 0%, ${hexWithAlpha(s.secondary_color, 0.55)} 60%, transparent 100%)`,
-        }}
-      >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 -bottom-20 h-40 blur-3xl opacity-40"
-          style={{ background: `radial-gradient(60% 60% at 50% 0%, ${s.primary_color}, transparent)` }}
-        />
-        {s.show_store_logo && data.store.logo_url && (
-          <img src={data.store.logo_url} alt={data.store.name} className="relative mx-auto h-16 w-auto object-contain mb-3 drop-shadow-lg" />
-        )}
-        <h1 className="relative text-2xl font-extrabold tracking-tight" style={{ color: titleColor }}>{data.store.name}</h1>
-        <p className="relative text-base font-semibold mt-2" style={{ color: titleColor, opacity: 0.95 }}>{s.tracking_page_title}</p>
-        <p className="relative text-sm opacity-75 mt-1">{s.tracking_page_subtitle}</p>
-        <div
-          className="relative mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-lg"
-          style={{ background: badge.bg, color: badge.text, border: `1px solid ${badge.border}`, boxShadow: `0 8px 24px -8px ${hexWithAlpha(badge.icon, 0.5)}` }}
-          key={displayStatus}
-        >
-          <BadgeIcon className="h-4 w-4" style={{ color: badge.icon }} />
-          <span>{info.label}</span>
-          {!isFinished && (
-            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: badge.icon }} />
-          )}
+      <HeaderBar
+        style={s.header_style}
+        color={s.header_color}
+        secondary={s.secondary_color}
+        height={s.header_height}
+        logoSize={s.header_logo_size}
+        align={s.header_logo_align}
+        showLogo={s.show_store_logo}
+        logoUrl={data.store.logo_url}
+        storeName={data.store.name}
+      />
+
+      <main className="max-w-md mx-auto px-4 pt-6 space-y-4">
+        <div className="text-center mb-2">
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: titleColor }}>{data.store.name}</h1>
+          <p className="text-base font-semibold mt-1.5" style={{ color: titleColor, opacity: 0.95 }}>{s.tracking_page_title}</p>
+          <p className="text-sm opacity-75 mt-0.5">{s.tracking_page_subtitle}</p>
+          <div
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-lg"
+            style={{ background: badge.bg, color: badge.text, border: `1px solid ${badge.border}`, boxShadow: `0 8px 24px -8px ${hexWithAlpha(badge.icon, 0.5)}` }}
+            key={displayStatus}
+          >
+            <BadgeIcon className="h-4 w-4" style={{ color: badge.icon }} />
+            <span>{info.label}</span>
+            {!isFinished && (
+              <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: badge.icon }} />
+            )}
+          </div>
         </div>
-      </header>
-
-
-      <main className="max-w-md mx-auto px-4 space-y-4">
         <section className="rounded-2xl p-5 animate-fade-in" style={cs}>
           <div className="text-xs uppercase opacity-60 tracking-wider">Pedido</div>
           <div className="text-lg font-bold" style={{ color: titleColor }}>#{orderShortNumber(data.order.id)}</div>
@@ -428,5 +430,23 @@ function Timeline({ status, primary, textColor }: { status: DeliveryStatus; prim
         );
       })}
     </ol>
+  );
+}
+
+function HeaderBar({ style, color, secondary, height, logoSize, align, showLogo, logoUrl, storeName }: {
+  style: "solid" | "gradient"; color: string; secondary: string; height: number; logoSize: number;
+  align: "left" | "center" | "right"; showLogo: boolean; logoUrl: string | null; storeName: string;
+}) {
+  const bg = style === "gradient" ? `linear-gradient(135deg, ${color} 0%, ${secondary} 100%)` : color;
+  const justify = align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+  return (
+    <div
+      className="w-full flex items-center px-5 shadow-sm"
+      style={{ background: bg, height: `clamp(${Math.round(height * 0.75)}px, 12vw, ${height}px)`, justifyContent: justify }}
+    >
+      {showLogo && logoUrl
+        ? <img src={logoUrl} alt={storeName} style={{ height: logoSize, maxHeight: "80%", width: "auto" }} className="object-contain drop-shadow" />
+        : <div style={{ color: "#fff", fontWeight: 800, letterSpacing: 0.5 }}>{storeName}</div>}
+    </div>
   );
 }

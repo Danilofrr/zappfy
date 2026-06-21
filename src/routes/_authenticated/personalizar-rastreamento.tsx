@@ -64,6 +64,11 @@ type Settings = {
   vehicle_custom_url: string | null;
   pin_color: string;
   pin_custom_url: string | null;
+  header_style: "solid" | "gradient";
+  header_color: string;
+  header_height: number;
+  header_logo_size: number;
+  header_logo_align: "left" | "center" | "right";
   msg_aguardando: string;
   msg_preparando: string;
   msg_saiu: string;
@@ -106,6 +111,11 @@ const DEFAULTS: Settings = {
   vehicle_custom_url: "",
   pin_color: "verde",
   pin_custom_url: "",
+  header_style: "solid",
+  header_color: "#dc2626",
+  header_height: 100,
+  header_logo_size: 56,
+  header_logo_align: "center",
   msg_aguardando: "Recebemos seu pedido e já estamos preparando tudo.",
   msg_preparando: "Seu pedido está sendo separado e preparado para envio.",
   msg_saiu: "Seu pedido já saiu para entrega e está a caminho.",
@@ -238,6 +248,36 @@ function Page() {
               <ColorField label="Cor principal" value={f.primary_color} onChange={(v) => up("primary_color", v)} />
               <ColorField label="Cor secundária" value={f.secondary_color} onChange={(v) => up("secondary_color", v)} />
               <ColorField label="Cor dos botões" value={f.button_color} onChange={(v) => up("button_color", v)} />
+            </div>
+          </Card>
+
+          <Card title="Cabeçalho">
+            <div className="space-y-1">
+              <Label className="text-xs">Tipo de cabeçalho</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["solid","gradient"] as const).map((opt) => (
+                  <button key={opt} type="button" onClick={() => up("header_style", opt)}
+                    className={`h-9 rounded-lg text-xs border transition ${f.header_style === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                    {opt === "solid" ? "Cor sólida" : "Gradiente"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <ColorField label="Cor do cabeçalho" value={f.header_color} onChange={(v) => up("header_color", v)} />
+            <SliderField label={`Altura do cabeçalho: ${f.header_height}px`} min={60} max={200} step={5}
+              value={f.header_height} onChange={(v) => up("header_height", v)} />
+            <SliderField label={`Tamanho da logo: ${f.header_logo_size}px`} min={28} max={140} step={2}
+              value={f.header_logo_size} onChange={(v) => up("header_logo_size", v)} />
+            <div className="space-y-1">
+              <Label className="text-xs">Alinhamento da logo</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["left","center","right"] as const).map((opt) => (
+                  <button key={opt} type="button" onClick={() => up("header_logo_align", opt)}
+                    className={`h-9 rounded-lg text-xs border transition capitalize ${f.header_logo_align === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                    {opt === "left" ? "Esquerda" : opt === "right" ? "Direita" : "Centro"}
+                  </button>
+                ))}
+              </div>
             </div>
           </Card>
 
@@ -568,20 +608,27 @@ function Preview({ f }: { f: Settings }) {
         minHeight: 560,
       }}
     >
-      <div
-        className="relative px-5 pt-8 pb-10 text-center overflow-hidden"
-        style={{ background: `linear-gradient(135deg, ${hexWithAlpha(f.primary_color, 0.22)} 0%, ${hexWithAlpha(f.secondary_color, 0.55)} 60%, transparent 100%)` }}
-      >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 -bottom-16 h-32 blur-3xl opacity-40"
-          style={{ background: `radial-gradient(60% 60% at 50% 0%, ${f.primary_color}, transparent)` }}
-        />
-        {f.show_store_logo && f.logo_url && <img src={f.logo_url} alt="logo" className="relative h-12 w-auto mx-auto mb-2 object-contain" />}
-        <div className="relative text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>Esparta Imports</div>
-        <div className="relative text-sm font-semibold mt-1" style={{ color: f.title_color, opacity: 0.95 }}>{f.tracking_page_title}</div>
-        <div className="relative text-xs opacity-70 mt-0.5">{f.tracking_page_subtitle}</div>
-        <div className="relative mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
+      {(() => {
+        const headerBg = f.header_style === "gradient"
+          ? `linear-gradient(135deg, ${f.header_color} 0%, ${f.secondary_color} 100%)`
+          : f.header_color;
+        const justify = f.header_logo_align === "left" ? "flex-start" : f.header_logo_align === "right" ? "flex-end" : "center";
+        const previewH = Math.round(f.header_height * 0.75);
+        const previewLogo = Math.round(f.header_logo_size * 0.75);
+        return (
+          <div className="flex items-center px-5" style={{ background: headerBg, height: previewH, justifyContent: justify }}>
+            {f.show_store_logo && f.logo_url
+              ? <img src={f.logo_url} alt="logo" style={{ height: previewLogo, width: "auto" }} className="object-contain" />
+              : <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, opacity: 0.9 }}>LOGO</div>}
+          </div>
+        );
+      })()}
+
+      <div className="px-4 pt-5 pb-3 text-center">
+        <div className="text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>Esparta Imports</div>
+        <div className="text-sm font-semibold mt-1" style={{ color: f.title_color, opacity: 0.95 }}>{f.tracking_page_title}</div>
+        <div className="text-xs opacity-70 mt-0.5">{f.tracking_page_subtitle}</div>
+        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
           style={{ background: badge.bg, color: badge.text, border: `1px solid ${badge.border}`, boxShadow: `0 8px 24px -8px ${hexWithAlpha(badge.icon, 0.5)}` }}>
           <BadgeIcon className="h-3.5 w-3.5" style={{ color: badge.icon }} /> {info.label}
         </div>
