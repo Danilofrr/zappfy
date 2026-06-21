@@ -162,6 +162,18 @@ function Page() {
           </Field>
         </Card>
 
+        <Card title="Página de Rastreamento de Entregas">
+          <p className="text-xs text-muted-foreground -mt-1 mb-3">
+            Personalize cores, logo e textos da página pública que o cliente vê acompanhando o motoboy em tempo real.
+          </p>
+          <a
+            href="/personalizar-rastreamento"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90"
+          >
+            Personalizar página de rastreamento
+          </a>
+        </Card>
+
       </div>
 
       <div className="mt-6">
