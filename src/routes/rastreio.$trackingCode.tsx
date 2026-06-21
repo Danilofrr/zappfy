@@ -14,7 +14,7 @@ import {
   type DeliveryStatus,
   type StatusBadgeStyle,
 } from "@/lib/tracking";
-import { Check, Clock, MapPin, MessageCircle, Bike, Loader2 } from "lucide-react";
+import { Check, Clock, MapPin, MessageCircle, Bike, Loader2, Package } from "lucide-react";
 
 export const Route = createFileRoute("/rastreio/$trackingCode")({
   ssr: false,
