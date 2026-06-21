@@ -758,3 +758,189 @@ function Preview({ f }: { f: Settings }) {
     </div>
   );
 }
+
+// ===================== MOTOBOY TAB =====================
+
+type CourierTheme = {
+  logo_url: string | null;
+  primary_color: string;
+  secondary_color: string;
+  header_style: "solid" | "gradient";
+  header_color: string;
+  background_color: string;
+  card_color: string;
+  card_border_color: string;
+  card_shadow_color: string;
+  text_color: string;
+  title_color: string;
+  button_color: string;
+  icon_color: string;
+  footer_text: string;
+};
+
+function resolveCourierTheme(f: Settings): CourierTheme {
+  if (f.courier_inherit_client) {
+    return {
+      logo_url: f.logo_url,
+      primary_color: f.primary_color,
+      secondary_color: f.secondary_color,
+      header_style: f.header_style,
+      header_color: f.header_color,
+      background_color: f.background_color,
+      card_color: f.card_color,
+      card_border_color: f.card_border_color,
+      card_shadow_color: f.card_shadow_color,
+      text_color: f.text_color,
+      title_color: f.title_color,
+      button_color: f.button_color,
+      icon_color: f.primary_color,
+      footer_text: f.courier_footer_text,
+    };
+  }
+  return {
+    logo_url: f.courier_logo_url,
+    primary_color: f.courier_primary_color,
+    secondary_color: f.courier_secondary_color,
+    header_style: f.courier_header_style,
+    header_color: f.courier_header_color,
+    background_color: f.courier_background_color,
+    card_color: f.courier_card_color,
+    card_border_color: f.courier_card_border_color,
+    card_shadow_color: f.courier_card_shadow_color,
+    text_color: f.courier_text_color,
+    title_color: f.courier_title_color,
+    button_color: f.courier_button_color,
+    icon_color: f.courier_icon_color,
+    footer_text: f.courier_footer_text,
+  };
+}
+
+function MotoboyTab({ f, up }: { f: Settings; up: <K extends keyof Settings>(k: K, v: Settings[K]) => void }) {
+  const disabled = f.courier_inherit_client;
+  const theme = resolveCourierTheme(f);
+  return (
+    <div className="grid lg:grid-cols-2 gap-6">
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-primary/40 bg-primary/5 p-4 flex items-center justify-between gap-4">
+          <div>
+            <div className="text-sm font-semibold">Usar mesma identidade visual do Cliente</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Quando ativado, a página do motoboy herda automaticamente todas as cores e a logo do rastreamento do cliente.</div>
+          </div>
+          <Switch checked={f.courier_inherit_client} onCheckedChange={(v) => up("courier_inherit_client", v)} />
+        </div>
+
+        <div className={disabled ? "pointer-events-none opacity-50 space-y-6" : "space-y-6"}>
+          <Card title="Identidade visual">
+            <Field label="URL da logo">
+              <Input value={f.courier_logo_url || ""} onChange={(e) => up("courier_logo_url", e.target.value)} placeholder="https://… (opcional)" />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <ColorField label="Cor principal" value={f.courier_primary_color} onChange={(v) => up("courier_primary_color", v)} />
+              <ColorField label="Cor secundária" value={f.courier_secondary_color} onChange={(v) => up("courier_secondary_color", v)} />
+              <ColorField label="Cor dos botões" value={f.courier_button_color} onChange={(v) => up("courier_button_color", v)} />
+              <ColorField label="Cor dos ícones" value={f.courier_icon_color} onChange={(v) => up("courier_icon_color", v)} />
+            </div>
+          </Card>
+
+          <Card title="Cabeçalho">
+            <div className="space-y-1">
+              <Label className="text-xs">Tipo de cabeçalho</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["solid","gradient"] as const).map((opt) => (
+                  <button key={opt} type="button" onClick={() => up("courier_header_style", opt)}
+                    className={`h-9 rounded-lg text-xs border transition ${f.courier_header_style === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                    {opt === "solid" ? "Cor sólida" : "Gradiente"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <ColorField label="Cor do cabeçalho" value={f.courier_header_color} onChange={(v) => up("courier_header_color", v)} />
+          </Card>
+
+          <Card title="Cores da página">
+            <div className="grid grid-cols-2 gap-3">
+              <ColorField label="Cor de fundo da página" value={f.courier_background_color} onChange={(v) => up("courier_background_color", v)} />
+              <ColorField label="Cor dos títulos" value={f.courier_title_color} onChange={(v) => up("courier_title_color", v)} />
+              <ColorField label="Cor dos textos" value={f.courier_text_color} onChange={(v) => up("courier_text_color", v)} />
+            </div>
+          </Card>
+
+          <Card title="Cards">
+            <div className="grid grid-cols-2 gap-3">
+              <ColorField label="Cor dos cards" value={f.courier_card_color} onChange={(v) => up("courier_card_color", v)} />
+              <ColorField label="Cor da borda" value={f.courier_card_border_color} onChange={(v) => up("courier_card_border_color", v)} />
+              <ColorField label="Cor da sombra" value={f.courier_card_shadow_color} onChange={(v) => up("courier_card_shadow_color", v)} />
+            </div>
+          </Card>
+        </div>
+
+        <Card title="Rodapé">
+          <Field label="Texto do rodapé">
+            <Input value={f.courier_footer_text} onChange={(e) => up("courier_footer_text", e.target.value)} placeholder="Powered by Zappfy" />
+          </Field>
+        </Card>
+      </div>
+
+      <div className="lg:sticky lg:top-4 self-start">
+        <div className="rounded-2xl border border-border bg-card p-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+            <Eye className="h-3.5 w-3.5" /> Pré-visualização — página do motoboy
+            {f.courier_inherit_client && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary">Herdado do cliente</span>}
+          </div>
+          <CourierPreview t={theme} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CourierPreview({ t }: { t: CourierTheme }) {
+  const headerBg = t.header_style === "gradient"
+    ? `linear-gradient(135deg, ${t.header_color} 0%, ${t.secondary_color} 100%)`
+    : t.header_color;
+  const cardCss: React.CSSProperties = {
+    background: t.card_color,
+    border: `1px solid ${t.card_border_color}`,
+    boxShadow: `0 8px 22px -10px ${t.card_shadow_color}88`,
+    borderRadius: 16,
+  };
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: t.background_color, color: t.text_color, minHeight: 560 }}>
+      <div className="px-5 py-4 text-center" style={{ background: headerBg }}>
+        {t.logo_url
+          ? <img src={t.logo_url} alt="logo" className="h-10 mx-auto object-contain" />
+          : <div className="font-extrabold text-white text-lg">LOGO</div>}
+        <div className="text-xs mt-2 text-white/85">Pedido #A1B2C3D4</div>
+        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style={{ background: `${t.primary_color}22`, color: t.primary_color }}>
+          <Bike className="h-3.5 w-3.5" /> Saiu para Entrega
+        </div>
+      </div>
+      <div className="p-4 space-y-3">
+        <div className="p-4" style={cardCss}>
+          <div className="flex items-start gap-2">
+            <MapPin className="h-5 w-5 mt-0.5" style={{ color: t.icon_color }} />
+            <div>
+              <div className="text-[10px] uppercase opacity-60">Entregar em</div>
+              <div className="font-semibold leading-snug" style={{ color: t.title_color }}>Rua Exemplo, 123 — Centro</div>
+            </div>
+          </div>
+          <div className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold rounded-xl" style={{ background: t.button_color, color: "#fff" }}>
+            <Navigation className="h-4 w-4" /> Abrir rota no Google Maps
+          </div>
+        </div>
+        <div className="p-4 space-y-1" style={cardCss}>
+          <div className="text-[10px] uppercase opacity-60">Cliente</div>
+          <div className="font-semibold" style={{ color: t.title_color }}>Maria Silva</div>
+          <div className="text-xs flex items-center gap-1.5" style={{ color: t.icon_color }}><Phone className="h-3 w-3" /> (81) 99999-0000</div>
+        </div>
+        <div className="p-4 space-y-2" style={cardCss}>
+          <div className="px-3 py-2.5 rounded-xl text-sm font-semibold text-center" style={{ background: t.primary_color, color: "#fff" }}>Estou chegando</div>
+          <div className="px-3 py-2.5 rounded-xl text-sm font-semibold text-center inline-flex items-center justify-center gap-2 w-full" style={{ background: t.button_color, color: "#fff" }}>
+            <CheckCircle2 className="h-4 w-4" /> Finalizar Entrega
+          </div>
+        </div>
+        <div className="text-center text-[11px] opacity-60 pt-2">{t.footer_text}</div>
+      </div>
+    </div>
+  );
+}
