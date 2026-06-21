@@ -544,6 +544,12 @@ function Page() {
           </div>
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="motoboy" className="mt-4">
+          <MotoboyTab f={f} up={up} />
+        </TabsContent>
+      </Tabs>
     </AppShell>
   );
 }
