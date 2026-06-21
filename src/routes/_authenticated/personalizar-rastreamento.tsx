@@ -760,7 +760,7 @@ function Preview({ f, storeName }: { f: Settings; storeName: string }) {
       })()}
 
       <div className="px-4 pt-5 pb-3 text-center">
-        <div className="text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>Zappfy</div>
+        <div className="text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>{storeName || "Sua Loja"}</div>
         <div className="text-sm font-semibold mt-1" style={{ color: f.title_color, opacity: 0.95 }}>{f.tracking_page_title}</div>
         <div className="text-xs opacity-70 mt-0.5">{f.tracking_page_subtitle}</div>
         <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
