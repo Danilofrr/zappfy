@@ -449,6 +449,7 @@ function Page() {
             )}
           </Card>
 
+          {isAdmin && (
           <Card title="Badges por Status">
             <p className="text-xs text-muted-foreground -mt-2 mb-1">
               Cada status tem identidade visual própria — fundo, borda, texto e ícone são configurados separadamente.
@@ -484,6 +485,7 @@ function Page() {
               );
             })}
           </Card>
+          )}
 
           <Card title="Ícone do entregador">
             <div className="space-y-3">
