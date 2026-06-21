@@ -432,3 +432,21 @@ function Timeline({ status, primary, textColor }: { status: DeliveryStatus; prim
     </ol>
   );
 }
+
+function HeaderBar({ style, color, secondary, height, logoSize, align, showLogo, logoUrl, storeName }: {
+  style: "solid" | "gradient"; color: string; secondary: string; height: number; logoSize: number;
+  align: "left" | "center" | "right"; showLogo: boolean; logoUrl: string | null; storeName: string;
+}) {
+  const bg = style === "gradient" ? `linear-gradient(135deg, ${color} 0%, ${secondary} 100%)` : color;
+  const justify = align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+  return (
+    <div
+      className="w-full flex items-center px-5 shadow-sm"
+      style={{ background: bg, height: `clamp(${Math.round(height * 0.75)}px, 12vw, ${height}px)`, justifyContent: justify }}
+    >
+      {showLogo && logoUrl
+        ? <img src={logoUrl} alt={storeName} style={{ height: logoSize, maxHeight: "80%", width: "auto" }} className="object-contain drop-shadow" />
+        : <div style={{ color: "#fff", fontWeight: 800, letterSpacing: 0.5 }}>{storeName}</div>}
+    </div>
+  );
+}
