@@ -33,6 +33,9 @@ type CourierTheme = {
   button_color: string;
   icon_color: string;
   footer_text: string;
+  header_height: number;
+  header_logo_size: number;
+  header_logo_align: "left" | "center" | "right";
 };
 
 type CourierView = {
@@ -74,6 +77,9 @@ const DEFAULT_THEME: CourierTheme = {
   button_color: "#10b981",
   icon_color: "#10b981",
   footer_text: "Powered by Zappfy",
+  header_height: 110,
+  header_logo_size: 56,
+  header_logo_align: "center",
 };
 
 function CourierPage() {
@@ -235,30 +241,55 @@ function CourierPage() {
   const isFinished = data.status === "entregue" || data.status === "cancelado";
   const fullAddress = [data.order.address, data.order.district, data.order.city].filter(Boolean).join(", ");
   const t: CourierTheme = { ...DEFAULT_THEME, ...(data.settings ?? {}) };
-  const headerBg = t.header_style === "gradient"
-    ? `linear-gradient(135deg, ${t.header_color} 0%, ${t.secondary_color} 100%)`
-    : t.header_color;
   const cardStyle: React.CSSProperties = {
     background: t.card_color,
     border: `1px solid ${t.card_border_color}`,
     boxShadow: `0 10px 26px -12px ${t.card_shadow_color}88`,
   };
   const primarySoftBg = `${t.primary_color}22`;
+  const headerJustify = t.header_logo_align === "left" ? "flex-start" : t.header_logo_align === "right" ? "flex-end" : "center";
+  // Responsive: mobile uses ~85% of the configured desktop height.
+  const headerMobileH = Math.max(72, Math.round(t.header_height * 0.85));
+  const headerLogoMobile = Math.max(28, Math.round(t.header_logo_size * 0.85));
 
   return (
     <div className="min-h-screen pb-10" style={{ background: t.background_color, color: t.text_color }}>
-      <header className="px-5 pt-6 pb-5 text-center" style={{ background: headerBg, borderBottom: `1px solid ${t.card_border_color}` }}>
-        {data.store.logo_url && (
-          <img src={data.store.logo_url} alt={data.store.name} className="h-12 w-auto mx-auto mb-2 object-contain" />
+      <style>{`@media (min-width: 768px){ header[data-courier-hdr]{ height: var(--hdr-h) !important; } header[data-courier-hdr] img{ height: var(--hdr-logo) !important; max-height: 80% !important; } }`}</style>
+      <header
+        data-courier-hdr
+        className="w-full flex items-center"
+        style={{
+          background: t.header_color,
+          justifyContent: headerJustify,
+          paddingLeft: t.header_logo_align === "center" ? 20 : 24,
+          paddingRight: t.header_logo_align === "center" ? 20 : 24,
+          ['--hdr-h' as any]: `${t.header_height}px`,
+          ['--hdr-logo' as any]: `${t.header_logo_size}px`,
+          height: `${headerMobileH}px`,
+        }}
+      >
+        {data.store.logo_url ? (
+          <img
+            src={data.store.logo_url}
+            alt={data.store.name}
+            style={{ height: headerLogoMobile, maxHeight: "78%", width: "auto" }}
+            className="object-contain"
+          />
+        ) : (
+          <div style={{ color: "#fff", fontWeight: 800, letterSpacing: 0.5, fontSize: 18 }}>{data.store.name}</div>
         )}
-        <div className="text-lg font-bold" style={{ color: "#fff" }}>{data.store.name}</div>
-        <div className="text-xs opacity-80" style={{ color: "#fff" }}>Pedido #{orderShortNumber(data.order.id)}</div>
-        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium" style={{ background: primarySoftBg, color: t.primary_color }}>
-          <Bike className="h-3.5 w-3.5" /> {info.label}
-        </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 space-y-4 mt-4">
+      <main className="max-w-md mx-auto px-4 space-y-4 mt-5">
+        {/* Store + order header (body) */}
+        <section className="text-center space-y-2">
+          <div className="text-xl font-extrabold" style={{ color: t.title_color }}>{data.store.name}</div>
+          <div className="text-xs opacity-70">Pedido #{orderShortNumber(data.order.id)}</div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium" style={{ background: primarySoftBg, color: t.primary_color }}>
+            <Bike className="h-3.5 w-3.5" /> {info.label}
+          </div>
+        </section>
+
         {/* Address */}
         <section className="rounded-2xl p-4" style={cardStyle}>
           <div className="flex items-start gap-2">

@@ -93,6 +93,9 @@ type Settings = {
   courier_button_color: string;
   courier_icon_color: string;
   courier_footer_text: string;
+  courier_header_height: number;
+  courier_header_logo_size: number;
+  courier_header_logo_align: "left" | "center" | "right";
 };
 
 const DEFAULTS: Settings = {
@@ -155,6 +158,9 @@ const DEFAULTS: Settings = {
   courier_button_color: "#10b981",
   courier_icon_color: "#10b981",
   courier_footer_text: "Powered by Zappfy",
+  courier_header_height: 110,
+  courier_header_logo_size: 56,
+  courier_header_logo_align: "center",
 };
 
 const BG_PRESETS = [
@@ -776,6 +782,9 @@ type CourierTheme = {
   button_color: string;
   icon_color: string;
   footer_text: string;
+  header_height: number;
+  header_logo_size: number;
+  header_logo_align: "left" | "center" | "right";
 };
 
 function resolveCourierTheme(f: Settings): CourierTheme {
@@ -795,6 +804,9 @@ function resolveCourierTheme(f: Settings): CourierTheme {
       button_color: f.button_color,
       icon_color: f.primary_color,
       footer_text: f.courier_footer_text,
+      header_height: f.header_height,
+      header_logo_size: f.header_logo_size,
+      header_logo_align: f.header_logo_align,
     };
   }
   return {
@@ -812,6 +824,9 @@ function resolveCourierTheme(f: Settings): CourierTheme {
     button_color: f.courier_button_color,
     icon_color: f.courier_icon_color,
     footer_text: f.courier_footer_text,
+    header_height: f.courier_header_height,
+    header_logo_size: f.courier_header_logo_size,
+    header_logo_align: f.courier_header_logo_align,
   };
 }
 
@@ -843,19 +858,35 @@ function MotoboyTab({ f, up }: { f: Settings; up: <K extends keyof Settings>(k: 
           </Card>
 
           <Card title="Cabeçalho">
+            <p className="text-xs text-muted-foreground -mt-2 mb-1">
+              Faixa sólida apenas com a logo, no estilo dos apps profissionais. Os demais elementos (nome da loja, número do pedido, status) ficam no corpo da página.
+            </p>
+            <ColorField label="Cor do cabeçalho" value={f.courier_header_color} onChange={(v) => up("courier_header_color", v)} />
+            <SliderField
+              label={`Altura do cabeçalho: ${f.courier_header_height}px`}
+              min={70} max={140} step={2}
+              value={f.courier_header_height}
+              onChange={(v) => up("courier_header_height", v)}
+            />
+            <SliderField
+              label={`Tamanho da logo: ${f.courier_header_logo_size}px`}
+              min={28} max={110} step={2}
+              value={f.courier_header_logo_size}
+              onChange={(v) => up("courier_header_logo_size", v)}
+            />
             <div className="space-y-1">
-              <Label className="text-xs">Tipo de cabeçalho</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["solid","gradient"] as const).map((opt) => (
-                  <button key={opt} type="button" onClick={() => up("courier_header_style", opt)}
-                    className={`h-9 rounded-lg text-xs border transition ${f.courier_header_style === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
-                    {opt === "solid" ? "Cor sólida" : "Gradiente"}
+              <Label className="text-xs">Alinhamento da logo</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["left","center","right"] as const).map((opt) => (
+                  <button key={opt} type="button" onClick={() => up("courier_header_logo_align", opt)}
+                    className={`h-9 rounded-lg text-xs border transition ${f.courier_header_logo_align === opt ? "border-primary ring-2 ring-primary/40 bg-primary/10" : "border-border hover:border-primary/40"}`}>
+                    {opt === "left" ? "Esquerda" : opt === "right" ? "Direita" : "Centro"}
                   </button>
                 ))}
               </div>
             </div>
-            <ColorField label="Cor do cabeçalho" value={f.courier_header_color} onChange={(v) => up("courier_header_color", v)} />
           </Card>
+
 
           <Card title="Cores da página">
             <div className="grid grid-cols-2 gap-3">
@@ -895,23 +926,27 @@ function MotoboyTab({ f, up }: { f: Settings; up: <K extends keyof Settings>(k: 
 }
 
 function CourierPreview({ t }: { t: CourierTheme }) {
-  const headerBg = t.header_style === "gradient"
-    ? `linear-gradient(135deg, ${t.header_color} 0%, ${t.secondary_color} 100%)`
-    : t.header_color;
   const cardCss: React.CSSProperties = {
     background: t.card_color,
     border: `1px solid ${t.card_border_color}`,
     boxShadow: `0 8px 22px -10px ${t.card_shadow_color}88`,
     borderRadius: 16,
   };
+  const justify = t.header_logo_align === "left" ? "flex-start" : t.header_logo_align === "right" ? "flex-end" : "center";
+  const previewH = Math.max(48, Math.round(t.header_height * 0.78));
+  const previewLogo = Math.max(20, Math.round(t.header_logo_size * 0.78));
+  const padX = t.header_logo_align === "center" ? 20 : 24;
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: t.background_color, color: t.text_color, minHeight: 560 }}>
-      <div className="px-5 py-4 text-center" style={{ background: headerBg }}>
+      <div className="flex items-center" style={{ background: t.header_color, height: previewH, justifyContent: justify, paddingLeft: padX, paddingRight: padX }}>
         {t.logo_url
-          ? <img src={t.logo_url} alt="logo" className="h-10 mx-auto object-contain" />
-          : <div className="font-extrabold text-white text-lg">LOGO</div>}
-        <div className="text-xs mt-2 text-white/85">Pedido #A1B2C3D4</div>
-        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style={{ background: `${t.primary_color}22`, color: t.primary_color }}>
+          ? <img src={t.logo_url} alt="logo" style={{ height: previewLogo, width: "auto", maxHeight: "80%" }} className="object-contain" />
+          : <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: 0.5 }}>LOGO</div>}
+      </div>
+      <div className="px-4 pt-4 pb-2 text-center space-y-1.5">
+        <div className="text-base font-extrabold" style={{ color: t.title_color }}>Esparta Imports</div>
+        <div className="text-[11px] opacity-70">Pedido #A1B2C3D4</div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style={{ background: `${t.primary_color}22`, color: t.primary_color }}>
           <Bike className="h-3.5 w-3.5" /> Saiu para Entrega
         </div>
       </div>

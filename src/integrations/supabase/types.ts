@@ -263,6 +263,9 @@ export type Database = {
           courier_card_shadow_color: string | null
           courier_footer_text: string | null
           courier_header_color: string | null
+          courier_header_height: number | null
+          courier_header_logo_align: string | null
+          courier_header_logo_size: number | null
           courier_header_style: string | null
           courier_icon_color: string | null
           courier_inherit_client: boolean | null
@@ -328,6 +331,9 @@ export type Database = {
           courier_card_shadow_color?: string | null
           courier_footer_text?: string | null
           courier_header_color?: string | null
+          courier_header_height?: number | null
+          courier_header_logo_align?: string | null
+          courier_header_logo_size?: number | null
           courier_header_style?: string | null
           courier_icon_color?: string | null
           courier_inherit_client?: boolean | null
@@ -393,6 +399,9 @@ export type Database = {
           courier_card_shadow_color?: string | null
           courier_footer_text?: string | null
           courier_header_color?: string | null
+          courier_header_height?: number | null
+          courier_header_logo_align?: string | null
+          courier_header_logo_size?: number | null
           courier_header_style?: string | null
           courier_icon_color?: string | null
           courier_inherit_client?: boolean | null
