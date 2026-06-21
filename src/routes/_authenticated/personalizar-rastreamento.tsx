@@ -140,6 +140,21 @@ const DEFAULTS: Settings = {
   msg_chegando: "Seu entregador está próximo do destino.",
   msg_entregue: "Pedido entregue com sucesso. Obrigado pela preferência.",
   msg_cancelado: "Este pedido foi cancelado.",
+  courier_inherit_client: true,
+  courier_logo_url: "",
+  courier_primary_color: "#10b981",
+  courier_secondary_color: "#0b1220",
+  courier_header_style: "solid",
+  courier_header_color: "#0f172a",
+  courier_background_color: "#0b1220",
+  courier_card_color: "#0f172a",
+  courier_card_border_color: "#1e293b",
+  courier_card_shadow_color: "#000000",
+  courier_text_color: "#e5e7eb",
+  courier_title_color: "#ffffff",
+  courier_button_color: "#10b981",
+  courier_icon_color: "#10b981",
+  courier_footer_text: "Powered by Zappfy",
 };
 
 const BG_PRESETS = [
