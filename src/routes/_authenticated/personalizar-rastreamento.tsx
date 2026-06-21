@@ -888,7 +888,7 @@ function resolveCourierTheme(f: Settings): CourierTheme {
   };
 }
 
-function MotoboyTab({ f, up, isAdmin }: { f: Settings; up: <K extends keyof Settings>(k: K, v: Settings[K]) => void; isAdmin: boolean }) {
+function MotoboyTab({ f, up, isAdmin, storeName }: { f: Settings; up: <K extends keyof Settings>(k: K, v: Settings[K]) => void; isAdmin: boolean; storeName: string }) {
   const disabled = f.courier_inherit_client;
   const theme = resolveCourierTheme(f);
   return (
