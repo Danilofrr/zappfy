@@ -599,7 +599,7 @@ function Page() {
         </TabsContent>
 
         <TabsContent value="motoboy" className="mt-4">
-          <MotoboyTab f={f} up={up} />
+          <MotoboyTab f={f} up={up} isAdmin={isAdmin} />
         </TabsContent>
       </Tabs>
     </AppShell>
