@@ -327,21 +327,52 @@ function RastreioPage() {
   );
 }
 
-function InfoCard({ label, value, color, bg }: { label: string; value: string; color: string; bg: string }) {
+function hexWithAlpha(hex: string, alpha: number): string {
+  if (!hex || !hex.startsWith("#") || hex.length !== 7) return hex;
+  const a = Math.max(0, Math.min(255, Math.round(alpha * 255)));
+  return hex + a.toString(16).padStart(2, "0");
+}
+function shadowFor(level: string): string {
+  switch (level) {
+    case "none": return "none";
+    case "sm": return "0 2px 8px rgba(0,0,0,0.18)";
+    case "lg": return "0 18px 40px -10px rgba(0,0,0,0.55)";
+    case "xl": return "0 30px 60px -16px rgba(0,0,0,0.7)";
+    default: return "0 10px 24px -8px rgba(0,0,0,0.4)";
+  }
+}
+function cardStyle(f: {
+  card_color: string; card_border_color: string; card_opacity: number;
+  card_glass: boolean; card_shadow: string; border_intensity: number;
+}): React.CSSProperties {
+  const bg = f.card_glass ? hexWithAlpha(f.card_color, Math.min(f.card_opacity, 0.6)) : hexWithAlpha(f.card_color, f.card_opacity);
+  const borderAlpha = Math.max(0, Math.min(1, f.border_intensity));
+  const style: React.CSSProperties = {
+    background: bg,
+    border: `1px solid ${hexWithAlpha(f.card_border_color, borderAlpha)}`,
+    boxShadow: shadowFor(f.card_shadow),
+  };
+  if (f.card_glass) {
+    (style as any).backdropFilter = "blur(20px) saturate(140%)";
+  }
+  return style;
+}
+
+function InfoCard({ label, value, color, style }: { label: string; value: string; color: string; style: React.CSSProperties }) {
   return (
-    <div className="rounded-xl p-3" style={{ background: bg, border: `1px solid ${color}22` }}>
+    <div className="rounded-xl p-3" style={style}>
       <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
       <div className="text-base font-semibold mt-0.5" style={{ color }}>{value}</div>
     </div>
   );
 }
 
-function Timeline({ status, primary }: { status: DeliveryStatus; primary: string }) {
+function Timeline({ status, primary, textColor }: { status: DeliveryStatus; primary: string; textColor?: string }) {
   const order: DeliveryStatus[] = ["aguardando_motoboy", "preparando", "saiu_para_entrega", "chegando", "entregue"];
   const currentIdx = status === "cancelado" ? -1 : order.indexOf(status);
   return (
     <ol className="relative space-y-4 pl-7">
-      <span className="absolute left-3 top-2 bottom-2 w-px" style={{ background: `${primary}33` }} />
+      <span className="absolute left-3 top-2 bottom-2 w-px" style={{ background: hexWithAlpha(primary, 0.2) }} />
       {TIMELINE_STEPS.map((step, i) => {
         const done = i < currentIdx;
         const isCurrent = i === currentIdx;
@@ -352,8 +383,8 @@ function Timeline({ status, primary }: { status: DeliveryStatus; primary: string
               className="absolute -left-[26px] top-1 h-5 w-5 rounded-full flex items-center justify-center transition-all"
               style={{
                 background: filled ? primary : "transparent",
-                border: `2px solid ${filled ? primary : `${primary}55`}`,
-                boxShadow: isCurrent ? `0 0 0 6px ${primary}33` : "none",
+                border: `2px solid ${filled ? primary : hexWithAlpha(primary, 0.35)}`,
+                boxShadow: isCurrent ? `0 0 0 6px ${hexWithAlpha(primary, 0.2)}` : "none",
               }}
             >
               {done && <Check className="h-3 w-3 text-white" />}
