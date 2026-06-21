@@ -72,6 +72,11 @@ type Payload = {
     vehicle_custom_url: string | null;
     pin_color: string;
     pin_custom_url: string | null;
+    header_style: "solid" | "gradient";
+    header_color: string;
+    header_height: number;
+    header_logo_size: number;
+    header_logo_align: "left" | "center" | "right";
     msg_aguardando: string;
     msg_preparando: string;
     msg_saiu: string;
