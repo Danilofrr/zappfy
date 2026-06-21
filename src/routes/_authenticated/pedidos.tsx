@@ -27,6 +27,7 @@ import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt,
 import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
+import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
@@ -373,6 +374,7 @@ function PedidosPage() {
 
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [open, setOpen] = useState(false);
+  const [trackingOpen, setTrackingOpen] = useState<string | null>(null);
 
   type DateRangeKey = "all" | "today" | "yesterday" | "7d" | "30d" | "month" | "custom";
   const [dateRange, setDateRange] = useState<DateRangeKey>("all");
@@ -576,6 +578,13 @@ function PedidosPage() {
                         <MessageCircle className="h-4 w-4" />
                       </button>
                       <button
+                        onClick={() => setTrackingOpen(trackingOpen === o.id ? null : o.id)}
+                        title="Rastreamento da entrega em tempo real"
+                        className={`p-1 ${trackingOpen === o.id ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+                      >
+                        <MapPin className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => { if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id); }}
                         className="text-muted-foreground hover:text-destructive p-1"
                       >
@@ -585,6 +594,13 @@ function PedidosPage() {
                   </td>
 
                 </tr>
+                {trackingOpen === o.id && (
+                  <tr className="border-t border-border bg-secondary/10">
+                    <td colSpan={8} className="px-4 py-4">
+                      <DeliveryTrackingPanel orderId={o.id} customerPhone={o.phone} />
+                    </td>
+                  </tr>
+                )}
                 </Fragment>
               ))}
             </tbody>
