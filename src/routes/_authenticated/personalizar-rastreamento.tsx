@@ -158,6 +158,9 @@ const DEFAULTS: Settings = {
   courier_button_color: "#10b981",
   courier_icon_color: "#10b981",
   courier_footer_text: "Powered by Zappfy",
+  courier_header_height: 110,
+  courier_header_logo_size: 56,
+  courier_header_logo_align: "center",
 };
 
 const BG_PRESETS = [
