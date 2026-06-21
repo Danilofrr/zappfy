@@ -18,6 +18,23 @@ export const Route = createFileRoute("/entrega/$courierToken")({
   component: CourierPage,
 });
 
+type CourierTheme = {
+  inherit_client: boolean;
+  primary_color: string;
+  secondary_color: string;
+  header_style: "solid" | "gradient";
+  header_color: string;
+  background_color: string;
+  card_color: string;
+  card_border_color: string;
+  card_shadow_color: string;
+  text_color: string;
+  title_color: string;
+  button_color: string;
+  icon_color: string;
+  footer_text: string;
+};
+
 type CourierView = {
   id: string;
   tracking_code: string;
@@ -39,6 +56,24 @@ type CourierView = {
     date: string;
   };
   store: { name: string; whatsapp: string; logo_url: string | null };
+  settings?: CourierTheme;
+};
+
+const DEFAULT_THEME: CourierTheme = {
+  inherit_client: true,
+  primary_color: "#10b981",
+  secondary_color: "#0b1220",
+  header_style: "solid",
+  header_color: "#0f172a",
+  background_color: "#0b1220",
+  card_color: "#0f172a",
+  card_border_color: "#1e293b",
+  card_shadow_color: "#000000",
+  text_color: "#e5e7eb",
+  title_color: "#ffffff",
+  button_color: "#10b981",
+  icon_color: "#10b981",
+  footer_text: "Powered by Zappfy",
 };
 
 function CourierPage() {
