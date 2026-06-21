@@ -608,20 +608,27 @@ function Preview({ f }: { f: Settings }) {
         minHeight: 560,
       }}
     >
-      <div
-        className="relative px-5 pt-8 pb-10 text-center overflow-hidden"
-        style={{ background: `linear-gradient(135deg, ${hexWithAlpha(f.primary_color, 0.22)} 0%, ${hexWithAlpha(f.secondary_color, 0.55)} 60%, transparent 100%)` }}
-      >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 -bottom-16 h-32 blur-3xl opacity-40"
-          style={{ background: `radial-gradient(60% 60% at 50% 0%, ${f.primary_color}, transparent)` }}
-        />
-        {f.show_store_logo && f.logo_url && <img src={f.logo_url} alt="logo" className="relative h-12 w-auto mx-auto mb-2 object-contain" />}
-        <div className="relative text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>Esparta Imports</div>
-        <div className="relative text-sm font-semibold mt-1" style={{ color: f.title_color, opacity: 0.95 }}>{f.tracking_page_title}</div>
-        <div className="relative text-xs opacity-70 mt-0.5">{f.tracking_page_subtitle}</div>
-        <div className="relative mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
+      {(() => {
+        const headerBg = f.header_style === "gradient"
+          ? `linear-gradient(135deg, ${f.header_color} 0%, ${f.secondary_color} 100%)`
+          : f.header_color;
+        const justify = f.header_logo_align === "left" ? "flex-start" : f.header_logo_align === "right" ? "flex-end" : "center";
+        const previewH = Math.round(f.header_height * 0.75);
+        const previewLogo = Math.round(f.header_logo_size * 0.75);
+        return (
+          <div className="flex items-center px-5" style={{ background: headerBg, height: previewH, justifyContent: justify }}>
+            {f.show_store_logo && f.logo_url
+              ? <img src={f.logo_url} alt="logo" style={{ height: previewLogo, width: "auto" }} className="object-contain" />
+              : <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, opacity: 0.9 }}>LOGO</div>}
+          </div>
+        );
+      })()}
+
+      <div className="px-4 pt-5 pb-3 text-center">
+        <div className="text-lg font-extrabold tracking-tight" style={{ color: f.title_color }}>Esparta Imports</div>
+        <div className="text-sm font-semibold mt-1" style={{ color: f.title_color, opacity: 0.95 }}>{f.tracking_page_title}</div>
+        <div className="text-xs opacity-70 mt-0.5">{f.tracking_page_subtitle}</div>
+        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
           style={{ background: badge.bg, color: badge.text, border: `1px solid ${badge.border}`, boxShadow: `0 8px 24px -8px ${hexWithAlpha(badge.icon, 0.5)}` }}>
           <BadgeIcon className="h-3.5 w-3.5" style={{ color: badge.icon }} /> {info.label}
         </div>
