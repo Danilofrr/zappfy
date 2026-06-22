@@ -34,6 +34,19 @@ type Theme = {
   icon_color: string;
   footer_text: string;
   brand_name: string;
+  login_logo_url: string | null;
+  login_icon_url: string | null;
+  login_bg_color: string;
+  login_card_color: string;
+  login_border_color: string;
+  login_text_color: string;
+  login_title_color: string;
+  login_button_color: string;
+  login_button_text_color: string;
+  login_glow_color: string;
+  login_title_text: string;
+  login_subtitle_text: string;
+  login_footer_text: string;
 };
 
 const DEFAULT: Theme = {
@@ -53,6 +66,19 @@ const DEFAULT: Theme = {
   icon_color: "#10b981",
   footer_text: "Powered by Zappfy",
   brand_name: "Entregas Zappfy",
+  login_logo_url: null,
+  login_icon_url: null,
+  login_bg_color: "#05070d",
+  login_card_color: "#0b1220",
+  login_border_color: "#1f2937",
+  login_text_color: "#e5e7eb",
+  login_title_color: "#ffffff",
+  login_button_color: "#10b981",
+  login_button_text_color: "#04140b",
+  login_glow_color: "#10b981",
+  login_title_text: "Entrar na sua conta",
+  login_subtitle_text: "Acesse a Central de Entregas",
+  login_footer_text: "Zappfy Entregas · © 2026",
 };
 
 function Page() {
