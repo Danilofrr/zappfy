@@ -28,7 +28,7 @@ import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
 import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
-import { whatsappLink, whatsappMessageHasEncodingDamage } from "@/lib/tracking";
+import { whatsappLink } from "@/lib/tracking";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
@@ -99,7 +99,7 @@ function PedidosPage() {
       .join("\n")
       .trim();
     const savedM = state.settings.motoboyMessageTemplate || "";
-    const tpl = savedM && !whatsappMessageHasEncodingDamage(savedM) ? savedM : DEFAULT_MOTOBOY_TEMPLATE;
+    const tpl = savedM || DEFAULT_MOTOBOY_TEMPLATE;
     return applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,
@@ -126,8 +126,7 @@ function PedidosPage() {
     const item = o.items[0]?.name ? ` (${o.items[0].name})` : "";
     const endereco = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
     const saved = state.settings.deliveryMessageTemplate || "";
-    const looksLegacyBroken = /Oba!\s*\?\s+Seu pedido/.test(saved) || /chamar por aqui\.\s*\?(\s|$)/.test(saved);
-    const tpl = !saved || whatsappMessageHasEncodingDamage(saved) || looksLegacyBroken ? DEFAULT_DELIVERY_TEMPLATE : saved;
+    const tpl = saved || DEFAULT_DELIVERY_TEMPLATE;
     const text = applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,
@@ -149,16 +148,16 @@ function PedidosPage() {
       pix: "PIX", dinheiro: "Dinheiro", cartao_credito: "Cartão de Crédito",
       cartao_debito: "Cartão de Débito", boleto: "Boleto", transferencia: "Transferência",
     };
-    const escape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
+    const htmlEscape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
     const rows = o.items.map((i) => `
       <tr>
-        <td>${escape(i.name)}</td>
+        <td>${htmlEscape(i.name)}</td>
         <td class="c">${i.qty}</td>
         <td class="r">${brl(i.price)}</td>
         <td class="r">${brl(i.price * i.qty)}</td>
       </tr>`).join("");
     const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/>
-<title>Recibo #${escape(o.id.slice(0, 8))}</title>
+<title>Recibo #${htmlEscape(o.id.slice(0, 8))}</title>
 <style>
   *{box-sizing:border-box}
   body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:0;padding:24px;background:#f5f5f5}
@@ -191,23 +190,23 @@ function PedidosPage() {
 <div class="sheet">
   <div class="head">
     <div>
-      <h1>${escape(storeName)}</h1>
+      <h1>${htmlEscape(storeName)}</h1>
       <div class="muted">Recibo de Pedido</div>
     </div>
     <div style="text-align:right">
-      <div class="badge">#${escape(o.id.slice(0, 8).toUpperCase())}</div>
-      <div class="muted" style="margin-top:6px">${escape(fmtDate(o.date))}</div>
+      <div class="badge">#${htmlEscape(o.id.slice(0, 8).toUpperCase())}</div>
+      <div class="muted" style="margin-top:6px">${htmlEscape(fmtDate(o.date))}</div>
     </div>
   </div>
   <div class="grid">
     <div class="box">
       <h3>Cliente</h3>
-      <div><strong>${escape(o.customer)}</strong></div>
-      ${o.phone ? `<div class="muted">${escape(o.phone)}</div>` : ""}
+      <div><strong>${htmlEscape(o.customer)}</strong></div>
+      ${o.phone ? `<div class="muted">${htmlEscape(o.phone)}</div>` : ""}
     </div>
     <div class="box">
       <h3>Entrega</h3>
-      <div>${escape(enderecoLinha) || '<span class="muted">—</span>'}</div>
+      <div>${htmlEscape(enderecoLinha) || '<span class="muted">—</span>'}</div>
     </div>
   </div>
   <table>
@@ -215,12 +214,12 @@ function PedidosPage() {
     <tbody>${rows}</tbody>
     <tfoot>
       <tr><td colspan="3" class="r">Subtotal</td><td class="r">${brl(subtotal)}</td></tr>
-      <tr><td colspan="3" class="r">Pagamento</td><td class="r">${escape(paymentLabels[o.payment] || o.payment)}</td></tr>
+      <tr><td colspan="3" class="r">Pagamento</td><td class="r">${htmlEscape(paymentLabels[o.payment] || o.payment)}</td></tr>
       <tr class="total"><td colspan="3" class="r">TOTAL</td><td class="r">${brl(o.total)}</td></tr>
     </tfoot>
   </table>
-  ${o.notes ? `<div class="notes"><strong>Observações:</strong>\n${escape(o.notes)}</div>` : ""}
-  <div class="footer">Obrigado pela preferência! • ${escape(storeName)}</div>
+  ${o.notes ? `<div class="notes"><strong>Observações:</strong>\n${htmlEscape(o.notes)}</div>` : ""}
+  <div class="footer">Obrigado pela preferência! • ${htmlEscape(storeName)}</div>
 </div>
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script>
 </body></html>`;
@@ -233,7 +232,7 @@ function PedidosPage() {
     const s = state.settings;
     const storeName = s.storeName || "Loja";
     const logoUrl = s.checkoutLogoUrl || "";
-    const escape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
+    const htmlEscape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
     const sender = getSenderInfo();
     const senderName = sender.name || storeName;
     const senderAddress = sender.address;
@@ -260,13 +259,13 @@ function PedidosPage() {
     }).join("");
 
     const totalQty = o.items.reduce((a, i) => a + i.qty, 0);
-    const itemsList = o.items.map((i) => `${i.qty}x ${escape(i.name)}`).join(" • ");
+    const itemsList = o.items.map((i) => `${i.qty}x ${htmlEscape(i.name)}`).join(" • ");
     const cep = (o as any).cep || "00000-000";
     const uf = (o as any).uf || "";
     const cityLine = [o.city, uf].filter(Boolean).join(" - ").toUpperCase();
 
     const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/>
-<title>Etiqueta ${escape(pedidoNum)}</title>
+<title>Etiqueta ${htmlEscape(pedidoNum)}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;color:#000}
   body{background:#e5e5e5;padding:16px}
@@ -313,13 +312,13 @@ function PedidosPage() {
 </div>
 <div class="label">
   <div class="brand">
-    ${logoUrl ? `<img src="${escape(logoUrl)}" alt="${escape(storeName)}" onerror="this.parentNode.innerHTML='<div class=\\'name\\'>${escape(storeName)}</div>'"/>` : `<div class="name">${escape(storeName)}</div>`}
+    ${logoUrl ? `<img src="${htmlEscape(logoUrl)}" alt="${htmlEscape(storeName)}" onerror="this.parentNode.innerHTML='<div class=\\'name\\'>${htmlEscape(storeName)}</div>'"/>` : `<div class="name">${htmlEscape(storeName)}</div>`}
   </div>
   <div class="row">
-    <div class="grow"><div class="lbl">NF</div><div class="val">${escape(nf)}</div></div>
-    <div class="grow"><div class="lbl">Pedido</div><div class="val">${escape(pedidoNum)}</div></div>
+    <div class="grow"><div class="lbl">NF</div><div class="val">${htmlEscape(nf)}</div></div>
+    <div class="grow"><div class="lbl">Pedido</div><div class="val">${htmlEscape(pedidoNum)}</div></div>
     <div><div class="lbl">Volume</div><div class="val">1 / 1</div></div>
-    <div><div class="lbl">Peso</div><div class="val">${escape(peso)}</div></div>
+    <div><div class="lbl">Peso</div><div class="val">${htmlEscape(peso)}</div></div>
   </div>
   <div class="barcode">
     <div class="bars">${bars}</div>
@@ -331,24 +330,24 @@ function PedidosPage() {
   </div>
   <div class="sec-title">Destinatário</div>
   <div class="dest">
-    <div class="name">${escape(o.customer)}</div>
+    <div class="name">${htmlEscape(o.customer)}</div>
     <div class="addr">
-      ${escape(o.address) || "—"}${o.district ? "<br/>Bairro: " + escape(o.district) : ""}
-      ${o.phone ? `<br/>Tel: ${escape(o.phone)}` : ""}
+      ${htmlEscape(o.address) || "—"}${o.district ? "<br/>Bairro: " + htmlEscape(o.district) : ""}
+      ${o.phone ? `<br/>Tel: ${htmlEscape(o.phone)}` : ""}
     </div>
-    <div class="city">${escape(cityLine) || "—"}</div>
-    <div class="cep">CEP ${escape(cep)}</div>
+    <div class="city">${htmlEscape(cityLine) || "—"}</div>
+    <div class="cep">CEP ${htmlEscape(cep)}</div>
   </div>
   <div class="sec-title">Remetente</div>
   <div class="sender">
-    <strong>${escape(senderName)}</strong>${hasSender ? "" : `<br/><span style="font-size:10px;color:#666">Configure o endereço do remetente em Configurações → Remetente da etiqueta.</span>`}
-    ${senderAddress ? `<br/>${escape(senderAddress)}${senderDistrict ? " — " + escape(senderDistrict) : ""}` : ""}
-    ${senderCity || senderCep ? `<br/>${escape(senderCity)}${senderCep ? " — CEP " + escape(senderCep) : ""}` : ""}
-    ${senderCnpj ? `<br/>CNPJ: ${escape(senderCnpj)}` : ""}
+    <strong>${htmlEscape(senderName)}</strong>${hasSender ? "" : `<br/><span style="font-size:10px;color:#666">Configure o endereço do remetente em Configurações → Remetente da etiqueta.</span>`}
+    ${senderAddress ? `<br/>${htmlEscape(senderAddress)}${senderDistrict ? " — " + htmlEscape(senderDistrict) : ""}` : ""}
+    ${senderCity || senderCep ? `<br/>${htmlEscape(senderCity)}${senderCep ? " — CEP " + htmlEscape(senderCep) : ""}` : ""}
+    ${senderCnpj ? `<br/>CNPJ: ${htmlEscape(senderCnpj)}` : ""}
   </div>
   <div class="items">
     <div class="ttl">Conteúdo (${totalQty} ${totalQty === 1 ? "item" : "itens"})</div>
-    ${escape(itemsList)}
+    ${htmlEscape(itemsList)}
   </div>
 </div>
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script>

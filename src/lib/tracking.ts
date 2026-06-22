@@ -229,18 +229,10 @@ export function buildCustomerMessage(trackingLink: string): string {
   return `Olá! Seu pedido saiu para entrega 🛵\n\nAcompanhe em tempo real pelo link:\n\n${trackingLink}`;
 }
 
-export function normalizeMessageForWhatsApp(message: string): string {
-  return String(message ?? "").normalize("NFC");
-}
-
-export function whatsappMessageHasEncodingDamage(message: string): boolean {
-  return String(message ?? "").includes("\uFFFD");
-}
-
 export function whatsappLink(phone: string, message: string): string {
   const clean = phone.replace(/\D/g, "");
-  const mensagemCodificada = encodeURIComponent(normalizeMessageForWhatsApp(message));
-  return `https://wa.me/${clean}?text=${mensagemCodificada}`;
+  const mensagemCodificada = encodeURIComponent(String(message ?? ""));
+  return `https://api.whatsapp.com/send?phone=${clean}&text=${mensagemCodificada}`;
 }
 
 export function googleMapsRouteUrl(address: string): string {

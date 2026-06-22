@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 });
 
 function applyMessageVariables(template: string, vars: Record<string, string>) {
-  return Object.entries(vars).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template || "").normalize("NFC");
+  return Object.entries(vars).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template || "");
 }
 
 function diagnosticVars(storeName: string) {
