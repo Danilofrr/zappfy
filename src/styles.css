@@ -273,3 +273,11 @@ html, body {
 #lovable-badge {
   display: none !important;
 }
+
+/* Central Entregas Zappfy — safe-area header on mobile (iOS/Android PWA) */
+@media (max-width: 768px) {
+  header.entregas-mobile-header {
+    padding-top: calc(max(env(safe-area-inset-top), 0px) + 24px);
+    min-height: 110px;
+  }
+}
