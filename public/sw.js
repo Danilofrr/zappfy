@@ -3,11 +3,11 @@
 const ENTREGAS_CACHE = "entregas-zappfy-v5";
 const ENTREGAS_PRECACHE = [
   "/entregas-zappfy/",
-  "/icon-192.png?v=5",
-  "/icon-512.png?v=5",
-  "/maskable-icon.png?v=5",
-  "/apple-touch-icon.png?v=5",
-  "/favicon.ico?v=5",
+  "/entregas-icon-192.png?v=5",
+  "/entregas-icon-512.png?v=5",
+  "/entregas-maskable-icon.png?v=5",
+  "/entregas-apple-touch-icon.png?v=5",
+  "/entregas-favicon.ico?v=5",
 ];
 
 self.addEventListener("install", (event) => {
