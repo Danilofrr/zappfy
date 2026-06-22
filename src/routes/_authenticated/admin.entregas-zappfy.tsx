@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
-import { Loader2, Save, Bike, Eye } from "lucide-react";
+import { Loader2, Save, Bike, Eye, Upload, X } from "lucide-react";
+import { useRef } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/entregas-zappfy")({

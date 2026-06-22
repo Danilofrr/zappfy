@@ -1,0 +1,1 @@
+ALTER TABLE public.zappfy_central_settings ADD COLUMN IF NOT EXISTS logo_size integer NOT NULL DEFAULT 48;
