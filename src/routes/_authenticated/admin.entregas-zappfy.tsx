@@ -261,6 +261,103 @@ function Page() {
     );
   }
 
+  function IconField({
+    value,
+    onChangeUrl,
+  }: {
+    value: string | null;
+    onChangeUrl: (v: string | null) => void;
+  }) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [busy, setBusy] = useState(false);
+
+    async function handleFile(file?: File | null) {
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande (máx 5MB)"); return; }
+      setBusy(true);
+      try {
+        const dataUrl: string = await new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result as string);
+          fr.onerror = () => reject(new Error("Falha ao ler arquivo"));
+          fr.readAsDataURL(file);
+        });
+        const resized = await new Promise<string>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 256;
+            const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const canvas = document.createElement("canvas");
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return reject(new Error("Canvas indisponível"));
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = () => reject(new Error("Imagem inválida"));
+          img.src = dataUrl;
+        });
+        onChangeUrl(resized);
+      } catch (e: any) {
+        toast.error(e.message ?? "Erro ao processar imagem");
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    return (
+      <div className="space-y-3">
+        <Label className="text-xs">Ícone principal (com brilho)</Label>
+        <div className="flex items-center gap-3">
+          <div
+            className="rounded-lg border border-border bg-muted/30 grid place-items-center overflow-hidden shrink-0"
+            style={{ height: 64, width: 64 }}
+          >
+            {value ? (
+              <img src={value} alt="" className="max-h-full max-w-full object-contain" />
+            ) : (
+              <Bike className="h-5 w-5 text-muted-foreground" />
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleFile(e.target.files?.[0])}
+            />
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => inputRef.current?.click()} disabled={busy}>
+                <Upload className="h-4 w-4 mr-1" />
+                {busy ? "Processando..." : value ? "Trocar ícone" : "Enviar ícone"}
+              </Button>
+              {value && (
+                <Button type="button" size="sm" variant="ghost" onClick={() => onChangeUrl(null)}>
+                  <X className="h-4 w-4 mr-1" /> Remover
+                </Button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">PNG transparente recomendado · até 256px.</p>
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs">Ou cole uma URL</Label>
+          <Input
+            value={value && value.startsWith("data:") ? "" : (value ?? "")}
+            onChange={(e) => onChangeUrl(e.target.value || null)}
+            placeholder="https://..."
+            className="mt-1"
+          />
+        </div>
+      </div>
+    );
+  }
+
+
+
 
   return (
     <AdminShell title="Entregas Zappfy" subtitle="Identidade visual exclusiva da Central de Entregas (somente admin master)">
