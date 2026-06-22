@@ -1,113 +1,104 @@
-## Módulo de Rastreamento de Entregas em Tempo Real
+## Central de Entregas Zappfy
 
-Adicionar ao Zappfy um sistema completo de rastreamento ao vivo, ligado aos pedidos existentes, com mapa, link público para o cliente, link do motoboy via navegador, e personalização por loja.
-
----
-
-### 1. Banco de dados (migração Supabase)
-
-**Tabela `delivery_tracking`**
-- `id`, `order_id` (FK orders), `store_id` (= user_id do lojista)
-- `tracking_code` (público, único) e `courier_token` (motoboy, único) — gerados via `gen_random_uuid()` / base36 curto
-- `courier_name`, `courier_phone`, `notes`
-- `status` enum: `preparando | aguardando_motoboy | saiu_para_entrega | chegando | entregue | cancelado`
-- `latitude`, `longitude`, `speed`, `heading`, `accuracy`, `last_updated_at`
-- `started_at`, `completed_at`, `estimated_arrival`
-- `customer_view_count`, `created_at`, `updated_at`
-
-**Tabela `delivery_tracking_settings`** (1 por loja)
-- store_id, logo_url, primary_color, secondary_color, background_color, button_color, text_color
-- tracking_page_title, tracking_page_subtitle, welcome_message, delivered_message
-- support_whatsapp
-- show_store_logo, show_courier_name, show_courier_phone, show_estimated_time, show_distance
-
-**RLS / GRANTs**
-- Lojista (authenticated) só lê/escreve onde `store_id = auth.uid()`.
-- Acesso público (anon) só via funções SECURITY DEFINER:
-  - `get_tracking_public(_code)` — retorna dados seguros + settings (sem courier_phone se desativado)
-  - `update_courier_location(_token, lat, lng, speed, heading, accuracy)`
-  - `update_courier_status(_token, status)`
-  - `increment_tracking_view(_code)`
-- Realtime habilitado em `delivery_tracking`.
+Evoluir a página do motoboy atual (`/entrega/$courierToken`) para uma Central de Entregas Zappfy, mantendo a página individual de entrega intacta e adicionando uma nova camada de "hub" por loja.
 
 ---
 
-### 2. Painel do lojista — dentro do pedido (`pedidos.tsx`)
+### 1. Nova rota: `/entregas-zappfy/$storeSlug`
 
-Nova seção **"Rastreamento da Entrega"** no card/dialog do pedido:
-- Estado atual com badge colorida + última atualização (relativa)
-- Se ainda não há tracking: botão **Gerar Rastreamento** abre dialog (nome motoboy, telefone, observação)
-- Se já existe:
-  - Mini-mapa Leaflet com posição do motoboy (atualizado via Realtime)
-  - Nome/telefone do motoboy
-  - Botões: Copiar Link Cliente, Copiar Link Motoboy, Enviar Cliente WhatsApp, Enviar Motoboy WhatsApp, Cancelar Rastreamento
+Página pública (sem login) com **identidade Zappfy** (não usa o tema da loja):
+- Header com logo e nome "Entregas Zappfy" (configurável pelo Admin Master)
+- Título: "Central de Entregas — {Nome da Loja}"
+- Lista de **Entregas Disponíveis** (status `aguardando_motoboy`, sem `courier_token` aceito ainda)
+- Lista de **Minhas Entregas em Andamento** (já aceitas por este dispositivo, status `saiu_para_entrega` / `chegando`)
 
-Mensagens WhatsApp prontas conforme especificação.
+Cada card mostra:
+- Número do pedido (#XXXX)
+- Nome do cliente
+- Endereço + bairro + cidade
+- Horário do pedido
+- Status (badge)
+- Botão **Aceitar Entrega** (disponíveis) ou **Continuar entrega** (em andamento)
 
----
-
-### 3. Página do motoboy — `/entrega/$courierToken` (pública)
-
-Layout mobile-first com:
-- Logo + nome da loja, número do pedido, endereço completo + ponto de referência, nome/telefone do cliente, observação
-- Status atual destacado
-- Botões:
-  - **Permitir localização** (testa permissão)
-  - **Iniciar Entrega** → `watchPosition`, status → `saiu_para_entrega`, envia coords a cada movimento (throttle 5s/15m)
-  - **Abrir rota no Google Maps** (URL com endereço)
-  - **Estou chegando** → status `chegando`
-  - **Finalizar Entrega** → para watch, status `entregue`
-- Avisos: permissão negada, manter tela aberta, `wake lock` quando suportado
-- Indicador "Enviando localização…" + último envio bem sucedido
+A página faz polling/realtime de novas entregas pelo `store_id` derivado do slug.
 
 ---
 
-### 4. Página pública do cliente — `/rastreio/$trackingCode`
+### 2. Fluxo de criação automática
 
-Design premium responsivo, identidade Zappfy (verde, cards arredondados, sombras suaves):
-1. **Header**: logo + nome loja + "Acompanhe sua entrega em tempo real" + badge status
-2. **Card principal**: número pedido, status, mensagem dinâmica por status
-3. **Mapa Leaflet** (OpenStreetMap — sem chave de API), ícone de motinha SVG, recentraliza, marker do endereço se geocodificado (best-effort via Nominatim quando possível, sem bloquear)
-4. **Infos em tempo real**: última atualização, distância aprox., ETA simples (distância / velocidade média), nome motoboy (se ativo), botão WhatsApp suporte
-5. **Timeline visual**: Confirmado → Preparando → Saiu para entrega → Chegando → Entregue (etapa atual destacada com glow)
-6. **Footer**: "Rastreamento fornecido por Zappfy"
-
-Atualizações via Supabase Realtime no `tracking_code`. Se `last_updated_at` > 2 min → "Aguardando nova atualização do entregador." Para de atualizar se `entregue` ou `cancelado`.
+Quando o pedido muda para "Saiu para Entrega" no painel de pedidos:
+- Já existe a criação de tracking via `DeliveryTrackingPanel`. Vamos adicionar:
+  - Um novo botão/atalho **"Enviar para Central de Entregas"** que cria o rastreamento sem precisar preencher nome/telefone do motoboy (campos ficam nulos até alguém aceitar)
+  - Status inicial: `aguardando_motoboy`
+- O rastreamento já criado aparece automaticamente na Central da loja correspondente.
 
 ---
 
-### 5. Configurações da página de rastreamento
+### 3. Aceitar entrega
 
-Nova rota `_authenticated/personalizar-rastreamento.tsx`:
-- Form com todos os campos de `delivery_tracking_settings`
-- Color pickers, toggles (switches), inputs de texto
-- **Preview ao vivo** da página do cliente ao lado (iframe ou render inline mockado)
+Botão **Aceitar Entrega** chama nova função `accept_delivery(_tracking_code, _courier_name?, _courier_phone?)`:
+- Valida que o tracking pertence à loja do slug
+- Valida que ainda não foi aceito (sem alterações de status ainda)
+- Marca como "aceito" (preenche `courier_name` se informado, mantém `aguardando_motoboy`)
+- Retorna o `courier_token`
+- Frontend redireciona para `/entrega/$courierToken` (página existente, sem mudanças)
 
-Link no menu de Configurações.
-
----
-
-### 6. Detalhes técnicos
-
-- **Mapa**: Leaflet + OpenStreetMap tiles (sem necessidade de chave Google Maps; mantém projeto leve). Ícone de motinha em SVG inline.
-- **Realtime**: `supabase.channel(...).on('postgres_changes', ...)` filtrando por `tracking_code` ou `id`, com cleanup em `useEffect`.
-- **Throttling do motoboy**: envia se moveu > 15m ou passou 5s desde o último envio.
-- **Wake Lock API** quando disponível para evitar sleep da tela do motoboy.
-- **Segurança**: as 3 rotas públicas (cliente/motoboy/views) só interagem com o banco via funções `SECURITY DEFINER` — RLS permanece restritiva.
+O `courier_token` aceito é guardado em `localStorage` (chave por loja) para listar "Minhas Entregas em Andamento" depois.
 
 ---
 
-### Arquivos criados / alterados
+### 4. Identidade visual Zappfy (Admin Master)
 
-- `supabase/migrations/<novo>.sql` — tabelas, enum, RLS, GRANTs, funções públicas, realtime
-- `src/routes/rastreio.$trackingCode.tsx` — página pública do cliente
-- `src/routes/entrega.$courierToken.tsx` — página do motoboy
-- `src/routes/_authenticated/personalizar-rastreamento.tsx` — configurações
-- `src/components/DeliveryTrackingPanel.tsx` — seção dentro do pedido
-- `src/components/TrackingMap.tsx` — mapa Leaflet reutilizável
-- `src/lib/tracking.ts` — helpers (links, distância, formatação, mensagens WhatsApp)
-- `src/routes/_authenticated/pedidos.tsx` — integra o painel
-- `src/routes/_authenticated/configuracoes.tsx` — link para a nova personalização
-- `package.json` — adicionar `leaflet` e `react-leaflet`
+Nova tabela `zappfy_central_settings` (linha única, singleton):
+- `logo_url`, `header_color`, `header_text_color`
+- `background_color`, `card_color`, `card_border_color`, `card_shadow_color`, `card_radius`
+- `text_color`, `title_color`, `button_color`, `button_text_color`, `icon_color`
+- `footer_text`
 
-Confirma para eu já começar pela migração?
+RLS:
+- `SELECT` público (anon) — leitura via RPC `get_zappfy_central_settings()`
+- `UPDATE/INSERT` só para `has_role(auth.uid(), 'admin')`
+
+Nova seção na rota `_authenticated/admin.configuracoes.tsx` (ou nova rota admin): **"Entregas Zappfy"** com form de personalização. Lojistas **não** acessam.
+
+---
+
+### 5. RPCs novas
+
+- `get_store_by_slug(_slug)` → `{ store_id, store_name }` (público)
+- `list_available_deliveries(_slug)` → entregas em `aguardando_motoboy` daquela loja (público)
+- `list_active_deliveries(_slug, _tokens text[])` → entregas em andamento que o motoboy aceitou (público, filtrado por tokens conhecidos)
+- `accept_delivery(_tracking_code, _courier_name, _courier_phone)` → `{ courier_token }` (público, valida loja)
+- `get_zappfy_central_settings()` → tema Zappfy (público)
+
+---
+
+### 6. Painel do lojista — pequeno ajuste
+
+No `DeliveryTrackingPanel.tsx`:
+- Adicionar botão **"Copiar link da Central de Entregas"** que copia `{origin}/entregas-zappfy/{slug}` (uma vez, exibido em qualquer pedido com tracking)
+- Quando criar tracking sem informar motoboy, status fica `aguardando_motoboy` e aparece automaticamente na Central
+
+---
+
+### Arquivos
+
+**Migração:**
+- Nova `zappfy_central_settings` + RLS + GRANTs
+- Novas funções SECURITY DEFINER acima
+- Permitir `courier_name`/`courier_phone` nulos em `delivery_tracking` (se ainda não forem)
+
+**Novos:**
+- `src/routes/entregas-zappfy.$storeSlug.tsx` — Central de Entregas
+- `src/routes/_authenticated/admin.entregas-zappfy.tsx` — personalização Admin Master (ou seção dentro de admin.configuracoes)
+
+**Editados:**
+- `src/components/DeliveryTrackingPanel.tsx` — botão copiar link da central
+- `src/integrations/supabase/types.ts` — auto-regenerado
+- `src/routes/_authenticated/admin.tsx` — adicionar link no menu admin
+
+**Não alterar:**
+- `src/routes/rastreio.$trackingCode.tsx` (página do cliente)
+- `src/routes/entrega.$courierToken.tsx` (página individual do motoboy, só recebe redirect)
+
+Confirma que posso começar pela migração?
