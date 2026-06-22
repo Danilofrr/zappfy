@@ -9,7 +9,7 @@ import {
   orderShortNumber,
   type DeliveryStatus,
 } from "@/lib/tracking";
-import { Bike, MapPin, Navigation, CheckCircle2, AlertTriangle, Loader2, Phone, Power } from "lucide-react";
+import { Bike, MapPin, Navigation, CheckCircle2, AlertTriangle, Loader2, Phone, Power, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/entrega/$courierToken")({
