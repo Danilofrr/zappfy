@@ -117,7 +117,7 @@ function LoginPage() {
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden flex flex-col items-center justify-between px-4 py-8"
+      className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center gap-6 px-4 py-8"
       style={{
         background: `radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, ${glow} 22%, transparent), transparent 60%), radial-gradient(80% 60% at 0% 100%, color-mix(in oklab, ${glow} 12%, transparent), transparent 60%), ${bg}`,
         color: text,
