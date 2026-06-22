@@ -25,6 +25,7 @@ export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
 type CentralTheme = {
   id: string;
   logo_url: string | null;
+  logo_size: number;
   header_color: string;
   header_text_color: string;
   background_color: string;
