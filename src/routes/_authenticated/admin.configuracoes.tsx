@@ -24,7 +24,7 @@ type Settings = {
   payment?: { pixKey?: string; receiverName?: string; bank?: string; defaultLink?: string; gateway?: string };
   messages?: { welcome?: string; nearDue?: string; expired?: string; paid?: string; blocked?: string; reactivated?: string };
   security?: { adminOnly?: boolean; accessLogs?: boolean; sessionMinutes?: number };
-  appearance?: { theme?: string; brandName?: string; sidebarLogo?: string; primaryColor?: string };
+  appearance?: { theme?: string; brandName?: string; sidebarLogo?: string; primaryColor?: string; dashboardFaviconUrl?: string; entregasFaviconUrl?: string };
   prize?: { enabled?: boolean; goal?: number; reward?: string; period?: string };
 };
 
