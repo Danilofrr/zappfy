@@ -175,7 +175,7 @@ function CentralPage() {
       _slug: storeSlug,
       _code: chosen.tracking_code,
       _name: form.name.trim(),
-      _phone: form.phone.trim() || null,
+      _phone: form.phone.trim() || undefined,
     });
     setAccepting(false);
     if (error) { toast.error(error.message); return; }

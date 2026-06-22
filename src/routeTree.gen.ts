@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as RastreioTrackingCodeRouteImport } from './routes/rastreio.$trackingCode'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
+import { Route as EntregasZappfyStoreSlugRouteImport } from './routes/entregas-zappfy.$storeSlug'
 import { Route as EntregaCourierTokenRouteImport } from './routes/entrega.$courierToken'
 import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
 import { Route as AtivarContaTokenRouteImport } from './routes/ativar-conta.$token'
@@ -44,6 +45,7 @@ import { Route as AuthenticatedAdminRelatoriosRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
 import { Route as AuthenticatedAdminPagamentosRouteImport } from './routes/_authenticated/admin.pagamentos'
 import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
+import { Route as AuthenticatedAdminEntregasZappfyRouteImport } from './routes/_authenticated/admin.entregas-zappfy'
 import { Route as AuthenticatedAdminCuponsRouteImport } from './routes/_authenticated/admin.cupons'
 import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
 import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
@@ -81,6 +83,11 @@ const RastreioTrackingCodeRoute = RastreioTrackingCodeRouteImport.update({
 const LojaSlugRoute = LojaSlugRouteImport.update({
   id: '/loja/$slug',
   path: '/loja/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregasZappfyStoreSlugRoute = EntregasZappfyStoreSlugRouteImport.update({
+  id: '/entregas-zappfy/$storeSlug',
+  path: '/entregas-zappfy/$storeSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EntregaCourierTokenRoute = EntregaCourierTokenRouteImport.update({
@@ -234,6 +241,12 @@ const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
   path: '/logs',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminEntregasZappfyRoute =
+  AuthenticatedAdminEntregasZappfyRouteImport.update({
+    id: '/entregas-zappfy',
+    path: '/entregas-zappfy',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCuponsRoute =
   AuthenticatedAdminCuponsRouteImport.update({
     id: '/cupons',
@@ -286,12 +299,14 @@ export interface FileRoutesByFullPath {
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/entrega/$courierToken': typeof EntregaCourierTokenRoute
+  '/entregas-zappfy/$storeSlug': typeof EntregasZappfyStoreSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/cupons': typeof AuthenticatedAdminCuponsRoute
+  '/admin/entregas-zappfy': typeof AuthenticatedAdminEntregasZappfyRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/admin/pagamentos': typeof AuthenticatedAdminPagamentosRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
@@ -324,6 +339,7 @@ export interface FileRoutesByTo {
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/entrega/$courierToken': typeof EntregaCourierTokenRoute
+  '/entregas-zappfy/$storeSlug': typeof EntregasZappfyStoreSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/': typeof AuthenticatedIndexRoute
@@ -331,6 +347,7 @@ export interface FileRoutesByTo {
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/cupons': typeof AuthenticatedAdminCuponsRoute
+  '/admin/entregas-zappfy': typeof AuthenticatedAdminEntregasZappfyRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/admin/pagamentos': typeof AuthenticatedAdminPagamentosRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
@@ -366,6 +383,7 @@ export interface FileRoutesById {
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/entrega/$courierToken': typeof EntregaCourierTokenRoute
+  '/entregas-zappfy/$storeSlug': typeof EntregasZappfyStoreSlugRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -373,6 +391,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/_authenticated/admin/cupons': typeof AuthenticatedAdminCuponsRoute
+  '/_authenticated/admin/entregas-zappfy': typeof AuthenticatedAdminEntregasZappfyRoute
   '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/_authenticated/admin/pagamentos': typeof AuthenticatedAdminPagamentosRoute
   '/_authenticated/admin/planos': typeof AuthenticatedAdminPlanosRoute
@@ -409,12 +428,14 @@ export interface FileRouteTypes {
     | '/ativar-conta/$token'
     | '/checkout/$slug'
     | '/entrega/$courierToken'
+    | '/entregas-zappfy/$storeSlug'
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
     | '/admin/assinaturas'
     | '/admin/clientes'
     | '/admin/configuracoes'
     | '/admin/cupons'
+    | '/admin/entregas-zappfy'
     | '/admin/logs'
     | '/admin/pagamentos'
     | '/admin/planos'
@@ -447,6 +468,7 @@ export interface FileRouteTypes {
     | '/ativar-conta/$token'
     | '/checkout/$slug'
     | '/entrega/$courierToken'
+    | '/entregas-zappfy/$storeSlug'
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
     | '/'
@@ -454,6 +476,7 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/configuracoes'
     | '/admin/cupons'
+    | '/admin/entregas-zappfy'
     | '/admin/logs'
     | '/admin/pagamentos'
     | '/admin/planos'
@@ -488,6 +511,7 @@ export interface FileRouteTypes {
     | '/ativar-conta/$token'
     | '/checkout/$slug'
     | '/entrega/$courierToken'
+    | '/entregas-zappfy/$storeSlug'
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
     | '/_authenticated/'
@@ -495,6 +519,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/clientes'
     | '/_authenticated/admin/configuracoes'
     | '/_authenticated/admin/cupons'
+    | '/_authenticated/admin/entregas-zappfy'
     | '/_authenticated/admin/logs'
     | '/_authenticated/admin/pagamentos'
     | '/_authenticated/admin/planos'
@@ -510,6 +535,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   AtivarContaTokenRoute: typeof AtivarContaTokenRoute
   EntregaCourierTokenRoute: typeof EntregaCourierTokenRoute
+  EntregasZappfyStoreSlugRoute: typeof EntregasZappfyStoreSlugRoute
   LojaSlugRoute: typeof LojaSlugRoute
   RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
   ApiPublicSubmitOrderRoute: typeof ApiPublicSubmitOrderRoute
@@ -564,6 +590,13 @@ declare module '@tanstack/react-router' {
       path: '/loja/$slug'
       fullPath: '/loja/$slug'
       preLoaderRoute: typeof LojaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entregas-zappfy/$storeSlug': {
+      id: '/entregas-zappfy/$storeSlug'
+      path: '/entregas-zappfy/$storeSlug'
+      fullPath: '/entregas-zappfy/$storeSlug'
+      preLoaderRoute: typeof EntregasZappfyStoreSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/entrega/$courierToken': {
@@ -762,6 +795,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLogsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/entregas-zappfy': {
+      id: '/_authenticated/admin/entregas-zappfy'
+      path: '/entregas-zappfy'
+      fullPath: '/admin/entregas-zappfy'
+      preLoaderRoute: typeof AuthenticatedAdminEntregasZappfyRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/cupons': {
       id: '/_authenticated/admin/cupons'
       path: '/cupons'
@@ -798,6 +838,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminClientesRoute: typeof AuthenticatedAdminClientesRoute
   AuthenticatedAdminConfiguracoesRoute: typeof AuthenticatedAdminConfiguracoesRoute
   AuthenticatedAdminCuponsRoute: typeof AuthenticatedAdminCuponsRoute
+  AuthenticatedAdminEntregasZappfyRoute: typeof AuthenticatedAdminEntregasZappfyRoute
   AuthenticatedAdminLogsRoute: typeof AuthenticatedAdminLogsRoute
   AuthenticatedAdminPagamentosRoute: typeof AuthenticatedAdminPagamentosRoute
   AuthenticatedAdminPlanosRoute: typeof AuthenticatedAdminPlanosRoute
@@ -810,6 +851,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminClientesRoute: AuthenticatedAdminClientesRoute,
   AuthenticatedAdminConfiguracoesRoute: AuthenticatedAdminConfiguracoesRoute,
   AuthenticatedAdminCuponsRoute: AuthenticatedAdminCuponsRoute,
+  AuthenticatedAdminEntregasZappfyRoute: AuthenticatedAdminEntregasZappfyRoute,
   AuthenticatedAdminLogsRoute: AuthenticatedAdminLogsRoute,
   AuthenticatedAdminPagamentosRoute: AuthenticatedAdminPagamentosRoute,
   AuthenticatedAdminPlanosRoute: AuthenticatedAdminPlanosRoute,
@@ -890,6 +932,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   AtivarContaTokenRoute: AtivarContaTokenRoute,
   EntregaCourierTokenRoute: EntregaCourierTokenRoute,
+  EntregasZappfyStoreSlugRoute: EntregasZappfyStoreSlugRoute,
   LojaSlugRoute: LojaSlugRoute,
   RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
   ApiPublicSubmitOrderRoute: ApiPublicSubmitOrderRoute,
