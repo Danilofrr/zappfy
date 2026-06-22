@@ -36,6 +36,9 @@ type Theme = {
   brand_name: string;
   login_logo_url: string | null;
   login_icon_url: string | null;
+  login_show_logo: boolean;
+  login_icon_size: number;
+  login_glow_enabled: boolean;
   login_bg_color: string;
   login_card_color: string;
   login_border_color: string;
