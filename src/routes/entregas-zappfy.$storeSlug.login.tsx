@@ -110,6 +110,9 @@ function LoginPage() {
   const footerText = theme?.login_footer_text || "Zappfy Entregas · © 2026";
   const loginLogo = theme?.login_logo_url || theme?.logo_url || null;
   const loginIcon = theme?.login_icon_url || null;
+  const showLogo = theme?.login_show_logo !== false;
+  const iconSize = theme?.login_icon_size || 64;
+  const glowEnabled = theme?.login_glow_enabled !== false;
   const brand = theme?.brand_name || "Zappfy Entregas";
 
   return (
