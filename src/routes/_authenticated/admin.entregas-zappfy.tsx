@@ -318,6 +318,49 @@ function Page() {
               </CardContent>
             </Card>
 
+            <Card>
+              <CardHeader><CardTitle className="text-base">Tela de Login do Motoboy</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <LogoField
+                  value={theme.login_logo_url}
+                  size={theme.logo_size}
+                  onChangeUrl={(v) => set("login_logo_url", v)}
+                  onChangeSize={(v) => set("logo_size", v)}
+                />
+                <div>
+                  <Label className="text-xs">URL do ícone principal (opcional)</Label>
+                  <Input
+                    value={theme.login_icon_url ?? ""}
+                    onChange={(e) => set("login_icon_url", e.target.value || null)}
+                    placeholder="https://… (deixe vazio para usar o ícone de moto)"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Color k="login_bg_color" label="Cor de fundo" />
+                  <Color k="login_card_color" label="Cor do card" />
+                  <Color k="login_border_color" label="Cor da borda" />
+                  <Color k="login_text_color" label="Cor dos textos" />
+                  <Color k="login_title_color" label="Cor do título" />
+                  <Color k="login_button_color" label="Cor do botão" />
+                  <Color k="login_button_text_color" label="Texto do botão" />
+                  <Color k="login_glow_color" label="Brilho do ícone" />
+                </div>
+                <div>
+                  <Label className="text-xs">Texto do título</Label>
+                  <Input value={theme.login_title_text} onChange={(e) => set("login_title_text", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Subtítulo</Label>
+                  <Input value={theme.login_subtitle_text} onChange={(e) => set("login_subtitle_text", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Rodapé</Label>
+                  <Input value={theme.login_footer_text} onChange={(e) => set("login_footer_text", e.target.value)} />
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="flex justify-end">
               <Button onClick={save} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
