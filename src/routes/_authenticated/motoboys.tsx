@@ -12,6 +12,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, KeyRound, Loader2, Bike, Power } from "lucide-react";
 import { toast } from "sonner";
+import bcrypt from "bcryptjs";
 
 export const Route = createFileRoute("/_authenticated/motoboys")({
   component: MotoboysPage,
@@ -82,8 +83,9 @@ function MotoboysPage() {
       toast.success("Motoboy atualizado");
     } else {
       if (!form.password || form.password.length < 4) { toast.error("Senha mínima de 4 caracteres"); setSaving(false); return; }
+      const password_hash = await bcrypt.hash(form.password, 10);
       const { error } = await (supabase as any).rpc("create_courier", {
-        _name: form.name, _phone: form.phone, _password: form.password,
+        _name: form.name, _phone: form.phone, _password_hash: password_hash,
         _vehicle: form.vehicle_type, _plate: form.plate, _active: form.active,
       });
       if (error) { toast.error(error.message); setSaving(false); return; }
@@ -113,7 +115,8 @@ function MotoboysPage() {
   async function confirmReset() {
     if (!resetting) return;
     if (resetPwd.length < 4) { toast.error("Senha mínima de 4 caracteres"); return; }
-    const { error } = await (supabase as any).rpc("reset_courier_password", { _id: resetting.id, _password: resetPwd });
+    const password_hash = await bcrypt.hash(resetPwd, 10);
+    const { error } = await (supabase as any).rpc("reset_courier_password", { _id: resetting.id, _password_hash: password_hash });
     if (error) { toast.error(error.message); return; }
     toast.success("Senha redefinida");
     setResetting(null); setResetPwd("");

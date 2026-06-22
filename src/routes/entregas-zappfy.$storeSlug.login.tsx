@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Bike, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getCourierSession, setCourierSession } from "@/lib/courier-session";
+import bcrypt from "bcryptjs";
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug/login")({
   ssr: false,
@@ -45,18 +46,30 @@ function LoginPage() {
       return;
     }
     setLoading(true);
-    const { data, error } = await (supabase as any).rpc("courier_login", {
-      _slug: storeSlug,
-      _phone: form.phone.trim(),
-      _password: form.password,
-    });
-    setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    const session = (data as any)?.session_token;
-    if (!session) { toast.error("Falha no login"); return; }
-    setCourierSession(storeSlug, session);
-    toast.success(`Olá, ${(data as any).name}!`);
-    navigate({ to: "/entregas-zappfy/$storeSlug", params: { storeSlug } });
+    try {
+      const { data: lookup, error: lookupError } = await (supabase as any).rpc("courier_lookup_for_login", {
+        _slug: storeSlug,
+        _phone: form.phone.trim(),
+      });
+      if (lookupError) throw lookupError;
+      if (!lookup) { toast.error("WhatsApp ou senha inválidos"); return; }
+      const ok = await bcrypt.compare(form.password, (lookup as any).password_hash || "");
+      if (!ok) { toast.error("WhatsApp ou senha inválidos"); return; }
+      if (!(lookup as any).active) { toast.error("Acesso desativado. Fale com a loja."); return; }
+      const { data: session, error: sessionError } = await (supabase as any).rpc("courier_create_session", {
+        _courier_id: (lookup as any).courier_id,
+      });
+      if (sessionError) throw sessionError;
+      const token = (session as any)?.session_token;
+      if (!token) { toast.error("Falha no login"); return; }
+      setCourierSession(storeSlug, token);
+      toast.success(`Olá, ${(session as any).name}!`);
+      navigate({ to: "/entregas-zappfy/$storeSlug", params: { storeSlug } });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha no login");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const bg = theme?.background_color || "#0b1220";
