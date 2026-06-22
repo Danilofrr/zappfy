@@ -10,8 +10,8 @@ export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
       { name: "apple-mobile-web-app-title", content: "Entregas Zappfy" },
     ],
     links: [
-      { rel: "manifest", href: "/manifest-entregas.json" },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest-entregas.json?v=4" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=4" },
     ],
   }),
   component: EntregasLayout,

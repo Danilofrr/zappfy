@@ -13,7 +13,7 @@ export const Route = createFileRoute("/entregas-zappfy/")({
     ],
     links: [
       { rel: "manifest", href: ENTREGAS_MANIFEST_URL },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=4" },
     ],
   }),
   component: EntregasIndex,
