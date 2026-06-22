@@ -125,7 +125,7 @@ function LoginPage() {
       if (sessionError) throw sessionError;
       if (!token) { toast.error("Falha no login"); return; }
       setCourierSession(storeSlug, token);
-      toast.success(`Olá, ${(session as any).name}!`);
+      toast.success(`Olá, ${(lookup as any).name}!`);
       navigate({ to: "/entregas-zappfy/$storeSlug", params: { storeSlug } });
     } catch (e: any) {
       toast.error(e?.message || "Falha no login");
