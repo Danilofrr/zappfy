@@ -125,6 +125,31 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     toast.success("Rastreamento criado!");
   }
 
+  async function handleSendToCentral() {
+    setCreating(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) { toast.error("Sessão expirada"); setCreating(false); return; }
+    const payload = {
+      order_id: orderId,
+      store_id: uid,
+      tracking_code: generateToken("t"),
+      courier_token: generateToken("c"),
+      courier_name: null,
+      courier_phone: null,
+      notes: null,
+      status: "aguardando_motoboy" as DeliveryStatus,
+    };
+    const { data, error } = await supabase
+      .from("delivery_tracking")
+      .insert(payload)
+      .select()
+      .single();
+    setCreating(false);
+    if (error) { toast.error(error.message); return; }
+    setTracking(data as Tracking);
+    toast.success("Entrega enviada para a Central de Entregas!");
+
   async function handleCancel() {
     if (!tracking) return;
     if (!confirm("Cancelar este rastreamento?")) return;
