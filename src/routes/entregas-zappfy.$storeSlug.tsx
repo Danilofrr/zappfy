@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { EntregasPwaShell } from "@/components/EntregasPwaShell";
-import { ENTREGAS_ICON_VERSION, ENTREGAS_MANIFEST_URL } from "@/lib/entregas-pwa";
+import { ENTREGAS_APPLE_ICON_URL, ENTREGAS_MANIFEST_URL } from "@/lib/entregas-pwa";
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
   ssr: false,
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
     ],
     links: [
       { rel: "manifest", href: ENTREGAS_MANIFEST_URL },
-      { rel: "apple-touch-icon", sizes: "180x180", href: `/apple-touch-icon.png?${ENTREGAS_ICON_VERSION}` },
+      { rel: "apple-touch-icon", sizes: "180x180", href: ENTREGAS_APPLE_ICON_URL },
     ],
   }),
   component: EntregasLayout,
