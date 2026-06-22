@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Download, WifiOff, RefreshCw, X } from "lucide-react";
+import { ENTREGAS_MANIFEST_URL, rememberEntregasPwa } from "@/lib/entregas-pwa";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -7,13 +8,12 @@ type BIPEvent = Event & {
 };
 
 const DISMISS_KEY = "zappfy:entregas:install-dismissed";
-const LAST_SLUG_KEY = "zappfy:entregas:last-slug";
 
 type Props = { storeSlug?: string };
 
 /**
  * Mounts on every Central Entregas page:
- *  - swaps the document's manifest + theme-color to the Entregas PWA manifest
+  *  - swaps the document's manifest + theme-color to the Entregas PWA manifest
  *  - registers the service worker and surfaces update notifications
  *  - shows an install button when the browser allows it (Android/Chrome)
  *  - shows an offline banner when the device loses internet
@@ -31,50 +31,15 @@ export function EntregasPwaShell({ storeSlug }: Props) {
   // Persist last slug so /entregas-zappfy can redirect on reopen.
   useEffect(() => {
     if (!storeSlug) return;
-    try { localStorage.setItem(LAST_SLUG_KEY, storeSlug.toLowerCase()); } catch {}
+    rememberEntregasPwa(storeSlug);
   }, [storeSlug]);
 
   // Swap the manifest + theme-color + Apple PWA meta in the live document head.
-  // Builds a per-page manifest with the CURRENT URL as start_url so iOS "Add to
-  // Home Screen" opens the installed app on the correct Central Entregas route.
   useEffect(() => {
     const head = document.head;
-
-    // --- manifest (dynamic blob with start_url = current login route) ---
     const prevManifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     const prevHref = prevManifest?.getAttribute("href") ?? null;
-
-    const currentPath = window.location.pathname + window.location.search;
-    const startUrl =
-      currentPath.startsWith("/entregas-zappfy")
-        ? currentPath
-        : storeSlug
-          ? `/entregas-zappfy/${storeSlug}/login`
-          : "/entregas-zappfy/";
-
-    const manifest = {
-      name: "Entregas Zappfy",
-      short_name: "Entregas",
-      description: "Central de Entregas da Zappfy",
-      id: "/entregas-zappfy/",
-      start_url: startUrl,
-      scope: "/entregas-zappfy/",
-      display: "standalone",
-      orientation: "portrait",
-      background_color: "#020617",
-      theme_color: "#22c55e",
-      lang: "pt-BR",
-      categories: ["business", "productivity"],
-      icons: [
-        { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-        { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-        { src: "/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-        { src: "/apple-touch-icon.png", sizes: "180x180", type: "image/png", purpose: "any" },
-      ],
-    };
-    const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
-    const blobUrl = URL.createObjectURL(blob);
-    if (prevManifest) prevManifest.setAttribute("href", blobUrl);
+    if (prevManifest) prevManifest.setAttribute("href", ENTREGAS_MANIFEST_URL);
 
     // --- theme-color ---
     const prevTheme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
@@ -107,7 +72,6 @@ export function EntregasPwaShell({ storeSlug }: Props) {
 
     return () => {
       if (prevManifest && prevHref) prevManifest.setAttribute("href", prevHref);
-      URL.revokeObjectURL(blobUrl);
       if (prevTheme && prevThemeContent) prevTheme.setAttribute("content", prevThemeContent);
       for (const m of [appleTitle, appleCapable, mobileCapable, appleStatus]) {
         if (m.created) m.el.remove();

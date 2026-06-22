@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { AvatarUploader } from "@/components/AvatarUploader";
 import { getPublicSupport } from "@/lib/admin.functions";
 import { whatsappLink } from "@/lib/tracking";
+import { getEntregasStandaloneRedirectSlug } from "@/lib/entregas-pwa";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/auth")({
       { title: "Entrar — ZappFy" },
       { name: "description", content: "Acesse sua conta ZappFy para gerenciar pedidos, vendas e lucro." },
     ],
+    links: [{ rel: "manifest", href: "/manifest.webmanifest" }],
   }),
   component: AuthPage,
 });
@@ -49,6 +51,11 @@ function AuthPage() {
   }, []);
 
   useEffect(() => {
+    const entregasSlug = getEntregasStandaloneRedirectSlug();
+    if (entregasSlug) {
+      navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug: entregasSlug }, replace: true });
+      return;
+    }
     const savedEmail = localStorage.getItem("lt_remember_email");
     if (savedEmail) {
       setEmail(savedEmail);

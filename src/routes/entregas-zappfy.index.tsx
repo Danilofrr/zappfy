@@ -1,12 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Bike, Loader2 } from "lucide-react";
-
-const LAST_SLUG_KEY = "zappfy:entregas:last-slug";
+import { ENTREGAS_DEFAULT_STORE_SLUG, ENTREGAS_LAST_SLUG_KEY, ENTREGAS_MANIFEST_URL, isStandaloneMode, rememberEntregasPwa } from "@/lib/entregas-pwa";
 
 export const Route = createFileRoute("/entregas-zappfy/")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Entregas Zappfy" }] }),
+  head: () => ({
+    meta: [
+      { title: "Entregas Zappfy" },
+      { name: "theme-color", content: "#22c55e" },
+      { name: "apple-mobile-web-app-title", content: "Entregas Zappfy" },
+    ],
+    links: [
+      { rel: "manifest", href: ENTREGAS_MANIFEST_URL },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+    ],
+  }),
   component: EntregasIndex,
 });
 
@@ -17,12 +26,17 @@ function EntregasIndex() {
 
   useEffect(() => {
     try {
-      const s = localStorage.getItem(LAST_SLUG_KEY);
+      const s = localStorage.getItem(ENTREGAS_LAST_SLUG_KEY);
       if (s) {
         navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug: s }, replace: true });
         return;
       }
     } catch {}
+    if (isStandaloneMode()) {
+      rememberEntregasPwa(ENTREGAS_DEFAULT_STORE_SLUG);
+      navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug: ENTREGAS_DEFAULT_STORE_SLUG }, replace: true });
+      return;
+    }
     setChecked(true);
   }, [navigate]);
 
@@ -30,7 +44,7 @@ function EntregasIndex() {
     e.preventDefault();
     const clean = (slug || "").trim().toLowerCase();
     if (!clean) return;
-    try { localStorage.setItem(LAST_SLUG_KEY, clean); } catch {}
+    rememberEntregasPwa(clean);
     navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug: clean } });
   }
 
