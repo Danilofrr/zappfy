@@ -237,9 +237,9 @@ function RastreioPage() {
   const eta = distance != null ? etaMinutes(distance, data.speed) : null;
   const stale =
     !isFinished &&
-    displayStatus === "saiu_para_entrega" &&
+    (displayStatus === "saiu_para_entrega" || displayStatus === "chegando") &&
     data.last_updated_at &&
-    Date.now() - new Date(data.last_updated_at).getTime() > 120_000;
+    Date.now() - new Date(data.last_updated_at).getTime() > 60_000;
 
   const messages: Record<DeliveryStatus, string> = {
     aguardando_motoboy: s.msg_aguardando,
