@@ -317,8 +317,7 @@ function Field({ label, children, className = "" }: { label: string; children: R
 }
 
 function FaviconUploader({ value, onChange, hint }: { value: string | null; onChange: (v: string | null) => void; hint?: string }) {
-  const inputRef = (typeof window !== "undefined" ? null : null) as any;
-  const ref = useState<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function handleFile(file?: File | null) {
