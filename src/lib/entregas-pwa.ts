@@ -1,5 +1,10 @@
 export const ENTREGAS_DEFAULT_STORE_SLUG = "esparta";
-export const ENTREGAS_MANIFEST_URL = "/manifest-entregas.json?v=4";
+export const ENTREGAS_ICON_VERSION = "v=5";
+export const ENTREGAS_MANIFEST_URL = `/manifest-entregas.json?${ENTREGAS_ICON_VERSION}`;
+export const ENTREGAS_ICON_192_URL = `/entregas-icon-192.png?${ENTREGAS_ICON_VERSION}`;
+export const ENTREGAS_ICON_512_URL = `/entregas-icon-512.png?${ENTREGAS_ICON_VERSION}`;
+export const ENTREGAS_APPLE_ICON_URL = `/entregas-apple-touch-icon.png?${ENTREGAS_ICON_VERSION}`;
+export const ENTREGAS_FAVICON_URL = `/entregas-favicon.ico?${ENTREGAS_ICON_VERSION}`;
 export const ENTREGAS_LAST_SLUG_KEY = "zappfy:entregas:last-slug";
 export const ENTREGAS_PWA_MARKER_KEY = "zappfy:entregas:pwa";
 

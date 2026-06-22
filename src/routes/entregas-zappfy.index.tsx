@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Bike, Loader2 } from "lucide-react";
-import { ENTREGAS_DEFAULT_STORE_SLUG, ENTREGAS_LAST_SLUG_KEY, ENTREGAS_MANIFEST_URL, isStandaloneMode, rememberEntregasPwa } from "@/lib/entregas-pwa";
+import { ENTREGAS_APPLE_ICON_URL, ENTREGAS_DEFAULT_STORE_SLUG, ENTREGAS_LAST_SLUG_KEY, ENTREGAS_MANIFEST_URL, isStandaloneMode, rememberEntregasPwa } from "@/lib/entregas-pwa";
 
 export const Route = createFileRoute("/entregas-zappfy/")({
   ssr: false,
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/entregas-zappfy/")({
     ],
     links: [
       { rel: "manifest", href: ENTREGAS_MANIFEST_URL },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=4" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: ENTREGAS_APPLE_ICON_URL },
     ],
   }),
   component: EntregasIndex,

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Download, WifiOff, RefreshCw, X } from "lucide-react";
-import { ENTREGAS_MANIFEST_URL, rememberEntregasPwa } from "@/lib/entregas-pwa";
-import { DynamicFavicon } from "@/components/DynamicFavicon";
+import { ENTREGAS_APPLE_ICON_URL, ENTREGAS_FAVICON_URL, ENTREGAS_ICON_192_URL, ENTREGAS_ICON_512_URL, ENTREGAS_MANIFEST_URL, rememberEntregasPwa } from "@/lib/entregas-pwa";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -69,17 +68,17 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     // --- apple-touch-icon override (Central Entregas icon) ---
     const prevApple = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
     const prevAppleHref = prevApple?.getAttribute("href") ?? null;
-    if (prevApple) prevApple.setAttribute("href", "/apple-touch-icon.png?v=4");
+    if (prevApple) prevApple.setAttribute("href", ENTREGAS_APPLE_ICON_URL);
 
     // --- favicon override (separa da dashboard) ---
     const faviconSwaps: { el: HTMLLinkElement; prev: string | null; href: string }[] = [];
     document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]').forEach((el) => {
       const prev = el.getAttribute("href");
       const sizes = el.getAttribute("sizes") || "";
-      let href = "/favicon.ico?v=4";
-      if (sizes.includes("192")) href = "/icon-192.png?v=4";
-      else if (sizes.includes("512")) href = "/icon-512.png?v=4";
-      else if (el.getAttribute("type") === "image/png") href = "/icon-192.png?v=4";
+      let href = ENTREGAS_FAVICON_URL;
+      if (sizes.includes("192")) href = ENTREGAS_ICON_192_URL;
+      else if (sizes.includes("512")) href = ENTREGAS_ICON_512_URL;
+      else if (el.getAttribute("type") === "image/png") href = ENTREGAS_ICON_192_URL;
       el.setAttribute("href", href);
       faviconSwaps.push({ el, prev, href });
     });
@@ -180,7 +179,6 @@ export function EntregasPwaShell({ storeSlug }: Props) {
 
   return (
     <>
-      <DynamicFavicon scope="entregas" />
       {offline && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[9999] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg bg-amber-500/95 text-black flex items-center gap-1.5">
           <WifiOff className="h-3.5 w-3.5" />

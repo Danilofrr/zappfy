@@ -19,6 +19,9 @@ export function DynamicFavicon({ scope }: { scope: Scope }) {
   });
 
   useEffect(() => {
+    if (scope === "dashboard" && window.location.pathname.startsWith("/entregas-zappfy")) {
+      return;
+    }
     if (!data) return;
     const url = scope === "dashboard" ? data.dashboard : data.entregas;
     if (!url) return;
