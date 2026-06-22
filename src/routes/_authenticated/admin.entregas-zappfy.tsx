@@ -512,6 +512,69 @@ function Page() {
               </div>
               <div className="text-[10px] opacity-50 text-center py-3">{theme.footer_text}</div>
             </div>
+
+            <div className="flex items-center gap-2 text-sm font-semibold pt-2"><Eye className="h-4 w-4" /> Login do Motoboy</div>
+            <div
+              className="rounded-2xl overflow-hidden border border-border relative"
+              style={{
+                background: `radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, ${theme.login_glow_color} 22%, transparent), transparent 60%), ${theme.login_bg_color}`,
+                color: theme.login_text_color,
+                minHeight: 480,
+              }}
+            >
+              <div className="p-5 flex flex-col items-center gap-4">
+                {(theme.login_logo_url || theme.logo_url) ? (
+                  <img src={theme.login_logo_url || theme.logo_url || ""} alt="" style={{ height: 28 }} className="object-contain" />
+                ) : (
+                  <div className="text-xs font-bold" style={{ color: theme.login_title_color }}>{theme.brand_name}</div>
+                )}
+
+                <div
+                  className="w-full rounded-2xl p-5 space-y-4 border backdrop-blur"
+                  style={{
+                    background: theme.login_card_color,
+                    borderColor: theme.login_border_color,
+                    boxShadow: `0 30px 60px -30px ${theme.login_glow_color}66`,
+                  }}
+                >
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-2xl blur-xl opacity-70" style={{ background: theme.login_glow_color }} />
+                      <div
+                        className="relative grid h-12 w-12 place-items-center rounded-2xl"
+                        style={{
+                          background: theme.login_button_color,
+                          color: theme.login_button_text_color,
+                          boxShadow: `0 8px 20px -6px ${theme.login_glow_color}`,
+                        }}
+                      >
+                        {theme.login_icon_url ? (
+                          <img src={theme.login_icon_url} alt="" className="h-7 w-7 object-contain" />
+                        ) : (
+                          <Bike className="h-6 w-6" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-base font-bold" style={{ color: theme.login_title_color }}>{theme.login_title_text}</div>
+                    <div className="text-[11px] opacity-70">{theme.login_subtitle_text}</div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-[10px] uppercase opacity-60">WhatsApp</div>
+                    <div className="h-9 rounded-md px-3 flex items-center text-xs" style={{ background: `color-mix(in oklab, ${theme.login_bg_color} 60%, #ffffff 6%)`, boxShadow: `0 0 0 1px ${theme.login_border_color} inset`, color: theme.login_title_color }}>5581999990000</div>
+                    <div className="text-[10px] uppercase opacity-60 pt-1">Senha</div>
+                    <div className="h-9 rounded-md px-3 flex items-center text-xs" style={{ background: `color-mix(in oklab, ${theme.login_bg_color} 60%, #ffffff 6%)`, boxShadow: `0 0 0 1px ${theme.login_border_color} inset`, color: theme.login_title_color }}>••••••••</div>
+                  </div>
+
+                  <button className="w-full h-10 rounded-xl text-sm font-bold" style={{ background: theme.login_button_color, color: theme.login_button_text_color, boxShadow: `0 10px 22px -10px ${theme.login_glow_color}` }}>
+                    Entrar
+                  </button>
+                </div>
+
+                <div className="text-[10px] opacity-50 text-center">{theme.login_footer_text}</div>
+              </div>
+
+            </div>
           </div>
         </div>
       )}
