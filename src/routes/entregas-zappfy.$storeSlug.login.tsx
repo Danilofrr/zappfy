@@ -147,35 +147,50 @@ function LoginPage() {
             </div>
           )}
           <h1 className="text-xl font-bold" style={{ color: title }}>Acesso Motoboy</h1>
-          {store && <p className="text-xs opacity-70">{store.store_name}</p>}
+          {storeStatus === "ok" && store && <p className="text-xs opacity-70">{store.store_name}</p>}
+          {storeStatus === "loading" && (
+            <p className="text-xs opacity-60 flex items-center justify-center gap-1">
+              <Loader2 className="h-3 w-3 animate-spin" /> Carregando loja…
+            </p>
+          )}
         </div>
 
-        <form onSubmit={submit} className="space-y-3">
-          <div>
-            <Label>WhatsApp</Label>
-            <Input
-              inputMode="numeric"
-              autoComplete="username"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder="5581999990000"
-            />
+        {storeStatus === "not_found" ? (
+          <div className="rounded-lg p-3 text-sm text-center" style={{ background: "rgba(239,68,68,0.12)", color: "#fecaca" }}>
+            Loja não encontrada. Verifique o link da Central Entregas Zappfy.
           </div>
-          <div>
-            <Label>Senha</Label>
-            <Input
-              type="password"
-              autoComplete="current-password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="••••••"
-            />
+        ) : storeStatus === "error" ? (
+          <div className="rounded-lg p-3 text-sm text-center" style={{ background: "rgba(234,179,8,0.12)", color: "#fde68a" }}>
+            Não foi possível carregar os dados da loja. Tente novamente em instantes.
           </div>
-          <Button type="submit" disabled={loading} className="w-full h-11 font-semibold" style={{ background: btn, color: btnText }}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Bike className="h-4 w-4 mr-2" />}
-            Entrar
-          </Button>
-        </form>
+        ) : (
+          <form onSubmit={submit} className="space-y-3">
+            <div>
+              <Label>WhatsApp</Label>
+              <Input
+                inputMode="numeric"
+                autoComplete="username"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="5581999990000"
+              />
+            </div>
+            <div>
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                autoComplete="current-password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="••••••"
+              />
+            </div>
+            <Button type="submit" disabled={loading || storeStatus !== "ok"} className="w-full h-11 font-semibold" style={{ background: btn, color: btnText }}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Bike className="h-4 w-4 mr-2" />}
+              Entrar
+            </Button>
+          </form>
+        )}
 
         <div className="text-center text-xs opacity-60">
           Não tem login?{" "}
