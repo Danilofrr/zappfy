@@ -1,11 +1,12 @@
 // ZappFy Service Worker — push notifications + offline cache for Central Entregas.
 
-const ENTREGAS_CACHE = "entregas-zappfy-v2";
+const ENTREGAS_CACHE = "entregas-zappfy-v3";
 const ENTREGAS_PRECACHE = [
   "/entregas-zappfy/",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/icon-512-maskable.png",
+  "/icon-192.png?v=3",
+  "/icon-512.png?v=3",
+  "/maskable-icon.png?v=3",
+  "/apple-touch-icon.png?v=3",
   "/favicon.ico",
 ];
 
