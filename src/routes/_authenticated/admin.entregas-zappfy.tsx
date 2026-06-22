@@ -196,10 +196,23 @@ function Page() {
             <div className="rounded-2xl overflow-hidden border border-border" style={{ background: theme.background_color, color: theme.text_color }}>
               <div className="px-4 py-3 flex items-center gap-2" style={{ background: theme.header_color, color: theme.header_text_color }}>
                 {theme.logo_url ? (
-                  <img src={theme.logo_url} alt="" className="h-8 w-auto object-contain" />
+                  <img
+                    src={theme.logo_url}
+                    alt=""
+                    style={{ height: theme.logo_size, width: "auto" }}
+                    className="object-contain"
+                  />
                 ) : (
-                  <div className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: theme.button_color, color: theme.button_text_color }}>
-                    <Bike className="h-4 w-4" />
+                  <div
+                    className="grid place-items-center rounded-lg"
+                    style={{
+                      height: theme.logo_size,
+                      width: theme.logo_size,
+                      background: theme.button_color,
+                      color: theme.button_text_color,
+                    }}
+                  >
+                    <Bike style={{ height: theme.logo_size * 0.5, width: theme.logo_size * 0.5 }} />
                   </div>
                 )}
                 <div className="leading-tight">
