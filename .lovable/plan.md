@@ -1,104 +1,100 @@
-## Central de Entregas Zappfy
+## Login individual para motoboys — Central Entregas Zappfy
 
-Evoluir a página do motoboy atual (`/entrega/$courierToken`) para uma Central de Entregas Zappfy, mantendo a página individual de entrega intacta e adicionando uma nova camada de "hub" por loja.
+### 1. Banco de dados (migração)
 
----
+Nova tabela `public.couriers`:
+- `id uuid PK`
+- `store_id uuid` (= user_id do lojista)
+- `name text`
+- `phone text` (WhatsApp, usado como "login" junto com o slug da loja — único por loja)
+- `password_hash text` (bcrypt via `crypt()` + `gen_salt('bf')` do `pgcrypto`)
+- `vehicle_type text` (moto, carro, bike, a-pé)
+- `plate text` nullable
+- `active boolean default true`
+- `last_login_at timestamptz`
+- timestamps + trigger `set_updated_at`
+- `UNIQUE (store_id, phone)`
 
-### 1. Nova rota: `/entregas-zappfy/$storeSlug`
+Em `delivery_tracking`: adicionar `courier_id uuid` nullable (referência lógica a `couriers.id`).
 
-Página pública (sem login) com **identidade Zappfy** (não usa o tema da loja):
-- Header com logo e nome "Entregas Zappfy" (configurável pelo Admin Master)
-- Título: "Central de Entregas — {Nome da Loja}"
-- Lista de **Entregas Disponíveis** (status `aguardando_motoboy`, sem `courier_token` aceito ainda)
-- Lista de **Minhas Entregas em Andamento** (já aceitas por este dispositivo, status `saiu_para_entrega` / `chegando`)
+GRANTs:
+- `couriers`: `SELECT/INSERT/UPDATE/DELETE` para `authenticated` (lojista gerencia via RLS); `service_role ALL`. Não dar `anon` — leitura pública vai por RPC SECURITY DEFINER.
+- RLS em `couriers`: lojista (auth.uid() = store_id) gerencia seus motoboys.
 
-Cada card mostra:
-- Número do pedido (#XXXX)
-- Nome do cliente
-- Endereço + bairro + cidade
-- Horário do pedido
-- Status (badge)
-- Botão **Aceitar Entrega** (disponíveis) ou **Continuar entrega** (em andamento)
+RPCs SECURITY DEFINER (público, anon):
+- `courier_login(_slug, _phone, _password)` → retorna `{ courier_id, courier_token (jwt simples ou random token de sessão guardado em coluna), name, phone, store_id }`. Para simplificar: gera `session_token` random e grava em nova tabela `courier_sessions(token, courier_id, expires_at)`. Retorna `session_token`. Valida `active=true`, senha via `crypt(_password, password_hash) = password_hash`.
+- `courier_me(_session)` → valida sessão, retorna dados do motoboy + store_id/slug.
+- `courier_logout(_session)`.
+- `list_available_deliveries_v2(_session)` → entregas `aguardando_motoboy` da loja do motoboy logado (substitui versão pública por slug; mantém a antiga para compat ou remove).
+- `accept_delivery_v2(_session, _code)` → identifica motoboy pela sessão, preenche `courier_id/name/phone` em `delivery_tracking`, retorna `courier_token` existente.
 
-A página faz polling/realtime de novas entregas pelo `store_id` derivado do slug.
+Nova tabela `courier_sessions`:
+- `token text PK` (random 48 chars)
+- `courier_id uuid`
+- `expires_at timestamptz default now() + 30 days`
+- `created_at`
 
----
+GRANT na `courier_sessions`: apenas service_role; toda leitura via RPC.
 
-### 2. Fluxo de criação automática
+### 2. Frontend — Cadastro de motoboys (lojista)
 
-Quando o pedido muda para "Saiu para Entrega" no painel de pedidos:
-- Já existe a criação de tracking via `DeliveryTrackingPanel`. Vamos adicionar:
-  - Um novo botão/atalho **"Enviar para Central de Entregas"** que cria o rastreamento sem precisar preencher nome/telefone do motoboy (campos ficam nulos até alguém aceitar)
-  - Status inicial: `aguardando_motoboy`
-- O rastreamento já criado aparece automaticamente na Central da loja correspondente.
+Nova rota `src/routes/_authenticated/motoboys.tsx`:
+- Tabela com motoboys (nome, whatsapp, veículo, placa, status, último login)
+- Modal de cadastro/edição: nome, WhatsApp, senha (apenas em criar/redefinir), tipo veículo, placa, ativo
+- Botão ativar/desativar, redefinir senha, excluir
+- Link no menu do AdminShell/AppShell ("Motoboys")
 
----
+Salvar senha: enviar via RPC `create_courier(_name, _phone, _password, _vehicle, _plate, _active)` SECURITY DEFINER que aplica hash com `crypt(_password, gen_salt('bf'))` e valida `auth.uid()` = store_id.
 
-### 3. Aceitar entrega
+### 3. Frontend — Login do motoboy
 
-Botão **Aceitar Entrega** chama nova função `accept_delivery(_tracking_code, _courier_name?, _courier_phone?)`:
-- Valida que o tracking pertence à loja do slug
-- Valida que ainda não foi aceito (sem alterações de status ainda)
-- Marca como "aceito" (preenche `courier_name` se informado, mantém `aguardando_motoboy`)
-- Retorna o `courier_token`
-- Frontend redireciona para `/entrega/$courierToken` (página existente, sem mudanças)
+Nova rota pública `src/routes/entregas-zappfy.$storeSlug.login.tsx`:
+- Form: WhatsApp + senha + botão Entrar
+- Chama `courier_login`; em sucesso salva `session_token` em `localStorage` (chave por slug) e redireciona para `/entregas-zappfy/:slug`.
+- Mensagens claras: credenciais inválidas, "Acesso desativado. Fale com a loja." quando `active=false`.
 
-O `courier_token` aceito é guardado em `localStorage` (chave por loja) para listar "Minhas Entregas em Andamento" depois.
+### 4. Central de Entregas — exigir login
 
----
+Editar `src/routes/entregas-zappfy.$storeSlug.tsx`:
+- Ao montar, ler `session_token` do localStorage. Se ausente → redirect para `/entregas-zappfy/:slug/login`.
+- Chamar `courier_me(session)`; se inválida/expirada → limpar e redirect.
+- Exibir nome do motoboy no header + botão "Sair".
+- Listar entregas via `list_available_deliveries_v2(session)`.
+- "Minhas entregas em andamento" passa a vir do servidor filtrando por `courier_id` (não mais localStorage de tokens).
+- Remover modal de Aceitar (nome/WhatsApp). Botão chama `accept_delivery_v2(session, code)` direto e navega para `/entrega/:courier_token`.
 
-### 4. Identidade visual Zappfy (Admin Master)
+### 5. Painel do lojista no pedido
 
-Nova tabela `zappfy_central_settings` (linha única, singleton):
-- `logo_url`, `header_color`, `header_text_color`
-- `background_color`, `card_color`, `card_border_color`, `card_shadow_color`, `card_radius`
-- `text_color`, `title_color`, `button_color`, `button_text_color`, `icon_color`
-- `footer_text`
+No `DeliveryTrackingPanel.tsx`, quando há tracking aceito mostrar: motoboy responsável (nome), WhatsApp (link wa.me), status, horário de aceite (`updated_at` quando courier_id foi setado — gravar `accepted_at` em `delivery_tracking`), última atualização GPS (`last_updated_at`). Adicionar coluna `accepted_at` em `delivery_tracking`.
 
-RLS:
-- `SELECT` público (anon) — leitura via RPC `get_zappfy_central_settings()`
-- `UPDATE/INSERT` só para `has_role(auth.uid(), 'admin')`
+### 6. Página do cliente (`rastreio.$trackingCode.tsx`)
 
-Nova seção na rota `_authenticated/admin.configuracoes.tsx` (ou nova rota admin): **"Entregas Zappfy"** com form de personalização. Lojistas **não** acessam.
+Sem mudanças de código — já mostra `courier_name` que agora vem do motoboy logado (nada digitado manualmente).
 
----
+### 7. Segurança
 
-### 5. RPCs novas
-
-- `get_store_by_slug(_slug)` → `{ store_id, store_name }` (público)
-- `list_available_deliveries(_slug)` → entregas em `aguardando_motoboy` daquela loja (público)
-- `list_active_deliveries(_slug, _tokens text[])` → entregas em andamento que o motoboy aceitou (público, filtrado por tokens conhecidos)
-- `accept_delivery(_tracking_code, _courier_name, _courier_phone)` → `{ courier_token }` (público, valida loja)
-- `get_zappfy_central_settings()` → tema Zappfy (público)
-
----
-
-### 6. Painel do lojista — pequeno ajuste
-
-No `DeliveryTrackingPanel.tsx`:
-- Adicionar botão **"Copiar link da Central de Entregas"** que copia `{origin}/entregas-zappfy/{slug}` (uma vez, exibido em qualquer pedido com tracking)
-- Quando criar tracking sem informar motoboy, status fica `aguardando_motoboy` e aparece automaticamente na Central
-
----
+- Senha sempre via `pgcrypto` (`crypt`/`gen_salt`), nunca em claro.
+- Motoboy inativo → `courier_login` retorna erro específico.
+- Toda leitura/escrita pública via SECURITY DEFINER validando `store_id`/sessão.
+- `couriers` e `courier_sessions` sem GRANT a `anon`.
 
 ### Arquivos
 
-**Migração:**
-- Nova `zappfy_central_settings` + RLS + GRANTs
-- Novas funções SECURITY DEFINER acima
-- Permitir `courier_name`/`courier_phone` nulos em `delivery_tracking` (se ainda não forem)
+**Nova migração** com: `pgcrypto` (se não ativo), `couriers`, `courier_sessions`, coluna `courier_id` + `accepted_at` em `delivery_tracking`, RLS, GRANTs, RPCs (`create_courier`, `update_courier`, `delete_courier`, `reset_courier_password`, `courier_login`, `courier_logout`, `courier_me`, `list_available_deliveries_v2`, `accept_delivery_v2`).
 
-**Novos:**
-- `src/routes/entregas-zappfy.$storeSlug.tsx` — Central de Entregas
-- `src/routes/_authenticated/admin.entregas-zappfy.tsx` — personalização Admin Master (ou seção dentro de admin.configuracoes)
+**Novos arquivos:**
+- `src/routes/_authenticated/motoboys.tsx`
+- `src/routes/entregas-zappfy.$storeSlug.login.tsx`
+- `src/lib/courier-session.ts` (helpers de localStorage por slug)
 
 **Editados:**
-- `src/components/DeliveryTrackingPanel.tsx` — botão copiar link da central
-- `src/integrations/supabase/types.ts` — auto-regenerado
-- `src/routes/_authenticated/admin.tsx` — adicionar link no menu admin
+- `src/routes/entregas-zappfy.$storeSlug.tsx` — login obrigatório, remover modal, usar RPCs v2
+- `src/components/DeliveryTrackingPanel.tsx` — exibir motoboy/horário/última atualização
+- `src/components/AppShell.tsx` (ou onde fica o menu lojista) — link "Motoboys"
+- `src/routeTree.gen.ts` — auto
 
 **Não alterar:**
-- `src/routes/rastreio.$trackingCode.tsx` (página do cliente)
-- `src/routes/entrega.$courierToken.tsx` (página individual do motoboy, só recebe redirect)
+- `entrega.$courierToken.tsx`
+- `rastreio.$trackingCode.tsx`
 
-Confirma que posso começar pela migração?
+Confirma para eu começar pela migração?
