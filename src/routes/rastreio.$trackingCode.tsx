@@ -102,8 +102,16 @@ function RastreioPage() {
   const [, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 15_000);
+    const t = setInterval(() => setNow(Date.now()), 5_000);
     return () => clearInterval(t);
+  }, []);
+
+  // Refetch latest tracking row when the browser regains internet
+  useEffect(() => {
+    const onOnline = () => { load(); };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function load() {
