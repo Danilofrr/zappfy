@@ -373,14 +373,14 @@ function FaviconUploader({ value, onChange, hint }: { value: string | null; onCh
       </div>
       <div className="flex-1 min-w-0">
         <input
-          ref={(el) => ref[1](el)}
+          ref={inputRef}
           type="file"
           accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon"
           className="hidden"
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => ref[0]?.click()}>
+          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>
             {busy ? "Processando..." : value ? "Trocar favicon" : "Enviar favicon"}
           </Button>
           {value && (
