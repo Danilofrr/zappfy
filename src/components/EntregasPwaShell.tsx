@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Download, WifiOff, RefreshCw, X } from "lucide-react";
+import { ENTREGAS_MANIFEST_URL, rememberEntregasPwa } from "@/lib/entregas-pwa";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -7,7 +8,6 @@ type BIPEvent = Event & {
 };
 
 const DISMISS_KEY = "zappfy:entregas:install-dismissed";
-const LAST_SLUG_KEY = "zappfy:entregas:last-slug";
 
 type Props = { storeSlug?: string };
 
@@ -31,7 +31,7 @@ export function EntregasPwaShell({ storeSlug }: Props) {
   // Persist last slug so /entregas-zappfy can redirect on reopen.
   useEffect(() => {
     if (!storeSlug) return;
-    try { localStorage.setItem(LAST_SLUG_KEY, storeSlug.toLowerCase()); } catch {}
+    rememberEntregasPwa(storeSlug);
   }, [storeSlug]);
 
   // Swap the manifest + theme-color + Apple PWA meta in the live document head.
@@ -39,7 +39,7 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     const head = document.head;
     const prevManifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     const prevHref = prevManifest?.getAttribute("href") ?? null;
-    if (prevManifest) prevManifest.setAttribute("href", "/manifest-entregas.json");
+    if (prevManifest) prevManifest.setAttribute("href", ENTREGAS_MANIFEST_URL);
 
     // --- theme-color ---
     const prevTheme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
