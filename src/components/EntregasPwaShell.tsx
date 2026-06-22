@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Download, WifiOff, RefreshCw, X } from "lucide-react";
 import { ENTREGAS_MANIFEST_URL, rememberEntregasPwa } from "@/lib/entregas-pwa";
+import { DynamicFavicon } from "@/components/DynamicFavicon";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
