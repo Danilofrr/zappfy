@@ -564,10 +564,12 @@ function Page() {
               }}
             >
               <div className="p-5 flex flex-col items-center gap-4">
-                {(theme.login_logo_url || theme.logo_url) ? (
-                  <img src={theme.login_logo_url || theme.logo_url || ""} alt="" style={{ height: 28 }} className="object-contain" />
-                ) : (
-                  <div className="text-xs font-bold" style={{ color: theme.login_title_color }}>{theme.brand_name}</div>
+                {theme.login_show_logo && (
+                  (theme.login_logo_url || theme.logo_url) ? (
+                    <img src={theme.login_logo_url || theme.logo_url || ""} alt="" style={{ height: 28 }} className="object-contain" />
+                  ) : (
+                    <div className="text-xs font-bold" style={{ color: theme.login_title_color }}>{theme.brand_name}</div>
+                  )
                 )}
 
                 <div
@@ -579,26 +581,36 @@ function Page() {
                   }}
                 >
                   <div className="flex flex-col items-center gap-2 text-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 rounded-2xl blur-xl opacity-70" style={{ background: theme.login_glow_color }} />
-                      <div
-                        className="relative grid h-12 w-12 place-items-center rounded-2xl"
-                        style={{
-                          background: theme.login_button_color,
-                          color: theme.login_button_text_color,
-                          boxShadow: `0 8px 20px -6px ${theme.login_glow_color}`,
-                        }}
-                      >
-                        {theme.login_icon_url ? (
-                          <img src={theme.login_icon_url} alt="" className="h-7 w-7 object-contain" />
-                        ) : (
-                          <Bike className="h-6 w-6" />
-                        )}
-                      </div>
+                    <div className="relative" style={{ width: theme.login_icon_size, height: theme.login_icon_size }}>
+                      {theme.login_glow_enabled && (
+                        <div className="absolute inset-0 rounded-2xl blur-xl opacity-70" style={{ background: theme.login_glow_color }} />
+                      )}
+                      {theme.login_icon_url ? (
+                        <img
+                          src={theme.login_icon_url}
+                          alt=""
+                          className="relative object-contain"
+                          style={{ width: theme.login_icon_size, height: theme.login_icon_size }}
+                        />
+                      ) : (
+                        <div
+                          className="relative grid place-items-center rounded-2xl"
+                          style={{
+                            width: theme.login_icon_size,
+                            height: theme.login_icon_size,
+                            background: theme.login_button_color,
+                            color: theme.login_button_text_color,
+                            boxShadow: theme.login_glow_enabled ? `0 8px 20px -6px ${theme.login_glow_color}` : undefined,
+                          }}
+                        >
+                          <Bike style={{ width: theme.login_icon_size * 0.5, height: theme.login_icon_size * 0.5 }} />
+                        </div>
+                      )}
                     </div>
                     <div className="text-base font-bold" style={{ color: theme.login_title_color }}>{theme.login_title_text}</div>
                     <div className="text-[11px] opacity-70">{theme.login_subtitle_text}</div>
                   </div>
+
 
                   <div className="space-y-2">
                     <div className="text-[10px] uppercase opacity-60">WhatsApp</div>
