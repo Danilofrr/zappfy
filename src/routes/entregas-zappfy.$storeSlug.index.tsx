@@ -169,7 +169,7 @@ function CentralPage() {
   return (
     <div className="min-h-screen pb-16" style={{ background: theme.background_color, color: theme.text_color }}>
       <header
-        className="w-full px-5 py-5 flex items-center gap-3"
+        className="entregas-mobile-header w-full px-5 py-5 flex items-center gap-3"
         style={{ background: theme.header_color, color: theme.header_text_color }}
       >
         {theme.logo_url ? (
