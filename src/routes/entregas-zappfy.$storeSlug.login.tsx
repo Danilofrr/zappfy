@@ -153,7 +153,7 @@ function LoginPage() {
         <div
           className="relative rounded-2xl p-6 sm:p-7 space-y-6 border backdrop-blur-xl shadow-2xl"
           style={{
-            background: `color-mix(in oklab, ${card} 92%, transparent)`,
+            background: card,
             borderColor: border,
             boxShadow: `0 30px 80px -30px color-mix(in oklab, ${glow} 40%, transparent), 0 2px 0 0 color-mix(in oklab, #ffffff 4%, transparent) inset`,
           }}
