@@ -34,29 +34,88 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     try { localStorage.setItem(LAST_SLUG_KEY, storeSlug.toLowerCase()); } catch {}
   }, [storeSlug]);
 
-  // Swap the manifest + theme-color in the live document head.
+  // Swap the manifest + theme-color + Apple PWA meta in the live document head.
+  // Builds a per-page manifest with the CURRENT URL as start_url so iOS "Add to
+  // Home Screen" opens the installed app on the correct Central Entregas route.
   useEffect(() => {
+    const head = document.head;
+
+    // --- manifest (dynamic blob with start_url = current login route) ---
     const prevManifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     const prevHref = prevManifest?.getAttribute("href") ?? null;
-    if (prevManifest) prevManifest.setAttribute("href", "/entregas-manifest.webmanifest");
 
+    const currentPath = window.location.pathname + window.location.search;
+    const startUrl =
+      currentPath.startsWith("/entregas-zappfy")
+        ? currentPath
+        : storeSlug
+          ? `/entregas-zappfy/${storeSlug}/login`
+          : "/entregas-zappfy/";
+
+    const manifest = {
+      name: "Entregas Zappfy",
+      short_name: "Entregas",
+      description: "Central de Entregas da Zappfy",
+      id: "/entregas-zappfy/",
+      start_url: startUrl,
+      scope: "/entregas-zappfy/",
+      display: "standalone",
+      orientation: "portrait",
+      background_color: "#020617",
+      theme_color: "#22c55e",
+      lang: "pt-BR",
+      categories: ["business", "productivity"],
+      icons: [
+        { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: "/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        { src: "/apple-touch-icon.png", sizes: "180x180", type: "image/png", purpose: "any" },
+      ],
+    };
+    const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
+    const blobUrl = URL.createObjectURL(blob);
+    if (prevManifest) prevManifest.setAttribute("href", blobUrl);
+
+    // --- theme-color ---
     const prevTheme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     const prevThemeContent = prevTheme?.getAttribute("content") ?? null;
     if (prevTheme) prevTheme.setAttribute("content", "#22c55e");
 
-    const prevAppleTitle = document.querySelector<HTMLMetaElement>(
-      'meta[name="apple-mobile-web-app-title"]',
-    );
-    const prevAppleTitleContent = prevAppleTitle?.getAttribute("content") ?? null;
-    if (prevAppleTitle) prevAppleTitle.setAttribute("content", "Entregas");
+    // --- Apple PWA tags (iOS uses these for Add to Home Screen) ---
+    const ensureMeta = (name: string, content: string) => {
+      let el = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+      let created = false;
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("name", name);
+        head.appendChild(el);
+        created = true;
+      }
+      const prev = el.getAttribute("content");
+      el.setAttribute("content", content);
+      return { el, prev, created };
+    };
+    const appleTitle = ensureMeta("apple-mobile-web-app-title", "Entregas Zappfy");
+    const appleCapable = ensureMeta("apple-mobile-web-app-capable", "yes");
+    const mobileCapable = ensureMeta("mobile-web-app-capable", "yes");
+    const appleStatus = ensureMeta("apple-mobile-web-app-status-bar-style", "black-translucent");
+
+    // --- apple-touch-icon override (Central Entregas icon) ---
+    const prevApple = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+    const prevAppleHref = prevApple?.getAttribute("href") ?? null;
+    if (prevApple) prevApple.setAttribute("href", "/apple-touch-icon.png");
 
     return () => {
       if (prevManifest && prevHref) prevManifest.setAttribute("href", prevHref);
+      URL.revokeObjectURL(blobUrl);
       if (prevTheme && prevThemeContent) prevTheme.setAttribute("content", prevThemeContent);
-      if (prevAppleTitle && prevAppleTitleContent)
-        prevAppleTitle.setAttribute("content", prevAppleTitleContent);
+      for (const m of [appleTitle, appleCapable, mobileCapable, appleStatus]) {
+        if (m.created) m.el.remove();
+        else if (m.prev !== null) m.el.setAttribute("content", m.prev);
+      }
+      if (prevApple && prevAppleHref) prevApple.setAttribute("href", prevAppleHref);
     };
-  }, []);
+  }, [storeSlug]);
 
   // Online/offline indicator.
   useEffect(() => {
