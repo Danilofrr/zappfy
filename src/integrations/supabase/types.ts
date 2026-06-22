@@ -1527,7 +1527,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
-      courier_create_session: { Args: { _courier_id: string }; Returns: Json }
+      courier_create_session: {
+        Args: { _courier_id: string; _token: string }
+        Returns: Json
+      }
       courier_logout: { Args: { _session: string }; Returns: boolean }
       courier_lookup_for_login: {
         Args: { _phone: string; _slug: string }
