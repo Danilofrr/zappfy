@@ -114,14 +114,18 @@ function LoginPage() {
       const ok = await bcrypt.compare(form.password, (lookup as any).password_hash || "");
       if (!ok) { toast.error("WhatsApp ou senha inválidos"); return; }
       if (!(lookup as any).active) { toast.error("Acesso desativado. Fale com a loja."); return; }
-      const { data: session, error: sessionError } = await (supabase as any).rpc("courier_create_session", {
+      const token =
+        (typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : Math.random().toString(36).slice(2)) + "-" + Date.now().toString(36);
+      const { error: sessionError } = await (supabase as any).rpc("courier_create_session", {
         _courier_id: (lookup as any).courier_id,
+        _token: token,
       });
       if (sessionError) throw sessionError;
-      const token = (session as any)?.session_token;
       if (!token) { toast.error("Falha no login"); return; }
       setCourierSession(storeSlug, token);
-      toast.success(`Olá, ${(session as any).name}!`);
+      toast.success(`Olá, ${(lookup as any).name}!`);
       navigate({ to: "/entregas-zappfy/$storeSlug", params: { storeSlug } });
     } catch (e: any) {
       toast.error(e?.message || "Falha no login");
