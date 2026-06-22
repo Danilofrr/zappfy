@@ -239,7 +239,7 @@ function CentralPage() {
         style={{ background: theme.header_color, color: theme.header_text_color }}
       >
         {theme.logo_url ? (
-          <img src={theme.logo_url} alt={theme.brand_name} className="h-10 w-auto object-contain" />
+          <img src={theme.logo_url} alt={theme.brand_name} style={{ height: theme.logo_size, width: "auto" }} className="object-contain" />
         ) : (
           <div className="grid h-10 w-10 place-items-center rounded-xl" style={{ background: theme.button_color, color: theme.button_text_color }}>
             <Bike className="h-5 w-5" />
