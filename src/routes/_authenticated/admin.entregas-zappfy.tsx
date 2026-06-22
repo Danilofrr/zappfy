@@ -141,10 +141,12 @@ function Page() {
                   <Label className="text-xs">Nome da marca</Label>
                   <Input value={theme.brand_name} onChange={(e) => set("brand_name", e.target.value)} />
                 </div>
-                <div>
-                  <Label className="text-xs">URL do logo</Label>
-                  <Input value={theme.logo_url ?? ""} onChange={(e) => set("logo_url", e.target.value || null)} placeholder="https://..." />
-                </div>
+                <LogoField
+                  value={theme.logo_url}
+                  size={theme.logo_size}
+                  onChangeUrl={(v) => set("logo_url", v)}
+                  onChangeSize={(v) => set("logo_size", v)}
+                />
                 <div>
                   <Label className="text-xs">Texto do rodapé</Label>
                   <Input value={theme.footer_text} onChange={(e) => set("footer_text", e.target.value)} />
