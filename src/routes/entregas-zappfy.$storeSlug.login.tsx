@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Bike, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { getCourierSession, setCourierSession } from "@/lib/courier-session";
+import { getCourierSession, setCourierSession, clearCourierSession } from "@/lib/courier-session";
 import bcrypt from "bcryptjs";
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug/login")({
@@ -20,23 +20,78 @@ function LoginPage() {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<any>(null);
   const [store, setStore] = useState<any>(null);
+  const [storeStatus, setStoreStatus] = useState<"loading" | "ok" | "not_found" | "error">("loading");
   const [form, setForm] = useState({ phone: "", password: "" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const existing = getCourierSession(storeSlug);
-    if (existing) {
-      navigate({ to: "/entregas-zappfy/$storeSlug", params: { storeSlug } });
-      return;
-    }
+    let cancelled = false;
+
+    // Valida sessão existente sem travar a tela: se falhar, limpa e mostra login.
     (async () => {
-      const [{ data: t }, { data: s }] = await Promise.all([
-        (supabase as any).rpc("get_zappfy_central_settings"),
-        (supabase as any).rpc("get_store_by_slug", { _slug: storeSlug }),
-      ]);
-      setTheme(t || {});
-      setStore(s);
+      const existing = getCourierSession(storeSlug);
+      if (!existing) return;
+      try {
+        const { data, error } = await (supabase as any).rpc("courier_me", { _session: existing });
+        if (cancelled) return;
+        if (!error && data) {
+          navigate({ to: "/entregas-zappfy/$storeSlug", params: { storeSlug } });
+        } else {
+          clearCourierSession(storeSlug);
+        }
+      } catch {
+        clearCourierSession(storeSlug);
+      }
     })();
+
+    // Tema (não bloqueia a tela)
+    (async () => {
+      try {
+        const { data } = await (supabase as any).rpc("get_zappfy_central_settings");
+        if (!cancelled) setTheme(data || {});
+      } catch {
+        if (!cancelled) setTheme({});
+      }
+    })();
+
+    // Lookup da loja com timeout
+    console.log("[motoboy-login] Buscando loja pelo slug:", storeSlug);
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        setStoreStatus((s) => (s === "loading" ? "error" : s));
+      }
+    }, 8000);
+
+    (async () => {
+      try {
+        const { data, error } = await (supabase as any).rpc("get_store_by_slug", { _slug: storeSlug });
+        if (cancelled) return;
+        clearTimeout(timeoutId);
+        if (error) {
+          console.error("[motoboy-login] Erro ao carregar login do motoboy:", error);
+          setStoreStatus("error");
+          return;
+        }
+        if (!data) {
+          console.warn("[motoboy-login] Loja não encontrada para slug:", storeSlug);
+          setStoreStatus("not_found");
+          return;
+        }
+        console.log("[motoboy-login] Loja encontrada:", data);
+        setStore(data);
+        setStoreStatus("ok");
+      } catch (err) {
+        if (cancelled) return;
+        clearTimeout(timeoutId);
+        console.error("[motoboy-login] Erro ao carregar login do motoboy:", err);
+        setStoreStatus("error");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [storeSlug, navigate]);
 
   async function submit(e: React.FormEvent) {
