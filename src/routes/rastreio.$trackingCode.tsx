@@ -321,7 +321,7 @@ function RastreioPage() {
           <p className="mt-3 text-sm leading-relaxed" style={{ color: s.text_color }}>{message}</p>
           {stale && (
             <div className="mt-3 text-xs rounded-lg px-3 py-2" style={{ background: "#f59e0b22", color: "#f59e0b" }}>
-              <Clock className="inline h-3.5 w-3.5 mr-1" /> Aguardando nova atualização do entregador…
+              <Clock className="inline h-3.5 w-3.5 mr-1" /> Localização do entregador pausada. Aguardando nova atualização...
             </div>
           )}
         </section>
