@@ -74,22 +74,37 @@ function MotoboysPage() {
   async function submit() {
     if (!form.name.trim() || !form.phone.trim()) { toast.error("Nome e WhatsApp obrigatórios"); return; }
     setSaving(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) { toast.error("Sessão expirada"); setSaving(false); return; }
     if (editing) {
-      const { error } = await (supabase as any).rpc("update_courier", {
-        _id: editing.id, _name: form.name, _phone: form.phone,
-        _vehicle: form.vehicle_type, _plate: form.plate, _active: form.active,
-      });
+      const { error } = await (supabase as any)
+        .from("couriers")
+        .update({
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          vehicle_type: form.vehicle_type,
+          plate: form.plate.trim() || null,
+          active: form.active,
+        })
+        .eq("id", editing.id)
+        .eq("store_id", uid);
       if (error) { toast.error(error.message); setSaving(false); return; }
       toast.success("Motoboy atualizado");
     } else {
       if (!form.password || form.password.length < 4) { toast.error("Senha mínima de 4 caracteres"); setSaving(false); return; }
       const password_hash = await bcrypt.hash(form.password, 10);
-      const { error } = await (supabase as any).rpc("create_courier", {
-        _name: form.name, _phone: form.phone, _password_hash: password_hash,
-        _vehicle: form.vehicle_type, _plate: form.plate, _active: form.active,
+      const { error } = await (supabase as any).from("couriers").insert({
+        store_id: uid,
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        password_hash,
+        vehicle_type: form.vehicle_type,
+        plate: form.plate.trim() || null,
+        active: form.active,
       });
       if (error) { toast.error(error.message); setSaving(false); return; }
-      toast.success("Motoboy cadastrado");
+      toast.success("Motoboy cadastrado com sucesso");
     }
     setSaving(false);
     setOpen(false);
@@ -97,16 +112,28 @@ function MotoboysPage() {
   }
 
   async function toggleActive(c: Courier) {
-    const { error } = await (supabase as any).rpc("update_courier", {
-      _id: c.id, _name: c.name, _phone: c.phone, _vehicle: c.vehicle_type, _plate: c.plate, _active: !c.active,
-    });
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return;
+    const { error } = await (supabase as any)
+      .from("couriers")
+      .update({ active: !c.active })
+      .eq("id", c.id)
+      .eq("store_id", uid);
     if (error) { toast.error(error.message); return; }
     load();
   }
 
   async function remove(c: Courier) {
     if (!confirm(`Excluir motoboy "${c.name}"?`)) return;
-    const { error } = await (supabase as any).rpc("delete_courier", { _id: c.id });
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return;
+    const { error } = await (supabase as any)
+      .from("couriers")
+      .delete()
+      .eq("id", c.id)
+      .eq("store_id", uid);
     if (error) { toast.error(error.message); return; }
     toast.success("Motoboy excluído");
     load();
@@ -115,8 +142,15 @@ function MotoboysPage() {
   async function confirmReset() {
     if (!resetting) return;
     if (resetPwd.length < 4) { toast.error("Senha mínima de 4 caracteres"); return; }
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return;
     const password_hash = await bcrypt.hash(resetPwd, 10);
-    const { error } = await (supabase as any).rpc("reset_courier_password", { _id: resetting.id, _password_hash: password_hash });
+    const { error } = await (supabase as any)
+      .from("couriers")
+      .update({ password_hash })
+      .eq("id", resetting.id)
+      .eq("store_id", uid);
     if (error) { toast.error(error.message); return; }
     toast.success("Senha redefinida");
     setResetting(null); setResetPwd("");
