@@ -10,6 +10,7 @@ import { TrendingUp, Loader2, ShieldCheck, Zap, BarChart3, MessageCircle, CheckC
 import { toast } from "sonner";
 import { AvatarUploader } from "@/components/AvatarUploader";
 import { getPublicSupport } from "@/lib/admin.functions";
+import { whatsappLink } from "@/lib/tracking";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -432,7 +433,7 @@ function AuthPage() {
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
           <a
-            href={`https://wa.me/${supportWhats.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Preciso de ajuda para acessar o Zappfy.")}`}
+            href={whatsappLink(supportWhats, "Olá! Preciso de ajuda para acessar o Zappfy.")}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Falar com o suporte no WhatsApp"
