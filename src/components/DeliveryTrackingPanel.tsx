@@ -149,6 +149,9 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     if (error) { toast.error(error.message); return; }
     setTracking(data as Tracking);
     toast.success("Entrega enviada para a Central de Entregas!");
+  }
+
+
 
   async function handleCancel() {
     if (!tracking) return;
