@@ -40,6 +40,7 @@ import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAssinaturaBloqueadaRouteImport } from './routes/_authenticated/assinatura-bloqueada'
 import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as EntregasZappfyStoreSlugIndexRouteImport } from './routes/entregas-zappfy.$storeSlug.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as EntregasZappfyStoreSlugLoginRouteImport } from './routes/entregas-zappfy.$storeSlug.login'
 import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
@@ -215,6 +216,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const EntregasZappfyStoreSlugIndexRoute =
+  EntregasZappfyStoreSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => EntregasZappfyStoreSlugRoute,
+  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -328,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/entregas-zappfy/$storeSlug/': typeof EntregasZappfyStoreSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -355,7 +363,6 @@ export interface FileRoutesByTo {
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/entrega/$courierToken': typeof EntregaCourierTokenRoute
-  '/entregas-zappfy/$storeSlug': typeof EntregasZappfyStoreSlugRouteWithChildren
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/': typeof AuthenticatedIndexRoute
@@ -371,6 +378,7 @@ export interface FileRoutesByTo {
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/entregas-zappfy/$storeSlug': typeof EntregasZappfyStoreSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -417,6 +425,7 @@ export interface FileRoutesById {
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/entregas-zappfy/$storeSlug/': typeof EntregasZappfyStoreSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -463,6 +472,7 @@ export interface FileRouteTypes {
     | '/api/public/submit-order'
     | '/entregas-zappfy/$storeSlug/login'
     | '/admin/'
+    | '/entregas-zappfy/$storeSlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -490,7 +500,6 @@ export interface FileRouteTypes {
     | '/ativar-conta/$token'
     | '/checkout/$slug'
     | '/entrega/$courierToken'
-    | '/entregas-zappfy/$storeSlug'
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
     | '/'
@@ -506,6 +515,7 @@ export interface FileRouteTypes {
     | '/api/public/submit-order'
     | '/entregas-zappfy/$storeSlug/login'
     | '/admin'
+    | '/entregas-zappfy/$storeSlug'
   id:
     | '__root__'
     | '/_authenticated'
@@ -551,6 +561,7 @@ export interface FileRouteTypes {
     | '/api/public/submit-order'
     | '/entregas-zappfy/$storeSlug/login'
     | '/_authenticated/admin/'
+    | '/entregas-zappfy/$storeSlug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -785,6 +796,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/entregas-zappfy/$storeSlug/': {
+      id: '/entregas-zappfy/$storeSlug/'
+      path: '/'
+      fullPath: '/entregas-zappfy/$storeSlug/'
+      preLoaderRoute: typeof EntregasZappfyStoreSlugIndexRouteImport
+      parentRoute: typeof EntregasZappfyStoreSlugRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -968,11 +986,13 @@ const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
 
 interface EntregasZappfyStoreSlugRouteChildren {
   EntregasZappfyStoreSlugLoginRoute: typeof EntregasZappfyStoreSlugLoginRoute
+  EntregasZappfyStoreSlugIndexRoute: typeof EntregasZappfyStoreSlugIndexRoute
 }
 
 const EntregasZappfyStoreSlugRouteChildren: EntregasZappfyStoreSlugRouteChildren =
   {
     EntregasZappfyStoreSlugLoginRoute: EntregasZappfyStoreSlugLoginRoute,
+    EntregasZappfyStoreSlugIndexRoute: EntregasZappfyStoreSlugIndexRoute,
   }
 
 const EntregasZappfyStoreSlugRouteWithChildren =
