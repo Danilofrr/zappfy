@@ -6,6 +6,7 @@ import { Bike, MapPin, Phone, Loader2, RefreshCw, Package, ArrowRight, Store, Lo
 import { toast } from "sonner";
 import { formatRelative, orderShortNumber } from "@/lib/tracking";
 import { getCourierSession, clearCourierSession } from "@/lib/courier-session";
+import { rememberEntregasPwa } from "@/lib/entregas-pwa";
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug/")({
   ssr: false,
@@ -78,6 +79,7 @@ function CentralPage() {
   // Bootstrap: theme + verify session
   useEffect(() => {
     let alive = true;
+    rememberEntregasPwa(storeSlug);
     (async () => {
       setLoading(true);
       const session = getCourierSession(storeSlug);
