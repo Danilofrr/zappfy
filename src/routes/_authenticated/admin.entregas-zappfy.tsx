@@ -80,13 +80,45 @@ function Page() {
   function set<K extends keyof Theme>(k: K, v: Theme[K]) { setTheme((t) => ({ ...t, [k]: v })); }
 
   function Color({ k, label }: { k: keyof Theme; label: string }) {
-    const val = (theme[k] as string) || "#000000";
+    const val = ((theme[k] as string) || "#000000").toString();
+    const safe = /^#[0-9a-fA-F]{6}$/.test(val) ? val : "#000000";
     return (
       <div>
         <Label className="text-xs">{label}</Label>
         <div className="flex items-center gap-2 mt-1">
-          <input type="color" value={val} onChange={(e) => set(k, e.target.value as any)} className="h-9 w-12 rounded border border-border bg-transparent" />
-          <Input value={val} onChange={(e) => set(k, e.target.value as any)} className="font-mono text-xs" />
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Escolher ${label}`}
+                className="h-9 w-12 rounded border border-border shrink-0"
+                style={{ background: safe }}
+              />
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto p-3 z-[100]"
+              align="start"
+              onOpenAutoFocus={(e) => e.preventDefault()}
+            >
+              <div className="space-y-2" onPointerDown={(e) => e.stopPropagation()}>
+                <HexColorPicker
+                  color={safe}
+                  onChange={(c) => set(k, c as any)}
+                  style={{ width: 220, height: 180 }}
+                />
+                <Input
+                  value={val}
+                  onChange={(e) => set(k, e.target.value as any)}
+                  className="font-mono text-xs h-8"
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Input
+            value={val}
+            onChange={(e) => set(k, e.target.value as any)}
+            className="font-mono text-xs"
+          />
         </div>
       </div>
     );
