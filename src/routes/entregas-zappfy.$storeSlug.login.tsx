@@ -24,6 +24,9 @@ function LoginPage() {
   const [form, setForm] = useState({ phone: "", password: "" });
   const [loading, setLoading] = useState(false);
 
+  console.log("Renderizando login do motoboy");
+  console.log("Slug recebido", storeSlug);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -54,8 +57,8 @@ function LoginPage() {
       }
     })();
 
-    // Lookup da loja com timeout
-    console.log("[motoboy-login] Buscando loja pelo slug:", storeSlug);
+    // Lookup da loja em segundo plano: nunca bloqueia a renderização do formulário.
+    console.log("Buscando loja", storeSlug);
     const timeoutId = setTimeout(() => {
       if (!cancelled) {
         setStoreStatus((s) => (s === "loading" ? "error" : s));
@@ -68,22 +71,22 @@ function LoginPage() {
         if (cancelled) return;
         clearTimeout(timeoutId);
         if (error) {
-          console.error("[motoboy-login] Erro ao carregar login do motoboy:", error);
+          console.error("Erro da busca", error);
           setStoreStatus("error");
           return;
         }
         if (!data) {
-          console.warn("[motoboy-login] Loja não encontrada para slug:", storeSlug);
+          console.log("Resultado da loja", null);
           setStoreStatus("not_found");
           return;
         }
-        console.log("[motoboy-login] Loja encontrada:", data);
+        console.log("Resultado da loja", data);
         setStore(data);
         setStoreStatus("ok");
       } catch (err) {
         if (cancelled) return;
         clearTimeout(timeoutId);
-        console.error("[motoboy-login] Erro ao carregar login do motoboy:", err);
+        console.error("Erro da busca", err);
         setStoreStatus("error");
       }
     })();
