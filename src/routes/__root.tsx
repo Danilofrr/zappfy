@@ -15,6 +15,7 @@ import { StoreProvider } from "@/lib/store";
 import { ThemeProvider } from "@/lib/theme";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { DynamicFavicon } from "@/components/DynamicFavicon";
 
 function NotFoundComponent() {
   return (
