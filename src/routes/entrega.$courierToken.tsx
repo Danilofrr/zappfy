@@ -144,6 +144,10 @@ function CourierPage() {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
     if (wakeLockRef.current) {
       try { wakeLockRef.current.release(); } catch {}
       wakeLockRef.current = null;
@@ -152,6 +156,7 @@ function CourierPage() {
   }
 
   async function sendLocation(pos: GeolocationPosition) {
+    latestPosRef.current = pos;
     setSending(true);
     const { latitude, longitude, speed, heading, accuracy } = pos.coords;
     const { error } = await supabase.rpc("update_courier_location", {
@@ -170,6 +175,24 @@ function CourierPage() {
     }
   }
 
+  function startHeartbeat() {
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    heartbeatRef.current = setInterval(() => {
+      // Re-send the most recent known position every 10s so the client sees
+      // last_updated_at advancing even when the courier is stopped.
+      const pos = latestPosRef.current;
+      if (pos) {
+        sendLocation(pos);
+      } else if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (p) => sendLocation(p),
+          () => {},
+          { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 },
+        );
+      }
+    }, 10_000);
+  }
+
   function startWatch(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
       if (!("geolocation" in navigator)) {
@@ -182,6 +205,7 @@ function CourierPage() {
       let resolved = false;
       const id = navigator.geolocation.watchPosition(
         (pos) => {
+          latestPosRef.current = pos;
           const { latitude, longitude } = pos.coords;
           const now = Date.now();
           const last = lastPosRef.current;
@@ -197,6 +221,7 @@ function CourierPage() {
             resolved = true;
             setWatching(true);
             requestWakeLock();
+            startHeartbeat();
             resolve(pos);
           }
         },
