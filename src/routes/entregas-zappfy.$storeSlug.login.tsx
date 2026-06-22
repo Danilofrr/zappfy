@@ -97,6 +97,14 @@ function LoginPage() {
     } finally { setLoading(false); }
   }
 
+  if (!theme) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#05070d" }}>
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#6b7280" }} />
+      </div>
+    );
+  }
+
   const bg = theme?.login_bg_color || "#05070d";
   const card = theme?.login_card_color || "#0b1220";
   const border = theme?.login_border_color || "#1f2937";
