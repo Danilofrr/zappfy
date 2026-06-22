@@ -584,3 +584,23 @@ export const getPublicSupport = createServerFn({ method: "GET" }).handler(async 
     enabled: v?.platform?.supportWhatsEnabled !== false,
   };
 });
+
+// ===== Favicons públicas (sem auth) — usadas pelos PWAs =====
+export const getPublicFavicons = createServerFn({ method: "GET" }).handler(async () => {
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabasePublic = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+  );
+  const { data } = await supabasePublic
+    .from("admin_settings")
+    .select("value")
+    .eq("key", "system")
+    .maybeSingle();
+  const a = ((data?.value as any) ?? {})?.appearance ?? {};
+  return {
+    dashboard: (a?.dashboardFaviconUrl as string | undefined) ?? null,
+    entregas: (a?.entregasFaviconUrl as string | undefined) ?? null,
+  };
+});

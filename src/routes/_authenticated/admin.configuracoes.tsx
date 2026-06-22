@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ type Settings = {
   payment?: { pixKey?: string; receiverName?: string; bank?: string; defaultLink?: string; gateway?: string };
   messages?: { welcome?: string; nearDue?: string; expired?: string; paid?: string; blocked?: string; reactivated?: string };
   security?: { adminOnly?: boolean; accessLogs?: boolean; sessionMinutes?: number };
-  appearance?: { theme?: string; brandName?: string; sidebarLogo?: string; primaryColor?: string };
+  appearance?: { theme?: string; brandName?: string; sidebarLogo?: string; primaryColor?: string; dashboardFaviconUrl?: string; entregasFaviconUrl?: string };
   prize?: { enabled?: boolean; goal?: number; reward?: string; period?: string };
 };
 
@@ -217,6 +217,20 @@ function AdminSettings() {
               <Field label="Cor principal"><div className="flex gap-2"><Input type="color" className="w-16 h-10 p-1" value={s.appearance?.primaryColor ?? "#22c55e"} onChange={(e) => set("appearance", { primaryColor: e.target.value })} /><Input value={s.appearance?.primaryColor ?? ""} onChange={(e) => set("appearance", { primaryColor: e.target.value })} /></div></Field>
               <Field label="Nome exibido no painel"><Input value={s.appearance?.brandName ?? ""} onChange={(e) => set("appearance", { brandName: e.target.value })} /></Field>
               <Field label="Logo do menu lateral (URL)"><Input value={s.appearance?.sidebarLogo ?? ""} onChange={(e) => set("appearance", { sidebarLogo: e.target.value })} /></Field>
+              <Field label="Favicon — Dashboard Zappfy" className="md:col-span-2">
+                <FaviconUploader
+                  value={s.appearance?.dashboardFaviconUrl ?? null}
+                  onChange={(v) => set("appearance", { dashboardFaviconUrl: v ?? "" })}
+                  hint="Aparece na aba do navegador da dashboard e na tela de login do lojista."
+                />
+              </Field>
+              <Field label="Favicon — Central de Entregas" className="md:col-span-2">
+                <FaviconUploader
+                  value={s.appearance?.entregasFaviconUrl ?? null}
+                  onChange={(v) => set("appearance", { entregasFaviconUrl: v ?? "" })}
+                  hint="Aparece na Central de Entregas Zappfy e no PWA instalado pelo motoboy."
+                />
+              </Field>
             </CardContent>
           </Card>
         </TabsContent>
@@ -298,6 +312,85 @@ function Field({ label, children, className = "" }: { label: string; children: R
     <div className={`space-y-1.5 ${className}`}>
       <Label>{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function FaviconUploader({ value, onChange, hint }: { value: string | null; onChange: (v: string | null) => void; hint?: string }) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleFile(file?: File | null) {
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx 1MB).");
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result as string);
+        fr.onerror = () => reject(new Error("Falha ao ler arquivo"));
+        fr.readAsDataURL(file);
+      });
+      // Redimensiona para 256x256 PNG para garantir favicon leve
+      const url: string = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const size = 256;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return reject(new Error("Canvas indisponível"));
+          const scale = Math.min(size / img.width, size / img.height);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+          resolve(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => reject(new Error("Imagem inválida"));
+        img.src = dataUrl;
+      });
+      onChange(url);
+      toast.success("Favicon atualizada. Lembre de salvar as configurações.");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao processar imagem");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4 rounded-lg border border-border/60 bg-muted/30 p-3">
+      <div className="h-14 w-14 rounded-lg bg-background border border-border grid place-items-center overflow-hidden shrink-0">
+        {value ? (
+          <img src={value} alt="favicon" className="h-12 w-12 object-contain" />
+        ) : (
+          <span className="text-[10px] text-muted-foreground text-center px-1">Sem favicon</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>
+            {busy ? "Processando..." : value ? "Trocar favicon" : "Enviar favicon"}
+          </Button>
+          {value && (
+            <Button type="button" size="sm" variant="ghost" onClick={() => onChange(null)}>
+              Remover
+            </Button>
+          )}
+        </div>
+        {hint && <p className="text-xs text-muted-foreground mt-1.5">{hint}</p>}
+      </div>
     </div>
   );
 }
