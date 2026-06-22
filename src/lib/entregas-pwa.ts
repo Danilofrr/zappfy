@@ -1,5 +1,6 @@
 export const ENTREGAS_DEFAULT_STORE_SLUG = "esparta";
-export const ENTREGAS_MANIFEST_URL = "/manifest-entregas.json?v=4";
+export const ENTREGAS_ICON_VERSION = "v=5";
+export const ENTREGAS_MANIFEST_URL = `/manifest-entregas.json?${ENTREGAS_ICON_VERSION}`;
 export const ENTREGAS_LAST_SLUG_KEY = "zappfy:entregas:last-slug";
 export const ENTREGAS_PWA_MARKER_KEY = "zappfy:entregas:pwa";
 

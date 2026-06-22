@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Download, WifiOff, RefreshCw, X } from "lucide-react";
-import { ENTREGAS_MANIFEST_URL, rememberEntregasPwa } from "@/lib/entregas-pwa";
+import { ENTREGAS_ICON_VERSION, ENTREGAS_MANIFEST_URL, rememberEntregasPwa } from "@/lib/entregas-pwa";
 import { DynamicFavicon } from "@/components/DynamicFavicon";
 
 type BIPEvent = Event & {
@@ -69,17 +69,17 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     // --- apple-touch-icon override (Central Entregas icon) ---
     const prevApple = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
     const prevAppleHref = prevApple?.getAttribute("href") ?? null;
-    if (prevApple) prevApple.setAttribute("href", "/apple-touch-icon.png?v=4");
+    if (prevApple) prevApple.setAttribute("href", `/apple-touch-icon.png?${ENTREGAS_ICON_VERSION}`);
 
     // --- favicon override (separa da dashboard) ---
     const faviconSwaps: { el: HTMLLinkElement; prev: string | null; href: string }[] = [];
     document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]').forEach((el) => {
       const prev = el.getAttribute("href");
       const sizes = el.getAttribute("sizes") || "";
-      let href = "/favicon.ico?v=4";
-      if (sizes.includes("192")) href = "/icon-192.png?v=4";
-      else if (sizes.includes("512")) href = "/icon-512.png?v=4";
-      else if (el.getAttribute("type") === "image/png") href = "/icon-192.png?v=4";
+      let href = `/favicon.ico?${ENTREGAS_ICON_VERSION}`;
+      if (sizes.includes("192")) href = `/icon-192.png?${ENTREGAS_ICON_VERSION}`;
+      else if (sizes.includes("512")) href = `/icon-512.png?${ENTREGAS_ICON_VERSION}`;
+      else if (el.getAttribute("type") === "image/png") href = `/icon-192.png?${ENTREGAS_ICON_VERSION}`;
       el.setAttribute("href", href);
       faviconSwaps.push({ el, prev, href });
     });
