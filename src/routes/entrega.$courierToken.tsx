@@ -9,7 +9,7 @@ import {
   orderShortNumber,
   type DeliveryStatus,
 } from "@/lib/tracking";
-import { Bike, MapPin, Navigation, CheckCircle2, AlertTriangle, Loader2, Phone, Power } from "lucide-react";
+import { Bike, MapPin, Navigation, CheckCircle2, AlertTriangle, Loader2, Phone, Power, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/entrega/$courierToken")({
@@ -92,7 +92,10 @@ function CourierPage() {
   const [sending, setSending] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const lastPosRef = useRef<{ lat: number; lng: number; t: number } | null>(null);
+  const latestPosRef = useRef<GeolocationPosition | null>(null);
   const wakeLockRef = useRef<any>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [online, setOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
 
   async function load() {
     const { data: res, error } = await supabase.rpc("get_courier_view", { _token: courierToken });
@@ -103,6 +106,29 @@ function CourierPage() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [courierToken]);
 
   useEffect(() => () => stopWatch(), []);
+
+  // online/offline indicator
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+
+  // Re-acquire wake lock if it was released (e.g., tab hidden then visible)
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible" && watching && !wakeLockRef.current) {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [watching]);
 
   async function requestWakeLock() {
     try {
@@ -118,6 +144,10 @@ function CourierPage() {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
     if (wakeLockRef.current) {
       try { wakeLockRef.current.release(); } catch {}
       wakeLockRef.current = null;
@@ -126,6 +156,7 @@ function CourierPage() {
   }
 
   async function sendLocation(pos: GeolocationPosition) {
+    latestPosRef.current = pos;
     setSending(true);
     const { latitude, longitude, speed, heading, accuracy } = pos.coords;
     const { error } = await supabase.rpc("update_courier_location", {
@@ -144,6 +175,24 @@ function CourierPage() {
     }
   }
 
+  function startHeartbeat() {
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    heartbeatRef.current = setInterval(() => {
+      // Re-send the most recent known position every 10s so the client sees
+      // last_updated_at advancing even when the courier is stopped.
+      const pos = latestPosRef.current;
+      if (pos) {
+        sendLocation(pos);
+      } else if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (p) => sendLocation(p),
+          () => {},
+          { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 },
+        );
+      }
+    }, 10_000);
+  }
+
   function startWatch(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
       if (!("geolocation" in navigator)) {
@@ -156,6 +205,7 @@ function CourierPage() {
       let resolved = false;
       const id = navigator.geolocation.watchPosition(
         (pos) => {
+          latestPosRef.current = pos;
           const { latitude, longitude } = pos.coords;
           const now = Date.now();
           const last = lastPosRef.current;
@@ -171,6 +221,7 @@ function CourierPage() {
             resolved = true;
             setWatching(true);
             requestWakeLock();
+            startHeartbeat();
             resolve(pos);
           }
         },
@@ -340,15 +391,29 @@ function CourierPage() {
               </div>
             )}
             {watching && (
-              <div className="rounded-lg text-xs p-3" style={{ background: primarySoftBg, color: t.primary_color }}>
-                <div className="flex items-center gap-2 font-medium">
-                  <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: t.primary_color }} />
-                  Enviando sua localização em tempo real
+              <div className="rounded-lg text-xs p-3 space-y-1.5" style={{ background: primarySoftBg, color: t.primary_color }}>
+                <div className="flex items-center justify-between gap-2 font-medium">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: t.primary_color }} />
+                    GPS ativo · enviando em tempo real
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: online ? t.primary_color : "#f87171" }}>
+                    {online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                    {online ? "Online" : "Sem internet"}
+                  </span>
                 </div>
-                <div className="opacity-80 mt-1">
+                <div className="opacity-80">
                   {sending ? "Sincronizando…" : `Último envio: ${formatRelative(lastSent ? new Date(lastSent) : null)}`}
                 </div>
-                <div className="opacity-70 mt-2 text-[11px]">⚠️ Mantenha esta tela aberta durante a entrega.</div>
+                <div className="opacity-70 text-[11px]">⚠️ Para manter o rastreamento ativo, não feche esta tela durante a entrega.</div>
+              </div>
+            )}
+            {!watching && data.status !== "aguardando_motoboy" && data.status !== "preparando" && (
+              <div className="rounded-lg text-xs p-3" style={{ background: "#f59e0b22", color: "#f59e0b" }}>
+                <div className="flex items-center gap-2 font-medium">
+                  <AlertTriangle className="h-3.5 w-3.5" /> GPS pausado
+                </div>
+                <div className="opacity-80 mt-1">Toque em "Retomar rastreamento" para voltar a enviar sua localização.</div>
               </div>
             )}
 

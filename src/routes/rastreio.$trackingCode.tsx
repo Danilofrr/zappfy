@@ -102,8 +102,16 @@ function RastreioPage() {
   const [, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 15_000);
+    const t = setInterval(() => setNow(Date.now()), 5_000);
     return () => clearInterval(t);
+  }, []);
+
+  // Refetch latest tracking row when the browser regains internet
+  useEffect(() => {
+    const onOnline = () => { load(); };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function load() {
@@ -121,10 +129,11 @@ function RastreioPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackingCode]);
 
-  // realtime updates for tracking row
+  // realtime updates for tracking row, with auto-reconnect + safety polling
   useEffect(() => {
     if (!data?.id) return;
-    const channel = supabase
+    let cancelled = false;
+    let channel = supabase
       .channel(`public_tracking_${data.id}`)
       .on(
         "postgres_changes",
@@ -132,7 +141,16 @@ function RastreioPage() {
         () => load(),
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    // Safety net: every 15s, refetch so the courier marker keeps moving even
+    // if the realtime socket silently dropped a message.
+    const poll = setInterval(() => { if (!cancelled) load(); }, 15_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.id]);
 
@@ -219,9 +237,9 @@ function RastreioPage() {
   const eta = distance != null ? etaMinutes(distance, data.speed) : null;
   const stale =
     !isFinished &&
-    displayStatus === "saiu_para_entrega" &&
+    (displayStatus === "saiu_para_entrega" || displayStatus === "chegando") &&
     data.last_updated_at &&
-    Date.now() - new Date(data.last_updated_at).getTime() > 120_000;
+    Date.now() - new Date(data.last_updated_at).getTime() > 60_000;
 
   const messages: Record<DeliveryStatus, string> = {
     aguardando_motoboy: s.msg_aguardando,
@@ -303,7 +321,7 @@ function RastreioPage() {
           <p className="mt-3 text-sm leading-relaxed" style={{ color: s.text_color }}>{message}</p>
           {stale && (
             <div className="mt-3 text-xs rounded-lg px-3 py-2" style={{ background: "#f59e0b22", color: "#f59e0b" }}>
-              <Clock className="inline h-3.5 w-3.5 mr-1" /> Aguardando nova atualização do entregador…
+              <Clock className="inline h-3.5 w-3.5 mr-1" /> Localização do entregador pausada. Aguardando nova atualização...
             </div>
           )}
         </section>
