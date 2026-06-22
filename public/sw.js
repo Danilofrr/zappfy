@@ -56,7 +56,7 @@ self.addEventListener("fetch", (event) => {
         return fresh;
       } catch {
         const cache = await caches.open(ENTREGAS_CACHE);
-        return (await cache.match(req)) || (await cache.match("/entregas-zappfy")) || Response.error();
+        return (await cache.match(req)) || (await cache.match("/entregas-zappfy/")) || Response.error();
       }
     })());
     return;
