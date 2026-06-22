@@ -70,6 +70,19 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     const prevAppleHref = prevApple?.getAttribute("href") ?? null;
     if (prevApple) prevApple.setAttribute("href", "/apple-touch-icon.png");
 
+    // --- favicon override (separa da dashboard) ---
+    const faviconSwaps: { el: HTMLLinkElement; prev: string | null; href: string }[] = [];
+    document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]').forEach((el) => {
+      const prev = el.getAttribute("href");
+      const sizes = el.getAttribute("sizes") || "";
+      let href = "/favicon.ico";
+      if (sizes.includes("192")) href = "/icon-192.png";
+      else if (sizes.includes("512")) href = "/icon-512.png";
+      else if (el.getAttribute("type") === "image/png") href = "/icon-192.png";
+      el.setAttribute("href", href);
+      faviconSwaps.push({ el, prev, href });
+    });
+
     return () => {
       if (prevManifest && prevHref) prevManifest.setAttribute("href", prevHref);
       if (prevTheme && prevThemeContent) prevTheme.setAttribute("content", prevThemeContent);
@@ -78,6 +91,7 @@ export function EntregasPwaShell({ storeSlug }: Props) {
         else if (m.prev !== null) m.el.setAttribute("content", m.prev);
       }
       if (prevApple && prevAppleHref) prevApple.setAttribute("href", prevAppleHref);
+      for (const f of faviconSwaps) if (f.prev) f.el.setAttribute("href", f.prev);
     };
   }, [storeSlug]);
 
