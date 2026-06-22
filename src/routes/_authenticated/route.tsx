@@ -1,9 +1,18 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { getEntregasStandaloneRedirectSlug } from "@/lib/entregas-pwa";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
+    const entregasSlug = location.pathname === "/" ? getEntregasStandaloneRedirectSlug() : null;
+    if (entregasSlug) {
+      throw redirect({
+        to: "/entregas-zappfy/$storeSlug/login",
+        params: { storeSlug: entregasSlug },
+      });
+    }
+
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
 
@@ -32,5 +41,6 @@ export const Route = createFileRoute("/_authenticated")({
 
     return { user: data.user, isAdmin, subscriptionStatus: sub?.status ?? null };
   },
+  head: () => ({ links: [{ rel: "manifest", href: "/manifest.webmanifest" }] }),
   component: () => <Outlet />,
 });
