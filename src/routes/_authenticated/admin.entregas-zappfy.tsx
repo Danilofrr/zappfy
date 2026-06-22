@@ -19,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/admin/entregas-zappfy")({
 type Theme = {
   id?: string;
   logo_url: string | null;
+  logo_size: number;
   header_color: string;
   header_text_color: string;
   background_color: string;
@@ -37,6 +38,7 @@ type Theme = {
 
 const DEFAULT: Theme = {
   logo_url: null,
+  logo_size: 48,
   header_color: "#0f172a",
   header_text_color: "#ffffff",
   background_color: "#0b1220",
