@@ -92,7 +92,10 @@ function CourierPage() {
   const [sending, setSending] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const lastPosRef = useRef<{ lat: number; lng: number; t: number } | null>(null);
+  const latestPosRef = useRef<GeolocationPosition | null>(null);
   const wakeLockRef = useRef<any>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [online, setOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
 
   async function load() {
     const { data: res, error } = await supabase.rpc("get_courier_view", { _token: courierToken });
@@ -103,6 +106,29 @@ function CourierPage() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [courierToken]);
 
   useEffect(() => () => stopWatch(), []);
+
+  // online/offline indicator
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+
+  // Re-acquire wake lock if it was released (e.g., tab hidden then visible)
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible" && watching && !wakeLockRef.current) {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [watching]);
 
   async function requestWakeLock() {
     try {
