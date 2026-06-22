@@ -159,22 +159,22 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const waNumber = (settings.whatsapp || "").replace(/\D/g, "");
   const waMessage =
     product && shipping
-      ? `Olá! Acabei de finalizar meu pedido na loja *${settings.storeName}*.%0A%0A` +
-        `*Produto:* ${product.name} (x${qty})%0A` +
-        `*Valor unitário:* ${brl(product.price)}%0A` +
-        `*Entrega (${shipping.label}):* ${brl(shipping.price)}%0A` +
-        `*Total:* ${brl(total)}%0A%0A` +
-        `*Nome:* ${form.customer}%0A` +
-        `*WhatsApp:* ${form.phone}%0A` +
-        (form.cpf ? `*CPF:* ${form.cpf}%0A` : "") +
-        (form.email ? `*E-mail:* ${form.email}%0A` : "") +
-        (form.cep ? `*CEP:* ${form.cep}%0A` : "") +
-        `*Endereço:* ${form.address}${form.district ? `, ${form.district}` : ""}${form.city ? ` - ${form.city}` : ""}%0A` +
-        (form.reference ? `*Ponto de referência:* ${form.reference}%0A` : "") +
+      ? `Olá! Acabei de finalizar meu pedido na loja *${settings.storeName}*.\n\n` +
+        `*Produto:* ${product.name} (x${qty})\n` +
+        `*Valor unitário:* ${brl(product.price)}\n` +
+        `*Entrega (${shipping.label}):* ${brl(shipping.price)}\n` +
+        `*Total:* ${brl(total)}\n\n` +
+        `*Nome:* ${form.customer}\n` +
+        `*WhatsApp:* ${form.phone}\n` +
+        (form.cpf ? `*CPF:* ${form.cpf}\n` : "") +
+        (form.email ? `*E-mail:* ${form.email}\n` : "") +
+        (form.cep ? `*CEP:* ${form.cep}\n` : "") +
+        `*Endereço:* ${form.address}${form.district ? `, ${form.district}` : ""}${form.city ? ` - ${form.city}` : ""}\n` +
+        (form.reference ? `*Ponto de referência:* ${form.reference}\n` : "") +
         `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? "Cartão" : "Dinheiro"}` +
-        (form.notes ? `%0A*Observações:* ${form.notes}` : "")
+        (form.notes ? `\n*Observações:* ${form.notes}` : "")
       : "";
-  const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${waMessage}` : "";
+  const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}` : "";
 
   if (done) {
     return (
