@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Bike, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { getCourierSession, setCourierSession } from "@/lib/courier-session";
+import { getCourierSession, setCourierSession, clearCourierSession } from "@/lib/courier-session";
 import bcrypt from "bcryptjs";
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug/login")({
@@ -20,23 +20,78 @@ function LoginPage() {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<any>(null);
   const [store, setStore] = useState<any>(null);
+  const [storeStatus, setStoreStatus] = useState<"loading" | "ok" | "not_found" | "error">("loading");
   const [form, setForm] = useState({ phone: "", password: "" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const existing = getCourierSession(storeSlug);
-    if (existing) {
-      navigate({ to: "/entregas-zappfy/$storeSlug", params: { storeSlug } });
-      return;
-    }
+    let cancelled = false;
+
+    // Valida sessão existente sem travar a tela: se falhar, limpa e mostra login.
     (async () => {
-      const [{ data: t }, { data: s }] = await Promise.all([
-        (supabase as any).rpc("get_zappfy_central_settings"),
-        (supabase as any).rpc("get_store_by_slug", { _slug: storeSlug }),
-      ]);
-      setTheme(t || {});
-      setStore(s);
+      const existing = getCourierSession(storeSlug);
+      if (!existing) return;
+      try {
+        const { data, error } = await (supabase as any).rpc("courier_me", { _session: existing });
+        if (cancelled) return;
+        if (!error && data) {
+          navigate({ to: "/entregas-zappfy/$storeSlug", params: { storeSlug } });
+        } else {
+          clearCourierSession(storeSlug);
+        }
+      } catch {
+        clearCourierSession(storeSlug);
+      }
     })();
+
+    // Tema (não bloqueia a tela)
+    (async () => {
+      try {
+        const { data } = await (supabase as any).rpc("get_zappfy_central_settings");
+        if (!cancelled) setTheme(data || {});
+      } catch {
+        if (!cancelled) setTheme({});
+      }
+    })();
+
+    // Lookup da loja com timeout
+    console.log("[motoboy-login] Buscando loja pelo slug:", storeSlug);
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        setStoreStatus((s) => (s === "loading" ? "error" : s));
+      }
+    }, 8000);
+
+    (async () => {
+      try {
+        const { data, error } = await (supabase as any).rpc("get_store_by_slug", { _slug: storeSlug });
+        if (cancelled) return;
+        clearTimeout(timeoutId);
+        if (error) {
+          console.error("[motoboy-login] Erro ao carregar login do motoboy:", error);
+          setStoreStatus("error");
+          return;
+        }
+        if (!data) {
+          console.warn("[motoboy-login] Loja não encontrada para slug:", storeSlug);
+          setStoreStatus("not_found");
+          return;
+        }
+        console.log("[motoboy-login] Loja encontrada:", data);
+        setStore(data);
+        setStoreStatus("ok");
+      } catch (err) {
+        if (cancelled) return;
+        clearTimeout(timeoutId);
+        console.error("[motoboy-login] Erro ao carregar login do motoboy:", err);
+        setStoreStatus("error");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [storeSlug, navigate]);
 
   async function submit(e: React.FormEvent) {
@@ -92,35 +147,50 @@ function LoginPage() {
             </div>
           )}
           <h1 className="text-xl font-bold" style={{ color: title }}>Acesso Motoboy</h1>
-          {store && <p className="text-xs opacity-70">{store.store_name}</p>}
+          {storeStatus === "ok" && store && <p className="text-xs opacity-70">{store.store_name}</p>}
+          {storeStatus === "loading" && (
+            <p className="text-xs opacity-60 flex items-center justify-center gap-1">
+              <Loader2 className="h-3 w-3 animate-spin" /> Carregando loja…
+            </p>
+          )}
         </div>
 
-        <form onSubmit={submit} className="space-y-3">
-          <div>
-            <Label>WhatsApp</Label>
-            <Input
-              inputMode="numeric"
-              autoComplete="username"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder="5581999990000"
-            />
+        {storeStatus === "not_found" ? (
+          <div className="rounded-lg p-3 text-sm text-center" style={{ background: "rgba(239,68,68,0.12)", color: "#fecaca" }}>
+            Loja não encontrada. Verifique o link da Central Entregas Zappfy.
           </div>
-          <div>
-            <Label>Senha</Label>
-            <Input
-              type="password"
-              autoComplete="current-password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="••••••"
-            />
+        ) : storeStatus === "error" ? (
+          <div className="rounded-lg p-3 text-sm text-center" style={{ background: "rgba(234,179,8,0.12)", color: "#fde68a" }}>
+            Não foi possível carregar os dados da loja. Tente novamente em instantes.
           </div>
-          <Button type="submit" disabled={loading} className="w-full h-11 font-semibold" style={{ background: btn, color: btnText }}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Bike className="h-4 w-4 mr-2" />}
-            Entrar
-          </Button>
-        </form>
+        ) : (
+          <form onSubmit={submit} className="space-y-3">
+            <div>
+              <Label>WhatsApp</Label>
+              <Input
+                inputMode="numeric"
+                autoComplete="username"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="5581999990000"
+              />
+            </div>
+            <div>
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                autoComplete="current-password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="••••••"
+              />
+            </div>
+            <Button type="submit" disabled={loading || storeStatus !== "ok"} className="w-full h-11 font-semibold" style={{ background: btn, color: btnText }}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Bike className="h-4 w-4 mr-2" />}
+              Entrar
+            </Button>
+          </form>
+        )}
 
         <div className="text-center text-xs opacity-60">
           Não tem login?{" "}
