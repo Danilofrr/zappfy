@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
-import { Loader2, Save, Bike, Eye } from "lucide-react";
+import { Loader2, Save, Bike, Eye, Upload, X } from "lucide-react";
+import { useRef } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/entregas-zappfy")({
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/admin/entregas-zappfy")({
 type Theme = {
   id?: string;
   logo_url: string | null;
+  logo_size: number;
   header_color: string;
   header_text_color: string;
   background_color: string;
@@ -36,6 +38,7 @@ type Theme = {
 
 const DEFAULT: Theme = {
   logo_url: null,
+  logo_size: 48,
   header_color: "#0f172a",
   header_text_color: "#ffffff",
   background_color: "#0b1220",
@@ -124,6 +127,115 @@ function Page() {
     );
   }
 
+  function LogoField({
+    value,
+    size,
+    onChangeUrl,
+    onChangeSize,
+  }: {
+    value: string | null;
+    size: number;
+    onChangeUrl: (v: string | null) => void;
+    onChangeSize: (v: number) => void;
+  }) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [busy, setBusy] = useState(false);
+
+    async function handleFile(file?: File | null) {
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande (máx 5MB)"); return; }
+      setBusy(true);
+      try {
+        const dataUrl: string = await new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result as string);
+          fr.onerror = () => reject(new Error("Falha ao ler arquivo"));
+          fr.readAsDataURL(file);
+        });
+        // resize for storage
+        const resized = await new Promise<string>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 512;
+            const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const canvas = document.createElement("canvas");
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return reject(new Error("Canvas indisponível"));
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = () => reject(new Error("Imagem inválida"));
+          img.src = dataUrl;
+        });
+        onChangeUrl(resized);
+      } catch (e: any) {
+        toast.error(e.message ?? "Erro ao processar imagem");
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    return (
+      <div className="space-y-3">
+        <Label className="text-xs">Logo da Central</Label>
+        <div className="flex items-center gap-3">
+          <div
+            className="rounded-lg border border-border bg-muted/30 grid place-items-center overflow-hidden shrink-0"
+            style={{ height: 80, width: 80 }}
+          >
+            {value ? (
+              <img src={value} alt="" className="max-h-full max-w-full object-contain" />
+            ) : (
+              <Bike className="h-6 w-6 text-muted-foreground" />
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleFile(e.target.files?.[0])}
+            />
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => inputRef.current?.click()} disabled={busy}>
+                <Upload className="h-4 w-4 mr-1" />
+                {busy ? "Processando..." : value ? "Trocar logo" : "Enviar logo"}
+              </Button>
+              {value && (
+                <Button type="button" size="sm" variant="ghost" onClick={() => onChangeUrl(null)}>
+                  <X className="h-4 w-4 mr-1" /> Remover
+                </Button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">PNG/JPG · será redimensionada para até 512px.</p>
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs">Ou cole uma URL</Label>
+          <Input
+            value={value && value.startsWith("data:") ? "" : (value ?? "")}
+            onChange={(e) => onChangeUrl(e.target.value || null)}
+            placeholder="https://..."
+            className="mt-1"
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Tamanho do logo ({size}px)</Label>
+          <input
+            type="range" min={24} max={120} value={size}
+            onChange={(e) => onChangeSize(Number(e.target.value))}
+            className="w-full mt-1"
+          />
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <AdminShell title="Entregas Zappfy" subtitle="Identidade visual exclusiva da Central de Entregas (somente admin master)">
       {loading ? (
@@ -138,10 +250,12 @@ function Page() {
                   <Label className="text-xs">Nome da marca</Label>
                   <Input value={theme.brand_name} onChange={(e) => set("brand_name", e.target.value)} />
                 </div>
-                <div>
-                  <Label className="text-xs">URL do logo</Label>
-                  <Input value={theme.logo_url ?? ""} onChange={(e) => set("logo_url", e.target.value || null)} placeholder="https://..." />
-                </div>
+                <LogoField
+                  value={theme.logo_url}
+                  size={theme.logo_size}
+                  onChangeUrl={(v) => set("logo_url", v)}
+                  onChangeSize={(v) => set("logo_size", v)}
+                />
                 <div>
                   <Label className="text-xs">Texto do rodapé</Label>
                   <Input value={theme.footer_text} onChange={(e) => set("footer_text", e.target.value)} />
@@ -191,10 +305,23 @@ function Page() {
             <div className="rounded-2xl overflow-hidden border border-border" style={{ background: theme.background_color, color: theme.text_color }}>
               <div className="px-4 py-3 flex items-center gap-2" style={{ background: theme.header_color, color: theme.header_text_color }}>
                 {theme.logo_url ? (
-                  <img src={theme.logo_url} alt="" className="h-8 w-auto object-contain" />
+                  <img
+                    src={theme.logo_url}
+                    alt=""
+                    style={{ height: theme.logo_size, width: "auto" }}
+                    className="object-contain"
+                  />
                 ) : (
-                  <div className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: theme.button_color, color: theme.button_text_color }}>
-                    <Bike className="h-4 w-4" />
+                  <div
+                    className="grid place-items-center rounded-lg"
+                    style={{
+                      height: theme.logo_size,
+                      width: theme.logo_size,
+                      background: theme.button_color,
+                      color: theme.button_text_color,
+                    }}
+                  >
+                    <Bike style={{ height: theme.logo_size * 0.5, width: theme.logo_size * 0.5 }} />
                   </div>
                 )}
                 <div className="leading-tight">

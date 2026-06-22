@@ -25,6 +25,7 @@ export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
 type CentralTheme = {
   id: string;
   logo_url: string | null;
+  logo_size: number;
   header_color: string;
   header_text_color: string;
   background_color: string;
@@ -66,6 +67,7 @@ type AcceptedRecord = { tracking_code: string; courier_token: string; accepted_a
 const DEFAULT_THEME: CentralTheme = {
   id: "",
   logo_url: null,
+  logo_size: 48,
   header_color: "#0f172a",
   header_text_color: "#ffffff",
   background_color: "#0b1220",
@@ -237,7 +239,7 @@ function CentralPage() {
         style={{ background: theme.header_color, color: theme.header_text_color }}
       >
         {theme.logo_url ? (
-          <img src={theme.logo_url} alt={theme.brand_name} className="h-10 w-auto object-contain" />
+          <img src={theme.logo_url} alt={theme.brand_name} style={{ height: theme.logo_size, width: "auto" }} className="object-contain" />
         ) : (
           <div className="grid h-10 w-10 place-items-center rounded-xl" style={{ background: theme.button_color, color: theme.button_text_color }}>
             <Bike className="h-5 w-5" />

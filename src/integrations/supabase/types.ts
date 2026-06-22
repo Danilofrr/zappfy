@@ -1190,6 +1190,7 @@ export type Database = {
           header_text_color: string
           icon_color: string
           id: string
+          logo_size: number
           logo_url: string | null
           text_color: string
           title_color: string
@@ -1210,6 +1211,7 @@ export type Database = {
           header_text_color?: string
           icon_color?: string
           id?: string
+          logo_size?: number
           logo_url?: string | null
           text_color?: string
           title_color?: string
@@ -1230,6 +1232,7 @@ export type Database = {
           header_text_color?: string
           icon_color?: string
           id?: string
+          logo_size?: number
           logo_url?: string | null
           text_color?: string
           title_color?: string
@@ -1441,6 +1444,7 @@ export type Database = {
           header_text_color: string
           icon_color: string
           id: string
+          logo_size: number
           logo_url: string | null
           text_color: string
           title_color: string
