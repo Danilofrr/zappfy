@@ -146,7 +146,7 @@ function LoginPage() {
 
       {/* Top brand */}
       {showLogo && (
-        <header className="relative z-10 w-full max-w-sm flex items-center justify-center pt-2 pb-4">
+        <header className="entregas-mobile-header relative z-10 w-full max-w-sm flex items-center justify-center pt-2 pb-4">
           {loginLogo ? (
             <img src={loginLogo} alt={brand} style={{ height: theme?.logo_size || 36 }} className="object-contain" />
           ) : (
