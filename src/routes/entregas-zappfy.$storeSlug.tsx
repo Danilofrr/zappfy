@@ -67,6 +67,7 @@ type AcceptedRecord = { tracking_code: string; courier_token: string; accepted_a
 const DEFAULT_THEME: CentralTheme = {
   id: "",
   logo_url: null,
+  logo_size: 48,
   header_color: "#0f172a",
   header_text_color: "#ffffff",
   background_color: "#0b1220",
