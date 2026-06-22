@@ -132,8 +132,8 @@ type State = {
   ads: AdEntry[];
   settings: Settings;
 };
-export const DEFAULT_MOTOBOY_TEMPLATE = `\u{1F6F5} *NOVA ENTREGA*\n\n\u{1F464} *Cliente:* {cliente}\n\u{1F4E6} *Produto:* {produto}\n\u{1F4CD} *Endere\u00e7o:* {endereco}\n\u{1F5FA}\u{FE0F} *Localiza\u00e7\u00e3o:* {mapa}\n\u{1F4F1} *Telefone:* {telefone}\n\n\u{1F4B0} *Pagamento:* {pagamento}\n\u{1F4B5} *Total:* {total}`;
-export const DEFAULT_DELIVERY_TEMPLATE = `Oba! \u{1F69A} Seu pedido{produto} acabou de sair para entrega!\n\nOl\u00e1 *{cliente}*, tudo bem? Em instantes voc\u00ea o receber\u00e1 no endere\u00e7o:\n{endereco}\n\nQualquer d\u00favida \u00e9 s\u00f3 chamar por aqui. \u{1F49C}\n\u2014 {loja}`;
+export const DEFAULT_MOTOBOY_TEMPLATE = `🛵 *NOVA ENTREGA*\n\n👤 *Cliente:* {cliente}\n📦 *Produto:* {produto}\n📍 *Endereço:* {endereco}\n🗺️ *Localização:* {mapa}\n📱 *Telefone:* {telefone}\n\n💰 *Pagamento:* {pagamento}\n💵 *Total:* {total}`;
+export const DEFAULT_DELIVERY_TEMPLATE = `Oba! 🎉 Seu pedido{produto} acabou de sair para entrega!\n\nOlá *{cliente}*, tudo bem? Em instantes você o receberá no endereço:\n{endereco}\n\nQualquer dúvida é só chamar por aqui. 🛵\n— {loja}`;
 
 const emptySettings: Settings = {
   storeName: "Minha Loja",
@@ -268,8 +268,6 @@ const toAd = (r: any): AdEntry => ({
   id: r.id, date: r.date, invested: Number(r.invested), purchases: r.purchases, revenue: Number(r.revenue),
 });
 
-const normalizeUnicodeText = (value: string) => String(value ?? "").normalize("NFC");
-
 const toSettings = (r: any): Settings => ({
   storeName: r.store_name, whatsapp: r.whatsapp ?? "", pixKey: r.pix_key ?? "",
   address: r.address ?? "", deliveryFee: Number(r.delivery_fee),
@@ -311,8 +309,8 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterShowCnpj: r.checkout_footer_show_cnpj ?? true,
   checkoutFooterShowEmail: r.checkout_footer_show_email ?? true,
   checkoutFooterShowWhatsapp: r.checkout_footer_show_whatsapp ?? true,
-  motoboyMessageTemplate: normalizeUnicodeText(r.motoboy_message_template ?? emptySettings.motoboyMessageTemplate),
-  deliveryMessageTemplate: normalizeUnicodeText(r.delivery_message_template ?? emptySettings.deliveryMessageTemplate),
+  motoboyMessageTemplate: r.motoboy_message_template ?? emptySettings.motoboyMessageTemplate,
+  deliveryMessageTemplate: r.delivery_message_template ?? emptySettings.deliveryMessageTemplate,
   motoboyFee: Number(r.motoboy_fee ?? 0),
   slug: r.slug ?? "",
 });
@@ -652,8 +650,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutFooterShowCnpj !== undefined) patch.checkout_footer_show_cnpj = p.checkoutFooterShowCnpj;
       if (p.checkoutFooterShowEmail !== undefined) patch.checkout_footer_show_email = p.checkoutFooterShowEmail;
       if (p.checkoutFooterShowWhatsapp !== undefined) patch.checkout_footer_show_whatsapp = p.checkoutFooterShowWhatsapp;
-      if (p.motoboyMessageTemplate !== undefined) patch.motoboy_message_template = normalizeUnicodeText(p.motoboyMessageTemplate);
-      if (p.deliveryMessageTemplate !== undefined) patch.delivery_message_template = normalizeUnicodeText(p.deliveryMessageTemplate);
+      if (p.motoboyMessageTemplate !== undefined) patch.motoboy_message_template = p.motoboyMessageTemplate;
+      if (p.deliveryMessageTemplate !== undefined) patch.delivery_message_template = p.deliveryMessageTemplate;
       if (p.motoboyFee !== undefined) patch.motoboy_fee = p.motoboyFee;
       if (p.slug !== undefined) patch.slug = p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || null : null;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();

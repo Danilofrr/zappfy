@@ -168,22 +168,6 @@ const DEFAULTS: Settings = {
   courier_header_logo_align: "center",
 };
 
-const TRACKING_MESSAGE_FIELDS: (keyof Settings)[] = [
-  "welcome_message",
-  "delivered_message",
-  "msg_aguardando",
-  "msg_preparando",
-  "msg_saiu",
-  "msg_chegando",
-  "msg_entregue",
-  "msg_cancelado",
-  "courier_footer_text",
-];
-
-function normalizeUnicodeText(value: string) {
-  return String(value ?? "").normalize("NFC");
-}
-
 // Tema oficial Zappfy — aplicado pelo Admin Master e atribuído a novos clientes
 export const ZAPPFY_THEME: Settings = { ...DEFAULTS };
 
@@ -237,7 +221,7 @@ function Page() {
         const clean: Partial<Settings> = {};
         for (const k of Object.keys(DEFAULTS) as (keyof Settings)[]) {
           const v = (data as any)[k];
-          if (v !== null && v !== undefined) (clean as any)[k] = typeof v === "string" ? normalizeUnicodeText(v) : v;
+          if (v !== null && v !== undefined) (clean as any)[k] = v;
         }
         const merged = { ...DEFAULTS, ...clean };
         if (!merged.status_styles || typeof merged.status_styles !== "object") merged.status_styles = {};
@@ -253,12 +237,8 @@ function Page() {
     if (!userId) return;
     setSaving(true);
     const effective = useSeparateCard ? f : { ...f, card_color: f.background_color };
-    const normalizedEffective = { ...effective };
-    for (const field of TRACKING_MESSAGE_FIELDS) {
-      (normalizedEffective as any)[field] = normalizeUnicodeText((normalizedEffective as any)[field]);
-    }
     const payload = {
-      ...normalizedEffective,
+      ...effective,
       store_id: userId,
       logo_url: f.logo_url || null,
       support_whatsapp: f.support_whatsapp || null,

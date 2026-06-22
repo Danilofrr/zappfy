@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { whatsappLink } from "@/lib/tracking";
 
 export const Route = createFileRoute("/_authenticated/assinatura-bloqueada")({
   component: BlockedPage,
@@ -18,7 +19,7 @@ function BlockedPage() {
         <p className="text-muted-foreground">Para continuar usando o Zappfy, entre em contato para renovar sua assinatura.</p>
         <div className="flex gap-2 justify-center">
           <Button asChild>
-            <a href="https://wa.me/" target="_blank" rel="noopener noreferrer">Falar com o suporte</a>
+            <a href={whatsappLink("", "Olá! Preciso de ajuda para renovar minha assinatura.")} target="_blank" rel="noopener noreferrer">Falar com o suporte</a>
           </Button>
           <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); window.location.href = "/auth"; }}>Sair</Button>
         </div>
