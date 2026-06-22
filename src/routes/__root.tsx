@@ -179,6 +179,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">
         <StoreProvider>
+          <DynamicFavicon scope="dashboard" />
           <Outlet />
           <InstallPrompt />
           <Toaster position="top-right" />
