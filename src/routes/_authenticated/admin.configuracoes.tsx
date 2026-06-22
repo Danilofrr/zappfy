@@ -315,3 +315,83 @@ function Field({ label, children, className = "" }: { label: string; children: R
     </div>
   );
 }
+
+function FaviconUploader({ value, onChange, hint }: { value: string | null; onChange: (v: string | null) => void; hint?: string }) {
+  const inputRef = (typeof window !== "undefined" ? null : null) as any;
+  const ref = useState<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleFile(file?: File | null) {
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx 1MB).");
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result as string);
+        fr.onerror = () => reject(new Error("Falha ao ler arquivo"));
+        fr.readAsDataURL(file);
+      });
+      // Redimensiona para 256x256 PNG para garantir favicon leve
+      const url: string = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const size = 256;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return reject(new Error("Canvas indisponível"));
+          const scale = Math.min(size / img.width, size / img.height);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+          resolve(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => reject(new Error("Imagem inválida"));
+        img.src = dataUrl;
+      });
+      onChange(url);
+      toast.success("Favicon atualizada. Lembre de salvar as configurações.");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao processar imagem");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4 rounded-lg border border-border/60 bg-muted/30 p-3">
+      <div className="h-14 w-14 rounded-lg bg-background border border-border grid place-items-center overflow-hidden shrink-0">
+        {value ? (
+          <img src={value} alt="favicon" className="h-12 w-12 object-contain" />
+        ) : (
+          <span className="text-[10px] text-muted-foreground text-center px-1">Sem favicon</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <input
+          ref={(el) => ref[1](el)}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => ref[0]?.click()}>
+            {busy ? "Processando..." : value ? "Trocar favicon" : "Enviar favicon"}
+          </Button>
+          {value && (
+            <Button type="button" size="sm" variant="ghost" onClick={() => onChange(null)}>
+              Remover
+            </Button>
+          )}
+        </div>
+        {hint && <p className="text-xs text-muted-foreground mt-1.5">{hint}</p>}
+      </div>
+    </div>
+  );
+}
