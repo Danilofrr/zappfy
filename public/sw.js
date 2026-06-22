@@ -1,13 +1,83 @@
-// ZappFy Push Service Worker
-// Handles incoming web push messages and notification clicks.
+// ZappFy Service Worker — push notifications + offline cache for Central Entregas.
+
+const ENTREGAS_CACHE = "entregas-zappfy-v1";
+const ENTREGAS_PRECACHE = [
+  "/entregas-zappfy",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/icon-512-maskable.png",
+  "/favicon.ico",
+];
 
 self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(ENTREGAS_CACHE).then((c) => c.addAll(ENTREGAS_PRECACHE).catch(() => {})),
+  );
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((k) => k.startsWith("entregas-zappfy-") && k !== ENTREGAS_CACHE)
+          .map((k) => caches.delete(k)),
+      );
+      await self.clients.claim();
+    })(),
+  );
 });
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
+});
+
+// NetworkFirst for /entregas-zappfy navigations, CacheFirst for its hashed assets.
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+  let url;
+  try { url = new URL(req.url); } catch { return; }
+  if (url.origin !== self.location.origin) return;
+
+  const isEntregasNav =
+    req.mode === "navigate" && url.pathname.startsWith("/entregas-zappfy");
+  const isCachableAsset =
+    /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?|ico)$/.test(url.pathname);
+
+  if (isEntregasNav) {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(req);
+        const cache = await caches.open(ENTREGAS_CACHE);
+        cache.put(req, fresh.clone()).catch(() => {});
+        return fresh;
+      } catch {
+        const cache = await caches.open(ENTREGAS_CACHE);
+        return (await cache.match(req)) || (await cache.match("/entregas-zappfy")) || Response.error();
+      }
+    })());
+    return;
+  }
+
+  if (isCachableAsset) {
+    event.respondWith((async () => {
+      const cache = await caches.open(ENTREGAS_CACHE);
+      const cached = await cache.match(req);
+      if (cached) return cached;
+      try {
+        const fresh = await fetch(req);
+        if (fresh && fresh.ok) cache.put(req, fresh.clone()).catch(() => {});
+        return fresh;
+      } catch {
+        return cached || Response.error();
+      }
+    })());
+  }
+});
+
 
 self.addEventListener("push", (event) => {
   let payload = {};
