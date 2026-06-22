@@ -430,9 +430,9 @@ function Page() {
                 />
 
                 <div className="grid grid-cols-2 gap-3">
-                  <Color k="login_bg_color" label="Cor de fundo" />
-                  <Color k="login_card_color" label="Cor do card" />
-                  <Color k="login_border_color" label="Cor da borda" />
+                  <Color k="login_bg_color" label="Fundo da página" />
+                  <Color k="login_card_color" label="Fundo do card" />
+                  <Color k="login_border_color" label="Borda do card" />
                   <Color k="login_text_color" label="Cor dos textos" />
                   <Color k="login_title_color" label="Cor do título" />
                   <Color k="login_button_color" label="Cor do botão" />
