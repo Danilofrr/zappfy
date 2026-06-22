@@ -96,8 +96,8 @@ self.addEventListener("push", (event) => {
   const soundUrl = (payload.data && payload.data.sound) || payload.sound || "/cash-register.mp3";
   const options = {
     body: payload.body || "",
-    icon: payload.icon || "/icon-192.png",
-    badge: payload.badge || "/icon-192.png",
+    icon: payload.icon || "/entregas-icon-192.png?v=5",
+    badge: payload.badge || "/entregas-icon-192.png?v=5",
     image: payload.image,
     tag: payload.tag || "zappfy-sale",
     renotify: true,
