@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { formatRelative, orderShortNumber } from "@/lib/tracking";
 import { getCourierSession, clearCourierSession } from "@/lib/courier-session";
 
-export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
+export const Route = createFileRoute("/entregas-zappfy/$storeSlug/")({
   ssr: false,
   head: () => ({ meta: [{ title: "Entregas Zappfy — Central de Entregas" }] }),
   component: CentralPage,
