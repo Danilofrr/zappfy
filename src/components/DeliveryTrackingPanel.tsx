@@ -48,6 +48,7 @@ type Tracking = {
   last_updated_at: string | null;
   started_at: string | null;
   completed_at: string | null;
+  accepted_at: string | null;
 };
 
 type Props = {
@@ -284,9 +285,19 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
 
       <div className="grid md:grid-cols-2 gap-3 mb-3">
         <div className="text-xs space-y-1">
-          <div><span className="text-muted-foreground">Motoboy:</span> <strong>{tracking.courier_name || "—"}</strong></div>
-          {tracking.courier_phone && <div><span className="text-muted-foreground">Telefone:</span> {tracking.courier_phone}</div>}
-          <div><span className="text-muted-foreground">Última atualização:</span> {formatRelative(tracking.last_updated_at)}</div>
+          <div><span className="text-muted-foreground">Motoboy:</span> <strong>{tracking.courier_name || "Aguardando aceite"}</strong></div>
+          {tracking.courier_phone && (
+            <div>
+              <span className="text-muted-foreground">WhatsApp:</span>{" "}
+              <a className="underline" href={whatsappLink(tracking.courier_phone, "")} target="_blank" rel="noreferrer">
+                {tracking.courier_phone}
+              </a>
+            </div>
+          )}
+          {tracking.accepted_at && (
+            <div><span className="text-muted-foreground">Aceita em:</span> {formatRelative(tracking.accepted_at)}</div>
+          )}
+          <div><span className="text-muted-foreground">Última atualização GPS:</span> {formatRelative(tracking.last_updated_at)}</div>
           {tracking.notes && <div className="text-muted-foreground italic">Obs: {tracking.notes}</div>}
           <div className="pt-1">
             <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setPickerOpen(true)}>
