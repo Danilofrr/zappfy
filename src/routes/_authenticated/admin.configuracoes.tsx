@@ -217,6 +217,20 @@ function AdminSettings() {
               <Field label="Cor principal"><div className="flex gap-2"><Input type="color" className="w-16 h-10 p-1" value={s.appearance?.primaryColor ?? "#22c55e"} onChange={(e) => set("appearance", { primaryColor: e.target.value })} /><Input value={s.appearance?.primaryColor ?? ""} onChange={(e) => set("appearance", { primaryColor: e.target.value })} /></div></Field>
               <Field label="Nome exibido no painel"><Input value={s.appearance?.brandName ?? ""} onChange={(e) => set("appearance", { brandName: e.target.value })} /></Field>
               <Field label="Logo do menu lateral (URL)"><Input value={s.appearance?.sidebarLogo ?? ""} onChange={(e) => set("appearance", { sidebarLogo: e.target.value })} /></Field>
+              <Field label="Favicon — Dashboard Zappfy" className="md:col-span-2">
+                <FaviconUploader
+                  value={s.appearance?.dashboardFaviconUrl ?? null}
+                  onChange={(v) => set("appearance", { dashboardFaviconUrl: v ?? "" })}
+                  hint="Aparece na aba do navegador da dashboard e na tela de login do lojista."
+                />
+              </Field>
+              <Field label="Favicon — Central de Entregas" className="md:col-span-2">
+                <FaviconUploader
+                  value={s.appearance?.entregasFaviconUrl ?? null}
+                  onChange={(v) => set("appearance", { entregasFaviconUrl: v ?? "" })}
+                  hint="Aparece na Central de Entregas Zappfy e no PWA instalado pelo motoboy."
+                />
+              </Field>
             </CardContent>
           </Card>
         </TabsContent>
