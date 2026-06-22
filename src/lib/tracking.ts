@@ -229,9 +229,18 @@ export function buildCustomerMessage(trackingLink: string): string {
   return `Olá! Seu pedido saiu para entrega 🛵\n\nAcompanhe em tempo real pelo link:\n\n${trackingLink}`;
 }
 
+export function normalizeMessageForWhatsApp(message: string): string {
+  return String(message ?? "").normalize("NFC");
+}
+
+export function whatsappMessageHasEncodingDamage(message: string): boolean {
+  return String(message ?? "").includes("\uFFFD");
+}
+
 export function whatsappLink(phone: string, message: string): string {
   const clean = phone.replace(/\D/g, "");
-  return `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
+  const mensagemCodificada = encodeURIComponent(normalizeMessageForWhatsApp(message));
+  return `https://wa.me/${clean}?text=${mensagemCodificada}`;
 }
 
 export function googleMapsRouteUrl(address: string): string {

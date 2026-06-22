@@ -23,6 +23,25 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: Page,
 });
 
+function applyMessageVariables(template: string, vars: Record<string, string>) {
+  return Object.entries(vars).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template || "").normalize("NFC");
+}
+
+function diagnosticVars(storeName: string) {
+  return {
+    cliente: "Cliente Teste",
+    telefone: "5581999990000",
+    produto: "🎉 Teste Emoji",
+    endereco: "Rua Teste, 123 📍",
+    total: "R$ 10,00",
+    loja: storeName || "Sua Loja",
+    observacoes: "✅ Observação com emoji",
+    mapa: "https://maps.google.com/?q=Rua+Teste",
+    itens: "1x 📦 Produto Teste",
+    pagamento: "PIX",
+  };
+}
+
 function Page() {
   const { state, updateSettings, resetSeed } = useStore();
   const [f, setF] = useState(state.settings);
@@ -51,6 +70,10 @@ function Page() {
 
   // Keep local form in sync when settings load asynchronously.
   useEffect(() => { setF(state.settings); }, [state.settings]);
+
+  const vars = diagnosticVars(f.storeName);
+  const deliveryDiagnostic = applyMessageVariables(f.deliveryMessageTemplate, vars);
+  const motoboyDiagnostic = applyMessageVariables(f.motoboyMessageTemplate, vars);
 
   return (
     <AppShell
@@ -207,6 +230,10 @@ function Page() {
                 <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restaurar padrão (com emojis)
               </Button>
             </div>
+            <MessageDiagnostic
+              saved={state.settings.deliveryMessageTemplate || ""}
+              sent={deliveryDiagnostic}
+            />
           </Field>
 
           <Field label="Mensagem para o motoboy / grupo">
@@ -228,6 +255,10 @@ function Page() {
                 <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restaurar padrão (com emojis)
               </Button>
             </div>
+            <MessageDiagnostic
+              saved={state.settings.motoboyMessageTemplate || ""}
+              sent={motoboyDiagnostic}
+            />
           </Field>
         </Card>
       </div>
@@ -316,6 +347,23 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
+}
+
+function MessageDiagnostic({ saved, sent }: { saved: string; sent: string }) {
+  return (
+    <div className="mt-3 rounded-lg border border-dashed border-border bg-muted/30 p-3 text-xs">
+      <div className="grid gap-2">
+        <div>
+          <div className="mb-1 font-medium text-muted-foreground">Mensagem salva no banco:</div>
+          <pre className="whitespace-pre-wrap break-words rounded-md bg-background/70 p-2 font-sans leading-relaxed">{saved || "—"}</pre>
+        </div>
+        <div>
+          <div className="mb-1 font-medium text-muted-foreground">Mensagem enviada ao WhatsApp:</div>
+          <pre className="whitespace-pre-wrap break-words rounded-md bg-background/70 p-2 font-sans leading-relaxed">{sent || "—"}</pre>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {

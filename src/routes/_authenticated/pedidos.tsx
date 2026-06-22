@@ -28,6 +28,7 @@ import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
 import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
+import { whatsappLink, whatsappMessageHasEncodingDamage } from "@/lib/tracking";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
@@ -98,7 +99,7 @@ function PedidosPage() {
       .join("\n")
       .trim();
     const savedM = state.settings.motoboyMessageTemplate || "";
-    const tpl = savedM && /\p{Extended_Pictographic}/u.test(savedM) ? savedM : DEFAULT_MOTOBOY_TEMPLATE;
+    const tpl = savedM && !whatsappMessageHasEncodingDamage(savedM) ? savedM : DEFAULT_MOTOBOY_TEMPLATE;
     return applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,
@@ -125,11 +126,8 @@ function PedidosPage() {
     const item = o.items[0]?.name ? ` (${o.items[0].name})` : "";
     const endereco = `${o.address}${o.district ? ", " + o.district : ""}${o.city ? " - " + o.city : ""}`;
     const saved = state.settings.deliveryMessageTemplate || "";
-    // If the saved template has lost its emojis (e.g. stored as "?" or pure ASCII),
-    // fall back to the default so the WhatsApp message keeps emojis intact.
-    const hasEmoji = /\p{Extended_Pictographic}/u.test(saved);
-    const looksBroken = /\?\s+Seu pedido|\?\s+Ol[aá]|chamar por aqui\.\s*\?/.test(saved);
-    const tpl = !saved || looksBroken || !hasEmoji ? DEFAULT_DELIVERY_TEMPLATE : saved;
+    const looksLegacyBroken = /Oba!\s*\?\s+Seu pedido/.test(saved) || /chamar por aqui\.\s*\?(\s|$)/.test(saved);
+    const tpl = !saved || whatsappMessageHasEncodingDamage(saved) || looksLegacyBroken ? DEFAULT_DELIVERY_TEMPLATE : saved;
     const text = applyTemplate(tpl, {
       cliente: o.customer,
       telefone: o.phone,
@@ -139,7 +137,7 @@ function PedidosPage() {
       total: brl(o.total),
       observacoes: o.notes || "",
     });
-    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(whatsappLink(`55${phone}`, text), "_blank");
   }
 
   function printReceipt(o: Order) {
@@ -1372,7 +1370,7 @@ function MotoboyDialog({
   }
 
   function send(phone: string) {
-    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(whatsappLink(`55${phone}`, text), "_blank");
     onClose();
   }
 
