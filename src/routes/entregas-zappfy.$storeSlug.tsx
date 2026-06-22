@@ -1,20 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Bike, MapPin, Phone, Loader2, RefreshCw, Package, ArrowRight, Store } from "lucide-react";
+import { Bike, MapPin, Phone, Loader2, RefreshCw, Package, ArrowRight, Store, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { formatRelative, orderShortNumber } from "@/lib/tracking";
+import { getCourierSession, clearCourierSession } from "@/lib/courier-session";
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
   ssr: false,
@@ -42,161 +33,119 @@ type CentralTheme = {
   brand_name: string;
 };
 
-type StoreInfo = { store_id: string; store_name: string; slug: string };
-
 type Delivery = {
   tracking_code: string;
   status: string;
   created_at: string;
   notes: string | null;
   order: {
-    id: string;
-    customer: string;
-    phone: string;
-    address: string;
-    district: string;
-    city: string;
-    total: number;
-    date: string;
-    notes: string | null;
+    id: string; customer: string; phone: string; address: string;
+    district: string; city: string; total: number; date: string; notes: string | null;
   };
 };
 
-type AcceptedRecord = { tracking_code: string; courier_token: string; accepted_at: number };
-
-const DEFAULT_THEME: CentralTheme = {
-  id: "",
-  logo_url: null,
-  logo_size: 48,
-  header_color: "#0f172a",
-  header_text_color: "#ffffff",
-  background_color: "#0b1220",
-  card_color: "#0f172a",
-  card_border_color: "#1e293b",
-  card_shadow_color: "#000000",
-  card_radius: 16,
-  text_color: "#e5e7eb",
-  title_color: "#ffffff",
-  button_color: "#10b981",
-  button_text_color: "#ffffff",
-  icon_color: "#10b981",
-  footer_text: "Powered by Zappfy",
-  brand_name: "Entregas Zappfy",
+type ActiveDelivery = {
+  tracking_code: string;
+  courier_token: string;
+  status: string;
+  accepted_at: string | null;
+  order: { id: string; customer: string; address: string };
 };
 
-function storageKey(slug: string) {
-  return `zappfy:central:accepted:${slug.toLowerCase()}`;
-}
-function readAccepted(slug: string): AcceptedRecord[] {
-  try {
-    const raw = localStorage.getItem(storageKey(slug));
-    if (!raw) return [];
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-function writeAccepted(slug: string, list: AcceptedRecord[]) {
-  try { localStorage.setItem(storageKey(slug), JSON.stringify(list)); } catch {}
-}
+type Me = { courier_id: string; name: string; phone: string; store_id: string; store_name: string; slug: string };
+
+const DEFAULT_THEME: CentralTheme = {
+  id: "", logo_url: null, logo_size: 48,
+  header_color: "#0f172a", header_text_color: "#ffffff",
+  background_color: "#0b1220", card_color: "#0f172a",
+  card_border_color: "#1e293b", card_shadow_color: "#000000", card_radius: 16,
+  text_color: "#e5e7eb", title_color: "#ffffff",
+  button_color: "#10b981", button_text_color: "#ffffff",
+  icon_color: "#10b981",
+  footer_text: "Powered by Zappfy", brand_name: "Entregas Zappfy",
+};
 
 function CentralPage() {
   const { storeSlug } = Route.useParams();
   const navigate = useNavigate();
   const [theme, setTheme] = useState<CentralTheme>(DEFAULT_THEME);
-  const [store, setStore] = useState<StoreInfo | null>(null);
-  const [list, setList] = useState<Delivery[]>([]);
+  const [me, setMe] = useState<Me | null>(null);
+  const [available, setAvailable] = useState<Delivery[]>([]);
+  const [active, setActive] = useState<ActiveDelivery[]>([]);
   const [loading, setLoading] = useState(true);
-  const [acceptOpen, setAcceptOpen] = useState(false);
-  const [chosen, setChosen] = useState<Delivery | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "" });
-  const [accepting, setAccepting] = useState(false);
-  const [accepted, setAccepted] = useState<AcceptedRecord[]>([]);
+  const [accepting, setAccepting] = useState<string | null>(null);
 
-  // Load theme + store + initial deliveries
+  // Bootstrap: theme + verify session
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
-      const [{ data: themeRes }, { data: storeRes }] = await Promise.all([
-        supabase.rpc("get_zappfy_central_settings"),
-        supabase.rpc("get_store_by_slug", { _slug: storeSlug }),
+      const session = getCourierSession(storeSlug);
+      if (!session) {
+        navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
+        return;
+      }
+      const [{ data: themeRes }, { data: meRes, error: meErr }] = await Promise.all([
+        (supabase as any).rpc("get_zappfy_central_settings"),
+        (supabase as any).rpc("courier_me", { _session: session }),
       ]);
       if (!alive) return;
       if (themeRes) setTheme({ ...DEFAULT_THEME, ...(themeRes as CentralTheme) });
-      if (storeRes) setStore(storeRes as StoreInfo);
-      setAccepted(readAccepted(storeSlug));
+      if (meErr || !meRes) {
+        clearCourierSession(storeSlug);
+        navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
+        return;
+      }
+      setMe(meRes as Me);
       setLoading(false);
     })();
     return () => { alive = false; };
-  }, [storeSlug]);
-
-  // Saved courier identity
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`zappfy:courier:${storeSlug.toLowerCase()}`);
-      if (saved) {
-        const v = JSON.parse(saved);
-        setForm({ name: v.name || "", phone: v.phone || "" });
-      }
-    } catch {}
-  }, [storeSlug]);
+  }, [storeSlug, navigate]);
 
   async function loadDeliveries() {
-    const { data, error } = await supabase.rpc("list_available_deliveries", { _slug: storeSlug });
-    if (!error && Array.isArray(data)) setList(data as Delivery[]);
+    const session = getCourierSession(storeSlug);
+    if (!session) return;
+    const [{ data: avail }, { data: act }] = await Promise.all([
+      (supabase as any).rpc("list_available_deliveries_v2", { _session: session }),
+      (supabase as any).rpc("list_my_active_deliveries", { _session: session }),
+    ]);
+    if (Array.isArray(avail)) setAvailable(avail as Delivery[]);
+    if (Array.isArray(act)) setActive(act as ActiveDelivery[]);
   }
 
   useEffect(() => {
-    if (!store) return;
+    if (!me) return;
     loadDeliveries();
     const interval = setInterval(loadDeliveries, 15000);
     const channel = supabase
-      .channel(`central_${store.store_id}`)
+      .channel(`central_${me.store_id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "delivery_tracking", filter: `store_id=eq.${store.store_id}` },
+        { event: "*", schema: "public", table: "delivery_tracking", filter: `store_id=eq.${me.store_id}` },
         () => loadDeliveries(),
       )
       .subscribe();
     return () => { clearInterval(interval); supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store?.store_id]);
+  }, [me?.store_id]);
 
-  function openAccept(d: Delivery) {
-    setChosen(d);
-    setAcceptOpen(true);
-  }
-
-  async function confirmAccept() {
-    if (!chosen) return;
-    if (!form.name.trim()) { toast.error("Informe seu nome"); return; }
-    setAccepting(true);
-    const { data, error } = await supabase.rpc("accept_delivery", {
-      _slug: storeSlug,
-      _code: chosen.tracking_code,
-      _name: form.name.trim(),
-      _phone: form.phone.trim() || undefined,
-    });
-    setAccepting(false);
+  async function accept(d: Delivery) {
+    const session = getCourierSession(storeSlug);
+    if (!session) return;
+    setAccepting(d.tracking_code);
+    const { data, error } = await (supabase as any).rpc("accept_delivery_v2", { _session: session, _code: d.tracking_code });
+    setAccepting(null);
     if (error) { toast.error(error.message); return; }
-    const result = data as { courier_token: string; tracking_code: string };
-    try {
-      localStorage.setItem(
-        `zappfy:courier:${storeSlug.toLowerCase()}`,
-        JSON.stringify({ name: form.name.trim(), phone: form.phone.trim() }),
-      );
-    } catch {}
-    const next = [
-      { tracking_code: result.tracking_code, courier_token: result.courier_token, accepted_at: Date.now() },
-      ...accepted.filter((a) => a.tracking_code !== result.tracking_code),
-    ];
-    writeAccepted(storeSlug, next);
-    setAccepted(next);
-    setAcceptOpen(false);
+    const result = data as { courier_token: string };
     toast.success("Entrega aceita! Boa rota 🛵");
     navigate({ to: "/entrega/$courierToken", params: { courierToken: result.courier_token } });
+  }
+
+  function logout() {
+    const session = getCourierSession(storeSlug);
+    if (session) (supabase as any).rpc("courier_logout", { _session: session });
+    clearCourierSession(storeSlug);
+    navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
   }
 
   const cardStyle: React.CSSProperties = {
@@ -207,27 +156,10 @@ function CentralPage() {
     color: theme.text_color,
   };
 
-  const recentAccepted = useMemo(
-    () => accepted.slice(0, 6).filter((a) => Date.now() - a.accepted_at < 1000 * 60 * 60 * 24 * 2),
-    [accepted],
-  );
-
-  if (loading) {
+  if (loading || !me) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.background_color, color: theme.text_color }}>
         <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!store) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-center px-6" style={{ background: theme.background_color, color: theme.text_color }}>
-        <div>
-          <div className="text-4xl mb-2">🔒</div>
-          <h1 className="text-xl font-semibold" style={{ color: theme.title_color }}>Loja não encontrada</h1>
-          <p className="text-sm opacity-70 mt-2">Verifique o link informado pela loja.</p>
-        </div>
       </div>
     );
   }
@@ -245,16 +177,25 @@ function CentralPage() {
             <Bike className="h-5 w-5" />
           </div>
         )}
-        <div className="leading-tight">
-          <div className="text-lg font-extrabold">{theme.brand_name}</div>
-          <div className="text-xs opacity-80">Central de Entregas</div>
+        <div className="leading-tight min-w-0">
+          <div className="text-lg font-extrabold truncate">{theme.brand_name}</div>
+          <div className="text-xs opacity-80 truncate">Olá, {me.name}</div>
         </div>
         <button
           onClick={loadDeliveries}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium border"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border"
           style={{ borderColor: `${theme.header_text_color}33`, color: theme.header_text_color }}
+          aria-label="Atualizar"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> Atualizar
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={logout}
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border"
+          style={{ borderColor: `${theme.header_text_color}33`, color: theme.header_text_color }}
+          aria-label="Sair"
+        >
+          <LogOut className="h-3.5 w-3.5" />
         </button>
       </header>
 
@@ -262,14 +203,14 @@ function CentralPage() {
         <section className="flex items-center gap-2 text-sm">
           <Store className="h-4 w-4" style={{ color: theme.icon_color }} />
           <span className="opacity-70">Loja:</span>
-          <strong style={{ color: theme.title_color }}>{store.store_name}</strong>
+          <strong style={{ color: theme.title_color }}>{me.store_name}</strong>
         </section>
 
-        {recentAccepted.length > 0 && (
+        {active.length > 0 && (
           <section>
             <h2 className="text-sm font-semibold mb-2 opacity-80">Minhas entregas em andamento</h2>
             <div className="space-y-2">
-              {recentAccepted.map((a) => (
+              {active.map((a) => (
                 <button
                   key={a.tracking_code}
                   onClick={() => navigate({ to: "/entrega/$courierToken", params: { courierToken: a.courier_token } })}
@@ -277,10 +218,13 @@ function CentralPage() {
                   style={cardStyle}
                 >
                   <div className="text-xs">
-                    <div className="opacity-70">Aceita {formatRelative(new Date(a.accepted_at).toISOString())}</div>
-                    <div className="font-semibold" style={{ color: theme.title_color }}>Continuar entrega</div>
+                    <div className="opacity-70">
+                      {a.accepted_at ? `Aceita ${formatRelative(a.accepted_at)}` : "Em andamento"}
+                    </div>
+                    <div className="font-semibold" style={{ color: theme.title_color }}>{a.order.customer}</div>
+                    <div className="opacity-70 truncate">{a.order.address}</div>
                   </div>
-                  <ArrowRight className="h-4 w-4" style={{ color: theme.icon_color }} />
+                  <ArrowRight className="h-4 w-4 shrink-0" style={{ color: theme.icon_color }} />
                 </button>
               ))}
             </div>
@@ -289,10 +233,10 @@ function CentralPage() {
 
         <section>
           <h2 className="text-sm font-semibold mb-2 opacity-80">
-            Entregas disponíveis {list.length > 0 && <span className="opacity-60">({list.length})</span>}
+            Entregas disponíveis {available.length > 0 && <span className="opacity-60">({available.length})</span>}
           </h2>
 
-          {list.length === 0 ? (
+          {available.length === 0 ? (
             <div className="p-6 text-center" style={cardStyle}>
               <Package className="h-8 w-8 mx-auto mb-2 opacity-50" style={{ color: theme.icon_color }} />
               <div className="text-sm font-medium" style={{ color: theme.title_color }}>Nenhuma entrega disponível</div>
@@ -300,8 +244,9 @@ function CentralPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {list.map((d) => {
+              {available.map((d) => {
                 const addr = [d.order.address, d.order.district, d.order.city].filter(Boolean).join(", ");
+                const isAccepting = accepting === d.tracking_code;
                 return (
                   <div key={d.tracking_code} className="p-4 space-y-3" style={cardStyle}>
                     <div className="flex items-start justify-between gap-2">
@@ -327,11 +272,13 @@ function CentralPage() {
                       </div>
                     )}
                     <Button
-                      onClick={() => openAccept(d)}
+                      onClick={() => accept(d)}
+                      disabled={isAccepting}
                       className="w-full h-11 font-semibold"
                       style={{ background: theme.button_color, color: theme.button_text_color }}
                     >
-                      <Bike className="h-4 w-4 mr-2" /> Aceitar Entrega
+                      {isAccepting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bike className="h-4 w-4 mr-2" />}
+                      Aceitar Entrega
                     </Button>
                   </div>
                 );
@@ -342,38 +289,6 @@ function CentralPage() {
       </main>
 
       <footer className="text-center text-[11px] opacity-50 mt-10">{theme.footer_text}</footer>
-
-      <Dialog open={acceptOpen} onOpenChange={setAcceptOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Aceitar entrega</DialogTitle>
-            <DialogDescription>
-              {chosen && (
-                <>
-                  Pedido #{orderShortNumber(chosen.order.id)} — {chosen.order.customer}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>Seu nome *</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="João Motoboy" />
-            </div>
-            <div>
-              <Label>Seu WhatsApp</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="5581999990000" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAcceptOpen(false)}>Cancelar</Button>
-            <Button onClick={confirmAccept} disabled={accepting}>
-              {accepting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Bike className="h-4 w-4 mr-1" />}
-              Aceitar e iniciar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

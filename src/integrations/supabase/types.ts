@@ -164,10 +164,83 @@ export type Database = {
         }
         Relationships: []
       }
+      courier_sessions: {
+        Row: {
+          courier_id: string
+          created_at: string
+          expires_at: string
+          token: string
+        }
+        Insert: {
+          courier_id: string
+          created_at?: string
+          expires_at?: string
+          token: string
+        }
+        Update: {
+          courier_id?: string
+          created_at?: string
+          expires_at?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courier_sessions_courier_id_fkey"
+            columns: ["courier_id"]
+            isOneToOne: false
+            referencedRelation: "couriers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      couriers: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          last_login_at: string | null
+          name: string
+          password_hash: string
+          phone: string
+          plate: string | null
+          store_id: string
+          updated_at: string
+          vehicle_type: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_login_at?: string | null
+          name: string
+          password_hash: string
+          phone: string
+          plate?: string | null
+          store_id: string
+          updated_at?: string
+          vehicle_type?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_login_at?: string | null
+          name?: string
+          password_hash?: string
+          phone?: string
+          plate?: string | null
+          store_id?: string
+          updated_at?: string
+          vehicle_type?: string | null
+        }
+        Relationships: []
+      }
       delivery_tracking: {
         Row: {
+          accepted_at: string | null
           accuracy: number | null
           completed_at: string | null
+          courier_id: string | null
           courier_name: string | null
           courier_phone: string | null
           courier_token: string
@@ -193,8 +266,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
           accuracy?: number | null
           completed_at?: string | null
+          courier_id?: string | null
           courier_name?: string | null
           courier_phone?: string | null
           courier_token: string
@@ -220,8 +295,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
           accuracy?: number | null
           completed_at?: string | null
+          courier_id?: string | null
           courier_name?: string | null
           courier_phone?: string | null
           courier_token?: string
@@ -1397,8 +1474,34 @@ export type Database = {
       }
     }
     Functions: {
+      _resolve_courier_session: {
+        Args: { _session: string }
+        Returns: {
+          active: boolean
+          created_at: string
+          id: string
+          last_login_at: string | null
+          name: string
+          password_hash: string
+          phone: string
+          plate: string | null
+          store_id: string
+          updated_at: string
+          vehicle_type: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "couriers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       accept_delivery: {
         Args: { _code: string; _name: string; _phone?: string; _slug: string }
+        Returns: Json
+      }
+      accept_delivery_v2: {
+        Args: { _code: string; _session: string }
         Returns: Json
       }
       admin_list_clients: {
@@ -1424,6 +1527,42 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      courier_login: {
+        Args: { _password: string; _phone: string; _slug: string }
+        Returns: Json
+      }
+      courier_logout: { Args: { _session: string }; Returns: boolean }
+      courier_me: { Args: { _session: string }; Returns: Json }
+      create_courier: {
+        Args: {
+          _active?: boolean
+          _name: string
+          _password: string
+          _phone: string
+          _plate?: string
+          _vehicle?: string
+        }
+        Returns: {
+          active: boolean
+          created_at: string
+          id: string
+          last_login_at: string | null
+          name: string
+          password_hash: string
+          phone: string
+          plate: string | null
+          store_id: string
+          updated_at: string
+          vehicle_type: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "couriers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      delete_courier: { Args: { _id: string }; Returns: boolean }
       get_courier_view: { Args: { _token: string }; Returns: Json }
       get_store_by_slug: { Args: { _slug: string }; Returns: Json }
       get_tracking_public: { Args: { _code: string }; Returns: Json }
@@ -1466,6 +1605,15 @@ export type Database = {
       }
       increment_tracking_view: { Args: { _code: string }; Returns: undefined }
       list_available_deliveries: { Args: { _slug: string }; Returns: Json }
+      list_available_deliveries_v2: {
+        Args: { _session: string }
+        Returns: Json
+      }
+      list_my_active_deliveries: { Args: { _session: string }; Returns: Json }
+      reset_courier_password: {
+        Args: { _id: string; _password: string }
+        Returns: boolean
+      }
       set_tracking_destination:
         | {
             Args: { _code: string; _lat: number; _lng: number }
@@ -1500,6 +1648,35 @@ export type Database = {
           _unit_price: number
         }
         Returns: string
+      }
+      update_courier: {
+        Args: {
+          _active: boolean
+          _id: string
+          _name: string
+          _phone: string
+          _plate: string
+          _vehicle: string
+        }
+        Returns: {
+          active: boolean
+          created_at: string
+          id: string
+          last_login_at: string | null
+          name: string
+          password_hash: string
+          phone: string
+          plate: string | null
+          store_id: string
+          updated_at: string
+          vehicle_type: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "couriers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       update_courier_location: {
         Args: {

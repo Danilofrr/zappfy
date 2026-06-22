@@ -20,6 +20,7 @@ import {
   Calculator,
   Palette,
   MapPin,
+  Bike,
 
 
 
@@ -39,6 +40,7 @@ const navGroups: { label: string; items: { to: string; label: string; icon: any 
       { to: "/produtos", label: "Estoque", icon: Boxes },
       { to: "/compras", label: "Compras", icon: Truck },
       { to: "/trocas", label: "Trocas & Devoluções", icon: RotateCcw },
+      { to: "/motoboys", label: "Motoboys", icon: Bike },
     ],
   },
   {
