@@ -10,6 +10,7 @@ import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock } from "lucide-re
 import { getShippingIcon } from "@/lib/shipping-icons";
 import { PaymentBadge } from "@/lib/payment-icons";
 import { brl } from "@/lib/format";
+import { whatsappLink } from "@/lib/tracking";
 import type { Product, Settings, PaymentMethod, ShippingOption, Order } from "@/lib/store";
 import cardsImageAsset from "@/assets/cards-payment-methods.png.asset.json";
 
@@ -174,7 +175,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? "Cartão" : "Dinheiro"}` +
         (form.notes ? `\n*Observações:* ${form.notes}` : "")
       : "";
-  const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}` : "";
+  const waUrl = waNumber ? whatsappLink(waNumber, waMessage) : "";
 
   if (done) {
     return (
