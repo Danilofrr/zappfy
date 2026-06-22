@@ -327,15 +327,11 @@ function Page() {
                   onChangeUrl={(v) => set("login_logo_url", v)}
                   onChangeSize={(v) => set("logo_size", v)}
                 />
-                <div>
-                  <Label className="text-xs">URL do ícone principal (opcional)</Label>
-                  <Input
-                    value={theme.login_icon_url ?? ""}
-                    onChange={(e) => set("login_icon_url", e.target.value || null)}
-                    placeholder="https://… (deixe vazio para usar o ícone de moto)"
-                    className="mt-1"
-                  />
-                </div>
+                <IconField
+                  value={theme.login_icon_url}
+                  onChangeUrl={(v) => set("login_icon_url", v)}
+                />
+
                 <div className="grid grid-cols-2 gap-3">
                   <Color k="login_bg_color" label="Cor de fundo" />
                   <Color k="login_card_color" label="Cor do card" />
