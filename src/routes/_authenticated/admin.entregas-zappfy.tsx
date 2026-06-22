@@ -425,16 +425,50 @@ function Page() {
             <Card>
               <CardHeader><CardTitle className="text-base">Tela de Login do Motoboy</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <LogoField
-                  value={theme.login_logo_url}
-                  size={theme.logo_size}
-                  onChangeUrl={(v) => set("login_logo_url", v)}
-                  onChangeSize={(v) => set("logo_size", v)}
-                />
+                <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                  <div>
+                    <Label className="text-sm">Exibir logo superior</Label>
+                    <p className="text-xs text-muted-foreground">Mostra a logo no topo da tela de login</p>
+                  </div>
+                  <Switch
+                    checked={theme.login_show_logo}
+                    onCheckedChange={(v) => set("login_show_logo", v)}
+                  />
+                </div>
+
+                {theme.login_show_logo && (
+                  <LogoField
+                    value={theme.login_logo_url}
+                    size={theme.logo_size}
+                    onChangeUrl={(v) => set("login_logo_url", v)}
+                    onChangeSize={(v) => set("logo_size", v)}
+                  />
+                )}
+
                 <IconField
                   value={theme.login_icon_url}
                   onChangeUrl={(v) => set("login_icon_url", v)}
                 />
+
+                <div>
+                  <Label className="text-xs">Tamanho do ícone central ({theme.login_icon_size}px)</Label>
+                  <input
+                    type="range" min={40} max={128} value={theme.login_icon_size}
+                    onChange={(e) => set("login_icon_size", Number(e.target.value))}
+                    className="w-full mt-1"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                  <div>
+                    <Label className="text-sm">Ativar brilho do ícone</Label>
+                    <p className="text-xs text-muted-foreground">Efeito de glow atrás do ícone central</p>
+                  </div>
+                  <Switch
+                    checked={theme.login_glow_enabled}
+                    onCheckedChange={(v) => set("login_glow_enabled", v)}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <Color k="login_bg_color" label="Fundo da página" />
@@ -444,7 +478,7 @@ function Page() {
                   <Color k="login_title_color" label="Cor do título" />
                   <Color k="login_button_color" label="Cor do botão" />
                   <Color k="login_button_text_color" label="Texto do botão" />
-                  <Color k="login_glow_color" label="Brilho do ícone" />
+                  <Color k="login_glow_color" label="Cor do brilho" />
                 </div>
                 <div>
                   <Label className="text-xs">Texto do título</Label>
