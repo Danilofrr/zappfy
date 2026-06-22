@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { HexColorPicker } from "react-colorful";
 import { Loader2, Save, Bike, Eye, Upload, X } from "lucide-react";
 import { useRef } from "react";
@@ -36,6 +37,9 @@ type Theme = {
   brand_name: string;
   login_logo_url: string | null;
   login_icon_url: string | null;
+  login_show_logo: boolean;
+  login_icon_size: number;
+  login_glow_enabled: boolean;
   login_bg_color: string;
   login_card_color: string;
   login_border_color: string;
@@ -68,6 +72,9 @@ const DEFAULT: Theme = {
   brand_name: "Entregas Zappfy",
   login_logo_url: null,
   login_icon_url: null,
+  login_show_logo: true,
+  login_icon_size: 64,
+  login_glow_enabled: true,
   login_bg_color: "#05070d",
   login_card_color: "#0b1220",
   login_border_color: "#1f2937",
@@ -418,16 +425,50 @@ function Page() {
             <Card>
               <CardHeader><CardTitle className="text-base">Tela de Login do Motoboy</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <LogoField
-                  value={theme.login_logo_url}
-                  size={theme.logo_size}
-                  onChangeUrl={(v) => set("login_logo_url", v)}
-                  onChangeSize={(v) => set("logo_size", v)}
-                />
+                <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                  <div>
+                    <Label className="text-sm">Exibir logo superior</Label>
+                    <p className="text-xs text-muted-foreground">Mostra a logo no topo da tela de login</p>
+                  </div>
+                  <Switch
+                    checked={theme.login_show_logo}
+                    onCheckedChange={(v) => set("login_show_logo", v)}
+                  />
+                </div>
+
+                {theme.login_show_logo && (
+                  <LogoField
+                    value={theme.login_logo_url}
+                    size={theme.logo_size}
+                    onChangeUrl={(v) => set("login_logo_url", v)}
+                    onChangeSize={(v) => set("logo_size", v)}
+                  />
+                )}
+
                 <IconField
                   value={theme.login_icon_url}
                   onChangeUrl={(v) => set("login_icon_url", v)}
                 />
+
+                <div>
+                  <Label className="text-xs">Tamanho do ícone central ({theme.login_icon_size}px)</Label>
+                  <input
+                    type="range" min={40} max={128} value={theme.login_icon_size}
+                    onChange={(e) => set("login_icon_size", Number(e.target.value))}
+                    className="w-full mt-1"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                  <div>
+                    <Label className="text-sm">Ativar brilho do ícone</Label>
+                    <p className="text-xs text-muted-foreground">Efeito de glow atrás do ícone central</p>
+                  </div>
+                  <Switch
+                    checked={theme.login_glow_enabled}
+                    onCheckedChange={(v) => set("login_glow_enabled", v)}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <Color k="login_bg_color" label="Fundo da página" />
@@ -437,7 +478,7 @@ function Page() {
                   <Color k="login_title_color" label="Cor do título" />
                   <Color k="login_button_color" label="Cor do botão" />
                   <Color k="login_button_text_color" label="Texto do botão" />
-                  <Color k="login_glow_color" label="Brilho do ícone" />
+                  <Color k="login_glow_color" label="Cor do brilho" />
                 </div>
                 <div>
                   <Label className="text-xs">Texto do título</Label>
@@ -523,10 +564,12 @@ function Page() {
               }}
             >
               <div className="p-5 flex flex-col items-center gap-4">
-                {(theme.login_logo_url || theme.logo_url) ? (
-                  <img src={theme.login_logo_url || theme.logo_url || ""} alt="" style={{ height: 28 }} className="object-contain" />
-                ) : (
-                  <div className="text-xs font-bold" style={{ color: theme.login_title_color }}>{theme.brand_name}</div>
+                {theme.login_show_logo && (
+                  (theme.login_logo_url || theme.logo_url) ? (
+                    <img src={theme.login_logo_url || theme.logo_url || ""} alt="" style={{ height: 28 }} className="object-contain" />
+                  ) : (
+                    <div className="text-xs font-bold" style={{ color: theme.login_title_color }}>{theme.brand_name}</div>
+                  )
                 )}
 
                 <div
@@ -538,26 +581,36 @@ function Page() {
                   }}
                 >
                   <div className="flex flex-col items-center gap-2 text-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 rounded-2xl blur-xl opacity-70" style={{ background: theme.login_glow_color }} />
-                      <div
-                        className="relative grid h-12 w-12 place-items-center rounded-2xl"
-                        style={{
-                          background: theme.login_button_color,
-                          color: theme.login_button_text_color,
-                          boxShadow: `0 8px 20px -6px ${theme.login_glow_color}`,
-                        }}
-                      >
-                        {theme.login_icon_url ? (
-                          <img src={theme.login_icon_url} alt="" className="h-7 w-7 object-contain" />
-                        ) : (
-                          <Bike className="h-6 w-6" />
-                        )}
-                      </div>
+                    <div className="relative" style={{ width: theme.login_icon_size, height: theme.login_icon_size }}>
+                      {theme.login_glow_enabled && (
+                        <div className="absolute inset-0 rounded-2xl blur-xl opacity-70" style={{ background: theme.login_glow_color }} />
+                      )}
+                      {theme.login_icon_url ? (
+                        <img
+                          src={theme.login_icon_url}
+                          alt=""
+                          className="relative object-contain"
+                          style={{ width: theme.login_icon_size, height: theme.login_icon_size }}
+                        />
+                      ) : (
+                        <div
+                          className="relative grid place-items-center rounded-2xl"
+                          style={{
+                            width: theme.login_icon_size,
+                            height: theme.login_icon_size,
+                            background: theme.login_button_color,
+                            color: theme.login_button_text_color,
+                            boxShadow: theme.login_glow_enabled ? `0 8px 20px -6px ${theme.login_glow_color}` : undefined,
+                          }}
+                        >
+                          <Bike style={{ width: theme.login_icon_size * 0.5, height: theme.login_icon_size * 0.5 }} />
+                        </div>
+                      )}
                     </div>
                     <div className="text-base font-bold" style={{ color: theme.login_title_color }}>{theme.login_title_text}</div>
                     <div className="text-[11px] opacity-70">{theme.login_subtitle_text}</div>
                   </div>
+
 
                   <div className="space-y-2">
                     <div className="text-[10px] uppercase opacity-60">WhatsApp</div>

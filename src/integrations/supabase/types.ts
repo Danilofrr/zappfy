@@ -1274,8 +1274,11 @@ export type Database = {
           login_card_color: string
           login_footer_text: string
           login_glow_color: string
+          login_glow_enabled: boolean
+          login_icon_size: number
           login_icon_url: string | null
           login_logo_url: string | null
+          login_show_logo: boolean
           login_subtitle_text: string
           login_text_color: string
           login_title_color: string
@@ -1308,8 +1311,11 @@ export type Database = {
           login_card_color?: string
           login_footer_text?: string
           login_glow_color?: string
+          login_glow_enabled?: boolean
+          login_icon_size?: number
           login_icon_url?: string | null
           login_logo_url?: string | null
+          login_show_logo?: boolean
           login_subtitle_text?: string
           login_text_color?: string
           login_title_color?: string
@@ -1342,8 +1348,11 @@ export type Database = {
           login_card_color?: string
           login_footer_text?: string
           login_glow_color?: string
+          login_glow_enabled?: boolean
+          login_icon_size?: number
           login_icon_url?: string | null
           login_logo_url?: string | null
+          login_show_logo?: boolean
           login_subtitle_text?: string
           login_text_color?: string
           login_title_color?: string
@@ -1633,8 +1642,11 @@ export type Database = {
           login_card_color: string
           login_footer_text: string
           login_glow_color: string
+          login_glow_enabled: boolean
+          login_icon_size: number
           login_icon_url: string | null
           login_logo_url: string | null
+          login_show_logo: boolean
           login_subtitle_text: string
           login_text_color: string
           login_title_color: string

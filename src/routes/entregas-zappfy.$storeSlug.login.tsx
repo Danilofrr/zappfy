@@ -110,6 +110,9 @@ function LoginPage() {
   const footerText = theme?.login_footer_text || "Zappfy Entregas · © 2026";
   const loginLogo = theme?.login_logo_url || theme?.logo_url || null;
   const loginIcon = theme?.login_icon_url || null;
+  const showLogo = theme?.login_show_logo !== false;
+  const iconSize = theme?.login_icon_size || 64;
+  const glowEnabled = theme?.login_glow_enabled !== false;
   const brand = theme?.brand_name || "Zappfy Entregas";
 
   return (
@@ -132,21 +135,23 @@ function LoginPage() {
       />
 
       {/* Top brand */}
-      <header className="relative z-10 w-full max-w-sm flex items-center justify-center pt-2 pb-4">
-        {loginLogo ? (
-          <img src={loginLogo} alt={brand} style={{ height: theme?.logo_size || 36 }} className="object-contain" />
-        ) : (
-          <div className="flex items-center gap-2 font-bold tracking-tight" style={{ color: title }}>
-            <span
-              className="grid h-7 w-7 place-items-center rounded-lg"
-              style={{ background: btn, color: btnText }}
-            >
-              <Bike className="h-4 w-4" />
-            </span>
-            <span>{brand}</span>
-          </div>
-        )}
-      </header>
+      {showLogo && (
+        <header className="relative z-10 w-full max-w-sm flex items-center justify-center pt-2 pb-4">
+          {loginLogo ? (
+            <img src={loginLogo} alt={brand} style={{ height: theme?.logo_size || 36 }} className="object-contain" />
+          ) : (
+            <div className="flex items-center gap-2 font-bold tracking-tight" style={{ color: title }}>
+              <span
+                className="grid h-7 w-7 place-items-center rounded-lg"
+                style={{ background: btn, color: btnText }}
+              >
+                <Bike className="h-4 w-4" />
+              </span>
+              <span>{brand}</span>
+            </div>
+          )}
+        </header>
+      )}
 
       {/* Card */}
       <main className="relative z-10 w-full max-w-sm">
@@ -160,26 +165,36 @@ function LoginPage() {
         >
           {/* Icon with glow */}
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="relative">
-              <div
-                className="absolute inset-0 rounded-2xl blur-2xl opacity-70"
-                style={{ background: glow }}
-              />
-              <div
-                className="relative grid h-16 w-16 place-items-center rounded-2xl"
-                style={{
-                  background: `linear-gradient(135deg, ${btn}, color-mix(in oklab, ${glow} 70%, #ffffff))`,
-                  color: btnText,
-                  boxShadow: `0 10px 30px -8px ${glow}`,
-                }}
-              >
-                {loginIcon ? (
-                  <img src={loginIcon} alt="" className="h-9 w-9 object-contain" />
-                ) : (
-                  <Bike className="h-8 w-8" />
-                )}
-              </div>
+            <div className="relative" style={{ width: iconSize, height: iconSize }}>
+              {glowEnabled && (
+                <div
+                  className="absolute inset-0 rounded-2xl blur-2xl opacity-70"
+                  style={{ background: glow }}
+                />
+              )}
+              {loginIcon ? (
+                <img
+                  src={loginIcon}
+                  alt=""
+                  className="relative object-contain"
+                  style={{ width: iconSize, height: iconSize }}
+                />
+              ) : (
+                <div
+                  className="relative grid place-items-center rounded-2xl"
+                  style={{
+                    width: iconSize,
+                    height: iconSize,
+                    background: `linear-gradient(135deg, ${btn}, color-mix(in oklab, ${glow} 70%, #ffffff))`,
+                    color: btnText,
+                    boxShadow: glowEnabled ? `0 10px 30px -8px ${glow}` : undefined,
+                  }}
+                >
+                  <Bike style={{ width: iconSize * 0.5, height: iconSize * 0.5 }} />
+                </div>
+              )}
             </div>
+
             <div className="space-y-1">
               <h1 className="text-2xl font-bold tracking-tight" style={{ color: title }}>{titleText}</h1>
               <p className="text-sm opacity-70">{subtitleText}</p>
