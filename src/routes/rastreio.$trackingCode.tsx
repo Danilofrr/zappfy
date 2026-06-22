@@ -129,10 +129,11 @@ function RastreioPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackingCode]);
 
-  // realtime updates for tracking row
+  // realtime updates for tracking row, with auto-reconnect + safety polling
   useEffect(() => {
     if (!data?.id) return;
-    const channel = supabase
+    let cancelled = false;
+    let channel = supabase
       .channel(`public_tracking_${data.id}`)
       .on(
         "postgres_changes",
@@ -140,7 +141,16 @@ function RastreioPage() {
         () => load(),
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    // Safety net: every 15s, refetch so the courier marker keeps moving even
+    // if the realtime socket silently dropped a message.
+    const poll = setInterval(() => { if (!cancelled) load(); }, 15_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.id]);
 
