@@ -1267,6 +1267,19 @@ export type Database = {
           header_text_color: string
           icon_color: string
           id: string
+          login_bg_color: string
+          login_border_color: string
+          login_button_color: string
+          login_button_text_color: string
+          login_card_color: string
+          login_footer_text: string
+          login_glow_color: string
+          login_icon_url: string | null
+          login_logo_url: string | null
+          login_subtitle_text: string
+          login_text_color: string
+          login_title_color: string
+          login_title_text: string
           logo_size: number
           logo_url: string | null
           text_color: string
@@ -1288,6 +1301,19 @@ export type Database = {
           header_text_color?: string
           icon_color?: string
           id?: string
+          login_bg_color?: string
+          login_border_color?: string
+          login_button_color?: string
+          login_button_text_color?: string
+          login_card_color?: string
+          login_footer_text?: string
+          login_glow_color?: string
+          login_icon_url?: string | null
+          login_logo_url?: string | null
+          login_subtitle_text?: string
+          login_text_color?: string
+          login_title_color?: string
+          login_title_text?: string
           logo_size?: number
           logo_url?: string | null
           text_color?: string
@@ -1309,6 +1335,19 @@ export type Database = {
           header_text_color?: string
           icon_color?: string
           id?: string
+          login_bg_color?: string
+          login_border_color?: string
+          login_button_color?: string
+          login_button_text_color?: string
+          login_card_color?: string
+          login_footer_text?: string
+          login_glow_color?: string
+          login_icon_url?: string | null
+          login_logo_url?: string | null
+          login_subtitle_text?: string
+          login_text_color?: string
+          login_title_color?: string
+          login_title_text?: string
           logo_size?: number
           logo_url?: string | null
           text_color?: string
@@ -1587,6 +1626,19 @@ export type Database = {
           header_text_color: string
           icon_color: string
           id: string
+          login_bg_color: string
+          login_border_color: string
+          login_button_color: string
+          login_button_text_color: string
+          login_card_color: string
+          login_footer_text: string
+          login_glow_color: string
+          login_icon_url: string | null
+          login_logo_url: string | null
+          login_subtitle_text: string
+          login_text_color: string
+          login_title_color: string
+          login_title_text: string
           logo_size: number
           logo_url: string | null
           text_color: string
