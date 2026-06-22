@@ -391,15 +391,29 @@ function CourierPage() {
               </div>
             )}
             {watching && (
-              <div className="rounded-lg text-xs p-3" style={{ background: primarySoftBg, color: t.primary_color }}>
-                <div className="flex items-center gap-2 font-medium">
-                  <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: t.primary_color }} />
-                  Enviando sua localização em tempo real
+              <div className="rounded-lg text-xs p-3 space-y-1.5" style={{ background: primarySoftBg, color: t.primary_color }}>
+                <div className="flex items-center justify-between gap-2 font-medium">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: t.primary_color }} />
+                    GPS ativo · enviando em tempo real
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: online ? t.primary_color : "#f87171" }}>
+                    {online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                    {online ? "Online" : "Sem internet"}
+                  </span>
                 </div>
-                <div className="opacity-80 mt-1">
+                <div className="opacity-80">
                   {sending ? "Sincronizando…" : `Último envio: ${formatRelative(lastSent ? new Date(lastSent) : null)}`}
                 </div>
-                <div className="opacity-70 mt-2 text-[11px]">⚠️ Mantenha esta tela aberta durante a entrega.</div>
+                <div className="opacity-70 text-[11px]">⚠️ Para manter o rastreamento ativo, não feche esta tela durante a entrega.</div>
+              </div>
+            )}
+            {!watching && data.status !== "aguardando_motoboy" && data.status !== "preparando" && (
+              <div className="rounded-lg text-xs p-3" style={{ background: "#f59e0b22", color: "#f59e0b" }}>
+                <div className="flex items-center gap-2 font-medium">
+                  <AlertTriangle className="h-3.5 w-3.5" /> GPS pausado
+                </div>
+                <div className="opacity-80 mt-1">Toque em "Retomar rastreamento" para voltar a enviar sua localização.</div>
               </div>
             )}
 
