@@ -125,6 +125,34 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     toast.success("Rastreamento criado!");
   }
 
+  async function handleSendToCentral() {
+    setCreating(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) { toast.error("Sessão expirada"); setCreating(false); return; }
+    const payload = {
+      order_id: orderId,
+      store_id: uid,
+      tracking_code: generateToken("t"),
+      courier_token: generateToken("c"),
+      courier_name: null,
+      courier_phone: null,
+      notes: null,
+      status: "aguardando_motoboy" as DeliveryStatus,
+    };
+    const { data, error } = await supabase
+      .from("delivery_tracking")
+      .insert(payload)
+      .select()
+      .single();
+    setCreating(false);
+    if (error) { toast.error(error.message); return; }
+    setTracking(data as Tracking);
+    toast.success("Entrega enviada para a Central de Entregas!");
+  }
+
+
+
   async function handleCancel() {
     if (!tracking) return;
     if (!confirm("Cancelar este rastreamento?")) return;
@@ -186,11 +214,22 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
             </div>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground mb-3">Gere um link para o motoboy compartilhar a localização em tempo real com o cliente.</p>
+          <p className="text-xs text-muted-foreground mb-3">Envie esta entrega para a Central de Entregas Zappfy ou gere um link específico para um motoboy.</p>
         )}
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <Bike className="h-4 w-4 mr-1.5" />{isCancelled ? "Gerar novo rastreamento" : "Gerar Rastreamento"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={handleSendToCentral} disabled={creating}>
+            {creating ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Bike className="h-4 w-4 mr-1.5" />}
+            Enviar para Central de Entregas
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
+            Gerar link de motoboy específico
+          </Button>
+          {state.settings.slug && (
+            <Button size="sm" variant="outline" onClick={() => copy(`${origin}/entregas-zappfy/${state.settings.slug}`, "Link da Central")}>
+              <Copy className="h-3.5 w-3.5 mr-1" /> Link da Central
+            </Button>
+          )}
+        </div>
         <CreateDialog open={createOpen} onOpenChange={setCreateOpen} form={form} setForm={setForm} onSubmit={handleCreate} loading={creating} />
       </div>
     );

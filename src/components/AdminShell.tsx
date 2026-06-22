@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   MapPin,
+  Bike,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const adminNav = [
   { to: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/admin/configuracoes", label: "Configurações", icon: Cog },
   { to: "/personalizar-rastreamento", label: "Rastreamento", icon: MapPin },
+  { to: "/admin/entregas-zappfy", label: "Entregas Zappfy", icon: Bike },
   { to: "/admin/logs", label: "Logs do Sistema", icon: ScrollText },
 ];
 

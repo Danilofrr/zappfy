@@ -1174,6 +1174,69 @@ export type Database = {
         }
         Relationships: []
       }
+      zappfy_central_settings: {
+        Row: {
+          background_color: string
+          brand_name: string
+          button_color: string
+          button_text_color: string
+          card_border_color: string
+          card_color: string
+          card_radius: number
+          card_shadow_color: string
+          created_at: string
+          footer_text: string
+          header_color: string
+          header_text_color: string
+          icon_color: string
+          id: string
+          logo_url: string | null
+          text_color: string
+          title_color: string
+          updated_at: string
+        }
+        Insert: {
+          background_color?: string
+          brand_name?: string
+          button_color?: string
+          button_text_color?: string
+          card_border_color?: string
+          card_color?: string
+          card_radius?: number
+          card_shadow_color?: string
+          created_at?: string
+          footer_text?: string
+          header_color?: string
+          header_text_color?: string
+          icon_color?: string
+          id?: string
+          logo_url?: string | null
+          text_color?: string
+          title_color?: string
+          updated_at?: string
+        }
+        Update: {
+          background_color?: string
+          brand_name?: string
+          button_color?: string
+          button_text_color?: string
+          card_border_color?: string
+          card_color?: string
+          card_radius?: number
+          card_shadow_color?: string
+          created_at?: string
+          footer_text?: string
+          header_color?: string
+          header_text_color?: string
+          icon_color?: string
+          id?: string
+          logo_url?: string | null
+          text_color?: string
+          title_color?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       products_public: {
@@ -1331,6 +1394,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_delivery: {
+        Args: { _code: string; _name: string; _phone?: string; _slug: string }
+        Returns: Json
+      }
       admin_list_clients: {
         Args: never
         Returns: {
@@ -1355,7 +1422,37 @@ export type Database = {
         Returns: undefined
       }
       get_courier_view: { Args: { _token: string }; Returns: Json }
+      get_store_by_slug: { Args: { _slug: string }; Returns: Json }
       get_tracking_public: { Args: { _code: string }; Returns: Json }
+      get_zappfy_central_settings: {
+        Args: never
+        Returns: {
+          background_color: string
+          brand_name: string
+          button_color: string
+          button_text_color: string
+          card_border_color: string
+          card_color: string
+          card_radius: number
+          card_shadow_color: string
+          created_at: string
+          footer_text: string
+          header_color: string
+          header_text_color: string
+          icon_color: string
+          id: string
+          logo_url: string | null
+          text_color: string
+          title_color: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "zappfy_central_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1364,6 +1461,7 @@ export type Database = {
         Returns: boolean
       }
       increment_tracking_view: { Args: { _code: string }; Returns: undefined }
+      list_available_deliveries: { Args: { _slug: string }; Returns: Json }
       set_tracking_destination:
         | {
             Args: { _code: string; _lat: number; _lng: number }
