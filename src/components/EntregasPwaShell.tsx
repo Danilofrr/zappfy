@@ -69,17 +69,17 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     // --- apple-touch-icon override (Central Entregas icon) ---
     const prevApple = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
     const prevAppleHref = prevApple?.getAttribute("href") ?? null;
-    if (prevApple) prevApple.setAttribute("href", "/apple-touch-icon.png");
+    if (prevApple) prevApple.setAttribute("href", "/apple-touch-icon.png?v=4");
 
     // --- favicon override (separa da dashboard) ---
     const faviconSwaps: { el: HTMLLinkElement; prev: string | null; href: string }[] = [];
     document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]').forEach((el) => {
       const prev = el.getAttribute("href");
       const sizes = el.getAttribute("sizes") || "";
-      let href = "/favicon.ico";
-      if (sizes.includes("192")) href = "/icon-192.png";
-      else if (sizes.includes("512")) href = "/icon-512.png";
-      else if (el.getAttribute("type") === "image/png") href = "/icon-192.png";
+      let href = "/favicon.ico?v=4";
+      if (sizes.includes("192")) href = "/icon-192.png?v=4";
+      else if (sizes.includes("512")) href = "/icon-512.png?v=4";
+      else if (el.getAttribute("type") === "image/png") href = "/icon-192.png?v=4";
       el.setAttribute("href", href);
       faviconSwaps.push({ el, prev, href });
     });
