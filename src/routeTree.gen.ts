@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as EntregasZappfyIndexRouteImport } from './routes/entregas-zappfy.index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as RastreioTrackingCodeRouteImport } from './routes/rastreio.$trackingCode'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
@@ -71,6 +72,11 @@ const AuthRoute = AuthRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregasZappfyIndexRoute = EntregasZappfyIndexRouteImport.update({
+  id: '/entregas-zappfy/',
+  path: '/entregas-zappfy/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -323,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/entregas-zappfy/$storeSlug': typeof EntregasZappfyStoreSlugRouteWithChildren
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
+  '/entregas-zappfy/': typeof EntregasZappfyIndexRoute
   '/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
@@ -366,6 +373,7 @@ export interface FileRoutesByTo {
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/': typeof AuthenticatedIndexRoute
+  '/entregas-zappfy': typeof EntregasZappfyIndexRoute
   '/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
@@ -413,6 +421,7 @@ export interface FileRoutesById {
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/entregas-zappfy/': typeof EntregasZappfyIndexRoute
   '/_authenticated/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
@@ -460,6 +469,7 @@ export interface FileRouteTypes {
     | '/entregas-zappfy/$storeSlug'
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
+    | '/entregas-zappfy/'
     | '/admin/assinaturas'
     | '/admin/clientes'
     | '/admin/configuracoes'
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
     | '/'
+    | '/entregas-zappfy'
     | '/admin/assinaturas'
     | '/admin/clientes'
     | '/admin/configuracoes'
@@ -549,6 +560,7 @@ export interface FileRouteTypes {
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
     | '/_authenticated/'
+    | '/entregas-zappfy/'
     | '/_authenticated/admin/assinaturas'
     | '/_authenticated/admin/clientes'
     | '/_authenticated/admin/configuracoes'
@@ -574,6 +586,7 @@ export interface RootRouteChildren {
   EntregasZappfyStoreSlugRoute: typeof EntregasZappfyStoreSlugRouteWithChildren
   LojaSlugRoute: typeof LojaSlugRoute
   RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
+  EntregasZappfyIndexRoute: typeof EntregasZappfyIndexRoute
   ApiPublicSubmitOrderRoute: typeof ApiPublicSubmitOrderRoute
 }
 
@@ -605,6 +618,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entregas-zappfy/': {
+      id: '/entregas-zappfy/'
+      path: '/entregas-zappfy'
+      fullPath: '/entregas-zappfy/'
+      preLoaderRoute: typeof EntregasZappfyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -1010,6 +1030,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntregasZappfyStoreSlugRoute: EntregasZappfyStoreSlugRouteWithChildren,
   LojaSlugRoute: LojaSlugRoute,
   RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
+  EntregasZappfyIndexRoute: EntregasZappfyIndexRoute,
   ApiPublicSubmitOrderRoute: ApiPublicSubmitOrderRoute,
 }
 export const routeTree = rootRouteImport
