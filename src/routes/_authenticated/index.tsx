@@ -17,6 +17,9 @@ import {
   Receipt,
   CheckCircle2,
   Circle,
+  LineChart as LineChartIcon,
+  Megaphone,
+  BarChart3,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -30,7 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePrivacy, mask } from "@/hooks/use-privacy";
-import { SubscriptionStatusCard } from "@/components/SubscriptionStatusCard";
+
 
 import { redirect } from "@tanstack/react-router";
 
@@ -139,7 +142,6 @@ function Dashboard() {
   return (
     <AppShell title="Dashboard" subtitle={`Saúde financeira — ${range.label}`}>
       <DashboardTopBar subtitle="Principal" />
-      <SubscriptionStatusCard variant="banner" />
       {/* Period filter */}
       <div className="mb-5 rounded-2xl border border-border bg-card p-3 lg:p-4 shadow-elegant">
         <div className="flex flex-wrap items-center gap-2">
@@ -236,7 +238,12 @@ function Dashboard() {
       <div className="mt-6 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-2xl border border-border bg-gradient-card p-6 shadow-elegant">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Lucro Real do Mês</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+                <BarChart3 className="h-3.5 w-3.5 text-primary" />
+              </span>
+              Lucro Real do Mês
+            </span>
             <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2.5 py-1">Indicador principal</span>
           </div>
           <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{m(brl(fin.profit))}</div>
@@ -257,7 +264,12 @@ function Dashboard() {
         {/* Ads card */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-elegant">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Facebook Ads</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+                <Megaphone className="h-3.5 w-3.5 text-primary" />
+              </span>
+              Facebook Ads
+            </span>
             <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
           </div>
           <div className="text-2xl font-bold">{m(brl(adsInvested))}</div>
@@ -275,9 +287,14 @@ function Dashboard() {
       {/* Chart */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="text-sm font-semibold">Faturamento x Lucro</div>
-            <div className="text-xs text-muted-foreground">Últimos 6 meses</div>
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <LineChartIcon className="h-4 w-4 text-primary" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold">Faturamento x Lucro</div>
+              <div className="text-xs text-muted-foreground">Últimos 6 meses</div>
+            </div>
           </div>
           <div className="flex items-center gap-4 text-xs">
             <span className="flex items-center gap-2"><span className="h-2 w-3 rounded-sm bg-foreground"/>Faturamento</span>
