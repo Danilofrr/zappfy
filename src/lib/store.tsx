@@ -313,6 +313,7 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterShowWhatsapp: r.checkout_footer_show_whatsapp ?? true,
   motoboyMessageTemplate: r.motoboy_message_template ?? emptySettings.motoboyMessageTemplate,
   deliveryMessageTemplate: r.delivery_message_template ?? emptySettings.deliveryMessageTemplate,
+  customerTrackingMessageTemplate: r.customer_tracking_message_template ?? "",
   motoboyFee: Number(r.motoboy_fee ?? 0),
   slug: r.slug ?? "",
 });
