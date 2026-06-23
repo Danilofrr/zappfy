@@ -126,74 +126,69 @@ export function SubscriptionStatusCard({
     );
   }
 
-  // ===== Sidebar variant =====
+  // ===== Sidebar variant (compact) =====
   return (
     <div
       className={cn(
-        "rounded-xl border p-3 transition-opacity",
+        "rounded-lg border px-2.5 py-2",
         isActive
-          ? "border-primary/40 bg-primary/5"
+          ? "border-primary/30 bg-primary/5"
           : urgent || isExpired
-          ? "border-orange-500/50 bg-orange-500/10"
-          : "border-amber-500/40 bg-amber-500/10",
-        collapsedHidden && "opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100",
+          ? "border-orange-500/40 bg-orange-500/5"
+          : "border-amber-500/30 bg-amber-500/5",
       )}
     >
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider">
         {isActive ? (
           <>
-            <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+            <CheckCircle2 className="h-3 w-3 text-primary" />
             <span className="text-primary">Plano ativo</span>
           </>
         ) : isExpired ? (
           <>
-            <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
+            <AlertTriangle className="h-3 w-3 text-orange-500" />
             <span className="text-orange-500">Trial expirado</span>
           </>
         ) : (
           <>
-            <Clock className={cn("h-3.5 w-3.5", urgent ? "text-orange-500" : "text-amber-500")} />
+            <Clock className={cn("h-3 w-3", urgent ? "text-orange-500" : "text-amber-500")} />
             <span className={cn(urgent ? "text-orange-500" : "text-amber-500")}>Teste grátis</span>
           </>
         )}
       </div>
 
       {isActive ? (
-        <div className="mt-1.5">
-          <div className="text-sm font-bold truncate">{planName}</div>
+        <div className="mt-0.5 text-[11px] text-muted-foreground truncate">
+          <span className="font-semibold text-foreground">{planName}</span>
           {sub?.expires_at && (
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              Renova em {new Date(sub.expires_at).toLocaleDateString("pt-BR")}
-            </div>
+            <> · Renova em {new Date(sub.expires_at).toLocaleDateString("pt-BR")}</>
           )}
         </div>
       ) : (
         <>
           {daysLeft !== null && daysLeft > 0 && !isExpired && (
-            <div className="mt-1.5">
-              <div className={cn("text-2xl font-extrabold leading-none", urgent ? "text-orange-500" : "text-foreground")}>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
+              <span className={cn("font-bold", urgent ? "text-orange-500" : "text-foreground")}>
                 {daysLeft}
-                <span className="text-xs font-medium text-muted-foreground ml-1">
-                  {daysLeft === 1 ? "dia restante" : "dias restantes"}
-                </span>
-              </div>
+              </span>{" "}
+              {daysLeft === 1 ? "dia restante" : "dias restantes"}
             </div>
           )}
           {isExpired && (
-            <div className="mt-1 text-[11px] text-muted-foreground">
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
               Assine para liberar os recursos.
             </div>
           )}
           <Link
             to="/minha-assinatura"
             className={cn(
-              "mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold shadow transition-all hover:scale-[1.02]",
+              "mt-1.5 inline-flex w-full items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]",
               urgent || isExpired
                 ? "bg-orange-500 text-white hover:bg-orange-600"
                 : "bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:from-amber-300 hover:to-yellow-400",
             )}
           >
-            <Sparkles className="h-3.5 w-3.5" />
+            <Sparkles className="h-3 w-3" />
             {isExpired ? "Assinar agora" : `Assinar ${brl(planPrice)}/mês`}
           </Link>
         </>
