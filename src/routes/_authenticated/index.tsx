@@ -238,7 +238,12 @@ function Dashboard() {
       <div className="mt-6 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-2xl border border-border bg-gradient-card p-6 shadow-elegant">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Lucro Real do Mês</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+                <BarChart3 className="h-3.5 w-3.5 text-primary" />
+              </span>
+              Lucro Real do Mês
+            </span>
             <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2.5 py-1">Indicador principal</span>
           </div>
           <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{m(brl(fin.profit))}</div>
