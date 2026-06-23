@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/lib/theme";
+import { usePlatformLogo } from "@/lib/usePlatformLogo";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/reset-password")({
 
 function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { logoUrl } = usePlatformLogo();
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -74,7 +76,7 @@ function ResetPasswordPage() {
       <div className="absolute top-4 right-4"><ThemeToggle /></div>
       <Card className="w-full max-w-md p-6 lg:p-8">
         <div className="flex items-center mb-6">
-          <img src="/logo-full.png" alt="Zappfy" className="h-12 w-auto object-contain" />
+          <img src={logoUrl} alt="Zappfy" className="h-12 w-auto object-contain" />
         </div>
 
         <h1 className="text-2xl font-bold mb-1">Redefinir senha</h1>
