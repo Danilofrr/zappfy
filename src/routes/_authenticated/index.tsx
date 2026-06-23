@@ -30,6 +30,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePrivacy, mask } from "@/hooks/use-privacy";
+import { SubscriptionStatusCard } from "@/components/SubscriptionStatusCard";
 
 import { redirect } from "@tanstack/react-router";
 
@@ -138,6 +139,7 @@ function Dashboard() {
   return (
     <AppShell title="Dashboard" subtitle={`Saúde financeira — ${range.label}`}>
       <DashboardTopBar subtitle="Principal" />
+      <SubscriptionStatusCard variant="banner" />
       {/* Period filter */}
       <div className="mb-5 rounded-2xl border border-border bg-card p-3 lg:p-4 shadow-elegant">
         <div className="flex flex-wrap items-center gap-2">
