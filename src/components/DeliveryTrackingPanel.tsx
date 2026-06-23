@@ -22,7 +22,6 @@ import {
   generateToken,
   orderShortNumber,
   STATUS_INFO,
-  trackingUrls,
   whatsappLink,
   type DeliveryStatus,
 } from "@/lib/tracking";
@@ -200,9 +199,9 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   }
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const urls = tracking ? trackingUrls(origin, tracking.tracking_code, tracking.courier_token) : null;
   const validTrackingCode = tracking?.tracking_code ?? "";
   const customerTrackingUrl = validTrackingCode ? `${origin}/rastreio/${validTrackingCode}` : "";
+  const courierTrackingUrl = tracking?.courier_token ? `${origin}/entrega/${tracking.courier_token}` : "";
   const orderNumber = orderShortNumber(orderId);
 
   async function copy(text: string, label: string) {
@@ -228,7 +227,12 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   async function copyCustomerLink() {
     if (!customerTrackingUrl) { toast.error("Acompanhamento ainda não disponível"); return; }
     console.log("URL Copiar:", customerTrackingUrl);
-    await copy(customerTrackingUrl, "Link do cliente");
+    try {
+      await navigator.clipboard.writeText(customerTrackingUrl);
+      toast.success("Link do cliente copiado!");
+    } catch {
+      toast.error("Não foi possível copiar. Copie manualmente.");
+    }
   }
 
   function viewCustomerLink() {
@@ -241,10 +245,10 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
 
 
   function sendCourier() {
-    if (!tracking || !urls) return;
+    if (!tracking || !courierTrackingUrl) return;
     const phone = tracking.courier_phone;
     if (!phone) { toast.error("Cadastre o telefone do motoboy"); return; }
-    const msg = buildCourierMessage(orderNumber, urls.courier);
+    const msg = buildCourierMessage(orderNumber, courierTrackingUrl);
     window.open(whatsappLink(phone, msg), "_blank");
   }
 
@@ -441,7 +445,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                <Button size="sm" variant="outline" onClick={() => urls && copy(urls.courier, "Link do motoboy")}>
+                <Button size="sm" variant="outline" onClick={() => courierTrackingUrl && copy(courierTrackingUrl, "Link do motoboy")}>
                   <Copy className="h-3.5 w-3.5 mr-1" /> Link motoboy
                 </Button>
                 <Button size="sm" variant="outline" onClick={load}>
