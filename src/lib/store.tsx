@@ -120,6 +120,7 @@ export type Settings = {
   checkoutFooterShowWhatsapp: boolean;
   motoboyMessageTemplate: string;
   deliveryMessageTemplate: string;
+  customerTrackingMessageTemplate: string;
   motoboyFee: number;
   slug: string;
 };
