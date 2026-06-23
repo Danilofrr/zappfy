@@ -69,15 +69,18 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   const [sendingCentral, setSendingCentral] = useState(false);
 
   async function ensureTracking(): Promise<Tracking | null> {
-    const { data: existing } = await supabase
+    // Prefer the most recent ACTIVE (non-cancelled) tracking row, so the
+    // public link we copy/share always matches a row the public RPC accepts.
+    const { data: active } = await supabase
       .from("delivery_tracking")
       .select("*")
       .eq("order_id", orderId)
+      .neq("status", "cancelado")
       .order("created_at", { ascending: false })
       .limit(1);
-    if (existing?.[0]) return existing[0] as Tracking;
+    if (active?.[0]) return active[0] as Tracking;
 
-    // Fallback auto-create (trigger should already have created it)
+    // No active row: create a fresh one so the customer always has a valid link.
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id;
     if (!uid) return null;
@@ -98,6 +101,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     }
     return created as Tracking;
   }
+
 
   async function load() {
     setLoading(true);
