@@ -1,100 +1,80 @@
-## Login individual para motoboys — Central Entregas Zappfy
+# Sistema de Convite de Trial
 
-### 1. Banco de dados (migração)
+## 1. Banco de dados (migração)
 
-Nova tabela `public.couriers`:
-- `id uuid PK`
-- `store_id uuid` (= user_id do lojista)
-- `name text`
-- `phone text` (WhatsApp, usado como "login" junto com o slug da loja — único por loja)
-- `password_hash text` (bcrypt via `crypt()` + `gen_salt('bf')` do `pgcrypto`)
-- `vehicle_type text` (moto, carro, bike, a-pé)
-- `plate text` nullable
-- `active boolean default true`
-- `last_login_at timestamptz`
-- timestamps + trigger `set_updated_at`
-- `UNIQUE (store_id, phone)`
+Nova tabela `public.trial_invites`:
 
-Em `delivery_tracking`: adicionar `courier_id uuid` nullable (referência lógica a `couriers.id`).
+- `code` (text, único, ~6-8 chars maiúsculos) — usado na URL `/trial/ABC123`
+- `created_by` (uuid, admin que gerou)
+- `label` (text, opcional — para identificar campanha)
+- `trial_days` (int, default 7)
+- `status` (text: `active` | `revoked`)
+- `signups_count` (int, default 0) — incrementado a cada cadastro
+- `conversions_count` (int, default 0) — incrementado quando vira `ativo`
+- `expires_at` (opcional — validade do link em si)
+- `revoked_at`
 
-GRANTs:
-- `couriers`: `SELECT/INSERT/UPDATE/DELETE` para `authenticated` (lojista gerencia via RLS); `service_role ALL`. Não dar `anon` — leitura pública vai por RPC SECURITY DEFINER.
-- RLS em `couriers`: lojista (auth.uid() = store_id) gerencia seus motoboys.
+Nova coluna em `public.subscriptions`:
+- `invite_code` (text, nullable) — rastreia origem do cadastro
 
-RPCs SECURITY DEFINER (público, anon):
-- `courier_login(_slug, _phone, _password)` → retorna `{ courier_id, courier_token (jwt simples ou random token de sessão guardado em coluna), name, phone, store_id }`. Para simplificar: gera `session_token` random e grava em nova tabela `courier_sessions(token, courier_id, expires_at)`. Retorna `session_token`. Valida `active=true`, senha via `crypt(_password, password_hash) = password_hash`.
-- `courier_me(_session)` → valida sessão, retorna dados do motoboy + store_id/slug.
-- `courier_logout(_session)`.
-- `list_available_deliveries_v2(_session)` → entregas `aguardando_motoboy` da loja do motoboy logado (substitui versão pública por slug; mantém a antiga para compat ou remove).
-- `accept_delivery_v2(_session, _code)` → identifica motoboy pela sessão, preenche `courier_id/name/phone` em `delivery_tracking`, retorna `courier_token` existente.
+Função SQL `redeem_trial_invite(_code text)` (SECURITY DEFINER) chamada pelo cliente após cadastro auth: cria settings/profile (via trigger já existente), cria/atualiza `subscriptions` com `status='teste'`, `trial_ends_at=now()+trial_days`, `expires_at=...`, `invite_code=_code`, incrementa `signups_count`. Valida que invite está `active` e não expirou.
 
-Nova tabela `courier_sessions`:
-- `token text PK` (random 48 chars)
-- `courier_id uuid`
-- `expires_at timestamptz default now() + 30 days`
-- `created_at`
+Função `admin_trial_stats()` retorna agregados: ativos, expirados, convertidos, taxa de conversão.
 
-GRANT na `courier_sessions`: apenas service_role; toda leitura via RPC.
+## 2. Server functions (admin)
 
-### 2. Frontend — Cadastro de motoboys (lojista)
+Em `src/lib/admin.functions.ts`:
+- `listTrialInvites()` — lista convites + stats por convite
+- `createTrialInvite({ label?, trialDays? })` — gera código aleatório único
+- `revokeTrialInvite({ code })`
+- `getTrialStats()` — chama `admin_trial_stats()`
 
-Nova rota `src/routes/_authenticated/motoboys.tsx`:
-- Tabela com motoboys (nome, whatsapp, veículo, placa, status, último login)
-- Modal de cadastro/edição: nome, WhatsApp, senha (apenas em criar/redefinir), tipo veículo, placa, ativo
-- Botão ativar/desativar, redefinir senha, excluir
-- Link no menu do AdminShell/AppShell ("Motoboys")
+Server fn pública (sem auth) `getTrialInviteInfo({ code })` em `src/lib/trial.functions.ts` — valida código e retorna `{ valid, trialDays, label }` para a página de cadastro mostrar "Você ganhará X dias grátis".
 
-Salvar senha: enviar via RPC `create_courier(_name, _phone, _password, _vehicle, _plate, _active)` SECURITY DEFINER que aplica hash com `crypt(_password, gen_salt('bf'))` e valida `auth.uid()` = store_id.
+Server fn autenticada `redeemTrialInvite({ code })` — chamada logo após o cliente criar conta, chama a função SQL.
 
-### 3. Frontend — Login do motoboy
+## 3. Rotas frontend
 
-Nova rota pública `src/routes/entregas-zappfy.$storeSlug.login.tsx`:
-- Form: WhatsApp + senha + botão Entrar
-- Chama `courier_login`; em sucesso salva `session_token` em `localStorage` (chave por slug) e redireciona para `/entregas-zappfy/:slug`.
-- Mensagens claras: credenciais inválidas, "Acesso desativado. Fale com a loja." quando `active=false`.
+- `src/routes/admin.trials.tsx` (sob `_authenticated/admin`) — página com:
+  - 4 cards de stats (ativos / expirados / convertidos / taxa)
+  - Botão **Gerar Link de Trial** (dialog com label + dias)
+  - Tabela de convites: código, label, dias, cadastros, conversões, status, ações (copiar link, revogar)
+- `src/routes/trial.$code.tsx` (público) — landing que valida código, mostra "7 dias grátis no Zappfy" e formulário de cadastro (email + senha + nome da loja). Após `signUp` bem-sucedido, chama `redeemTrialInvite` e redireciona para `/`.
+- Link no `AdminShell` nav: **Trials** (ícone Gift).
 
-### 4. Central de Entregas — exigir login
+## 4. Dashboard do cliente
 
-Editar `src/routes/entregas-zappfy.$storeSlug.tsx`:
-- Ao montar, ler `session_token` do localStorage. Se ausente → redirect para `/entregas-zappfy/:slug/login`.
-- Chamar `courier_me(session)`; se inválida/expirada → limpar e redirect.
-- Exibir nome do motoboy no header + botão "Sair".
-- Listar entregas via `list_available_deliveries_v2(session)`.
-- "Minhas entregas em andamento" passa a vir do servidor filtrando por `courier_id` (não mais localStorage de tokens).
-- Remover modal de Aceitar (nome/WhatsApp). Botão chama `accept_delivery_v2(session, code)` direto e navega para `/entrega/:courier_token`.
+`SubscriptionStatusCard` (sidebar) já mostra dias de trial. Ajustar cores conforme especificado:
+- 7–4 dias → verde
+- 3–2 dias → amarelo
+- 1 dia → vermelho
 
-### 5. Painel do lojista no pedido
+Adicionar **banner de alerta** quando dias restantes ≤ 3 no topo das páginas autenticadas: "Seu período de teste está terminando. Assine para continuar usando o Zappfy." + botão **Assinar Agora** → `/minha-assinatura`.
 
-No `DeliveryTrackingPanel.tsx`, quando há tracking aceito mostrar: motoboy responsável (nome), WhatsApp (link wa.me), status, horário de aceite (`updated_at` quando courier_id foi setado — gravar `accepted_at` em `delivery_tracking`), última atualização GPS (`last_updated_at`). Adicionar coluna `accepted_at` em `delivery_tracking`.
+## 5. Bloqueio quando trial expira
 
-### 6. Página do cliente (`rastreio.$trackingCode.tsx`)
+Em `_authenticated/route.tsx` (gate de auth): após buscar `getMyAccess`, se `status` for `vencido` ou `teste` com `expires_at < now`, redirecionar para `/assinatura-bloqueada` (já existe). Whitelistar apenas: `/minha-assinatura`, `/assinatura-bloqueada`, `/configuracoes`.
 
-Sem mudanças de código — já mostra `courier_name` que agora vem do motoboy logado (nada digitado manualmente).
+## 6. Admin Clientes — coluna "Dias restantes"
 
-### 7. Segurança
+Adicionar coluna na tabela `src/routes/_authenticated/admin.clientes.tsx` mostrando dias restantes calculados de `expires_at`.
 
-- Senha sempre via `pgcrypto` (`crypt`/`gen_salt`), nunca em claro.
-- Motoboy inativo → `courier_login` retorna erro específico.
-- Toda leitura/escrita pública via SECURITY DEFINER validando `store_id`/sessão.
-- `couriers` e `courier_sessions` sem GRANT a `anon`.
+## Detalhes técnicos
 
-### Arquivos
+- Código do convite: 6 chars `A-Z0-9` (sem caracteres ambíguos), unicidade no DB com retry.
+- URL gerada no client: `${origin}/trial/${code}`.
+- `redeem_trial_invite` usa `auth.uid()` (SECURITY DEFINER + check `auth.uid() is not null`).
+- Conversão = quando `subscriptions.status` muda para `ativo` e `invite_code` está set → trigger after-update incrementa `conversions_count`.
+- RLS: `trial_invites` somente admin (via `has_role`); leitura pública mínima via RPC.
 
-**Nova migração** com: `pgcrypto` (se não ativo), `couriers`, `courier_sessions`, coluna `courier_id` + `accepted_at` em `delivery_tracking`, RLS, GRANTs, RPCs (`create_courier`, `update_courier`, `delete_courier`, `reset_courier_password`, `courier_login`, `courier_logout`, `courier_me`, `list_available_deliveries_v2`, `accept_delivery_v2`).
-
-**Novos arquivos:**
-- `src/routes/_authenticated/motoboys.tsx`
-- `src/routes/entregas-zappfy.$storeSlug.login.tsx`
-- `src/lib/courier-session.ts` (helpers de localStorage por slug)
-
-**Editados:**
-- `src/routes/entregas-zappfy.$storeSlug.tsx` — login obrigatório, remover modal, usar RPCs v2
-- `src/components/DeliveryTrackingPanel.tsx` — exibir motoboy/horário/última atualização
-- `src/components/AppShell.tsx` (ou onde fica o menu lojista) — link "Motoboys"
-- `src/routeTree.gen.ts` — auto
-
-**Não alterar:**
-- `entrega.$courierToken.tsx`
-- `rastreio.$trackingCode.tsx`
-
-Confirma para eu começar pela migração?
+```text
+/trial/:code  →  cadastro  →  redeem_trial_invite(code)
+                              ↓
+                  subscriptions(status=teste, trial_ends_at=+7d, invite_code)
+                              ↓
+                  dashboard sidebar: contador colorido
+                              ↓
+                  expira  →  /assinatura-bloqueada
+                              ↓
+                  assina  →  trigger: conversions_count++
+```
