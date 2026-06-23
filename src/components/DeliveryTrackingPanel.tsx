@@ -12,11 +12,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Bike, Copy, MessageCircle, MapPin, RefreshCw, X, Send, Loader2, AlertTriangle, ExternalLink, Eye } from "lucide-react";
+import { Bike, Copy, MessageCircle, MapPin, RefreshCw, X, Send, Loader2, AlertTriangle, ExternalLink, Eye, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildCourierMessage,
   buildCustomerTrackingMessage,
+  deriveDisplayStatus,
   formatRelative,
   generateToken,
   orderShortNumber,
