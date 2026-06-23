@@ -29,6 +29,7 @@ import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { ThemeToggle } from "@/lib/theme";
+import { SubscriptionStatusCard } from "@/components/SubscriptionStatusCard";
 
 const navGroups: { label: string; items: { to: string; label: string; icon: any }[] }[] = [
   {
