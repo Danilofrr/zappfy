@@ -284,8 +284,8 @@ export function StatCard({
       <div className="flex items-center justify-between">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
         {Icon && (
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-secondary">
-            <Icon className="h-4 w-4 text-muted-foreground" />
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+            <Icon className="h-4 w-4 text-primary" />
           </div>
         )}
       </div>
