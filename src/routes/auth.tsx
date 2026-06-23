@@ -12,6 +12,7 @@ import { AvatarUploader } from "@/components/AvatarUploader";
 import { getPublicSupport } from "@/lib/admin.functions";
 import { whatsappLink } from "@/lib/tracking";
 import { getEntregasStandaloneRedirectSlug } from "@/lib/entregas-pwa";
+import { usePlatformLogo } from "@/lib/usePlatformLogo";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { logoUrl } = usePlatformLogo();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -303,7 +305,7 @@ function AuthPage() {
 
           {/* Desktop header */}
           <Link to="/auth" className="hidden lg:flex items-center justify-start mb-5">
-            <img src="/logo-full.png" alt="Zappfy" className="h-12 w-auto object-contain" />
+            <img src={logoUrl} alt="Zappfy" className="h-12 w-auto object-contain" />
           </Link>
 
           <Card className="p-6 lg:p-7 rounded-2xl bg-card/80 backdrop-blur-xl border-border/60 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5)] card-neon lg:shadow-elegant">

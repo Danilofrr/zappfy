@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { ThemeToggle } from "@/lib/theme";
 import { SubscriptionStatusCard } from "@/components/SubscriptionStatusCard";
+import { usePlatformLogo } from "@/lib/usePlatformLogo";
 
 const navGroups: { label: string; items: { to: string; label: string; icon: any }[] }[] = [
   {
@@ -70,8 +71,9 @@ const navGroups: { label: string; items: { to: string; label: string; icon: any 
 export function AppShell({ children, title, subtitle, actions }: { children: ReactNode; title: string; subtitle?: string; actions?: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
-  
+
   const { state, signOut, user } = useStore();
+  const { sidebarLogo } = usePlatformLogo();
 
   const primaryMobile = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },

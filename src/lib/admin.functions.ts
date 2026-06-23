@@ -604,3 +604,24 @@ export const getPublicFavicons = createServerFn({ method: "GET" }).handler(async
     entregas: (a?.entregasFaviconUrl as string | undefined) ?? null,
   };
 });
+
+// ===== Marca pública (sem auth) — logo da plataforma =====
+export const getPublicPlatformBrand = createServerFn({ method: "GET" }).handler(async () => {
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabasePublic = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+  );
+  const { data } = await supabasePublic
+    .from("admin_settings")
+    .select("value")
+    .eq("key", "system")
+    .maybeSingle();
+  const v = (data?.value as any) ?? {};
+  return {
+    logoUrl: (v?.platform?.logoUrl as string | undefined) ?? null,
+    sidebarLogo: (v?.appearance?.sidebarLogo as string | undefined) ?? null,
+    brandName: (v?.appearance?.brandName as string | undefined) ?? "ZappFy",
+  };
+});
