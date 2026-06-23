@@ -261,7 +261,7 @@ function Page() {
               sent={motoboyDiagnostic}
             />
           </Field>
-          </Field>
+
 
           <div className="h-px bg-border my-2" />
 
