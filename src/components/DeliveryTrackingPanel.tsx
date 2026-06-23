@@ -111,7 +111,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
-  // Realtime sync
+  // Realtime sync for the tracking row
   useEffect(() => {
     if (!tracking?.id) return;
     const channel = supabase
@@ -124,6 +124,21 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [tracking?.id]);
+
+  // Realtime sync for the linked order (status changes from the dashboard)
+  useEffect(() => {
+    if (!orderId) return;
+    const channel = supabase
+      .channel(`order_${orderId}_panel`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${orderId}` },
+        () => { load(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
 
   async function handleCreateCourier() {
     if (!tracking) return;
@@ -169,6 +184,15 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     if (error) { toast.error(error.message); return; }
     setTracking({ ...tracking, status: "cancelado" });
     toast.success("Rastreamento cancelado");
+  }
+
+  async function handleFinalize() {
+    if (!tracking) return;
+    if (!confirm("Finalizar acompanhamento deste pedido?")) return;
+    const { error } = await supabase.rpc("finalize_delivery_tracking", { _tracking_id: tracking.id });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Acompanhamento finalizado");
+    load();
   }
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
