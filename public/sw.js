@@ -1,6 +1,6 @@
 // ZappFy Service Worker — push notifications + offline cache for Central Entregas.
 
-const ENTREGAS_CACHE = "entregas-zappfy-v5";
+const ENTREGAS_CACHE = "entregas-zappfy-v6";
 const ENTREGAS_PRECACHE = [
   "/entregas-zappfy/",
   "/entregas-icon-192.png?v=5",
@@ -45,8 +45,14 @@ self.addEventListener("fetch", (event) => {
 
   const isEntregasNav =
     req.mode === "navigate" && url.pathname.startsWith("/entregas-zappfy");
+  const isEntregasAsset =
+    url.pathname.startsWith("/entregas-zappfy") ||
+    url.pathname.startsWith("/entregas-") ||
+    url.pathname === "/manifest-entregas.json" ||
+    url.pathname === "/entregas-manifest.webmanifest";
+
   const isCachableAsset =
-    /\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?|ico)$/.test(url.pathname);
+    isEntregasAsset && /\.(?:png|jpg|jpeg|svg|webp|woff2?|ico|json|webmanifest)$/.test(url.pathname);
 
   if (isEntregasNav) {
     event.respondWith((async () => {

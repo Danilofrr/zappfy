@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +66,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   const [form, setForm] = useState({ name: "", phone: "", notes: "" });
   const [creating, setCreating] = useState(false);
   const [sendingCentral, setSendingCentral] = useState(false);
+  const customerTrackingUrlRef = useRef("");
 
   async function ensureTracking(): Promise<Tracking | null> {
     // Prefer the most recent ACTIVE (non-cancelled) tracking row, so the
@@ -199,46 +200,65 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   }
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const validTrackingCode = tracking?.tracking_code ?? "";
+  const validTrackingCode = tracking?.tracking_code?.trim() ?? "";
   const customerTrackingUrl = validTrackingCode ? `${origin}/rastreio/${validTrackingCode}` : "";
   const courierTrackingUrl = tracking?.courier_token ? `${origin}/entrega/${tracking.courier_token}` : "";
   const orderNumber = orderShortNumber(orderId);
+  customerTrackingUrlRef.current = customerTrackingUrl;
 
-  async function copy(text: string, label: string) {
+  function getSharedCustomerTrackingUrl() {
+    return customerTrackingUrlRef.current;
+  }
+
+  async function writeClipboard(text: string) {
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      try {
         const ta = document.createElement("textarea");
         ta.value = text;
         ta.style.position = "fixed";
         ta.style.left = "-9999px";
+        ta.style.top = "0";
         document.body.appendChild(ta);
+        ta.focus();
         ta.select();
-        document.execCommand("copy");
+        const ok = document.execCommand("copy");
         document.body.removeChild(ta);
+        return ok;
+      } catch {
+        return false;
       }
+    }
+  }
+
+  async function copy(text: string, label: string) {
+    const ok = await writeClipboard(text);
+    if (ok) {
       toast.success(`${label} copiado!`);
-    } catch {
+    } else {
       toast.error("Não foi possível copiar. Copie manualmente.");
     }
   }
 
   async function copyCustomerLink() {
-    if (!customerTrackingUrl) { toast.error("Acompanhamento ainda não disponível"); return; }
-    console.log("URL Copiar:", customerTrackingUrl);
-    try {
-      await navigator.clipboard.writeText(customerTrackingUrl);
+    const url = getSharedCustomerTrackingUrl();
+    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
+    console.log("URL Copiar:", url);
+    const ok = await writeClipboard(url);
+    if (ok) {
       toast.success("Link do cliente copiado!");
-    } catch {
+    } else {
       toast.error("Não foi possível copiar. Copie manualmente.");
     }
   }
 
   function viewCustomerLink() {
-    if (!customerTrackingUrl) { toast.error("Acompanhamento ainda não disponível"); return; }
-    console.log("URL Visualizar:", customerTrackingUrl);
-    window.open(customerTrackingUrl, "_blank", "noopener,noreferrer");
+    const url = getSharedCustomerTrackingUrl();
+    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
+    console.log("URL Visualizar:", url);
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
 
@@ -255,8 +275,9 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   async function sendCustomer() {
     const phone = customerPhone || "";
     if (!phone) { toast.error("Pedido sem telefone do cliente"); return; }
-    if (!customerTrackingUrl) { toast.error("Acompanhamento ainda não disponível"); return; }
-    console.log("URL WhatsApp:", customerTrackingUrl);
+    const url = getSharedCustomerTrackingUrl();
+    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
+    console.log("URL WhatsApp:", url);
 
     const order = state.orders.find((o) => o.id === orderId);
     const firstItem = order?.items?.[0];
@@ -266,7 +287,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     const msg = buildCustomerTrackingMessage(state.settings.customerTrackingMessageTemplate, {
       customer_name: order?.customer ?? "",
       order_number: orderNumber,
-      tracking_link: customerTrackingUrl,
+      tracking_link: url,
       store_name: state.settings.storeName ?? "",
       product_name: productName,
       order_status: order?.status ?? tracking?.status ?? "",
