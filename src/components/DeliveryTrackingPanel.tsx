@@ -69,15 +69,18 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   const [sendingCentral, setSendingCentral] = useState(false);
 
   async function ensureTracking(): Promise<Tracking | null> {
-    const { data: existing } = await supabase
+    // Prefer the most recent ACTIVE (non-cancelled) tracking row, so the
+    // public link we copy/share always matches a row the public RPC accepts.
+    const { data: active } = await supabase
       .from("delivery_tracking")
       .select("*")
       .eq("order_id", orderId)
+      .neq("status", "cancelado")
       .order("created_at", { ascending: false })
       .limit(1);
-    if (existing?.[0]) return existing[0] as Tracking;
+    if (active?.[0]) return active[0] as Tracking;
 
-    // Fallback auto-create (trigger should already have created it)
+    // No active row: create a fresh one so the customer always has a valid link.
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id;
     if (!uid) return null;
@@ -98,6 +101,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     }
     return created as Tracking;
   }
+
 
   async function load() {
     setLoading(true);
@@ -199,10 +203,45 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   const urls = tracking ? trackingUrls(origin, tracking.tracking_code, tracking.courier_token) : null;
   const orderNumber = orderShortNumber(orderId);
 
-  function copy(text: string, label: string) {
-    navigator.clipboard?.writeText(text);
-    toast.success(`${label} copiado!`);
+  async function copy(text: string, label: string) {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      toast.success(`${label} copiado!`);
+    } catch {
+      toast.error("Não foi possível copiar. Copie manualmente.");
+    }
   }
+
+  // Always resolve the freshest ACTIVE customer URL from the DB before sharing,
+  // so Copiar, Visualizar e WhatsApp usam exatamente o mesmo link válido.
+  async function resolveCustomerUrl(): Promise<string | null> {
+    const fresh = await ensureTracking();
+    if (!fresh) { toast.error("Não foi possível gerar o link"); return null; }
+    if (fresh.tracking_code !== tracking?.tracking_code) setTracking(fresh);
+    return `${origin}/rastreio/${fresh.tracking_code}`;
+  }
+
+  async function copyCustomerLink() {
+    const url = await resolveCustomerUrl();
+    if (url) await copy(url, "Link do cliente");
+  }
+
+  async function viewCustomerLink() {
+    const url = await resolveCustomerUrl();
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  }
+
 
   function sendCourier() {
     if (!tracking || !urls) return;
@@ -212,10 +251,11 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     window.open(whatsappLink(phone, msg), "_blank");
   }
 
-  function sendCustomer() {
-    if (!urls) return;
+  async function sendCustomer() {
     const phone = customerPhone || "";
     if (!phone) { toast.error("Pedido sem telefone do cliente"); return; }
+    const url = await resolveCustomerUrl();
+    if (!url) return;
     const order = state.orders.find((o) => o.id === orderId);
     const firstItem = order?.items?.[0];
     const productName = firstItem
@@ -224,13 +264,14 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     const msg = buildCustomerTrackingMessage(state.settings.customerTrackingMessageTemplate, {
       customer_name: order?.customer ?? "",
       order_number: orderNumber,
-      tracking_link: urls.customer,
+      tracking_link: url,
       store_name: state.settings.storeName ?? "",
       product_name: productName,
       order_status: order?.status ?? tracking?.status ?? "",
     });
     window.open(whatsappLink(phone, msg), "_blank");
   }
+
 
   if (loading || !tracking) {
     return (
@@ -312,17 +353,16 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
                 <code className="flex-1 truncate rounded-md bg-background border border-border px-2 py-1 text-[11px]">{urls.customer}</code>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => copy(urls.customer, "Link do cliente")}>
+                <Button size="sm" variant="outline" onClick={copyCustomerLink}>
                   <Copy className="h-3.5 w-3.5 mr-1" /> Copiar link
                 </Button>
                 <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={sendCustomer}>
                   <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
                 </Button>
-                <Button size="sm" variant="outline" asChild>
-                  <a href={urls.customer} target="_blank" rel="noreferrer">
-                    <Eye className="h-3.5 w-3.5 mr-1" /> Visualizar
-                  </a>
+                <Button size="sm" variant="outline" onClick={viewCustomerLink}>
+                  <Eye className="h-3.5 w-3.5 mr-1" /> Visualizar
                 </Button>
+
               </div>
             </div>
           )}
