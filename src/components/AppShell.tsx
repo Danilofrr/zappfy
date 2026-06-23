@@ -167,19 +167,19 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
               ))}
             </nav>
 
-            <div className="border-t border-sidebar-border p-3 space-y-3 mt-6 lg:mt-8">
+            <div className="border-t border-sidebar-border p-3 space-y-2 mt-4">
               <SubscriptionStatusCard variant="sidebar" />
-              <div className="rounded-xl bg-card p-3 border border-border">
-                <div className="text-xs text-muted-foreground">Loja</div>
-                <div className="font-semibold truncate">{state.settings.storeName}</div>
-                {user?.email && <div className="text-[11px] text-muted-foreground truncate mt-1">{user.email}</div>}
+              <div className="rounded-lg bg-card px-2.5 py-2 border border-border/70">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Loja</div>
+                <div className="text-sm font-semibold truncate leading-tight">{state.settings.storeName}</div>
+                {user?.email && <div className="text-[10px] text-muted-foreground truncate">{user.email}</div>}
               </div>
               <button
                 onClick={() => signOut()}
                 title="Sair"
-                className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                className="w-full flex items-center justify-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
               >
-                <LogOut className="h-4 w-4 shrink-0" />
+                <LogOut className="h-3.5 w-3.5 shrink-0" />
                 <span className="whitespace-nowrap">Sair</span>
               </button>
             </div>
