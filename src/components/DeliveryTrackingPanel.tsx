@@ -240,7 +240,9 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     );
   }
 
-  const info = STATUS_INFO[tracking.status];
+  const order = state.orders.find((o) => o.id === orderId);
+  const displayStatus: DeliveryStatus = deriveDisplayStatus(tracking.status, order?.status);
+  const info = STATUS_INFO[displayStatus];
   const courierPos = tracking.latitude != null && tracking.longitude != null
     ? { lat: tracking.latitude, lng: tracking.longitude }
     : null;
@@ -248,8 +250,10 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     ? { lat: tracking.delivery_latitude, lng: tracking.delivery_longitude }
     : null;
   const hasMapAnything = courierPos || destination;
-  const preDelivery = tracking.status === "preparando" || (tracking.status === "aguardando_motoboy" && !tracking.courier_name);
-  const isCancelled = tracking.status === "cancelado";
+  const isCancelled = displayStatus === "cancelado";
+  const isDelivered = displayStatus === "entregue";
+  const isFinished = isCancelled || isDelivered;
+  const preDelivery = !isFinished && (displayStatus === "preparando" || (displayStatus === "aguardando_motoboy" && !tracking.courier_name));
 
   async function handleSaveDestination(coords: { lat: number; lng: number }) {
     const { error } = await supabase.rpc("set_tracking_destination", {
