@@ -166,24 +166,42 @@ function ClientsPage() {
                   <td className="p-3 text-xs">{c.lastSignInAt ? new Date(c.lastSignInAt).toLocaleString("pt-BR") : "Nunca"}</td>
                   <td className="p-3">
                     <div className="flex justify-end gap-1">
-                      <Button size="sm" variant="ghost" title="Renovar +30d" onClick={async () => { await renewFn({ data: { userId: c.id, days: 30 } }); toast.success("Renovado +30 dias"); invalidate(); }}>
+                      <Button size="sm" variant="ghost" title="Renovar +30d" onClick={async () => {
+                        try { await renewFn({ data: { userId: c.id, days: 30 } }); toast.success("Renovado +30 dias"); await qc.invalidateQueries({ queryKey: ["admin-clients"] }); }
+                        catch (e: any) { toast.error(e?.message ?? "Erro ao renovar"); }
+                      }}>
                         <RotateCw className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="ghost" title="Adicionar 7d teste" onClick={async () => { await trialFn({ data: { userId: c.id, days: 7 } }); toast.success("+7 dias teste"); invalidate(); }}>
+                      <Button size="sm" variant="ghost" title="Adicionar 7d teste" onClick={async () => {
+                        try { await trialFn({ data: { userId: c.id, days: 7 } }); toast.success("+7 dias teste"); await qc.invalidateQueries({ queryKey: ["admin-clients"] }); }
+                        catch (e: any) { toast.error(e?.message ?? "Erro ao adicionar teste"); }
+                      }}>
                         <CalendarPlus className="h-4 w-4" />
                       </Button>
                       {c.subscription?.status !== "bloqueado" ? (
-                        <Button size="sm" variant="ghost" title="Bloquear" onClick={async () => { await statusFn({ data: { userId: c.id, status: "bloqueado" } }); toast.success("Cliente bloqueado"); invalidate(); }}>
+                        <Button size="sm" variant="ghost" title="Bloquear" onClick={async () => {
+                          if (!confirm(`Bloquear o acesso de ${c.email}?`)) return;
+                          try { await statusFn({ data: { userId: c.id, status: "bloqueado" } }); toast.success("Cliente bloqueado"); await qc.invalidateQueries({ queryKey: ["admin-clients"] }); }
+                          catch (e: any) { toast.error(e?.message ?? "Erro ao bloquear"); }
+                        }}>
                           <Ban className="h-4 w-4 text-destructive" />
                         </Button>
                       ) : (
-                        <Button size="sm" variant="ghost" title="Desbloquear" onClick={async () => { await statusFn({ data: { userId: c.id, status: "ativo" } }); toast.success("Desbloqueado"); invalidate(); }}>
+                        <Button size="sm" variant="ghost" title="Desbloquear" onClick={async () => {
+                          try { await statusFn({ data: { userId: c.id, status: "ativo" } }); toast.success("Desbloqueado"); await qc.invalidateQueries({ queryKey: ["admin-clients"] }); }
+                          catch (e: any) { toast.error(e?.message ?? "Erro ao desbloquear"); }
+                        }}>
                           <Play className="h-4 w-4 text-green-500" />
                         </Button>
                       )}
                       <Button size="sm" variant="ghost" title="Gerar link de ativação" onClick={async () => {
-                        const r: any = await tokenFn({ data: { userId: c.id } });
-                        setActivationLink(`${window.location.origin}/ativar-conta/${r.token}`);
+                        try {
+                          const r: any = await tokenFn({ data: { userId: c.id } });
+                          const link = `${window.location.origin}/ativar-conta/${r.token}`;
+                          setActivationLink(link);
+                          try { await navigator.clipboard.writeText(link); toast.success("Link gerado e copiado"); }
+                          catch { toast.success("Link gerado"); }
+                        } catch (e: any) { toast.error(e?.message ?? "Erro ao gerar link"); }
                       }}>
                         <LinkIcon className="h-4 w-4" />
                       </Button>
@@ -192,14 +210,14 @@ function ClientsPage() {
                       </Button>
                       <Button size="sm" variant="ghost" title="Excluir" onClick={async () => {
                         if (!confirm(`Excluir ${c.email}?`)) return;
-                        await delFn({ data: { userId: c.id } });
-                        toast.success("Cliente excluído");
-                        invalidate();
+                        try { await delFn({ data: { userId: c.id } }); toast.success("Cliente excluído"); await qc.invalidateQueries({ queryKey: ["admin-clients"] }); }
+                        catch (e: any) { toast.error(e?.message ?? "Erro ao excluir"); }
                       }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   </td>
+
                 </tr>
               ))}
               {clients.length === 0 && (
