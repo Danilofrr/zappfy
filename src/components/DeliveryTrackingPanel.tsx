@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Bike, Copy, MessageCircle, MapPin, RefreshCw, X, Send, Loader2, AlertTriangle } from "lucide-react";
+import { Bike, Copy, MessageCircle, MapPin, RefreshCw, X, Send, Loader2, AlertTriangle, ExternalLink, Eye } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildCourierMessage,
@@ -65,16 +65,43 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", notes: "" });
   const [creating, setCreating] = useState(false);
+  const [sendingCentral, setSendingCentral] = useState(false);
 
-  async function load() {
-    setLoading(true);
-    const { data, error } = await supabase
+  async function ensureTracking(): Promise<Tracking | null> {
+    const { data: existing } = await supabase
       .from("delivery_tracking")
       .select("*")
       .eq("order_id", orderId)
       .order("created_at", { ascending: false })
       .limit(1);
-    if (!error) setTracking((data?.[0] as Tracking | undefined) ?? null);
+    if (existing?.[0]) return existing[0] as Tracking;
+
+    // Fallback auto-create (trigger should already have created it)
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) return null;
+    const { data: created, error } = await supabase
+      .from("delivery_tracking")
+      .insert({
+        order_id: orderId,
+        store_id: uid,
+        tracking_code: generateToken("t"),
+        courier_token: generateToken("c"),
+        status: "preparando" as DeliveryStatus,
+      })
+      .select()
+      .single();
+    if (error) {
+      console.error("auto-create tracking failed", error);
+      return null;
+    }
+    return created as Tracking;
+  }
+
+  async function load() {
+    setLoading(true);
+    const t = await ensureTracking();
+    setTracking(t);
     setLoading(false);
   }
 
@@ -97,62 +124,39 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     return () => { supabase.removeChannel(channel); };
   }, [tracking?.id]);
 
-  async function handleCreate() {
+  async function handleCreateCourier() {
+    if (!tracking) return;
     if (!form.name.trim()) { toast.error("Informe o nome do motoboy"); return; }
     setCreating(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (!uid) { toast.error("Sessão expirada"); setCreating(false); return; }
-    const payload = {
-      order_id: orderId,
-      store_id: uid,
-      tracking_code: generateToken("t"),
-      courier_token: generateToken("c"),
-      courier_name: form.name.trim(),
-      courier_phone: form.phone.trim() || null,
-      notes: form.notes.trim() || null,
-      status: "aguardando_motoboy" as DeliveryStatus,
-    };
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("delivery_tracking")
-      .insert(payload)
-      .select()
-      .single();
+      .update({
+        courier_name: form.name.trim(),
+        courier_phone: form.phone.trim() || null,
+        notes: form.notes.trim() || null,
+        status: "aguardando_motoboy" as DeliveryStatus,
+      })
+      .eq("id", tracking.id);
     setCreating(false);
     if (error) { toast.error(error.message); return; }
-    setTracking(data as Tracking);
     setCreateOpen(false);
     setForm({ name: "", phone: "", notes: "" });
-    toast.success("Rastreamento criado!");
+    toast.success("Motoboy vinculado ao pedido!");
+    load();
   }
 
   async function handleSendToCentral() {
-    setCreating(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (!uid) { toast.error("Sessão expirada"); setCreating(false); return; }
-    const payload = {
-      order_id: orderId,
-      store_id: uid,
-      tracking_code: generateToken("t"),
-      courier_token: generateToken("c"),
-      courier_name: null,
-      courier_phone: null,
-      notes: null,
-      status: "aguardando_motoboy" as DeliveryStatus,
-    };
-    const { data, error } = await supabase
+    if (!tracking) return;
+    setSendingCentral(true);
+    const { error } = await supabase
       .from("delivery_tracking")
-      .insert(payload)
-      .select()
-      .single();
-    setCreating(false);
+      .update({ status: "aguardando_motoboy" as DeliveryStatus })
+      .eq("id", tracking.id);
+    setSendingCentral(false);
     if (error) { toast.error(error.message); return; }
-    setTracking(data as Tracking);
+    setTracking({ ...tracking, status: "aguardando_motoboy" });
     toast.success("Entrega enviada para a Central de Entregas!");
   }
-
-
 
   async function handleCancel() {
     if (!tracking) return;
@@ -191,53 +195,13 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     window.open(whatsappLink(phone, msg), "_blank");
   }
 
-  if (loading) {
+  if (loading || !tracking) {
     return (
       <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground flex items-center gap-2">
         <Loader2 className="h-4 w-4 animate-spin" /> Carregando rastreamento…
       </div>
     );
   }
-
-  if (!tracking || tracking.status === "cancelado") {
-    const isCancelled = tracking?.status === "cancelado";
-    return (
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center gap-2 mb-1 text-sm font-semibold">
-          <Bike className="h-4 w-4 text-primary" /> Rastreamento da Entrega
-        </div>
-        {isCancelled ? (
-          <div className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs flex items-start gap-2">
-            <X className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-            <div>
-              <div className="font-semibold text-destructive">Rastreamento cancelado</div>
-              <div className="text-muted-foreground mt-0.5">Os links anteriores foram desativados. Gere um novo rastreamento para continuar.</div>
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground mb-3">Envie esta entrega para a Central de Entregas Zappfy ou gere um link específico para um motoboy.</p>
-        )}
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={handleSendToCentral} disabled={creating}>
-            {creating ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Bike className="h-4 w-4 mr-1.5" />}
-            Enviar para Central de Entregas
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
-            Gerar link de motoboy específico
-          </Button>
-          {state.settings.slug && (
-            <Button size="sm" variant="outline" onClick={() => copy(`${origin}/entregas-zappfy/${state.settings.slug}`, "Link da Central")}>
-              <Copy className="h-3.5 w-3.5 mr-1" /> Link da Central
-            </Button>
-          )}
-        </div>
-        <CreateDialog open={createOpen} onOpenChange={setCreateOpen} form={form} setForm={setForm} onSubmit={handleCreate} loading={creating} />
-      </div>
-    );
-  }
-
-
-
 
   const info = STATUS_INFO[tracking.status];
   const courierPos = tracking.latitude != null && tracking.longitude != null
@@ -247,6 +211,8 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     ? { lat: tracking.delivery_latitude, lng: tracking.delivery_longitude }
     : null;
   const hasMapAnything = courierPos || destination;
+  const preDelivery = tracking.status === "preparando" || (tracking.status === "aguardando_motoboy" && !tracking.courier_name);
+  const isCancelled = tracking.status === "cancelado";
 
   async function handleSaveDestination(coords: { lat: number; lng: number }) {
     const { error } = await supabase.rpc("set_tracking_destination", {
@@ -257,7 +223,6 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
       _status: "manual",
     });
     if (error) { toast.error(error.message); return; }
-    // optimistic update + refresh
     setTracking((t) => t ? { ...t, delivery_latitude: coords.lat, delivery_longitude: coords.lng, delivery_geocoding_status: "manual" } : t);
     toast.success("Localização do destino salva!");
     load();
@@ -266,16 +231,69 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2 text-sm font-semibold"><Bike className="h-4 w-4 text-primary" /> Rastreamento da Entrega</div>
+        <div className="flex items-center gap-2 text-sm font-semibold"><Bike className="h-4 w-4 text-primary" /> Acompanhamento do Pedido</div>
         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${info.bg} ${info.color}`}>{info.label}</span>
       </div>
 
-      {!destination && tracking.status !== "entregue" && (
+      {/* Always-visible client link block */}
+      {urls && !isCancelled && (
+        <div className="mb-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
+          <div className="text-xs font-semibold mb-1.5">Link público do cliente</div>
+          <div className="flex items-center gap-2 mb-2">
+            <code className="flex-1 truncate rounded-md bg-background border border-border px-2 py-1 text-[11px]">{urls.customer}</code>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => copy(urls.customer, "Link do cliente")}>
+              <Copy className="h-3.5 w-3.5 mr-1" /> Copiar link
+            </Button>
+            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={sendCustomer}>
+              <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <a href={urls.customer} target="_blank" rel="noreferrer">
+                <Eye className="h-3.5 w-3.5 mr-1" /> Visualizar
+              </a>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isCancelled && (
+        <div className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs flex items-start gap-2">
+          <X className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+          <div>
+            <div className="font-semibold text-destructive">Rastreamento cancelado</div>
+            <div className="text-muted-foreground mt-0.5">Os links foram desativados.</div>
+          </div>
+        </div>
+      )}
+
+      {preDelivery && !isCancelled && (
+        <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs">
+          <div className="font-semibold text-amber-700 dark:text-amber-400">Pedido ainda em preparação</div>
+          <div className="text-muted-foreground mt-0.5">O cliente já pode acompanhar pelo link acima. Quando estiver pronto, envie para a Central de Entregas ou vincule um motoboy específico.</div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Button size="sm" onClick={handleSendToCentral} disabled={sendingCentral}>
+              {sendingCentral ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Bike className="h-4 w-4 mr-1.5" />}
+              {tracking.status === "preparando" ? "Enviar para Central de Entregas" : "Já na Central"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
+              Vincular motoboy específico
+            </Button>
+            {state.settings.slug && (
+              <Button size="sm" variant="outline" onClick={() => copy(`${origin}/entregas-zappfy/${state.settings.slug}`, "Link da Central")}>
+                <ExternalLink className="h-3.5 w-3.5 mr-1" /> Link da Central
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!preDelivery && !isCancelled && !destination && tracking.status !== "entregue" && (
         <div className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <div className="flex-1">
             <div className="font-semibold text-amber-600 dark:text-amber-400">Defina a localização do destino para exibir o pino no mapa.</div>
-            <div className="text-muted-foreground mt-0.5">O endereço do pedido não foi localizado automaticamente. Ajuste o ponto manualmente abaixo.</div>
           </div>
           <Button size="sm" variant="outline" onClick={() => setPickerOpen(true)}>
             <MapPin className="h-3.5 w-3.5 mr-1" /> Definir
@@ -283,68 +301,68 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-3 mb-3">
-        <div className="text-xs space-y-1">
-          <div><span className="text-muted-foreground">Motoboy:</span> <strong>{tracking.courier_name || "Aguardando aceite"}</strong></div>
-          {tracking.courier_phone && (
-            <div>
-              <span className="text-muted-foreground">WhatsApp:</span>{" "}
-              <a className="underline" href={whatsappLink(tracking.courier_phone, "")} target="_blank" rel="noreferrer">
-                {tracking.courier_phone}
-              </a>
+      {!preDelivery && !isCancelled && (
+        <>
+          <div className="grid md:grid-cols-2 gap-3 mb-3">
+            <div className="text-xs space-y-1">
+              <div><span className="text-muted-foreground">Motoboy:</span> <strong>{tracking.courier_name || "Aguardando aceite"}</strong></div>
+              {tracking.courier_phone && (
+                <div>
+                  <span className="text-muted-foreground">WhatsApp:</span>{" "}
+                  <a className="underline" href={whatsappLink(tracking.courier_phone, "")} target="_blank" rel="noreferrer">
+                    {tracking.courier_phone}
+                  </a>
+                </div>
+              )}
+              {tracking.accepted_at && (
+                <div><span className="text-muted-foreground">Aceita em:</span> {formatRelative(tracking.accepted_at)}</div>
+              )}
+              <div><span className="text-muted-foreground">Última atualização GPS:</span> {formatRelative(tracking.last_updated_at)}</div>
+              {tracking.notes && <div className="text-muted-foreground italic">Obs: {tracking.notes}</div>}
+              <div className="pt-1">
+                <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setPickerOpen(true)}>
+                  <MapPin className="h-3 w-3 mr-1" /> {destination ? "Ajustar destino no mapa" : "Definir localização no mapa"}
+                </Button>
+              </div>
             </div>
-          )}
-          {tracking.accepted_at && (
-            <div><span className="text-muted-foreground">Aceita em:</span> {formatRelative(tracking.accepted_at)}</div>
-          )}
-          <div><span className="text-muted-foreground">Última atualização GPS:</span> {formatRelative(tracking.last_updated_at)}</div>
-          {tracking.notes && <div className="text-muted-foreground italic">Obs: {tracking.notes}</div>}
-          <div className="pt-1">
-            <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setPickerOpen(true)}>
-              <MapPin className="h-3 w-3 mr-1" /> {destination ? "Ajustar destino no mapa" : "Definir localização no mapa"}
-            </Button>
+            <div className="rounded-xl overflow-hidden">
+              {hasMapAnything ? (
+                <TrackingMap
+                  courier={courierPos}
+                  destination={destination}
+                  heading={tracking.heading}
+                  height={160}
+                  primaryColor={state.settings.checkoutNeonColor || "#10b981"}
+                  follow
+                />
+              ) : (
+                <div className="h-[160px] rounded-xl border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground text-center px-3">
+                  <MapPin className="h-3.5 w-3.5 mr-1 shrink-0" /> Aguardando posição do motoboy e localização do destino…
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="rounded-xl overflow-hidden">
-          {hasMapAnything ? (
-            <TrackingMap
-              courier={courierPos}
-              destination={destination}
-              heading={tracking.heading}
-              height={160}
-              primaryColor={state.settings.checkoutNeonColor || "#10b981"}
-              follow
-            />
-          ) : (
-            <div className="h-[160px] rounded-xl border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground text-center px-3">
-              <MapPin className="h-3.5 w-3.5 mr-1 shrink-0" /> Aguardando posição do motoboy e localização do destino…
-            </div>
-          )}
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-        <Button size="sm" variant="outline" onClick={() => urls && copy(urls.customer, "Link do cliente")}>
-          <Copy className="h-3.5 w-3.5 mr-1" /> Link cliente
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => urls && copy(urls.courier, "Link do motoboy")}>
-          <Copy className="h-3.5 w-3.5 mr-1" /> Link motoboy
-        </Button>
-        <Button size="sm" variant="outline" onClick={load}>
-          <RefreshCw className="h-3.5 w-3.5 mr-1" /> Atualizar
-        </Button>
-        <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={sendCustomer}>
-          <MessageCircle className="h-3.5 w-3.5 mr-1" /> Avisar cliente
-        </Button>
-        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={sendCourier}>
-          <Send className="h-3.5 w-3.5 mr-1" /> Enviar motoboy
-        </Button>
-        {tracking.status !== "entregue" && (
-          <Button size="sm" variant="destructive" onClick={handleCancel}>
-            <X className="h-3.5 w-3.5 mr-1" /> Cancelar
-          </Button>
-        )}
-      </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <Button size="sm" variant="outline" onClick={() => urls && copy(urls.courier, "Link do motoboy")}>
+              <Copy className="h-3.5 w-3.5 mr-1" /> Link motoboy
+            </Button>
+            <Button size="sm" variant="outline" onClick={load}>
+              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Atualizar
+            </Button>
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={sendCourier}>
+              <Send className="h-3.5 w-3.5 mr-1" /> Enviar motoboy
+            </Button>
+            {tracking.status !== "entregue" && (
+              <Button size="sm" variant="destructive" onClick={handleCancel}>
+                <X className="h-3.5 w-3.5 mr-1" /> Cancelar
+              </Button>
+            )}
+          </div>
+        </>
+      )}
+
+      <CreateDialog open={createOpen} onOpenChange={setCreateOpen} form={form} setForm={setForm} onSubmit={handleCreateCourier} loading={creating} />
 
       <DestinationPicker
         open={pickerOpen}
@@ -371,7 +389,7 @@ function CreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Gerar rastreamento</DialogTitle>
+          <DialogTitle>Vincular motoboy</DialogTitle>
           <DialogDescription>Cadastre o motoboy que fará esta entrega.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -392,7 +410,7 @@ function CreateDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={onSubmit} disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Bike className="h-4 w-4 mr-1" />}
-            Gerar
+            Vincular
           </Button>
         </DialogFooter>
       </DialogContent>
