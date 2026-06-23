@@ -17,6 +17,9 @@ import {
   Receipt,
   CheckCircle2,
   Circle,
+  LineChart as LineChartIcon,
+  Megaphone,
+  BarChart3,
 } from "lucide-react";
 import {
   ResponsiveContainer,
