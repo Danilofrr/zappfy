@@ -16,7 +16,7 @@ import { Bike, Copy, MessageCircle, MapPin, RefreshCw, X, Send, Loader2, AlertTr
 import { toast } from "sonner";
 import {
   buildCourierMessage,
-  buildCustomerMessage,
+  buildCustomerTrackingMessage,
   formatRelative,
   generateToken,
   orderShortNumber,
