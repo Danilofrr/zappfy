@@ -201,6 +201,8 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const urls = tracking ? trackingUrls(origin, tracking.tracking_code, tracking.courier_token) : null;
+  const validTrackingCode = tracking?.tracking_code ?? "";
+  const customerTrackingUrl = validTrackingCode ? `${origin}/rastreio/${validTrackingCode}` : "";
   const orderNumber = orderShortNumber(orderId);
 
   async function copy(text: string, label: string) {
@@ -223,23 +225,16 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     }
   }
 
-  // Single source of truth for the customer URL — exatamente o mesmo valor
-  // exibido no campo "Link público do cliente". Usado por Copiar, WhatsApp e Visualizar.
-  function getCustomerTrackingUrl(): string | null {
-    if (!tracking?.tracking_code) return null;
-    return `${origin}/rastreio/${tracking.tracking_code}`;
-  }
-
   async function copyCustomerLink() {
-    const url = getCustomerTrackingUrl();
-    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
-    await copy(url, "Link do cliente");
+    if (!customerTrackingUrl) { toast.error("Acompanhamento ainda não disponível"); return; }
+    console.log("URL Copiar:", customerTrackingUrl);
+    await copy(customerTrackingUrl, "Link do cliente");
   }
 
   function viewCustomerLink() {
-    const url = getCustomerTrackingUrl();
-    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (!customerTrackingUrl) { toast.error("Acompanhamento ainda não disponível"); return; }
+    console.log("URL Visualizar:", customerTrackingUrl);
+    window.open(customerTrackingUrl, "_blank", "noopener,noreferrer");
   }
 
 
@@ -256,8 +251,8 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   async function sendCustomer() {
     const phone = customerPhone || "";
     if (!phone) { toast.error("Pedido sem telefone do cliente"); return; }
-    const url = getCustomerTrackingUrl();
-    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
+    if (!customerTrackingUrl) { toast.error("Acompanhamento ainda não disponível"); return; }
+    console.log("URL WhatsApp:", customerTrackingUrl);
 
     const order = state.orders.find((o) => o.id === orderId);
     const firstItem = order?.items?.[0];
@@ -267,7 +262,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     const msg = buildCustomerTrackingMessage(state.settings.customerTrackingMessageTemplate, {
       customer_name: order?.customer ?? "",
       order_number: orderNumber,
-      tracking_link: url,
+      tracking_link: customerTrackingUrl,
       store_name: state.settings.storeName ?? "",
       product_name: productName,
       order_status: order?.status ?? tracking?.status ?? "",
@@ -349,11 +344,11 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
       ) : (
         <>
           {/* Always-visible client link block */}
-          {urls && (
+          {customerTrackingUrl && (
             <div className="mb-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
               <div className="text-xs font-semibold mb-1.5">Link público do cliente</div>
               <div className="flex items-center gap-2 mb-2">
-                <code className="flex-1 truncate rounded-md bg-background border border-border px-2 py-1 text-[11px]">{urls.customer}</code>
+                <code className="flex-1 truncate rounded-md bg-background border border-border px-2 py-1 text-[11px]">{customerTrackingUrl}</code>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={copyCustomerLink}>
