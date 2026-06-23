@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as EntregasZappfyIndexRouteImport } from './routes/entregas-zappfy.index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as TrialCodeRouteImport } from './routes/trial.$code'
 import { Route as RastreioTrackingCodeRouteImport } from './routes/rastreio.$trackingCode'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
 import { Route as EntregasZappfyStoreSlugRouteImport } from './routes/entregas-zappfy.$storeSlug'
@@ -45,6 +46,7 @@ import { Route as EntregasZappfyStoreSlugIndexRouteImport } from './routes/entre
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as EntregasZappfyStoreSlugLoginRouteImport } from './routes/entregas-zappfy.$storeSlug.login'
 import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
+import { Route as AuthenticatedAdminTrialsRouteImport } from './routes/_authenticated/admin.trials'
 import { Route as AuthenticatedAdminRelatoriosRouteImport } from './routes/_authenticated/admin.relatorios'
 import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
 import { Route as AuthenticatedAdminPagamentosRouteImport } from './routes/_authenticated/admin.pagamentos'
@@ -83,6 +85,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const TrialCodeRoute = TrialCodeRouteImport.update({
+  id: '/trial/$code',
+  path: '/trial/$code',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RastreioTrackingCodeRoute = RastreioTrackingCodeRouteImport.update({
   id: '/rastreio/$trackingCode',
@@ -244,6 +251,12 @@ const ApiPublicSubmitOrderRoute = ApiPublicSubmitOrderRouteImport.update({
   path: '/api/public/submit-order',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminTrialsRoute =
+  AuthenticatedAdminTrialsRouteImport.update({
+    id: '/trials',
+    path: '/trials',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminRelatoriosRoute =
   AuthenticatedAdminRelatoriosRouteImport.update({
     id: '/relatorios',
@@ -329,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/entregas-zappfy/$storeSlug': typeof EntregasZappfyStoreSlugRouteWithChildren
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
+  '/trial/$code': typeof TrialCodeRoute
   '/entregas-zappfy/': typeof EntregasZappfyIndexRoute
   '/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
@@ -339,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/admin/pagamentos': typeof AuthenticatedAdminPagamentosRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/admin/relatorios': typeof AuthenticatedAdminRelatoriosRoute
+  '/admin/trials': typeof AuthenticatedAdminTrialsRoute
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -372,6 +387,7 @@ export interface FileRoutesByTo {
   '/entrega/$courierToken': typeof EntregaCourierTokenRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
+  '/trial/$code': typeof TrialCodeRoute
   '/': typeof AuthenticatedIndexRoute
   '/entregas-zappfy': typeof EntregasZappfyIndexRoute
   '/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
@@ -383,6 +399,7 @@ export interface FileRoutesByTo {
   '/admin/pagamentos': typeof AuthenticatedAdminPagamentosRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/admin/relatorios': typeof AuthenticatedAdminRelatoriosRoute
+  '/admin/trials': typeof AuthenticatedAdminTrialsRoute
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -420,6 +437,7 @@ export interface FileRoutesById {
   '/entregas-zappfy/$storeSlug': typeof EntregasZappfyStoreSlugRouteWithChildren
   '/loja/$slug': typeof LojaSlugRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
+  '/trial/$code': typeof TrialCodeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/entregas-zappfy/': typeof EntregasZappfyIndexRoute
   '/_authenticated/admin/assinaturas': typeof AuthenticatedAdminAssinaturasRoute
@@ -431,6 +449,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/pagamentos': typeof AuthenticatedAdminPagamentosRoute
   '/_authenticated/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/_authenticated/admin/relatorios': typeof AuthenticatedAdminRelatoriosRoute
+  '/_authenticated/admin/trials': typeof AuthenticatedAdminTrialsRoute
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -469,6 +488,7 @@ export interface FileRouteTypes {
     | '/entregas-zappfy/$storeSlug'
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
+    | '/trial/$code'
     | '/entregas-zappfy/'
     | '/admin/assinaturas'
     | '/admin/clientes'
@@ -479,6 +499,7 @@ export interface FileRouteTypes {
     | '/admin/pagamentos'
     | '/admin/planos'
     | '/admin/relatorios'
+    | '/admin/trials'
     | '/api/public/submit-order'
     | '/entregas-zappfy/$storeSlug/login'
     | '/admin/'
@@ -512,6 +533,7 @@ export interface FileRouteTypes {
     | '/entrega/$courierToken'
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
+    | '/trial/$code'
     | '/'
     | '/entregas-zappfy'
     | '/admin/assinaturas'
@@ -523,6 +545,7 @@ export interface FileRouteTypes {
     | '/admin/pagamentos'
     | '/admin/planos'
     | '/admin/relatorios'
+    | '/admin/trials'
     | '/api/public/submit-order'
     | '/entregas-zappfy/$storeSlug/login'
     | '/admin'
@@ -559,6 +582,7 @@ export interface FileRouteTypes {
     | '/entregas-zappfy/$storeSlug'
     | '/loja/$slug'
     | '/rastreio/$trackingCode'
+    | '/trial/$code'
     | '/_authenticated/'
     | '/entregas-zappfy/'
     | '/_authenticated/admin/assinaturas'
@@ -570,6 +594,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/pagamentos'
     | '/_authenticated/admin/planos'
     | '/_authenticated/admin/relatorios'
+    | '/_authenticated/admin/trials'
     | '/api/public/submit-order'
     | '/entregas-zappfy/$storeSlug/login'
     | '/_authenticated/admin/'
@@ -586,6 +611,7 @@ export interface RootRouteChildren {
   EntregasZappfyStoreSlugRoute: typeof EntregasZappfyStoreSlugRouteWithChildren
   LojaSlugRoute: typeof LojaSlugRoute
   RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
+  TrialCodeRoute: typeof TrialCodeRoute
   EntregasZappfyIndexRoute: typeof EntregasZappfyIndexRoute
   ApiPublicSubmitOrderRoute: typeof ApiPublicSubmitOrderRoute
 }
@@ -633,6 +659,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/trial/$code': {
+      id: '/trial/$code'
+      path: '/trial/$code'
+      fullPath: '/trial/$code'
+      preLoaderRoute: typeof TrialCodeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/rastreio/$trackingCode': {
       id: '/rastreio/$trackingCode'
@@ -844,6 +877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSubmitOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/trials': {
+      id: '/_authenticated/admin/trials'
+      path: '/trials'
+      fullPath: '/admin/trials'
+      preLoaderRoute: typeof AuthenticatedAdminTrialsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/relatorios': {
       id: '/_authenticated/admin/relatorios'
       path: '/relatorios'
@@ -920,6 +960,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPagamentosRoute: typeof AuthenticatedAdminPagamentosRoute
   AuthenticatedAdminPlanosRoute: typeof AuthenticatedAdminPlanosRoute
   AuthenticatedAdminRelatoriosRoute: typeof AuthenticatedAdminRelatoriosRoute
+  AuthenticatedAdminTrialsRoute: typeof AuthenticatedAdminTrialsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
@@ -933,6 +974,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPagamentosRoute: AuthenticatedAdminPagamentosRoute,
   AuthenticatedAdminPlanosRoute: AuthenticatedAdminPlanosRoute,
   AuthenticatedAdminRelatoriosRoute: AuthenticatedAdminRelatoriosRoute,
+  AuthenticatedAdminTrialsRoute: AuthenticatedAdminTrialsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
@@ -1030,6 +1072,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntregasZappfyStoreSlugRoute: EntregasZappfyStoreSlugRouteWithChildren,
   LojaSlugRoute: LojaSlugRoute,
   RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
+  TrialCodeRoute: TrialCodeRoute,
   EntregasZappfyIndexRoute: EntregasZappfyIndexRoute,
   ApiPublicSubmitOrderRoute: ApiPublicSubmitOrderRoute,
 }
