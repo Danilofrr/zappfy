@@ -203,10 +203,45 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   const urls = tracking ? trackingUrls(origin, tracking.tracking_code, tracking.courier_token) : null;
   const orderNumber = orderShortNumber(orderId);
 
-  function copy(text: string, label: string) {
-    navigator.clipboard?.writeText(text);
-    toast.success(`${label} copiado!`);
+  async function copy(text: string, label: string) {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      toast.success(`${label} copiado!`);
+    } catch {
+      toast.error("Não foi possível copiar. Copie manualmente.");
+    }
   }
+
+  // Always resolve the freshest ACTIVE customer URL from the DB before sharing,
+  // so Copiar, Visualizar e WhatsApp usam exatamente o mesmo link válido.
+  async function resolveCustomerUrl(): Promise<string | null> {
+    const fresh = await ensureTracking();
+    if (!fresh) { toast.error("Não foi possível gerar o link"); return null; }
+    if (fresh.tracking_code !== tracking?.tracking_code) setTracking(fresh);
+    return `${origin}/rastreio/${fresh.tracking_code}`;
+  }
+
+  async function copyCustomerLink() {
+    const url = await resolveCustomerUrl();
+    if (url) await copy(url, "Link do cliente");
+  }
+
+  async function viewCustomerLink() {
+    const url = await resolveCustomerUrl();
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  }
+
 
   function sendCourier() {
     if (!tracking || !urls) return;
