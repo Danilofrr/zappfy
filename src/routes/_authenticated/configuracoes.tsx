@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, DEFAULT_DELIVERY_TEMPLATE, DEFAULT_MOTOBOY_TEMPLATE } from "@/lib/store";
+import { DEFAULT_CUSTOMER_TRACKING_TEMPLATE, buildCustomerTrackingMessage } from "@/lib/tracking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -260,8 +261,45 @@ function Page() {
               sent={motoboyDiagnostic}
             />
           </Field>
+
+
+          <div className="h-px bg-border my-2" />
+
+          <Field label="Mensagem de acompanhamento do pedido (enviada no botão “Avisar cliente”)">
+            <Textarea
+              rows={9}
+              value={f.customerTrackingMessageTemplate}
+              onChange={(e) => setF({ ...f, customerTrackingMessageTemplate: e.target.value })}
+              placeholder={DEFAULT_CUSTOMER_TRACKING_TEMPLATE}
+            />
+            <div className="flex items-center justify-between mt-1 gap-2 flex-wrap">
+              <p className="text-[11px] text-muted-foreground">
+                Variáveis: <code>{"{customer_name}"}</code>, <code>{"{order_number}"}</code>, <code>{"{tracking_link}"}</code>, <code>{"{store_name}"}</code>, <code>{"{product_name}"}</code>, <code>{"{order_status}"}</code>
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setF({ ...f, customerTrackingMessageTemplate: DEFAULT_CUSTOMER_TRACKING_TEMPLATE })}
+              >
+                <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restaurar padrão
+              </Button>
+            </div>
+            <MessageDiagnostic
+              saved={state.settings.customerTrackingMessageTemplate || ""}
+              sent={buildCustomerTrackingMessage(f.customerTrackingMessageTemplate, {
+                customer_name: "Maria Silva",
+                order_number: "1042",
+                tracking_link: `${typeof window !== "undefined" ? window.location.origin : ""}/rastreio/abc123`,
+                store_name: f.storeName || "Sua Loja",
+                product_name: "Camiseta Premium",
+                order_status: "aguardando",
+              })}
+            />
+          </Field>
         </Card>
       </div>
+
 
       <div className="mt-6 flex justify-end">
         <Button onClick={() => { updateSettings(f); saveSenderInfo(sender); toast.success("Configurações salvas"); }}>Salvar alterações</Button>

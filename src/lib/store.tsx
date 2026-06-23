@@ -120,6 +120,7 @@ export type Settings = {
   checkoutFooterShowWhatsapp: boolean;
   motoboyMessageTemplate: string;
   deliveryMessageTemplate: string;
+  customerTrackingMessageTemplate: string;
   motoboyFee: number;
   slug: string;
 };
@@ -186,6 +187,7 @@ const emptySettings: Settings = {
   checkoutFooterShowWhatsapp: true,
   motoboyMessageTemplate: DEFAULT_MOTOBOY_TEMPLATE,
   deliveryMessageTemplate: DEFAULT_DELIVERY_TEMPLATE,
+  customerTrackingMessageTemplate: "",
   motoboyFee: 0,
   slug: "",
 };
@@ -311,6 +313,7 @@ const toSettings = (r: any): Settings => ({
   checkoutFooterShowWhatsapp: r.checkout_footer_show_whatsapp ?? true,
   motoboyMessageTemplate: r.motoboy_message_template ?? emptySettings.motoboyMessageTemplate,
   deliveryMessageTemplate: r.delivery_message_template ?? emptySettings.deliveryMessageTemplate,
+  customerTrackingMessageTemplate: r.customer_tracking_message_template ?? "",
   motoboyFee: Number(r.motoboy_fee ?? 0),
   slug: r.slug ?? "",
 });
@@ -652,6 +655,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.checkoutFooterShowWhatsapp !== undefined) patch.checkout_footer_show_whatsapp = p.checkoutFooterShowWhatsapp;
       if (p.motoboyMessageTemplate !== undefined) patch.motoboy_message_template = p.motoboyMessageTemplate;
       if (p.deliveryMessageTemplate !== undefined) patch.delivery_message_template = p.deliveryMessageTemplate;
+      if (p.customerTrackingMessageTemplate !== undefined) patch.customer_tracking_message_template = p.customerTrackingMessageTemplate;
       if (p.motoboyFee !== undefined) patch.motoboy_fee = p.motoboyFee;
       if (p.slug !== undefined) patch.slug = p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || null : null;
       const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();

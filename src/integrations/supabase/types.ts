@@ -971,6 +971,7 @@ export type Database = {
           checkout_text_color: string
           checkout_theme: string
           created_at: string
+          customer_tracking_message_template: string | null
           delivery_fee: number
           delivery_label: string
           delivery_message_template: string | null
@@ -1024,6 +1025,7 @@ export type Database = {
           checkout_text_color?: string
           checkout_theme?: string
           created_at?: string
+          customer_tracking_message_template?: string | null
           delivery_fee?: number
           delivery_label?: string
           delivery_message_template?: string | null
@@ -1077,6 +1079,7 @@ export type Database = {
           checkout_text_color?: string
           checkout_theme?: string
           created_at?: string
+          customer_tracking_message_template?: string | null
           delivery_fee?: number
           delivery_label?: string
           delivery_message_template?: string | null

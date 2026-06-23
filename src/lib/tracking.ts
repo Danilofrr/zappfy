@@ -225,8 +225,33 @@ export function buildCourierMessage(orderNumber: string, courierLink: string): s
   return `Olá, você recebeu uma nova entrega 🛵\n\nPedido: #${orderNumber}\n\nClique no link abaixo, permita a localização e toque em *Iniciar Entrega*:\n\n${courierLink}`;
 }
 
+export const DEFAULT_CUSTOMER_TRACKING_TEMPLATE = `Oba! 🎉 Seu pedido foi realizado com sucesso, {customer_name}!\n\nAcompanhe seu pedido em tempo real pelo link:\n\n{tracking_link}\n\nQualquer dúvida, é só chamar por aqui.\n\n— {store_name}`;
+
+export type CustomerTrackingVars = {
+  customer_name?: string;
+  order_number?: string;
+  tracking_link: string;
+  store_name?: string;
+  product_name?: string;
+  order_status?: string;
+};
+
+export function buildCustomerTrackingMessage(template: string, vars: CustomerTrackingVars): string {
+  const tpl = (template && template.trim()) ? template : DEFAULT_CUSTOMER_TRACKING_TEMPLATE;
+  const map: Record<string, string> = {
+    customer_name: vars.customer_name ?? "",
+    order_number: vars.order_number ?? "",
+    tracking_link: vars.tracking_link ?? "",
+    store_name: vars.store_name ?? "",
+    product_name: vars.product_name ?? "",
+    order_status: vars.order_status ?? "",
+  };
+  return Object.entries(map).reduce((t, [k, v]) => t.replaceAll(`{${k}}`, v), tpl);
+}
+
+/** @deprecated Use buildCustomerTrackingMessage */
 export function buildCustomerMessage(trackingLink: string): string {
-  return `Olá! Seu pedido saiu para entrega 🛵\n\nAcompanhe em tempo real pelo link:\n\n${trackingLink}`;
+  return buildCustomerTrackingMessage(DEFAULT_CUSTOMER_TRACKING_TEMPLATE, { tracking_link: trackingLink });
 }
 
 export function whatsappLink(phone: string, message: string): string {

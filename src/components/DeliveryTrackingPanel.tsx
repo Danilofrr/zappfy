@@ -16,7 +16,7 @@ import { Bike, Copy, MessageCircle, MapPin, RefreshCw, X, Send, Loader2, AlertTr
 import { toast } from "sonner";
 import {
   buildCourierMessage,
-  buildCustomerMessage,
+  buildCustomerTrackingMessage,
   formatRelative,
   generateToken,
   orderShortNumber,
@@ -191,7 +191,19 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     if (!urls) return;
     const phone = customerPhone || "";
     if (!phone) { toast.error("Pedido sem telefone do cliente"); return; }
-    const msg = buildCustomerMessage(urls.customer);
+    const order = state.orders.find((o) => o.id === orderId);
+    const firstItem = order?.items?.[0];
+    const productName = firstItem
+      ? (order!.items.length > 1 ? `${firstItem.name} +${order!.items.length - 1}` : firstItem.name)
+      : "";
+    const msg = buildCustomerTrackingMessage(state.settings.customerTrackingMessageTemplate, {
+      customer_name: order?.customer ?? "",
+      order_number: orderNumber,
+      tracking_link: urls.customer,
+      store_name: state.settings.storeName ?? "",
+      product_name: productName,
+      order_status: order?.status ?? tracking?.status ?? "",
+    });
     window.open(whatsappLink(phone, msg), "_blank");
   }
 
