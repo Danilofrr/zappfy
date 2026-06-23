@@ -1667,6 +1667,10 @@ export type Database = {
         }
       }
       delete_courier: { Args: { _id: string }; Returns: boolean }
+      finalize_delivery_tracking: {
+        Args: { _tracking_id: string }
+        Returns: boolean
+      }
       get_courier_view: { Args: { _token: string }; Returns: Json }
       get_store_by_slug: { Args: { _slug: string }; Returns: Json }
       get_tracking_public: { Args: { _code: string }; Returns: Json }

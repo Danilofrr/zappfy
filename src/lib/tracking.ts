@@ -22,12 +22,12 @@ export const STATUS_BADGE_DEFAULTS: Record<DeliveryStatus, StatusBadgeStyle> = {
 };
 
 export const STATUS_INFO: Record<DeliveryStatus, { label: string; message: string; emoji: string; Icon: LucideIcon; bg: string; color: string }> = {
-  aguardando_motoboy: { label: "Pedido Recebido",    message: "Recebemos seu pedido e já estamos preparando tudo.", emoji: "✅", Icon: CheckCircle2,    bg: "bg-emerald-500/15", color: "text-emerald-400" },
-  preparando:         { label: "Separando Pedido",   message: "Seu pedido está sendo separado e preparado para envio.", emoji: "📦", Icon: Package,        bg: "bg-orange-500/15",  color: "text-orange-400" },
-  saiu_para_entrega:  { label: "Saiu para Entrega",  message: "Seu pedido já saiu para entrega e está a caminho.",   emoji: "🛵", Icon: Bike,           bg: "bg-emerald-500/15", color: "text-emerald-400" },
-  chegando:           { label: "Chegando",           message: "Seu entregador está próximo do destino.",             emoji: "📍", Icon: MapPin,         bg: "bg-purple-500/15",  color: "text-purple-400" },
-  entregue:           { label: "Entregue",           message: "Pedido entregue com sucesso. Obrigado pela preferência.", emoji: "✅", Icon: CheckCircle2,   bg: "bg-emerald-500/20", color: "text-emerald-500" },
-  cancelado:          { label: "Cancelado",          message: "Este pedido foi cancelado.",                          emoji: "❌", Icon: XCircle,        bg: "bg-destructive/15", color: "text-destructive" },
+  aguardando_motoboy: { label: "Pedido Recebido",    message: "Recebemos seu pedido e já estamos preparando tudo.", emoji: "🟡", Icon: CheckCircle2,    bg: "bg-yellow-500/15",  color: "text-yellow-500" },
+  preparando:         { label: "Separando Pedido",   message: "Seu pedido está sendo separado e preparado para envio.", emoji: "🟠", Icon: Package,        bg: "bg-orange-500/15",  color: "text-orange-400" },
+  saiu_para_entrega:  { label: "Saiu para Entrega",  message: "Seu pedido já saiu para entrega e está a caminho.",   emoji: "🔵", Icon: Bike,           bg: "bg-blue-500/15",    color: "text-blue-400" },
+  chegando:           { label: "Chegando",           message: "Seu entregador está próximo do destino.",             emoji: "🟣", Icon: MapPin,         bg: "bg-purple-500/15",  color: "text-purple-400" },
+  entregue:           { label: "Entregue",           message: "Pedido entregue com sucesso. Obrigado pela preferência.", emoji: "🟢", Icon: CheckCircle2,   bg: "bg-emerald-500/20", color: "text-emerald-500" },
+  cancelado:          { label: "Cancelado",          message: "Este pedido foi cancelado.",                          emoji: "🔴", Icon: XCircle,        bg: "bg-destructive/15", color: "text-destructive" },
 };
 
 export function getBadgeStyle(status: DeliveryStatus, overrides?: Partial<Record<DeliveryStatus, Partial<StatusBadgeStyle>>>): StatusBadgeStyle {
