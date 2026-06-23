@@ -264,7 +264,12 @@ function Dashboard() {
         {/* Ads card */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-elegant">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Facebook Ads</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+                <Megaphone className="h-3.5 w-3.5 text-primary" />
+              </span>
+              Facebook Ads
+            </span>
             <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
           </div>
           <div className="text-2xl font-bold">{m(brl(adsInvested))}</div>
