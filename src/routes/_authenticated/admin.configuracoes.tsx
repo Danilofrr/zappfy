@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getSystemSettings, saveSystemSettings } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock, Trophy } from "lucide-react";
+import { LogoUploader } from "@/components/LogoUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({ component: AdminSettings });
 
@@ -119,7 +120,13 @@ function AdminSettings() {
             <CardContent className="grid md:grid-cols-2 gap-4">
               <Field label="Nome do SaaS"><Input value={s.platform?.name ?? ""} onChange={(e) => set("platform", { name: e.target.value })} /></Field>
               <Field label="URL oficial"><Input value={s.platform?.url ?? ""} onChange={(e) => set("platform", { url: e.target.value })} /></Field>
-              <Field label="Logo (URL)"><Input value={s.platform?.logoUrl ?? ""} onChange={(e) => set("platform", { logoUrl: e.target.value })} placeholder="https://..." /></Field>
+              <div className="md:col-span-2">
+                <LogoUploader
+                  value={s.platform?.logoUrl ?? null}
+                  onChange={(v) => set("platform", { logoUrl: v ?? "" })}
+                  hint="Esta logo é usada no login, dashboards (admin e cliente) e demais páginas internas do Zappfy."
+                />
+              </div>
               <Field label="Cor principal"><div className="flex gap-2"><Input type="color" className="w-16 h-10 p-1" value={s.platform?.primaryColor ?? "#22c55e"} onChange={(e) => set("platform", { primaryColor: e.target.value })} /><Input value={s.platform?.primaryColor ?? ""} onChange={(e) => set("platform", { primaryColor: e.target.value })} /></div></Field>
               <Field label="E-mail de suporte"><Input type="email" value={s.platform?.supportEmail ?? ""} onChange={(e) => set("platform", { supportEmail: e.target.value })} /></Field>
               <Field label="WhatsApp de suporte"><Input value={s.platform?.supportWhats ?? ""} onChange={(e) => set("platform", { supportWhats: e.target.value })} placeholder="+55 11 ..." /></Field>
@@ -216,7 +223,14 @@ function AdminSettings() {
               </Field>
               <Field label="Cor principal"><div className="flex gap-2"><Input type="color" className="w-16 h-10 p-1" value={s.appearance?.primaryColor ?? "#22c55e"} onChange={(e) => set("appearance", { primaryColor: e.target.value })} /><Input value={s.appearance?.primaryColor ?? ""} onChange={(e) => set("appearance", { primaryColor: e.target.value })} /></div></Field>
               <Field label="Nome exibido no painel"><Input value={s.appearance?.brandName ?? ""} onChange={(e) => set("appearance", { brandName: e.target.value })} /></Field>
-              <Field label="Logo do menu lateral (URL)"><Input value={s.appearance?.sidebarLogo ?? ""} onChange={(e) => set("appearance", { sidebarLogo: e.target.value })} /></Field>
+              <div className="md:col-span-2">
+                <LogoUploader
+                  label="Logo do menu lateral (opcional)"
+                  value={s.appearance?.sidebarLogo ?? null}
+                  onChange={(v) => set("appearance", { sidebarLogo: v ?? "" })}
+                  hint="Se vazio, usa a logo principal da plataforma."
+                />
+              </div>
               <Field label="Favicon — Dashboard Zappfy" className="md:col-span-2">
                 <FaviconUploader
                   value={s.appearance?.dashboardFaviconUrl ?? null}
