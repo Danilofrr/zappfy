@@ -223,24 +223,26 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     }
   }
 
-  // Always resolve the freshest ACTIVE customer URL from the DB before sharing,
-  // so Copiar, Visualizar e WhatsApp usam exatamente o mesmo link válido.
-  async function resolveCustomerUrl(): Promise<string | null> {
-    const fresh = await ensureTracking();
-    if (!fresh) { toast.error("Não foi possível gerar o link"); return null; }
-    if (fresh.tracking_code !== tracking?.tracking_code) setTracking(fresh);
-    return `${origin}/rastreio/${fresh.tracking_code}`;
+  // Single source of truth for the customer URL — exatamente o mesmo valor
+  // exibido no campo "Link público do cliente". Usado por Copiar, WhatsApp e Visualizar.
+  function getCustomerTrackingUrl(): string | null {
+    if (!tracking?.tracking_code) return null;
+    return `${origin}/rastreio/${tracking.tracking_code}`;
   }
 
   async function copyCustomerLink() {
-    const url = await resolveCustomerUrl();
-    if (url) await copy(url, "Link do cliente");
+    const url = getCustomerTrackingUrl();
+    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
+    await copy(url, "Link do cliente");
   }
 
-  async function viewCustomerLink() {
-    const url = await resolveCustomerUrl();
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  function viewCustomerLink() {
+    const url = getCustomerTrackingUrl();
+    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
+    window.open(url, "_blank", "noopener,noreferrer");
   }
+
+
 
 
   function sendCourier() {
@@ -254,8 +256,9 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   async function sendCustomer() {
     const phone = customerPhone || "";
     if (!phone) { toast.error("Pedido sem telefone do cliente"); return; }
-    const url = await resolveCustomerUrl();
-    if (!url) return;
+    const url = getCustomerTrackingUrl();
+    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
+
     const order = state.orders.find((o) => o.id === orderId);
     const firstItem = order?.items?.[0];
     const productName = firstItem
