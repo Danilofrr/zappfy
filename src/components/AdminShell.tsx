@@ -14,6 +14,7 @@ import {
   X,
   MapPin,
   Bike,
+  Gift,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const adminNav = [
   { to: "/admin/pagamentos", label: "Pagamentos", icon: CreditCard },
   { to: "/admin/planos", label: "Planos", icon: Package },
   { to: "/admin/cupons", label: "Cupons", icon: Ticket },
+  { to: "/admin/trials", label: "Trials", icon: Gift },
   { to: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/admin/configuracoes", label: "Configurações", icon: Cog },
   { to: "/personalizar-rastreamento", label: "Rastreamento", icon: MapPin },

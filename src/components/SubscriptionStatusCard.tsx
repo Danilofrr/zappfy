@@ -48,6 +48,15 @@ export function SubscriptionStatusCard({
   // Days to show
   const daysLeft = isTrial ? trialDays : isActive ? expDays : null;
   const urgent = daysLeft !== null && daysLeft <= 1 && !isActive;
+  // Trial color tier: 7-4 green, 3-2 amber, 1 red
+  const trialTier: "green" | "amber" | "red" | null =
+    isTrial && daysLeft !== null && daysLeft > 0
+      ? daysLeft >= 4
+        ? "green"
+        : daysLeft >= 2
+        ? "amber"
+        : "red"
+      : null;
 
   // ===== Banner variant (dashboard top) =====
   if (variant === "banner") {
@@ -127,15 +136,23 @@ export function SubscriptionStatusCard({
   }
 
   // ===== Sidebar variant (compact) =====
+  const tierClass = (g: string, a: string, r: string, fallback: string) =>
+    trialTier === "green" ? g : trialTier === "amber" ? a : trialTier === "red" ? r : fallback;
+
   return (
     <div
       className={cn(
         "rounded-lg border px-2.5 py-2",
         isActive
           ? "border-primary/30 bg-primary/5"
-          : urgent || isExpired
-          ? "border-orange-500/40 bg-orange-500/5"
-          : "border-amber-500/30 bg-amber-500/5",
+          : isExpired
+          ? "border-red-500/40 bg-red-500/5"
+          : tierClass(
+              "border-green-500/30 bg-green-500/5",
+              "border-amber-500/30 bg-amber-500/5",
+              "border-red-500/40 bg-red-500/5",
+              "border-amber-500/30 bg-amber-500/5",
+            ),
       )}
     >
       <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider">
@@ -146,13 +163,27 @@ export function SubscriptionStatusCard({
           </>
         ) : isExpired ? (
           <>
-            <AlertTriangle className="h-3 w-3 text-orange-500" />
-            <span className="text-orange-500">Trial expirado</span>
+            <AlertTriangle className="h-3 w-3 text-red-500" />
+            <span className="text-red-500">Trial expirado</span>
           </>
         ) : (
           <>
-            <Clock className={cn("h-3 w-3", urgent ? "text-orange-500" : "text-amber-500")} />
-            <span className={cn(urgent ? "text-orange-500" : "text-amber-500")}>Teste grátis</span>
+            <Clock
+              className={cn(
+                "h-3 w-3",
+                tierClass("text-green-500", "text-amber-500", "text-red-500", "text-amber-500"),
+              )}
+            />
+            <span
+              className={tierClass(
+                "text-green-500",
+                "text-amber-500",
+                "text-red-500",
+                "text-amber-500",
+              )}
+            >
+              Teste grátis
+            </span>
           </>
         )}
       </div>
@@ -168,7 +199,12 @@ export function SubscriptionStatusCard({
         <>
           {daysLeft !== null && daysLeft > 0 && !isExpired && (
             <div className="mt-0.5 text-[11px] text-muted-foreground">
-              <span className={cn("font-bold", urgent ? "text-orange-500" : "text-foreground")}>
+              <span
+                className={cn(
+                  "font-bold",
+                  tierClass("text-green-500", "text-amber-500", "text-red-500", "text-foreground"),
+                )}
+              >
                 {daysLeft}
               </span>{" "}
               {daysLeft === 1 ? "dia restante" : "dias restantes"}
@@ -183,8 +219,10 @@ export function SubscriptionStatusCard({
             to="/minha-assinatura"
             className={cn(
               "mt-1.5 inline-flex w-full items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]",
-              urgent || isExpired
-                ? "bg-orange-500 text-white hover:bg-orange-600"
+              isExpired || trialTier === "red"
+                ? "bg-red-500 text-white hover:bg-red-600"
+                : trialTier === "amber"
+                ? "bg-amber-500 text-black hover:bg-amber-400"
                 : "bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:from-amber-300 hover:to-yellow-400",
             )}
           >

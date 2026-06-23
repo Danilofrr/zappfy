@@ -115,6 +115,7 @@ function ClientsPage() {
                 <th className="text-left p-3">Loja</th>
                 <th className="text-left p-3">Plano</th>
                 <th className="text-left p-3">Status</th>
+                <th className="text-left p-3">Dias restantes</th>
                 <th className="text-left p-3">Vence em</th>
                 <th className="text-left p-3">Último acesso</th>
                 <th className="text-right p-3">Ações</th>
@@ -151,6 +152,15 @@ function ClientsPage() {
                         {c.subscription.status}
                       </Badge>
                     ) : "—"}
+                  </td>
+                  <td className="p-3 text-xs">
+                    {(() => {
+                      if (!c.subscription?.expiresAt) return <span className="text-muted-foreground">—</span>;
+                      const days = Math.ceil((new Date(c.subscription.expiresAt).getTime() - Date.now()) / 86400000);
+                      if (days <= 0) return <span className="text-red-500 font-medium">Expirado</span>;
+                      const color = days >= 4 ? "text-green-500" : days >= 2 ? "text-amber-500" : "text-red-500";
+                      return <span className={`${color} font-medium`}>{days} {days === 1 ? "dia" : "dias"}</span>;
+                    })()}
                   </td>
                   <td className="p-3 text-xs">{c.subscription?.expiresAt ? new Date(c.subscription.expiresAt).toLocaleDateString("pt-BR") : "—"}</td>
                   <td className="p-3 text-xs">{c.lastSignInAt ? new Date(c.lastSignInAt).toLocaleString("pt-BR") : "Nunca"}</td>
@@ -193,7 +203,7 @@ function ClientsPage() {
                 </tr>
               ))}
               {clients.length === 0 && (
-                <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum cliente cadastrado ainda</td></tr>
+                <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum cliente cadastrado ainda</td></tr>
               )}
             </tbody>
           </table>

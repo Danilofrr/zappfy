@@ -1150,6 +1150,7 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
+          invite_code: string | null
           last_payment_at: string | null
           notes: string | null
           plan_id: string | null
@@ -1164,6 +1165,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          invite_code?: string | null
           last_payment_at?: string | null
           notes?: string | null
           plan_id?: string | null
@@ -1178,6 +1180,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          invite_code?: string | null
           last_payment_at?: string | null
           notes?: string | null
           plan_id?: string | null
@@ -1227,6 +1230,51 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      trial_invites: {
+        Row: {
+          code: string
+          conversions_count: number
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          label: string | null
+          revoked_at: string | null
+          signups_count: number
+          status: string
+          trial_days: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          conversions_count?: number
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          revoked_at?: string | null
+          signups_count?: number
+          status?: string
+          trial_days?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          conversions_count?: number
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          revoked_at?: string | null
+          signups_count?: number
+          status?: string
+          trial_days?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1571,6 +1619,7 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      admin_trial_stats: { Args: never; Returns: Json }
       apply_tracking_default_for_user: {
         Args: { _user_id: string }
         Returns: undefined
@@ -1618,6 +1667,7 @@ export type Database = {
       get_courier_view: { Args: { _token: string }; Returns: Json }
       get_store_by_slug: { Args: { _slug: string }; Returns: Json }
       get_tracking_public: { Args: { _code: string }; Returns: Json }
+      get_trial_invite_info: { Args: { _code: string }; Returns: Json }
       get_zappfy_central_settings: {
         Args: never
         Returns: {
@@ -1678,6 +1728,7 @@ export type Database = {
         Returns: Json
       }
       list_my_active_deliveries: { Args: { _session: string }; Returns: Json }
+      redeem_trial_invite: { Args: { _code: string }; Returns: Json }
       reset_courier_password: {
         Args: { _id: string; _password_hash: string }
         Returns: boolean
