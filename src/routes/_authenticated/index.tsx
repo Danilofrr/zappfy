@@ -287,9 +287,14 @@ function Dashboard() {
       {/* Chart */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="text-sm font-semibold">Faturamento x Lucro</div>
-            <div className="text-xs text-muted-foreground">Últimos 6 meses</div>
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <LineChartIcon className="h-4 w-4 text-primary" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold">Faturamento x Lucro</div>
+              <div className="text-xs text-muted-foreground">Últimos 6 meses</div>
+            </div>
           </div>
           <div className="flex items-center gap-4 text-xs">
             <span className="flex items-center gap-2"><span className="h-2 w-3 rounded-sm bg-foreground"/>Faturamento</span>
