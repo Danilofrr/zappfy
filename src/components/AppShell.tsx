@@ -115,24 +115,13 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                 onClick={() => setOpen(false)}
                 className="flex items-center min-w-0 w-full h-full text-2xl font-bold justify-start"
               >
-                {/* Collapsed (desktop only): bubble icon */}
-                <img
-                  src="/logo-bubble.png"
-                  alt="Zappfy"
-                  className={cn(
-                    "hidden h-12 w-auto max-h-none max-w-none shrink-0 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.55)]",
-                    !sidebarHovered && "lg:block",
-                  )}
-                />
-                {/* Expanded / mobile: full logo */}
+                {/* Full logo always */}
                 <img
                   src="/logo-full.png"
                   alt="Zappfy"
-                  className={cn(
-                    "block h-12 w-auto max-h-none max-w-none object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]",
-                    sidebarHovered ? "lg:block" : "lg:hidden",
-                  )}
+                  className="block h-12 w-auto max-h-none max-w-none object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.45)]"
                 />
+
               </Link>
               <button
                 onClick={() => setOpen(false)}
@@ -146,10 +135,10 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-4">
               {navGroups.map((group) => (
                 <div key={group.label} className="space-y-1">
-                  <div className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45 opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                  <div className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45 whitespace-nowrap">
                     {group.label}
                   </div>
-                  <div className="hidden lg:block lg:group-hover/sidebar:hidden mx-2 my-1 h-px bg-sidebar-border/60" />
+
                   {group.items.map((item) => {
                     const Icon = item.icon;
                     const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
