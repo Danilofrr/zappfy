@@ -256,8 +256,9 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   async function sendCustomer() {
     const phone = customerPhone || "";
     if (!phone) { toast.error("Pedido sem telefone do cliente"); return; }
-    const url = await resolveCustomerUrl();
-    if (!url) return;
+    const url = getCustomerTrackingUrl();
+    if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
+
     const order = state.orders.find((o) => o.id === orderId);
     const firstItem = order?.items?.[0];
     const productName = firstItem
