@@ -156,9 +156,10 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                         )}
                       >
                         <Icon className={cn("h-5 w-5 shrink-0", active && "text-primary-foreground drop-shadow-[0_0_6px_rgba(34,197,94,0.9)]")} />
-                        <span className="truncate opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                        <span className="truncate whitespace-nowrap">
                           {item.label}
                         </span>
+
                       </Link>
                     );
                   })}
@@ -166,9 +167,9 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
               ))}
             </nav>
 
-            <div className="border-t border-sidebar-border p-3 space-y-3">
-              <SubscriptionStatusCard variant="sidebar" collapsedHidden />
-              <div className="rounded-xl bg-card p-3 border border-border opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 transition-opacity duration-200">
+            <div className="border-t border-sidebar-border p-3 space-y-3 mt-6 lg:mt-8">
+              <SubscriptionStatusCard variant="sidebar" />
+              <div className="rounded-xl bg-card p-3 border border-border">
                 <div className="text-xs text-muted-foreground">Loja</div>
                 <div className="font-semibold truncate">{state.settings.storeName}</div>
                 {user?.email && <div className="text-[11px] text-muted-foreground truncate mt-1">{user.email}</div>}
@@ -179,9 +180,10 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                 className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
-                <span className="opacity-100 lg:opacity-0 lg:group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">Sair</span>
+                <span className="whitespace-nowrap">Sair</span>
               </button>
             </div>
+
           </div>
         </aside>
 
