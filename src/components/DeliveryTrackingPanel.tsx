@@ -353,17 +353,16 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
                 <code className="flex-1 truncate rounded-md bg-background border border-border px-2 py-1 text-[11px]">{urls.customer}</code>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => copy(urls.customer, "Link do cliente")}>
+                <Button size="sm" variant="outline" onClick={copyCustomerLink}>
                   <Copy className="h-3.5 w-3.5 mr-1" /> Copiar link
                 </Button>
                 <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={sendCustomer}>
                   <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
                 </Button>
-                <Button size="sm" variant="outline" asChild>
-                  <a href={urls.customer} target="_blank" rel="noreferrer">
-                    <Eye className="h-3.5 w-3.5 mr-1" /> Visualizar
-                  </a>
+                <Button size="sm" variant="outline" onClick={viewCustomerLink}>
+                  <Eye className="h-3.5 w-3.5 mr-1" /> Visualizar
                 </Button>
+
               </div>
             </div>
           )}
