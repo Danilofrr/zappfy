@@ -251,10 +251,11 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     window.open(whatsappLink(phone, msg), "_blank");
   }
 
-  function sendCustomer() {
-    if (!urls) return;
+  async function sendCustomer() {
     const phone = customerPhone || "";
     if (!phone) { toast.error("Pedido sem telefone do cliente"); return; }
+    const url = await resolveCustomerUrl();
+    if (!url) return;
     const order = state.orders.find((o) => o.id === orderId);
     const firstItem = order?.items?.[0];
     const productName = firstItem
@@ -263,13 +264,14 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     const msg = buildCustomerTrackingMessage(state.settings.customerTrackingMessageTemplate, {
       customer_name: order?.customer ?? "",
       order_number: orderNumber,
-      tracking_link: urls.customer,
+      tracking_link: url,
       store_name: state.settings.storeName ?? "",
       product_name: productName,
       order_status: order?.status ?? tracking?.status ?? "",
     });
     window.open(whatsappLink(phone, msg), "_blank");
   }
+
 
   if (loading || !tracking) {
     return (
