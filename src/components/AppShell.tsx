@@ -70,7 +70,7 @@ const navGroups: { label: string; items: { to: string; label: string; icon: any 
 export function AppShell({ children, title, subtitle, actions }: { children: ReactNode; title: string; subtitle?: string; actions?: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
-  const [sidebarHovered, setSidebarHovered] = useState(false);
+  
   const { state, signOut, user } = useStore();
 
   const primaryMobile = [
@@ -102,12 +102,9 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
       <div className="flex">
         {/* Sidebar — desktop collapses to icons; on mobile acts as drawer opened by bottom "Menu" button */}
         <aside
-          onMouseEnter={() => setSidebarHovered(true)}
-          onMouseLeave={() => setSidebarHovered(false)}
           className={cn(
-            "group/sidebar fixed lg:sticky top-0 left-0 z-50 h-screen shrink-0 border-r border-sidebar-border bg-sidebar transition-[transform,width] duration-300 ease-out",
+            "fixed lg:sticky top-0 left-0 z-50 h-screen shrink-0 border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-out",
             "w-[260px]",
-            sidebarHovered ? "lg:w-[260px]" : "lg:w-[5.5rem]",
             open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
         >
