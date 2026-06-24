@@ -338,6 +338,7 @@ export const savePlan = createServerFn({ method: "POST" })
         name: z.string().min(1),
         description: z.string().default(""),
         price_monthly: z.number().min(0),
+        price_quarterly: z.number().min(0).optional().default(0),
         price_yearly: z.number().min(0),
         features: z.array(z.string()).default([]),
         is_active: z.boolean().default(true),

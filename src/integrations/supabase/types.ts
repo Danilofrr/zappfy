@@ -721,6 +721,7 @@ export type Database = {
           limits: Json
           name: string
           price_monthly: number
+          price_quarterly: number
           price_yearly: number
           sort_order: number
           updated_at: string
@@ -740,6 +741,7 @@ export type Database = {
           limits?: Json
           name: string
           price_monthly?: number
+          price_quarterly?: number
           price_yearly?: number
           sort_order?: number
           updated_at?: string
@@ -759,6 +761,7 @@ export type Database = {
           limits?: Json
           name?: string
           price_monthly?: number
+          price_quarterly?: number
           price_yearly?: number
           sort_order?: number
           updated_at?: string

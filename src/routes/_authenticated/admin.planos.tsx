@@ -32,7 +32,7 @@ function PlansPage() {
 
   return (
     <AdminShell title="Planos" subtitle="Gerencie os planos disponíveis"
-      actions={<Button onClick={() => setEditing({ name: "", description: "", price_monthly: 0, price_yearly: 0, features: "", is_active: true, sort_order: 0 })}><Plus className="h-4 w-4 mr-1" />Novo plano</Button>}>
+      actions={<Button onClick={() => setEditing({ name: "", description: "", price_monthly: 0, price_quarterly: 0, price_yearly: 0, features: "", is_active: true, sort_order: 0 })}><Plus className="h-4 w-4 mr-1" />Novo plano</Button>}>
       {isLoading ? <div className="text-muted-foreground">Carregando...</div> : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {plans.map((p: any) => (
@@ -45,6 +45,7 @@ function PlansPage() {
                 {p.is_active ? <span className="text-xs px-2 py-1 bg-green-500/15 text-green-500 rounded">Ativo</span> : <span className="text-xs px-2 py-1 bg-secondary rounded">Inativo</span>}
               </div>
               <div className="mt-3 text-2xl font-bold text-primary">{brl(Number(p.price_monthly))}<span className="text-xs text-muted-foreground">/mês</span></div>
+              <div className="text-xs text-muted-foreground">{brl(Number(p.price_quarterly || 0))}/trimestre</div>
               <div className="text-xs text-muted-foreground">{brl(Number(p.price_yearly))}/ano</div>
               <ul className="mt-3 space-y-1 text-sm">
                 {(p.features || []).map((f: string, i: number) => <li key={i}>• {f}</li>)}
@@ -67,8 +68,9 @@ function PlansPage() {
             <div className="grid gap-3">
               <div><Label>Nome</Label><Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
               <div><Label>Descrição</Label><Input value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div><Label>Preço mensal (R$)</Label><Input type="number" step="0.01" value={editing.price_monthly} onChange={(e) => setEditing({ ...editing, price_monthly: Number(e.target.value) })} /></div>
+                <div><Label>Preço trimestral (R$)</Label><Input type="number" step="0.01" value={editing.price_quarterly ?? 0} onChange={(e) => setEditing({ ...editing, price_quarterly: Number(e.target.value) })} /></div>
                 <div><Label>Preço anual (R$)</Label><Input type="number" step="0.01" value={editing.price_yearly} onChange={(e) => setEditing({ ...editing, price_yearly: Number(e.target.value) })} /></div>
               </div>
               <div><Label>Recursos (um por linha)</Label><Textarea value={editing.features} onChange={(e) => setEditing({ ...editing, features: e.target.value })} /></div>
