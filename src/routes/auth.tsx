@@ -13,6 +13,7 @@ import { getPublicSupport } from "@/lib/admin.functions";
 import { whatsappLink } from "@/lib/tracking";
 import { getEntregasStandaloneRedirectSlug } from "@/lib/entregas-pwa";
 import { usePlatformLogo } from "@/lib/usePlatformLogo";
+import { SupportWhatsBubble } from "@/components/SupportWhatsBubble";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
