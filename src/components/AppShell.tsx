@@ -250,6 +250,8 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           </button>
         </div>
       </nav>
+
+      <SupportWhatsBubble mode="dashboard" />
     </div>
   );
 }
