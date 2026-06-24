@@ -728,18 +728,18 @@ function EditOrderDialog({
             {items.map((it, idx) => (
               <div key={idx} className="grid grid-cols-12 gap-2 items-end">
                 <div className="col-span-5">
-                  <Field label={idx === 0 ? "Produto" : ""}>
+                  <Field label={idx === 0 ? "Produto" : ""} icon={idx === 0 ? ShoppingCart : undefined}>
                     <Input value={it.name ?? ""} onChange={(e) => updateItem(idx, { name: e.target.value })} />
                   </Field>
                 </div>
                 <div className="col-span-2">
-                  <Field label={idx === 0 ? "Qtd" : ""}>
+                  <Field label={idx === 0 ? "Qtd" : ""} icon={idx === 0 ? Hash : undefined}>
                     <Input type="number" min={1} value={it.qty}
                       onChange={(e) => updateItem(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
                   </Field>
                 </div>
                 <div className="col-span-4">
-                  <Field label={idx === 0 ? "Valor unit. (R$)" : ""}>
+                  <Field label={idx === 0 ? "Valor unit. (R$)" : ""} icon={idx === 0 ? DollarSign : undefined}>
                     <Input type="number" step="0.01" min={0} value={it.price}
                       onChange={(e) => updateItem(idx, { price: Math.max(0, Number(e.target.value) || 0) })} />
                   </Field>
