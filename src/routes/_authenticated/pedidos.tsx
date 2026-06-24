@@ -26,7 +26,7 @@ import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt,
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { dateInputToLocalISO, dateOnlyToLocalDate } from "@/lib/format";
+import { dateInputToLocalISO } from "@/lib/format";
 
 import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
