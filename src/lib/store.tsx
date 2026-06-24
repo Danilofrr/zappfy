@@ -443,6 +443,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         loadedFor.current = null;
         setState(emptyState);
       }
+      // Audit log — apenas transições de identidade (ignora TOKEN_REFRESHED / INITIAL_SESSION)
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED" || event === "PASSWORD_RECOVERY") {
+        const evMap = {
+          SIGNED_IN: "signed_in",
+          SIGNED_OUT: "signed_out",
+          USER_UPDATED: "user_updated",
+          PASSWORD_RECOVERY: "password_recovery",
+        } as const;
+        import("@/lib/access-log.functions").then(({ logAuthEvent }) => {
+          logAuthEvent({
+            data: {
+              event: evMap[event as keyof typeof evMap],
+              email: u?.email ?? undefined,
+              user_id: u?.id ?? undefined,
+            },
+          }).catch(() => {});
+        }).catch(() => {});
+      }
     });
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, [loadAll]);
