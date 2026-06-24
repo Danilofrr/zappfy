@@ -780,7 +780,7 @@ function EditOrderDialog({
             )}
           </div>
 
-          <Field label="📅 Data do pedido">
+          <Field label="Data do pedido" icon={CalendarIcon} iconTone="primary">
             <Popover>
               <PopoverTrigger asChild>
                 <Button
