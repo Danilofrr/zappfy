@@ -22,7 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { dateInputToLocalISO } from "@/lib/format";
 
 import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
@@ -626,7 +630,7 @@ function PedidosPage() {
         onSave={async (patch) => {
           if (!editing) return;
           await updateOrder(editing.id, patch);
-          toast.success("Pedido atualizado!");
+          toast.success(patch.date ? "Data do pedido atualizada com sucesso." : "Pedido atualizado!");
           setEditing(null);
         }}
       />
@@ -654,6 +658,7 @@ function EditOrderDialog({
   const [items, setItems] = useState<any[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [totalEdited, setTotalEdited] = useState(false);
+  const [orderDate, setOrderDate] = useState<Date | undefined>(undefined);
 
   useMemo(() => {
     if (order) {
@@ -665,6 +670,7 @@ function EditOrderDialog({
       setItems(order.items.map((it) => ({ ...it })));
       setTotal(order.total);
       setTotalEdited(false);
+      setOrderDate(order.date ? new Date(order.date) : new Date());
     }
   }, [order]);
 
@@ -771,6 +777,30 @@ function EditOrderDialog({
             )}
           </div>
 
+          <Field label="📅 Data do pedido">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn("w-full justify-start text-left font-normal", !orderDate && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {orderDate ? orderDate.toLocaleDateString("pt-BR") : "Selecione uma data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={orderDate}
+                  onSelect={(d) => d && setOrderDate(d)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </Field>
+
           <div className="grid grid-cols-2 gap-3">
             <Field label="Pagamento">
               <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
@@ -809,7 +839,16 @@ function EditOrderDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => onSave({ ...form, items, total })}>Salvar alterações</Button>
+          <Button onClick={() => {
+            const patch: any = { ...form, items, total };
+            if (orderDate) {
+              const y = orderDate.getFullYear();
+              const m = String(orderDate.getMonth() + 1).padStart(2, "0");
+              const d = String(orderDate.getDate()).padStart(2, "0");
+              patch.date = dateInputToLocalISO(`${y}-${m}-${d}`);
+            }
+            onSave(patch);
+          }}>Salvar alterações</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
