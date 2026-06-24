@@ -20,7 +20,9 @@ import {
   LineChart as LineChartIcon,
   Megaphone,
   BarChart3,
+  Trophy,
 } from "lucide-react";
+
 import {
   ResponsiveContainer,
   LineChart,
