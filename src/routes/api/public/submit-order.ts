@@ -113,16 +113,16 @@ export const Route = createFileRoute("/api/public/submit-order")({
           _notes: order.notes ?? "",
         };
 
-        console.log("[submit-order] chamando submit_public_order:", rpcArgs);
+        console.log("[submit-order] rpc call", { slug, productId: item.productId, qty: item.qty });
 
         const { data, error } = await (supabase as any).rpc("submit_public_order", rpcArgs);
 
         if (error) {
-          console.error("[submit-order] supabase rpc error", error);
+          console.error("[submit-order] supabase rpc error", { code: (error as any)?.code, message: error.message });
           return jsonError(400, error.message || "Falha ao registrar pedido", error);
         }
 
-        console.log("[submit-order] pedido criado:", data);
+        console.log("[submit-order] pedido criado", { orderId: data });
 
         // Fire-and-forget push notification to the store owner.
         try {
