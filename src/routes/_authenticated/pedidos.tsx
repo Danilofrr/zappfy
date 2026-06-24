@@ -770,6 +770,11 @@ function EditOrderDialog({
               <Button type="button" onClick={addProductToOrder} disabled={!addProductId}>
                 <Plus className="h-4 w-4" /> Adicionar
               </Button>
+            </div>
+
+            {shipping > 0 && (
+              <div className="text-xs text-muted-foreground">Entrega: R$ {shipping.toFixed(2)}</div>
+            )}
           </div>
 
           <Field label="📅 Data do pedido">
@@ -795,11 +800,6 @@ function EditOrderDialog({
               </PopoverContent>
             </Popover>
           </Field>
-
-            {shipping > 0 && (
-              <div className="text-xs text-muted-foreground">Entrega: R$ {shipping.toFixed(2)}</div>
-            )}
-          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Pagamento">
