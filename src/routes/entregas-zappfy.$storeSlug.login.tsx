@@ -8,7 +8,7 @@ import { Bike, Loader2, Lock, Phone, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { getCourierSession, setCourierSession, clearCourierSession } from "@/lib/courier-session";
 import { rememberEntregasPwa } from "@/lib/entregas-pwa";
-import bcrypt from "bcryptjs";
+
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug/login")({
   ssr: false,
