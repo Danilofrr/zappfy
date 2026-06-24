@@ -75,24 +75,19 @@ function LoginPage() {
     if (!form.phone.trim() || !form.password) { toast.error("Informe WhatsApp e senha"); return; }
     setLoading(true);
     try {
-      const { data: lookup, error: lookupError } = await (supabase as any).rpc("courier_lookup_for_login", {
-        _slug: storeSlug, _phone: form.phone.trim(),
+      const { data: result, error: loginError } = await (supabase as any).rpc("courier_login", {
+        _slug: storeSlug,
+        _phone: form.phone.trim(),
+        _password: form.password,
       });
-      if (lookupError) throw lookupError;
-      if (!lookup) { toast.error("WhatsApp ou senha inválidos"); return; }
-      const ok = await bcrypt.compare(form.password, (lookup as any).password_hash || "");
-      if (!ok) { toast.error("WhatsApp ou senha inválidos"); return; }
-      if (!(lookup as any).active) { toast.error("Acesso desativado. Fale com a loja."); return; }
-      const token =
-        (typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : Math.random().toString(36).slice(2)) + "-" + Date.now().toString(36);
-      const { error: sessionError } = await (supabase as any).rpc("courier_create_session", {
-        _courier_id: (lookup as any).courier_id, _token: token,
-      });
-      if (sessionError) throw sessionError;
-      setCourierSession(storeSlug, token);
-      toast.success(`Olá, ${(lookup as any).name}!`);
+      if (loginError) {
+        const msg = loginError.message || "WhatsApp ou senha inválidos";
+        toast.error(msg.includes("desativado") ? msg : "WhatsApp ou senha inválidos");
+        return;
+      }
+      if (!result?.session_token) { toast.error("WhatsApp ou senha inválidos"); return; }
+      setCourierSession(storeSlug, result.session_token);
+      toast.success(`Olá, ${result.name}!`);
       navigate({ to: "/entregas-zappfy/$storeSlug", params: { storeSlug } });
     } catch (e: any) {
       toast.error(e?.message || "Falha no login");
