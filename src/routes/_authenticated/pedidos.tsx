@@ -839,7 +839,16 @@ function EditOrderDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => onSave({ ...form, items, total })}>Salvar alterações</Button>
+          <Button onClick={() => {
+            const patch: any = { ...form, items, total };
+            if (orderDate) {
+              const y = orderDate.getFullYear();
+              const m = String(orderDate.getMonth() + 1).padStart(2, "0");
+              const d = String(orderDate.getDate()).padStart(2, "0");
+              patch.date = dateInputToLocalISO(`${y}-${m}-${d}`);
+            }
+            onSave(patch);
+          }}>Salvar alterações</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
