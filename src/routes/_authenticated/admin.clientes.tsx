@@ -24,6 +24,8 @@ import {
   sendClientPasswordReset,
 } from "@/lib/admin.functions";
 import { Plus, Copy, Trash2, Ban, Play, RotateCw, CalendarPlus, Link as LinkIcon, KeyRound, Mail, RefreshCw } from "lucide-react";
+import { buildPublicUrl } from "@/lib/public-url";
+import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
 
 export const Route = createFileRoute("/_authenticated/admin/clientes")({
   component: ClientsPage,
@@ -39,6 +41,7 @@ const statusColors: Record<string, string> = {
 
 function ClientsPage() {
   const qc = useQueryClient();
+  const publicBaseUrl = usePublicBaseUrl();
   const listFn = useServerFn(listClients);
   const plansFn = useServerFn(listPlans);
   const createFn = useServerFn(createClient);
@@ -84,7 +87,7 @@ function ClientsPage() {
         },
       }),
     onSuccess: (res: any) => {
-      const link = `${window.location.origin}/ativar-conta/${res.activationToken}`;
+      const link = buildPublicUrl(`/ativar-conta/${res.activationToken}`, publicBaseUrl);
       setActivationLink(link);
       setOpenCreate(false);
       setForm({ email: "", fullName: "", storeName: "", whatsapp: "", planId: "", trialDays: "7" });
@@ -197,7 +200,7 @@ function ClientsPage() {
                       <Button size="sm" variant="ghost" title="Gerar link de ativação" onClick={async () => {
                         try {
                           const r: any = await tokenFn({ data: { userId: c.id } });
-                          const link = `${window.location.origin}/ativar-conta/${r.token}`;
+                          const link = buildPublicUrl(`/ativar-conta/${r.token}`, publicBaseUrl);
                           setActivationLink(link);
                           try { await navigator.clipboard.writeText(link); toast.success("Link gerado e copiado"); }
                           catch { toast.success("Link gerado"); }
@@ -312,7 +315,7 @@ function ClientsPage() {
               onClick={async () => {
                 if (!pwdClient) return;
                 try {
-                  const r: any = await resetPwdFn({ data: { userId: pwdClient.id, redirectTo: `${window.location.origin}/reset-password` } });
+                  const r: any = await resetPwdFn({ data: { userId: pwdClient.id, redirectTo: buildPublicUrl("/reset-password", publicBaseUrl) } });
                   setResetLink(r.link);
                   toast.success("Link de redefinição gerado");
                 } catch (e: any) {

@@ -1,6 +1,7 @@
 // Helpers for the delivery tracking module
 import type { LucideIcon } from "lucide-react";
 import { Package, Bike, MapPin, CheckCircle2, XCircle } from "lucide-react";
+import { buildPublicUrl } from "@/lib/public-url";
 
 export type DeliveryStatus =
   | "preparando"
@@ -181,8 +182,8 @@ export function generateToken(prefix = ""): string {
 
 export function trackingUrls(origin: string, trackingCode: string, courierToken: string) {
   return {
-    customer: `${origin}/rastreio/${trackingCode}`,
-    courier: `${origin}/entrega/${courierToken}`,
+    customer: buildPublicUrl(`/rastreio/${trackingCode}`, origin),
+    courier: buildPublicUrl(`/entrega/${courierToken}`, origin),
   };
 }
 

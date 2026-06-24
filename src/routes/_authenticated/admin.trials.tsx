@@ -34,6 +34,8 @@ import {
   Clock,
   Percent,
 } from "lucide-react";
+import { buildPublicUrl } from "@/lib/public-url";
+import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
 
 export const Route = createFileRoute("/_authenticated/admin/trials")({
   component: TrialsPage,
@@ -41,6 +43,7 @@ export const Route = createFileRoute("/_authenticated/admin/trials")({
 
 function TrialsPage() {
   const qc = useQueryClient();
+  const publicBaseUrl = usePublicBaseUrl();
   const listFn = useServerFn(listTrialInvites);
   const statsFn = useServerFn(getTrialStats);
   const createFn = useServerFn(createTrialInvite);
@@ -75,7 +78,7 @@ function TrialsPage() {
         },
       }),
     onSuccess: (inv: any) => {
-      const link = `${window.location.origin}/trial/${inv.code}`;
+      const link = buildPublicUrl(`/trial/${inv.code}`, publicBaseUrl);
       navigator.clipboard.writeText(link).catch(() => {});
       toast.success(`Convite ${inv.code} criado — link copiado`);
       setOpenCreate(false);
@@ -86,7 +89,7 @@ function TrialsPage() {
   });
 
   const copyLink = (code: string) => {
-    const link = `${window.location.origin}/trial/${code}`;
+    const link = buildPublicUrl(`/trial/${code}`, publicBaseUrl);
     navigator.clipboard.writeText(link).then(() => toast.success("Link copiado"));
   };
 
@@ -162,7 +165,7 @@ function TrialsPage() {
                     <td className="p-3">
                       <div className="font-mono font-bold text-primary">{i.code}</div>
                       <div className="text-xs text-muted-foreground truncate max-w-[260px]">
-                        {typeof window !== "undefined" ? window.location.origin : ""}/trial/{i.code}
+                        {buildPublicUrl(`/trial/${i.code}`, publicBaseUrl)}
                       </div>
                     </td>
                     <td className="p-3 text-muted-foreground">{i.label || "—"}</td>

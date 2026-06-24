@@ -29,6 +29,8 @@ import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
 import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
 import { whatsappLink } from "@/lib/tracking";
+import { buildPublicUrl } from "@/lib/public-url";
+import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
@@ -75,6 +77,7 @@ function applyTemplate(tpl: string, vars: Record<string, string>) {
 
 function PedidosPage() {
   const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
+  const publicBaseUrl = usePublicBaseUrl();
   const [editing, setEditing] = useState<Order | null>(null);
   const [motoboyFor, setMotoboyFor] = useState<Order | null>(null);
 
@@ -432,8 +435,7 @@ function PedidosPage() {
     { key: "custom", label: "Personalizado" },
   ];
 
-  const checkoutLink =
-    typeof window !== "undefined" ? `${window.location.origin}/checkout` : "/checkout";
+  const checkoutLink = buildPublicUrl(state.settings.slug ? `/loja/${state.settings.slug}` : "/checkout", publicBaseUrl);
 
   return (
     <AppShell
