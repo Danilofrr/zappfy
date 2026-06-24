@@ -68,8 +68,9 @@ function PlansPage() {
             <div className="grid gap-3">
               <div><Label>Nome</Label><Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
               <div><Label>Descrição</Label><Input value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div><Label>Preço mensal (R$)</Label><Input type="number" step="0.01" value={editing.price_monthly} onChange={(e) => setEditing({ ...editing, price_monthly: Number(e.target.value) })} /></div>
+                <div><Label>Preço trimestral (R$)</Label><Input type="number" step="0.01" value={editing.price_quarterly ?? 0} onChange={(e) => setEditing({ ...editing, price_quarterly: Number(e.target.value) })} /></div>
                 <div><Label>Preço anual (R$)</Label><Input type="number" step="0.01" value={editing.price_yearly} onChange={(e) => setEditing({ ...editing, price_yearly: Number(e.target.value) })} /></div>
               </div>
               <div><Label>Recursos (um por linha)</Label><Textarea value={editing.features} onChange={(e) => setEditing({ ...editing, features: e.target.value })} /></div>
