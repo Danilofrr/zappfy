@@ -256,7 +256,7 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
               });
             }
 
-            const days = daysFor(plan, cycle);
+            const days = plan.duration_days ?? legacyDaysFor(plan, cycle!);
             const now = new Date();
             // Renovação estende a partir do maior entre hoje e expires_at atual
             const base =
