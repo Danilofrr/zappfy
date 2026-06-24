@@ -658,6 +658,7 @@ function EditOrderDialog({
   const [items, setItems] = useState<any[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [totalEdited, setTotalEdited] = useState(false);
+  const [orderDate, setOrderDate] = useState<Date | undefined>(undefined);
 
   useMemo(() => {
     if (order) {
@@ -669,6 +670,7 @@ function EditOrderDialog({
       setItems(order.items.map((it) => ({ ...it })));
       setTotal(order.total);
       setTotalEdited(false);
+      setOrderDate(order.date ? new Date(order.date) : new Date());
     }
   }, [order]);
 
