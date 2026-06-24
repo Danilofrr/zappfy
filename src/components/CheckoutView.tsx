@@ -125,23 +125,8 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       date: new Date().toISOString(),
     };
 
-    console.log("[checkout] enviando pedido:", {
-      nome_cliente: payload.customer,
-      whatsapp: payload.phone,
-      cep: payload.cep,
-      endereco: payload.address,
-      ponto_referencia: payload.reference,
-      bairro: payload.district,
-      cidade: payload.city,
-      produto: product.name,
-      quantidade: Number(qty),
-      valor_unitario: unitPrice,
-      valor_entrega: shippingValue,
-      valor_total: Number(total),
-      forma_pagamento: payload.payment,
-      status_pedido: payload.status,
-      _raw: payload,
-    });
+    // não logar PII do cliente (nome, telefone, endereço) no console
+
 
     setSubmitting(true);
     try {
