@@ -76,16 +76,16 @@ function getOrderIds(payload: any): { orderId: string | null; subId: string | nu
   };
 }
 
-type Cycle = "monthly" | "quarterly" | "yearly";
+type Cycle = "mensal" | "trimestral" | "anual" | "monthly" | "quarterly" | "yearly";
 
-function matchPlanCycle(plan: any, productId: string): Cycle | null {
+function legacyCycleFor(plan: any, productId: string): Cycle | null {
   if (plan.kiwify_product_id_monthly === productId) return "monthly";
   if (plan.kiwify_product_id_quarterly === productId) return "quarterly";
   if (plan.kiwify_product_id_yearly === productId) return "yearly";
   return null;
 }
 
-function daysFor(plan: any, cycle: Cycle): number {
+function legacyDaysFor(plan: any, cycle: Cycle): number {
   if (cycle === "monthly") return plan.duration_days_monthly ?? 30;
   if (cycle === "quarterly") return plan.duration_days_quarterly ?? 90;
   return plan.duration_days_yearly ?? 365;
@@ -206,18 +206,30 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
           let cycle: Cycle | null = null;
 
           if (productId) {
-            const { data: plans } = await supabaseAdmin
+            // 1) Tenta o novo modelo: 1 plano = 1 ciclo + 1 kiwify_product_id
+            const { data: directPlan } = await supabaseAdmin
               .from("plans")
               .select("*")
-              .or(
-                `kiwify_product_id_monthly.eq.${productId},kiwify_product_id_quarterly.eq.${productId},kiwify_product_id_yearly.eq.${productId}`,
-              );
-            for (const p of plans ?? []) {
-              const c = matchPlanCycle(p, productId);
-              if (c) {
-                plan = p;
-                cycle = c;
-                break;
+              .eq("kiwify_product_id", productId)
+              .maybeSingle();
+            if (directPlan) {
+              plan = directPlan;
+              cycle = (directPlan.billing_cycle as Cycle) ?? "mensal";
+            } else {
+              // 2) Fallback: modelo antigo (3 IDs em um único plano)
+              const { data: plans } = await supabaseAdmin
+                .from("plans")
+                .select("*")
+                .or(
+                  `kiwify_product_id_monthly.eq.${productId},kiwify_product_id_quarterly.eq.${productId},kiwify_product_id_yearly.eq.${productId}`,
+                );
+              for (const p of plans ?? []) {
+                const c = legacyCycleFor(p, productId);
+                if (c) {
+                  plan = p;
+                  cycle = c;
+                  break;
+                }
               }
             }
           }
@@ -244,7 +256,7 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
               });
             }
 
-            const days = daysFor(plan, cycle);
+            const days = plan.duration_days ?? legacyDaysFor(plan, cycle!);
             const now = new Date();
             // Renovação estende a partir do maior entre hoje e expires_at atual
             const base =

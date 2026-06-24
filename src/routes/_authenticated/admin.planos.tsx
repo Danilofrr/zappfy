@@ -9,12 +9,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { listPlans, savePlan, deletePlan } from "@/lib/admin.functions";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { brl } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/planos")({ component: PlansPage });
+
+const CYCLES: Record<string, { label: string; days: number; suffix: string }> = {
+  mensal: { label: "Mensal", days: 30, suffix: "/mês" },
+  trimestral: { label: "Trimestral", days: 90, suffix: "/trimestre" },
+  anual: { label: "Anual", days: 365, suffix: "/ano" },
+};
+
+function emptyPlan() {
+  return {
+    name: "",
+    description: "",
+    billing_cycle: "mensal",
+    price: 0,
+    duration_days: 30,
+    kiwify_product_id: "",
+    features: "",
+    is_active: true,
+    sort_order: 0,
+  };
+}
 
 function PlansPage() {
   const qc = useQueryClient();
@@ -31,33 +52,56 @@ function PlansPage() {
   });
 
   return (
-    <AdminShell title="Planos" subtitle="Gerencie os planos disponíveis"
-      actions={<Button onClick={() => setEditing({ name: "", description: "", price_monthly: 0, price_quarterly: 0, price_yearly: 0, features: "", is_active: true, sort_order: 0 })}><Plus className="h-4 w-4 mr-1" />Novo plano</Button>}>
+    <AdminShell title="Planos" subtitle="Cadastre um plano por ciclo (Mensal, Trimestral, Anual) com seu próprio ID Kiwify"
+      actions={<Button onClick={() => setEditing(emptyPlan())}><Plus className="h-4 w-4 mr-1" />Novo plano</Button>}>
       {isLoading ? <div className="text-muted-foreground">Carregando...</div> : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {plans.map((p: any) => (
-            <div key={p.id} className="rounded-2xl border border-border bg-card p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-bold">{p.name}</h3>
-                  <p className="text-xs text-muted-foreground">{p.description}</p>
+          {plans.map((p: any) => {
+            const cycle = CYCLES[p.billing_cycle as string] ?? CYCLES.mensal;
+            const displayPrice = Number(p.price ?? p.price_monthly ?? 0);
+            return (
+              <div key={p.id} className="rounded-2xl border border-border bg-card p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-bold truncate">{p.name}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-primary/15 text-primary">{cycle.label}</span>
+                    {p.is_active
+                      ? <span className="text-[10px] px-2 py-0.5 bg-green-500/15 text-green-500 rounded">Ativo</span>
+                      : <span className="text-[10px] px-2 py-0.5 bg-secondary rounded">Inativo</span>}
+                  </div>
                 </div>
-                {p.is_active ? <span className="text-xs px-2 py-1 bg-green-500/15 text-green-500 rounded">Ativo</span> : <span className="text-xs px-2 py-1 bg-secondary rounded">Inativo</span>}
+                <div className="mt-3 text-2xl font-bold text-primary">
+                  {brl(displayPrice)}<span className="text-xs text-muted-foreground">{cycle.suffix}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">{p.duration_days ?? cycle.days} dias de acesso</div>
+                <div className="mt-2 text-[11px] text-muted-foreground">
+                  Kiwify ID: <span className="font-mono">{p.kiwify_product_id || "—"}</span>
+                </div>
+                <ul className="mt-3 space-y-1 text-sm">
+                  {(p.features || []).map((f: string, i: number) => <li key={i}>• {f}</li>)}
+                </ul>
+                <div className="mt-4 flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setEditing({
+                    ...emptyPlan(),
+                    ...p,
+                    price: Number(p.price ?? p.price_monthly ?? 0),
+                    duration_days: p.duration_days ?? CYCLES[p.billing_cycle as string]?.days ?? 30,
+                    billing_cycle: p.billing_cycle ?? "mensal",
+                    kiwify_product_id: p.kiwify_product_id ?? "",
+                    features: (p.features || []).join("\n"),
+                  })}>
+                    <Edit className="h-3 w-3 mr-1" />Editar
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={async () => { if (confirm(`Excluir ${p.name}?`)) { await delFn({ data: { id: p.id } }); toast.success("Excluído"); qc.invalidateQueries({ queryKey: ["admin-plans"] }); } }}>
+                    <Trash2 className="h-3 w-3 text-destructive" />
+                  </Button>
+                </div>
               </div>
-              <div className="mt-3 text-2xl font-bold text-primary">{brl(Number(p.price_monthly))}<span className="text-xs text-muted-foreground">/mês</span></div>
-              <div className="text-xs text-muted-foreground">{brl(Number(p.price_quarterly || 0))}/trimestre</div>
-              <div className="text-xs text-muted-foreground">{brl(Number(p.price_yearly))}/ano</div>
-              <ul className="mt-3 space-y-1 text-sm">
-                {(p.features || []).map((f: string, i: number) => <li key={i}>• {f}</li>)}
-              </ul>
-              <div className="mt-4 flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setEditing({ ...p, features: (p.features || []).join("\n") })}><Edit className="h-3 w-3 mr-1" />Editar</Button>
-                <Button size="sm" variant="ghost" onClick={async () => { if (confirm(`Excluir ${p.name}?`)) { await delFn({ data: { id: p.id } }); toast.success("Excluído"); qc.invalidateQueries({ queryKey: ["admin-plans"] }); } }}>
-                  <Trash2 className="h-3 w-3 text-destructive" />
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -66,47 +110,37 @@ function PlansPage() {
           <DialogHeader><DialogTitle>{editing?.id ? "Editar plano" : "Novo plano"}</DialogTitle></DialogHeader>
           {editing && (
             <div className="grid gap-3">
-              <div><Label>Nome</Label><Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
+              <div><Label>Nome do produto</Label><Input placeholder="Ex: Zappfy Mensal" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
               <div><Label>Descrição</Label><Input value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
-              <div className="grid grid-cols-3 gap-3">
-                <div><Label>Preço mensal (R$)</Label><Input type="number" step="0.01" value={editing.price_monthly} onChange={(e) => setEditing({ ...editing, price_monthly: Number(e.target.value) })} /></div>
-                <div><Label>Preço trimestral (R$)</Label><Input type="number" step="0.01" value={editing.price_quarterly ?? 0} onChange={(e) => setEditing({ ...editing, price_quarterly: Number(e.target.value) })} /></div>
-                <div><Label>Preço anual (R$)</Label><Input type="number" step="0.01" value={editing.price_yearly} onChange={(e) => setEditing({ ...editing, price_yearly: Number(e.target.value) })} /></div>
-              </div>
-              <div><Label>Recursos (um por linha)</Label><Textarea value={editing.features} onChange={(e) => setEditing({ ...editing, features: e.target.value })} /></div>
 
-              <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <div className="text-sm font-semibold">Integração Kiwify</div>
-                  <p className="text-xs text-muted-foreground">Cole o ID do produto da Kiwify para cada ciclo. O webhook usa esses IDs para liberar o acesso automaticamente.</p>
+                  <Label>Ciclo</Label>
+                  <Select
+                    value={editing.billing_cycle}
+                    onValueChange={(v) => setEditing({ ...editing, billing_cycle: v, duration_days: CYCLES[v]?.days ?? editing.duration_days })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CYCLES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="grid gap-3">
-                  <div>
-                    <Label>ID produto Kiwify — Mensal (30 dias)</Label>
-                    <Input
-                      placeholder="ex: 12ab34cd-56ef-..."
-                      value={editing.kiwify_product_id_monthly ?? ""}
-                      onChange={(e) => setEditing({ ...editing, kiwify_product_id_monthly: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>ID produto Kiwify — Trimestral (90 dias)</Label>
-                    <Input
-                      placeholder="ex: 12ab34cd-56ef-..."
-                      value={editing.kiwify_product_id_quarterly ?? ""}
-                      onChange={(e) => setEditing({ ...editing, kiwify_product_id_quarterly: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>ID produto Kiwify — Anual (365 dias)</Label>
-                    <Input
-                      placeholder="ex: 12ab34cd-56ef-..."
-                      value={editing.kiwify_product_id_yearly ?? ""}
-                      onChange={(e) => setEditing({ ...editing, kiwify_product_id_yearly: e.target.value })}
-                    />
-                  </div>
-                </div>
+                <div><Label>Preço (R$)</Label><Input type="number" step="0.01" value={editing.price} onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })} /></div>
+                <div><Label>Dias de acesso</Label><Input type="number" value={editing.duration_days} onChange={(e) => setEditing({ ...editing, duration_days: Number(e.target.value) })} /></div>
               </div>
+
+              <div>
+                <Label>ID do produto na Kiwify</Label>
+                <Input
+                  placeholder="ex: 12ab34cd-56ef-..."
+                  value={editing.kiwify_product_id ?? ""}
+                  onChange={(e) => setEditing({ ...editing, kiwify_product_id: e.target.value })}
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">O webhook usa esse ID para identificar o plano comprado e liberar o acesso pelos dias informados.</p>
+              </div>
+
+              <div><Label>Recursos (um por linha)</Label><Textarea value={editing.features} onChange={(e) => setEditing({ ...editing, features: e.target.value })} /></div>
 
               <div className="flex items-center gap-2"><Switch checked={editing.is_active} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} /><Label>Plano ativo</Label></div>
             </div>

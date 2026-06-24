@@ -707,19 +707,23 @@ export type Database = {
       }
       plans: {
         Row: {
+          billing_cycle: string
           created_at: string
           description: string | null
+          duration_days: number
           duration_days_monthly: number
           duration_days_quarterly: number
           duration_days_yearly: number
           features: Json
           id: string
           is_active: boolean
+          kiwify_product_id: string | null
           kiwify_product_id_monthly: string | null
           kiwify_product_id_quarterly: string | null
           kiwify_product_id_yearly: string | null
           limits: Json
           name: string
+          price: number
           price_monthly: number
           price_quarterly: number
           price_yearly: number
@@ -727,19 +731,23 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_cycle?: string
           created_at?: string
           description?: string | null
+          duration_days?: number
           duration_days_monthly?: number
           duration_days_quarterly?: number
           duration_days_yearly?: number
           features?: Json
           id?: string
           is_active?: boolean
+          kiwify_product_id?: string | null
           kiwify_product_id_monthly?: string | null
           kiwify_product_id_quarterly?: string | null
           kiwify_product_id_yearly?: string | null
           limits?: Json
           name: string
+          price?: number
           price_monthly?: number
           price_quarterly?: number
           price_yearly?: number
@@ -747,19 +755,23 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_cycle?: string
           created_at?: string
           description?: string | null
+          duration_days?: number
           duration_days_monthly?: number
           duration_days_quarterly?: number
           duration_days_yearly?: number
           features?: Json
           id?: string
           is_active?: boolean
+          kiwify_product_id?: string | null
           kiwify_product_id_monthly?: string | null
           kiwify_product_id_quarterly?: string | null
           kiwify_product_id_yearly?: string | null
           limits?: Json
           name?: string
+          price?: number
           price_monthly?: number
           price_quarterly?: number
           price_yearly?: number
