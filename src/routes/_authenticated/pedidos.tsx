@@ -1014,18 +1014,18 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
           <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
             <SectionLabel icon={UserIcon}>Cliente</SectionLabel>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Nome"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
-              <Field label="Telefone"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
+              <Field label="Nome" icon={UserIcon} iconTone="primary"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
+              <Field label="Telefone" icon={Phone}><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
             </div>
           </div>
 
           {/* Endereço */}
           <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
             <SectionLabel icon={MapPin}>Endereço</SectionLabel>
-            <Field label="Rua / nº"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
+            <Field label="Rua / nº" icon={MapPin} iconTone="primary"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
-              <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
+              <Field label="Bairro" icon={Home}><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
+              <Field label="Cidade" icon={Building2}><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
             </div>
           </div>
 
