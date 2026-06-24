@@ -134,6 +134,10 @@ function AdminSettings() {
                 <Switch checked={s.platform?.supportWhatsEnabled !== false} onCheckedChange={(v) => set("platform", { supportWhatsEnabled: v })} />
                 <Label className="cursor-pointer">Exibir botão flutuante de WhatsApp na tela de login</Label>
               </div>
+              <div className="flex items-center gap-3 md:col-span-2 rounded-lg border border-border/60 bg-muted/30 p-3">
+                <Switch checked={s.platform?.supportWhatsDashboardEnabled === true} onCheckedChange={(v) => set("platform", { supportWhatsDashboardEnabled: v })} />
+                <Label className="cursor-pointer">Exibir botão flutuante de WhatsApp na dashboard do cliente</Label>
+              </div>
               <Field label="CNPJ/Empresa"><Input value={s.platform?.cnpj ?? ""} onChange={(e) => set("platform", { cnpj: e.target.value })} /></Field>
             </CardContent>
           </Card>
