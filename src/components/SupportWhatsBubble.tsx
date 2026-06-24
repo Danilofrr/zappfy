@@ -26,8 +26,11 @@ export function SupportWhatsBubble({ mode }: { mode: Mode }) {
     getPublicSupport()
       .then((r: any) => {
         setWhats(r?.whats ?? null);
-        const flag = mode === "login" ? r?.enabled : r?.dashboardEnabled;
-        setEnabled(flag !== false && flag !== undefined ? !!flag : false);
+        if (mode === "login") {
+          setEnabled(r?.enabled !== false);
+        } else {
+          setEnabled(r?.dashboardEnabled === true);
+        }
       })
       .catch(() => {});
   }, [mode]);
