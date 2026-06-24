@@ -9,6 +9,7 @@ import { TrendingUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/lib/theme";
 import { usePlatformLogo } from "@/lib/usePlatformLogo";
+import { validatePassword, PASSWORD_HINT } from "@/lib/password-policy";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -55,7 +56,8 @@ function ResetPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 6) { toast.error("A senha deve ter pelo menos 6 caracteres"); return; }
+    const check = validatePassword(password);
+    if (!check.ok) { toast.error(check.error); return; }
     if (password !== confirm) { toast.error("As senhas não coincidem"); return; }
     setLoading(true);
     try {
@@ -104,7 +106,7 @@ function ResetPasswordPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder={PASSWORD_HINT}
                 required
                 autoFocus
               />

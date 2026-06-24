@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { activateAccount, getActivationInfo } from "@/lib/activation.functions";
 import { ShieldCheck, CheckCircle2 } from "lucide-react";
+import { validatePassword, PASSWORD_HINT } from "@/lib/password-policy";
 
 export const Route = createFileRoute("/ativar-conta/$token")({
   ssr: false,
@@ -30,7 +31,8 @@ function ActivatePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 6) return toast.error("Senha deve ter ao menos 6 caracteres");
+    const check = validatePassword(password);
+    if (!check.ok) return toast.error(check.error);
     if (password !== confirm) return toast.error("As senhas não coincidem");
     setLoading(true);
     try {
@@ -62,7 +64,7 @@ function ActivatePage() {
         {valid === true && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div><Label>E-mail</Label><Input value={email} disabled /></div>
-            <div><Label>Nova senha</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
+            <div><Label>Nova senha</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={PASSWORD_HINT} required /></div>
             <div><Label>Confirmar senha</Label><Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required /></div>
             <Button type="submit" disabled={loading} className="w-full">
               <CheckCircle2 className="h-4 w-4 mr-1" /> Ativar conta

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Gift, CheckCircle2, Loader2, Zap, BarChart3, ShieldCheck } from "lucide-react";
 import { getTrialInviteInfo, redeemTrialInvite } from "@/lib/trial.functions";
+import { validatePassword, PASSWORD_HINT } from "@/lib/password-policy";
 
 export const Route = createFileRoute("/trial/$code")({
   ssr: false,
@@ -43,10 +44,12 @@ function TrialPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!fullName || !storeName || !email || password.length < 6) {
-      toast.error("Preencha todos os campos. Senha com no mínimo 6 caracteres.");
+    if (!fullName || !storeName || !email) {
+      toast.error("Preencha todos os campos.");
       return;
     }
+    const pwdCheck = validatePassword(password);
+    if (!pwdCheck.ok) { toast.error(pwdCheck.error); return; }
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
