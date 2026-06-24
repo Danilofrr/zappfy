@@ -28,6 +28,8 @@ import {
 import { TrackingMap } from "./TrackingMap";
 import { DestinationPicker } from "./DestinationPicker";
 import { useStore } from "@/lib/store";
+import { buildPublicUrl } from "@/lib/public-url";
+import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
 
 type Tracking = {
   id: string;
@@ -59,6 +61,7 @@ type Props = {
 
 export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: Props) {
   const { state } = useStore();
+  const publicBaseUrl = usePublicBaseUrl();
   const [tracking, setTracking] = useState<Tracking | null>(null);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -199,10 +202,10 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     load();
   }
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
   const validTrackingCode = tracking?.tracking_code?.trim() ?? "";
-  const customerTrackingUrl = validTrackingCode ? `${origin}/rastreio/${validTrackingCode}` : "";
-  const courierTrackingUrl = tracking?.courier_token ? `${origin}/entrega/${tracking.courier_token}` : "";
+  const customerTrackingUrl = validTrackingCode ? buildPublicUrl(`/rastreio/${validTrackingCode}`, publicBaseUrl) : "";
+  const courierTrackingUrl = tracking?.courier_token ? buildPublicUrl(`/entrega/${tracking.courier_token}`, publicBaseUrl) : "";
+  const centralTrackingUrl = state.settings.slug ? buildPublicUrl(`/entregas-zappfy/${state.settings.slug}`, publicBaseUrl) : "";
   const orderNumber = orderShortNumber(orderId);
   customerTrackingUrlRef.current = customerTrackingUrl;
 
@@ -402,8 +405,8 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
                 <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
                   Vincular motoboy específico
                 </Button>
-                {state.settings.slug && (
-                  <Button size="sm" variant="outline" onClick={() => copy(`${origin}/entregas-zappfy/${state.settings.slug}`, "Link da Central")}>
+                {centralTrackingUrl && (
+                  <Button size="sm" variant="outline" onClick={() => copy(centralTrackingUrl, "Link da Central")}>
                     <ExternalLink className="h-3.5 w-3.5 mr-1" /> Link da Central
                   </Button>
                 )}

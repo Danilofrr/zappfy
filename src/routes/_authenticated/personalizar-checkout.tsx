@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Image as ImageIcon, Upload, X, ExternalLink, Copy } from "lucide-react";
+import { buildPublicUrl } from "@/lib/public-url";
+import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
 
 export const Route = createFileRoute("/_authenticated/personalizar-checkout")({
   head: () => ({ meta: [{ title: "Personalizar Checkout — ZappFy" }] }),
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/personalizar-checkout")({
 
 function Page() {
   const { state, updateSettings } = useStore();
+  const publicBaseUrl = usePublicBaseUrl();
   const [f, setF] = useState(state.settings);
   const [logoDims, setLogoDims] = useState<{ w: number; h: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -39,9 +42,7 @@ function Page() {
     reader.readAsDataURL(file);
   }
 
-  const publicUrl = typeof window !== "undefined" && f.slug
-    ? `${window.location.origin}/loja/${f.slug}`
-    : "";
+  const publicUrl = f.slug ? buildPublicUrl(`/loja/${f.slug}`, publicBaseUrl) : "";
 
   return (
     <AppShell

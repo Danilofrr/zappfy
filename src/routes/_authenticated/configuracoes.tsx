@@ -18,6 +18,8 @@ import { getSenderInfo, saveSenderInfo, type SenderInfo } from "@/lib/sender-inf
 import { AvatarUploader } from "@/components/AvatarUploader";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { buildPublicUrl } from "@/lib/public-url";
+import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — ZappFy" }] }),
@@ -45,6 +47,7 @@ function diagnosticVars(storeName: string) {
 
 function Page() {
   const { state, updateSettings, resetSeed } = useStore();
+  const publicBaseUrl = usePublicBaseUrl();
   const [f, setF] = useState(state.settings);
   const [sender, setSender] = useState<SenderInfo>(() => getSenderInfo());
   const [logoDims, setLogoDims] = useState<{ w: number; h: number } | null>(null);
@@ -75,6 +78,8 @@ function Page() {
   const vars = diagnosticVars(f.storeName);
   const deliveryDiagnostic = applyMessageVariables(f.deliveryMessageTemplate, vars);
   const motoboyDiagnostic = applyMessageVariables(f.motoboyMessageTemplate, vars);
+  const checkoutPublicUrl = f.slug ? buildPublicUrl(`/loja/${f.slug}`, publicBaseUrl) : "";
+  const trackingExampleUrl = buildPublicUrl("/rastreio/abc123", publicBaseUrl);
 
   return (
     <AppShell
@@ -107,11 +112,11 @@ function Page() {
               onChange={(e) => setF({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })}
               placeholder="esparta"
             />
-            {f.slug && (
+            {checkoutPublicUrl && (
               <div className="mt-2 flex items-center gap-2">
                 <Input
                   readOnly
-                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/loja/${f.slug}`}
+                  value={checkoutPublicUrl}
                   className="text-xs"
                   onFocus={(e) => e.currentTarget.select()}
                 />
@@ -119,8 +124,7 @@ function Page() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    const url = `${window.location.origin}/loja/${f.slug}`;
-                    navigator.clipboard?.writeText(url);
+                    navigator.clipboard?.writeText(checkoutPublicUrl);
                     toast.success("Link copiado!");
                   }}
                 >Copiar</Button>
@@ -290,7 +294,7 @@ function Page() {
               sent={buildCustomerTrackingMessage(f.customerTrackingMessageTemplate, {
                 customer_name: "Maria Silva",
                 order_number: "1042",
-                tracking_link: `${typeof window !== "undefined" ? window.location.origin : ""}/rastreio/abc123`,
+                tracking_link: trackingExampleUrl,
                 store_name: f.storeName || "Sua Loja",
                 product_name: "Camiseta Premium",
                 order_status: "aguardando",

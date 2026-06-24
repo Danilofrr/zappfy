@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getOfficialPublicBaseUrl } from "@/lib/public-url";
 
 async function ensureAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
@@ -557,9 +558,16 @@ export const saveSystemSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
     await ensureAdmin(supabase, userId);
+    const value = {
+      ...data.value,
+      platform: {
+        ...(data.value.platform ?? {}),
+        url: getOfficialPublicBaseUrl((data.value.platform as any)?.url),
+      },
+    };
     const { error } = await supabase
       .from("admin_settings")
-      .upsert({ key: "system", value: data.value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+      .upsert({ key: "system", value, updated_at: new Date().toISOString() }, { onConflict: "key" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -581,6 +589,7 @@ export const getPublicSupport = createServerFn({ method: "GET" }).handler(async 
   return {
     whats: (v?.platform?.supportWhats as string | undefined) ?? null,
     email: (v?.platform?.supportEmail as string | undefined) ?? null,
+    officialUrl: getOfficialPublicBaseUrl(v?.platform?.url as string | undefined),
     enabled: v?.platform?.supportWhatsEnabled !== false,
     dashboardEnabled: v?.platform?.supportWhatsDashboardEnabled === true,
   };
