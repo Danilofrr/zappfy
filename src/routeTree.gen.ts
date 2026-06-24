@@ -46,6 +46,7 @@ import { Route as EntregasZappfyStoreSlugIndexRouteImport } from './routes/entre
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as EntregasZappfyStoreSlugLoginRouteImport } from './routes/entregas-zappfy.$storeSlug.login'
 import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
+import { Route as ApiPublicKiwifyWebhookRouteImport } from './routes/api/public/kiwify-webhook'
 import { Route as AuthenticatedAdminTrialsRouteImport } from './routes/_authenticated/admin.trials'
 import { Route as AuthenticatedAdminRelatoriosRouteImport } from './routes/_authenticated/admin.relatorios'
 import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
@@ -251,6 +252,11 @@ const ApiPublicSubmitOrderRoute = ApiPublicSubmitOrderRouteImport.update({
   path: '/api/public/submit-order',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicKiwifyWebhookRoute = ApiPublicKiwifyWebhookRouteImport.update({
+  id: '/api/public/kiwify-webhook',
+  path: '/api/public/kiwify-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminTrialsRoute =
   AuthenticatedAdminTrialsRouteImport.update({
     id: '/trials',
@@ -354,6 +360,7 @@ export interface FileRoutesByFullPath {
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/admin/relatorios': typeof AuthenticatedAdminRelatoriosRoute
   '/admin/trials': typeof AuthenticatedAdminTrialsRoute
+  '/api/public/kiwify-webhook': typeof ApiPublicKiwifyWebhookRoute
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/admin/relatorios': typeof AuthenticatedAdminRelatoriosRoute
   '/admin/trials': typeof AuthenticatedAdminTrialsRoute
+  '/api/public/kiwify-webhook': typeof ApiPublicKiwifyWebhookRoute
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/_authenticated/admin/relatorios': typeof AuthenticatedAdminRelatoriosRoute
   '/_authenticated/admin/trials': typeof AuthenticatedAdminTrialsRoute
+  '/api/public/kiwify-webhook': typeof ApiPublicKiwifyWebhookRoute
   '/api/public/submit-order': typeof ApiPublicSubmitOrderRoute
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -500,6 +509,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/relatorios'
     | '/admin/trials'
+    | '/api/public/kiwify-webhook'
     | '/api/public/submit-order'
     | '/entregas-zappfy/$storeSlug/login'
     | '/admin/'
@@ -546,6 +556,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/relatorios'
     | '/admin/trials'
+    | '/api/public/kiwify-webhook'
     | '/api/public/submit-order'
     | '/entregas-zappfy/$storeSlug/login'
     | '/admin'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/planos'
     | '/_authenticated/admin/relatorios'
     | '/_authenticated/admin/trials'
+    | '/api/public/kiwify-webhook'
     | '/api/public/submit-order'
     | '/entregas-zappfy/$storeSlug/login'
     | '/_authenticated/admin/'
@@ -613,6 +625,7 @@ export interface RootRouteChildren {
   RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
   TrialCodeRoute: typeof TrialCodeRoute
   EntregasZappfyIndexRoute: typeof EntregasZappfyIndexRoute
+  ApiPublicKiwifyWebhookRoute: typeof ApiPublicKiwifyWebhookRoute
   ApiPublicSubmitOrderRoute: typeof ApiPublicSubmitOrderRoute
 }
 
@@ -877,6 +890,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSubmitOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/kiwify-webhook': {
+      id: '/api/public/kiwify-webhook'
+      path: '/api/public/kiwify-webhook'
+      fullPath: '/api/public/kiwify-webhook'
+      preLoaderRoute: typeof ApiPublicKiwifyWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/trials': {
       id: '/_authenticated/admin/trials'
       path: '/trials'
@@ -1074,18 +1094,9 @@ const rootRouteChildren: RootRouteChildren = {
   RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
   TrialCodeRoute: TrialCodeRoute,
   EntregasZappfyIndexRoute: EntregasZappfyIndexRoute,
+  ApiPublicKiwifyWebhookRoute: ApiPublicKiwifyWebhookRoute,
   ApiPublicSubmitOrderRoute: ApiPublicSubmitOrderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

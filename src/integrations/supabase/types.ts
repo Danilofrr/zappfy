@@ -579,6 +579,45 @@ export type Database = {
         }
         Relationships: []
       }
+      kiwify_webhook_logs: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          error_message: string | null
+          event_type: string | null
+          id: string
+          order_id: string | null
+          payload: Json | null
+          product_id: string | null
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          product_id?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          product_id?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: []
+      }
       notification_subscriptions: {
         Row: {
           auth: string
@@ -670,9 +709,15 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          duration_days_monthly: number
+          duration_days_quarterly: number
+          duration_days_yearly: number
           features: Json
           id: string
           is_active: boolean
+          kiwify_product_id_monthly: string | null
+          kiwify_product_id_quarterly: string | null
+          kiwify_product_id_yearly: string | null
           limits: Json
           name: string
           price_monthly: number
@@ -683,9 +728,15 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          duration_days_monthly?: number
+          duration_days_quarterly?: number
+          duration_days_yearly?: number
           features?: Json
           id?: string
           is_active?: boolean
+          kiwify_product_id_monthly?: string | null
+          kiwify_product_id_quarterly?: string | null
+          kiwify_product_id_yearly?: string | null
           limits?: Json
           name: string
           price_monthly?: number
@@ -696,9 +747,15 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          duration_days_monthly?: number
+          duration_days_quarterly?: number
+          duration_days_yearly?: number
           features?: Json
           id?: string
           is_active?: boolean
+          kiwify_product_id_monthly?: string | null
+          kiwify_product_id_quarterly?: string | null
+          kiwify_product_id_yearly?: string | null
           limits?: Json
           name?: string
           price_monthly?: number
@@ -1154,6 +1211,9 @@ export type Database = {
           expires_at: string | null
           id: string
           invite_code: string | null
+          kiwify_customer_email: string | null
+          kiwify_order_id: string | null
+          kiwify_subscription_id: string | null
           last_payment_at: string | null
           notes: string | null
           plan_id: string | null
@@ -1169,6 +1229,9 @@ export type Database = {
           expires_at?: string | null
           id?: string
           invite_code?: string | null
+          kiwify_customer_email?: string | null
+          kiwify_order_id?: string | null
+          kiwify_subscription_id?: string | null
           last_payment_at?: string | null
           notes?: string | null
           plan_id?: string | null
@@ -1184,6 +1247,9 @@ export type Database = {
           expires_at?: string | null
           id?: string
           invite_code?: string | null
+          kiwify_customer_email?: string | null
+          kiwify_order_id?: string | null
+          kiwify_subscription_id?: string | null
           last_payment_at?: string | null
           notes?: string | null
           plan_id?: string | null
