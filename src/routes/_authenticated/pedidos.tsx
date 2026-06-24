@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp, CalendarIcon } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp, CalendarIcon, Phone, Home, Building2, ShoppingCart, Hash, DollarSign, Flag } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -711,32 +711,35 @@ function EditOrderDialog({
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Cliente"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
-            <Field label="Telefone"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
+            <Field label="Cliente" icon={UserIcon} iconTone="primary"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
+            <Field label="Telefone" icon={Phone}><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
           </div>
-          <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
+          <Field label="Endereço" icon={MapPin} iconTone="primary"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
-            <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
+            <Field label="Bairro" icon={Home}><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
+            <Field label="Cidade" icon={Building2}><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
           </div>
 
           <div className="rounded-lg border border-border p-3 space-y-2">
-            <div className="text-xs font-semibold text-muted-foreground">Itens do pedido</div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
+              <ShoppingBag className="h-3.5 w-3.5" />
+              <span>Itens do pedido</span>
+            </div>
             {items.map((it, idx) => (
               <div key={idx} className="grid grid-cols-12 gap-2 items-end">
                 <div className="col-span-5">
-                  <Field label={idx === 0 ? "Produto" : ""}>
+                  <Field label={idx === 0 ? "Produto" : ""} icon={idx === 0 ? ShoppingCart : undefined}>
                     <Input value={it.name ?? ""} onChange={(e) => updateItem(idx, { name: e.target.value })} />
                   </Field>
                 </div>
                 <div className="col-span-2">
-                  <Field label={idx === 0 ? "Qtd" : ""}>
+                  <Field label={idx === 0 ? "Qtd" : ""} icon={idx === 0 ? Hash : undefined}>
                     <Input type="number" min={1} value={it.qty}
                       onChange={(e) => updateItem(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
                   </Field>
                 </div>
                 <div className="col-span-4">
-                  <Field label={idx === 0 ? "Valor unit. (R$)" : ""}>
+                  <Field label={idx === 0 ? "Valor unit. (R$)" : ""} icon={idx === 0 ? DollarSign : undefined}>
                     <Input type="number" step="0.01" min={0} value={it.price}
                       onChange={(e) => updateItem(idx, { price: Math.max(0, Number(e.target.value) || 0) })} />
                   </Field>
@@ -773,11 +776,11 @@ function EditOrderDialog({
             </div>
 
             {shipping > 0 && (
-              <div className="text-xs text-muted-foreground">Entrega: R$ {shipping.toFixed(2)}</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Entrega: R$ {shipping.toFixed(2)}</div>
             )}
           </div>
 
-          <Field label="📅 Data do pedido">
+          <Field label="Data do pedido" icon={CalendarIcon} iconTone="primary">
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -802,7 +805,7 @@ function EditOrderDialog({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Pagamento">
+            <Field label="Pagamento" icon={CreditCard} iconTone="primary">
               <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
@@ -812,7 +815,7 @@ function EditOrderDialog({
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Status">
+            <Field label="Status" icon={Flag}>
               <Select value={form.status} onValueChange={(v: any) => setForm({...form, status: v})}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
@@ -1011,18 +1014,18 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
           <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
             <SectionLabel icon={UserIcon}>Cliente</SectionLabel>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Nome"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
-              <Field label="Telefone"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
+              <Field label="Nome" icon={UserIcon} iconTone="primary"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
+              <Field label="Telefone" icon={Phone}><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
             </div>
           </div>
 
           {/* Endereço */}
           <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
             <SectionLabel icon={MapPin}>Endereço</SectionLabel>
-            <Field label="Rua / nº"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
+            <Field label="Rua / nº" icon={MapPin} iconTone="primary"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
-              <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
+              <Field label="Bairro" icon={Home}><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
+              <Field label="Cidade" icon={Building2}><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
             </div>
           </div>
 
@@ -1179,7 +1182,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Status">
+              <Field label="Status" icon={Flag}>
                 <Select value={form.status} onValueChange={(v: any) => setForm({...form, status: v})}>
                   <SelectTrigger><SelectValue/></SelectTrigger>
                   <SelectContent>
@@ -1188,7 +1191,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 </Select>
               </Field>
             </div>
-            <Field label="Data do pedido">
+            <Field label="Data do pedido" icon={CalendarIcon} iconTone="primary">
               <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
             </Field>
 
@@ -1367,10 +1370,13 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
 
 
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, icon: Icon, iconTone = "muted", children }: { label: string; icon?: any; iconTone?: "primary" | "muted"; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
+      <Label className="text-xs flex items-center gap-1.5">
+        {Icon ? <Icon className={cn("h-3.5 w-3.5", iconTone === "primary" ? "text-primary" : "text-muted-foreground")} /> : null}
+        <span>{label}</span>
+      </Label>
       {children}
     </div>
   );
