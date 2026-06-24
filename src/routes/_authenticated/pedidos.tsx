@@ -630,7 +630,7 @@ function PedidosPage() {
         onSave={async (patch) => {
           if (!editing) return;
           await updateOrder(editing.id, patch);
-          toast.success("Pedido atualizado!");
+          toast.success(patch.date ? "Data do pedido atualizada com sucesso." : "Pedido atualizado!");
           setEditing(null);
         }}
       />
