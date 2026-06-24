@@ -96,6 +96,39 @@ function Dashboard() {
   const goalRev = state.settings.monthlyRevenueGoal;
   const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
 
+  // Champion product of the current month
+  const champion = useMemo(() => {
+    const { start, end } = monthRange();
+    const monthOrders = state.orders.filter(
+      (o) => new Date(o.date) >= start && new Date(o.date) < end && o.status !== "cancelado",
+    );
+    const agg = new Map<string, { name: string; qty: number; revenue: number; profit: number }>();
+    let totalRevenue = 0;
+    for (const o of monthOrders) {
+      for (const it of o.items) {
+        const cur = agg.get(it.productId) ?? { name: it.name, qty: 0, revenue: 0, profit: 0 };
+        cur.qty += it.qty;
+        cur.revenue += it.price * it.qty;
+        cur.profit += (it.price - it.cost) * it.qty;
+        agg.set(it.productId, cur);
+        totalRevenue += it.price * it.qty;
+      }
+    }
+    let bestId: string | null = null;
+    let best: { name: string; qty: number; revenue: number; profit: number } | null = null;
+    for (const [id, v] of agg) {
+      if (!best || v.qty > best.qty || (v.qty === best.qty && v.revenue > best.revenue)) {
+        best = v;
+        bestId = id;
+      }
+    }
+    if (!best || !bestId) return null;
+    const product = state.products.find((p) => p.id === bestId);
+    const share = totalRevenue > 0 ? (best.revenue / totalRevenue) * 100 : 0;
+    return { ...best, imageUrl: product?.imageUrl, share };
+  }, [state.orders, state.products]);
+
+
   // Build 6-month series
   const series = Array.from({ length: 6 }).map((_, idx) => {
     const i = 5 - idx;
