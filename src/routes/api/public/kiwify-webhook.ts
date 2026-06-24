@@ -165,9 +165,21 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
           return json(400, { error: "JSON inválido" });
         }
 
+        const parsedPayload = kiwifyPayloadSchema.safeParse(payload);
+        if (!parsedPayload.success) {
+          console.warn("[kiwify-webhook] payload inválido", parsedPayload.error.flatten());
+          return json(400, { error: "Payload inválido" });
+        }
+        payload = parsedPayload.data;
+
         const eventType = getEventType(payload);
-        const productId = getProductId(payload);
-        const { email, name, cpf, phone } = getCustomer(payload);
+        const rawProductId = getProductId(payload);
+        const productId = rawProductId && SAFE_ID_RE.test(rawProductId) ? rawProductId : null;
+        const { email: rawEmail, name: rawName, cpf, phone: rawPhone } = getCustomer(payload);
+        const emailParsed = z.string().email().max(255).safeParse(rawEmail);
+        const email = emailParsed.success ? emailParsed.data.toLowerCase() : "";
+        const name = rawName.slice(0, 200);
+        const phone = rawPhone.slice(0, 40);
         const { orderId, subId } = getOrderIds(payload);
 
         const { supabaseAdmin } = await import(
