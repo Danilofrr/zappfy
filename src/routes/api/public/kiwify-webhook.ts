@@ -1,4 +1,52 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+
+// Aceita IDs alfanuméricos da Kiwify; bloqueia caracteres que poderiam
+// quebrar o filtro PostgREST `.or(...)` mais abaixo (vírgula, parêntese, etc).
+const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
+const kiwifyPayloadSchema = z
+  .object({
+    webhook_event_type: z.string().max(80).optional(),
+    event: z.string().max(80).optional(),
+    order_status: z.string().max(80).optional(),
+    order_id: z.string().max(120).optional().nullable(),
+    subscription_id: z.string().max(120).optional().nullable(),
+    id: z.string().max(120).optional().nullable(),
+    Product: z
+      .object({ product_id: z.string().max(64).optional() })
+      .passthrough()
+      .optional(),
+    product_id: z.string().max(64).optional().nullable(),
+    product: z.object({ id: z.string().max(64).optional() }).passthrough().optional(),
+    Subscription: z
+      .object({
+        id: z.string().max(120).optional(),
+        status: z.string().max(80).optional(),
+        plan: z.object({ id: z.string().max(64).optional() }).passthrough().optional(),
+      })
+      .passthrough()
+      .optional(),
+    subscription: z.object({ id: z.string().max(120).optional() }).passthrough().optional(),
+    Order: z.object({ id: z.string().max(120).optional() }).passthrough().optional(),
+    Customer: z
+      .object({
+        email: z.string().max(255).optional(),
+        full_name: z.string().max(200).optional(),
+        name: z.string().max(200).optional(),
+        first_name: z.string().max(200).optional(),
+        CPF: z.string().max(32).optional(),
+        cpf: z.string().max(32).optional(),
+        document: z.string().max(32).optional(),
+        mobile: z.string().max(40).optional(),
+        phone: z.string().max(40).optional(),
+      })
+      .passthrough()
+      .optional(),
+    customer: z.record(z.string(), z.any()).optional(),
+    buyer: z.record(z.string(), z.any()).optional(),
+  })
+  .passthrough();
 
 /**
  * Kiwify webhook endpoint.
