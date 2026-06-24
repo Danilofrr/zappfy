@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +8,11 @@ import { Card } from "@/components/ui/card";
 import { TrendingUp, Loader2, ShieldCheck, Zap, BarChart3, MessageCircle, CheckCircle2, Sparkles, ArrowUpRight, Star, Phone, Lock, Eye, EyeOff, Mail, User as UserIcon, Store as StoreIcon } from "lucide-react";
 import { toast } from "sonner";
 import { AvatarUploader } from "@/components/AvatarUploader";
-import { getPublicSupport } from "@/lib/admin.functions";
-import { whatsappLink } from "@/lib/tracking";
 import { getEntregasStandaloneRedirectSlug } from "@/lib/entregas-pwa";
 import { usePlatformLogo } from "@/lib/usePlatformLogo";
 import { SupportWhatsBubble } from "@/components/SupportWhatsBubble";
+import { buildPublicUrl } from "@/lib/public-url";
+import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -29,6 +28,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const publicBaseUrl = usePublicBaseUrl();
   const { logoUrl } = usePlatformLogo();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -37,22 +37,6 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [supportWhats, setSupportWhats] = useState<string | null>(null);
-  const [supportEnabled, setSupportEnabled] = useState(false);
-  const [supportClosed, setSupportClosed] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setSupportClosed(sessionStorage.getItem("zappfy_support_closed") === "1");
-    }
-    getPublicSupport()
-      .then((r) => {
-        setSupportWhats(r?.whats ?? null);
-        setSupportEnabled(r?.enabled !== false);
-      })
-      .catch(() => {});
-  }, []);
-
   useEffect(() => {
     const entregasSlug = getEntregasStandaloneRedirectSlug();
     if (entregasSlug) {
@@ -76,7 +60,7 @@ function AuthPage() {
     }
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: buildPublicUrl("/reset-password", publicBaseUrl),
       });
       if (error) throw error;
       toast.success("Enviamos um link de recuperação para o seu e-mail.");
@@ -94,7 +78,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: buildPublicUrl("/", publicBaseUrl),
             data: { full_name: fullName },
           },
         });
