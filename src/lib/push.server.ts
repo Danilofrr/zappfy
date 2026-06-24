@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 const VAPID_PUBLIC_KEY =
-  "BEMaUchwsmaAILommuH7nAnp6zu8PO0un7R7xRAuKvvjLiXCGQ77YW99WoC8npUAbJ3sOZe1x6nuMj8J_Ne8F8o";
+  "BFzD-WlMTpM6BV5Jkd2g_8GxTK8Bg_b_zwADApU-MWUuvx1xZsa0gHqUAIn5XUEb4GUiHW9Noyyg-DBaw4A8KJ4";
 const VAPID_SUBJECT = "mailto:contato@zappfy.app";
 
 export type PushPayload = {
