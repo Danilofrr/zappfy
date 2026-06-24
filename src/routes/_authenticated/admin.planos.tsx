@@ -32,7 +32,7 @@ function PlansPage() {
 
   return (
     <AdminShell title="Planos" subtitle="Gerencie os planos disponíveis"
-      actions={<Button onClick={() => setEditing({ name: "", description: "", price_monthly: 0, price_yearly: 0, features: "", is_active: true, sort_order: 0 })}><Plus className="h-4 w-4 mr-1" />Novo plano</Button>}>
+      actions={<Button onClick={() => setEditing({ name: "", description: "", price_monthly: 0, price_quarterly: 0, price_yearly: 0, features: "", is_active: true, sort_order: 0 })}><Plus className="h-4 w-4 mr-1" />Novo plano</Button>}>
       {isLoading ? <div className="text-muted-foreground">Carregando...</div> : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {plans.map((p: any) => (
