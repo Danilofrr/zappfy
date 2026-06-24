@@ -248,7 +248,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   async function copyCustomerLink() {
     const url = getSharedCustomerTrackingUrl();
     if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
-    console.log("URL Copiar:", url);
+    // não logar a URL: contém courier_token sensível
     const ok = await writeClipboard(url);
     if (ok) {
       toast.success("Link do cliente copiado!");
@@ -260,7 +260,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
   function viewCustomerLink() {
     const url = getSharedCustomerTrackingUrl();
     if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
-    console.log("URL Visualizar:", url);
+    // não logar a URL: contém courier_token sensível
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
@@ -280,7 +280,7 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     if (!phone) { toast.error("Pedido sem telefone do cliente"); return; }
     const url = getSharedCustomerTrackingUrl();
     if (!url) { toast.error("Acompanhamento ainda não disponível"); return; }
-    console.log("URL WhatsApp:", url);
+    // não logar a URL: contém courier_token sensível
 
     const order = state.orders.find((o) => o.id === orderId);
     const firstItem = order?.items?.[0];

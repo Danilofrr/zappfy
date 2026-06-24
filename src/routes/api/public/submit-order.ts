@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/public/submit-order")({
           return jsonError(400, "JSON inválido no corpo da requisição");
         }
 
-        console.log("[submit-order] payload recebido:", JSON.stringify(raw));
+        // payload bruto não é logado: contém PII do cliente final
 
         const parsed = submitSchema.safeParse(raw);
         if (!parsed.success) {
