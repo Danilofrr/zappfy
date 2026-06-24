@@ -582,6 +582,7 @@ export const getPublicSupport = createServerFn({ method: "GET" }).handler(async 
     whats: (v?.platform?.supportWhats as string | undefined) ?? null,
     email: (v?.platform?.supportEmail as string | undefined) ?? null,
     enabled: v?.platform?.supportWhatsEnabled !== false,
+    dashboardEnabled: v?.platform?.supportWhatsDashboardEnabled === true,
   };
 });
 
