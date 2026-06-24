@@ -354,7 +354,60 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* Champion product of the month */}
+      <div className="mt-6 rounded-2xl border border-border bg-gradient-card p-5 lg:p-6 shadow-elegant">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <Trophy className="h-4 w-4 text-primary" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold flex items-center gap-2">
+                🏆 Produto Campeão do Mês
+              </div>
+              <div className="text-xs text-muted-foreground">Mais vendido no mês atual</div>
+            </div>
+          </div>
+          {champion && (
+            <span className="rounded-full bg-primary/15 text-primary text-[11px] font-semibold px-2.5 py-1">
+              Mais vendido do mês
+            </span>
+          )}
+        </div>
+        {champion ? (
+          <div className="flex items-start gap-4">
+            {champion.imageUrl ? (
+              <img
+                src={champion.imageUrl}
+                alt={champion.name}
+                className="h-20 w-20 lg:h-24 lg:w-24 rounded-xl object-cover border border-border shrink-0"
+              />
+            ) : (
+              <div className="h-20 w-20 lg:h-24 lg:w-24 rounded-xl bg-secondary/40 border border-border grid place-items-center shrink-0">
+                <Package className="h-8 w-8 text-muted-foreground" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-lg lg:text-xl font-bold truncate">{champion.name}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {champion.qty} {champion.qty === 1 ? "unidade vendida" : "unidades vendidas"} · {pct(champion.share)} das vendas
+              </div>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Mini label="Faturamento" value={m(brl(champion.revenue))} />
+                <Mini label="Lucro estimado" value={m(brl(champion.profit))} />
+                <Mini label="Participação" value={pct(champion.share)} />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground py-6 text-center">
+            Nenhum produto vendido este mês ainda.
+          </div>
+        )}
+      </div>
+
       {/* Recent orders */}
+
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between mb-4">
           <div className="text-sm font-semibold">Últimos pedidos</div>
