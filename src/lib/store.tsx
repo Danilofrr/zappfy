@@ -552,6 +552,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (patch.status !== undefined) body.status = patch.status;
       if (patch.items !== undefined) body.items = patch.items;
       if (patch.total !== undefined) body.total = patch.total;
+      if ((patch as any).date !== undefined) body.date = (patch as any).date;
       const { data, error } = await supabase.from("orders").update(body).eq("id", id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
