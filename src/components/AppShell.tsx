@@ -31,6 +31,7 @@ import { useStore } from "@/lib/store";
 import { ThemeToggle } from "@/lib/theme";
 import { SubscriptionStatusCard } from "@/components/SubscriptionStatusCard";
 import { usePlatformLogo } from "@/lib/usePlatformLogo";
+import { SupportWhatsBubble } from "@/components/SupportWhatsBubble";
 
 const navGroups: { label: string; items: { to: string; label: string; icon: any }[] }[] = [
   {
@@ -249,6 +250,8 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
           </button>
         </div>
       </nav>
+
+      <SupportWhatsBubble mode="dashboard" />
     </div>
   );
 }
