@@ -711,17 +711,20 @@ function EditOrderDialog({
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Cliente"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
-            <Field label="Telefone"><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
+            <Field label="Cliente" icon={UserIcon} iconTone="primary"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
+            <Field label="Telefone" icon={Phone}><Input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} /></Field>
           </div>
-          <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
+          <Field label="Endereço" icon={MapPin} iconTone="primary"><Input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} /></Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Bairro"><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
-            <Field label="Cidade"><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
+            <Field label="Bairro" icon={Home}><Input value={form.district} onChange={(e) => setForm({...form, district: e.target.value})} /></Field>
+            <Field label="Cidade" icon={Building2}><Input value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} /></Field>
           </div>
 
           <div className="rounded-lg border border-border p-3 space-y-2">
-            <div className="text-xs font-semibold text-muted-foreground">Itens do pedido</div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
+              <ShoppingBag className="h-3.5 w-3.5" />
+              <span>Itens do pedido</span>
+            </div>
             {items.map((it, idx) => (
               <div key={idx} className="grid grid-cols-12 gap-2 items-end">
                 <div className="col-span-5">
