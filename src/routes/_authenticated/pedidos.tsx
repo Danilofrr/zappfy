@@ -770,7 +770,31 @@ function EditOrderDialog({
               <Button type="button" onClick={addProductToOrder} disabled={!addProductId}>
                 <Plus className="h-4 w-4" /> Adicionar
               </Button>
-            </div>
+          </div>
+
+          <Field label="📅 Data do pedido">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn("w-full justify-start text-left font-normal", !orderDate && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {orderDate ? orderDate.toLocaleDateString("pt-BR") : "Selecione uma data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={orderDate}
+                  onSelect={(d) => d && setOrderDate(d)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </Field>
 
             {shipping > 0 && (
               <div className="text-xs text-muted-foreground">Entrega: R$ {shipping.toFixed(2)}</div>
