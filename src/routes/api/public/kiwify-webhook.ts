@@ -76,16 +76,16 @@ function getOrderIds(payload: any): { orderId: string | null; subId: string | nu
   };
 }
 
-type Cycle = "monthly" | "quarterly" | "yearly";
+type Cycle = "mensal" | "trimestral" | "anual" | "monthly" | "quarterly" | "yearly";
 
-function matchPlanCycle(plan: any, productId: string): Cycle | null {
+function legacyCycleFor(plan: any, productId: string): Cycle | null {
   if (plan.kiwify_product_id_monthly === productId) return "monthly";
   if (plan.kiwify_product_id_quarterly === productId) return "quarterly";
   if (plan.kiwify_product_id_yearly === productId) return "yearly";
   return null;
 }
 
-function daysFor(plan: any, cycle: Cycle): number {
+function legacyDaysFor(plan: any, cycle: Cycle): number {
   if (cycle === "monthly") return plan.duration_days_monthly ?? 30;
   if (cycle === "quarterly") return plan.duration_days_quarterly ?? 90;
   return plan.duration_days_yearly ?? 365;
