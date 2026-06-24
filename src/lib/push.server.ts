@@ -5,7 +5,6 @@ import type { Database } from "@/integrations/supabase/types";
 
 const VAPID_PUBLIC_KEY =
   "BEMaUchwsmaAILommuH7nAnp6zu8PO0un7R7xRAuKvvjLiXCGQ77YW99WoC8npUAbJ3sOZe1x6nuMj8J_Ne8F8o";
-const VAPID_PRIVATE_KEY = "MiamKcFmqrxF5ds8tpYEsc3Vr5c_o1hp1WG5W98r8e4";
 const VAPID_SUBJECT = "mailto:contato@zappfy.app";
 
 export type PushPayload = {
@@ -47,10 +46,15 @@ export async function sendPushToUser(
 
   console.log("[push] subscriptions found", subs.length);
 
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!privateKey) {
+    console.error("[push] VAPID_PRIVATE_KEY não configurada — push desabilitado");
+    return { sent: 0, removed: 0 };
+  }
   const vapid = {
     subject: VAPID_SUBJECT,
     publicKey: VAPID_PUBLIC_KEY,
-    privateKey: VAPID_PRIVATE_KEY,
+    privateKey,
   };
 
   let sent = 0;
