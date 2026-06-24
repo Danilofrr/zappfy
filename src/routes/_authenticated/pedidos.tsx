@@ -1182,7 +1182,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Status">
+              <Field label="Status" icon={Flag}>
                 <Select value={form.status} onValueChange={(v: any) => setForm({...form, status: v})}>
                   <SelectTrigger><SelectValue/></SelectTrigger>
                   <SelectContent>
@@ -1191,7 +1191,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 </Select>
               </Field>
             </div>
-            <Field label="Data do pedido">
+            <Field label="Data do pedido" icon={CalendarIcon} iconTone="primary">
               <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
             </Field>
 
