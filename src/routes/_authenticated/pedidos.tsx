@@ -1367,10 +1367,13 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
 
 
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, icon: Icon, iconTone = "muted", children }: { label: string; icon?: any; iconTone?: "primary" | "muted"; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
+      <Label className="text-xs flex items-center gap-1.5">
+        {Icon ? <Icon className={cn("h-3.5 w-3.5", iconTone === "primary" ? "text-primary" : "text-muted-foreground")} /> : null}
+        <span>{label}</span>
+      </Label>
       {children}
     </div>
   );
