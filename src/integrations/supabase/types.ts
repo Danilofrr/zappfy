@@ -1712,11 +1712,11 @@ export type Database = {
         Args: { _courier_id: string; _token: string }
         Returns: Json
       }
-      courier_logout: { Args: { _session: string }; Returns: boolean }
-      courier_lookup_for_login: {
-        Args: { _phone: string; _slug: string }
+      courier_login: {
+        Args: { _password: string; _phone: string; _slug: string }
         Returns: Json
       }
+      courier_logout: { Args: { _session: string }; Returns: boolean }
       courier_me: { Args: { _session: string }; Returns: Json }
       create_courier: {
         Args: {
