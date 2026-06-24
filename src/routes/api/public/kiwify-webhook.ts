@@ -287,9 +287,13 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
 
           // ===== CANCELAMENTO (mantém acesso até expirar) =====
           if (isCancel && existingSub) {
+            // Mantém status "ativo" até expires_at — a gate bloqueia automaticamente
+            // quando vencer. Marcamos no campo notes para rastreio.
             await supabaseAdmin
               .from("subscriptions")
-              .update({ status: "cancelado" })
+              .update({
+                notes: `[kiwify] assinatura cancelada em ${new Date().toISOString()} — acesso mantido até ${existingSub.expires_at ?? "—"}`,
+              })
               .eq("id", existingSub.id);
             await supabaseAdmin.from("access_logs").insert({
               user_id: userId,
