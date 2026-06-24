@@ -805,7 +805,7 @@ function EditOrderDialog({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Pagamento">
+            <Field label="Pagamento" icon={CreditCard} iconTone="primary">
               <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
@@ -815,7 +815,7 @@ function EditOrderDialog({
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Status">
+            <Field label="Status" icon={Flag}>
               <Select value={form.status} onValueChange={(v: any) => setForm({...form, status: v})}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
