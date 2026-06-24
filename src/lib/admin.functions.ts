@@ -342,6 +342,9 @@ export const savePlan = createServerFn({ method: "POST" })
         features: z.array(z.string()).default([]),
         is_active: z.boolean().default(true),
         sort_order: z.number().int().default(0),
+        kiwify_product_id_monthly: z.string().trim().optional().nullable(),
+        kiwify_product_id_quarterly: z.string().trim().optional().nullable(),
+        kiwify_product_id_yearly: z.string().trim().optional().nullable(),
       })
       .parse(d),
   )
