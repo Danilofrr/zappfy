@@ -72,6 +72,40 @@ function PlansPage() {
                 <div><Label>Preço anual (R$)</Label><Input type="number" step="0.01" value={editing.price_yearly} onChange={(e) => setEditing({ ...editing, price_yearly: Number(e.target.value) })} /></div>
               </div>
               <div><Label>Recursos (um por linha)</Label><Textarea value={editing.features} onChange={(e) => setEditing({ ...editing, features: e.target.value })} /></div>
+
+              <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-3">
+                <div>
+                  <div className="text-sm font-semibold">Integração Kiwify</div>
+                  <p className="text-xs text-muted-foreground">Cole o ID do produto da Kiwify para cada ciclo. O webhook usa esses IDs para liberar o acesso automaticamente.</p>
+                </div>
+                <div className="grid gap-3">
+                  <div>
+                    <Label>ID produto Kiwify — Mensal (30 dias)</Label>
+                    <Input
+                      placeholder="ex: 12ab34cd-56ef-..."
+                      value={editing.kiwify_product_id_monthly ?? ""}
+                      onChange={(e) => setEditing({ ...editing, kiwify_product_id_monthly: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>ID produto Kiwify — Trimestral (90 dias)</Label>
+                    <Input
+                      placeholder="ex: 12ab34cd-56ef-..."
+                      value={editing.kiwify_product_id_quarterly ?? ""}
+                      onChange={(e) => setEditing({ ...editing, kiwify_product_id_quarterly: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>ID produto Kiwify — Anual (365 dias)</Label>
+                    <Input
+                      placeholder="ex: 12ab34cd-56ef-..."
+                      value={editing.kiwify_product_id_yearly ?? ""}
+                      onChange={(e) => setEditing({ ...editing, kiwify_product_id_yearly: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center gap-2"><Switch checked={editing.is_active} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} /><Label>Plano ativo</Label></div>
             </div>
           )}
