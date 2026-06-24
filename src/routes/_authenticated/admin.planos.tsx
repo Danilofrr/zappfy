@@ -45,6 +45,7 @@ function PlansPage() {
                 {p.is_active ? <span className="text-xs px-2 py-1 bg-green-500/15 text-green-500 rounded">Ativo</span> : <span className="text-xs px-2 py-1 bg-secondary rounded">Inativo</span>}
               </div>
               <div className="mt-3 text-2xl font-bold text-primary">{brl(Number(p.price_monthly))}<span className="text-xs text-muted-foreground">/mês</span></div>
+              <div className="text-xs text-muted-foreground">{brl(Number(p.price_quarterly || 0))}/trimestre</div>
               <div className="text-xs text-muted-foreground">{brl(Number(p.price_yearly))}/ano</div>
               <ul className="mt-3 space-y-1 text-sm">
                 {(p.features || []).map((f: string, i: number) => <li key={i}>• {f}</li>)}
