@@ -92,7 +92,7 @@ function MotoboysPage() {
       if (error) { toast.error(error.message); setSaving(false); return; }
       toast.success("Motoboy atualizado");
     } else {
-      if (!form.password || form.password.length < 4) { toast.error("Senha mínima de 4 caracteres"); setSaving(false); return; }
+      if (!form.password || form.password.length < 6) { toast.error("Senha do motoboy deve ter ao menos 6 caracteres"); setSaving(false); return; }
       const password_hash = await bcrypt.hash(form.password, 10);
       const { error } = await (supabase as any).from("couriers").insert({
         store_id: uid,
@@ -141,7 +141,7 @@ function MotoboysPage() {
 
   async function confirmReset() {
     if (!resetting) return;
-    if (resetPwd.length < 4) { toast.error("Senha mínima de 4 caracteres"); return; }
+    if (resetPwd.length < 6) { toast.error("Senha do motoboy deve ter ao menos 6 caracteres"); return; }
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id;
     if (!uid) return;

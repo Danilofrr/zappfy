@@ -235,7 +235,12 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
           }
 
           if (!userId && isApproval) {
-            const password = cpf && cpf.length >= 6 ? cpf : `zappfy${Date.now()}`;
+            // Senha inicial aleatória forte — usuário recebe email/link de definição.
+            // Nunca usar CPF: previsível e o comprador poderia logar antes do reset.
+            const randomBytes = new Uint8Array(24);
+            crypto.getRandomValues(randomBytes);
+            const password = btoa(String.fromCharCode(...randomBytes))
+              .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "") + "Aa1!";
             const { data: created, error: createErr } =
               await supabaseAdmin.auth.admin.createUser({
                 email,
