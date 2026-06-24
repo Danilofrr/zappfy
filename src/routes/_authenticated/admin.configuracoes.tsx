@@ -20,7 +20,7 @@ import { LogoUploader } from "@/components/LogoUploader";
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({ component: AdminSettings });
 
 type Settings = {
-  platform?: { name?: string; logoUrl?: string; primaryColor?: string; supportEmail?: string; supportWhats?: string; supportWhatsEnabled?: boolean; cnpj?: string; url?: string };
+  platform?: { name?: string; logoUrl?: string; primaryColor?: string; supportEmail?: string; supportWhats?: string; supportWhatsEnabled?: boolean; supportWhatsDashboardEnabled?: boolean; cnpj?: string; url?: string };
   subscription?: { trialDays?: number; autoBlock?: boolean; toleranceDays?: number; msgExpired?: string; msgBlocked?: string };
   payment?: { pixKey?: string; receiverName?: string; bank?: string; defaultLink?: string; gateway?: string };
   messages?: { welcome?: string; nearDue?: string; expired?: string; paid?: string; blocked?: string; reactivated?: string };
