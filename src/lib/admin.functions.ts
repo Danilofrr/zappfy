@@ -286,10 +286,31 @@ export const generateActivationToken = createServerFn({ method: "POST" })
   });
 
 // ===== Senha do cliente =====
+const ALLOWED_REDIRECT_HOSTS = new Set([
+  "zappfy.lovable.app",
+  "localhost",
+  "127.0.0.1",
+]);
+function assertSafeRedirect(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase();
+    const ok =
+      ALLOWED_REDIRECT_HOSTS.has(host) ||
+      host.endsWith(".lovable.app") ||
+      host.endsWith(".lovable.dev");
+    if (!ok) throw new Error("Redirect não permitido");
+    return u.toString();
+  } catch {
+    throw new Error("Redirect inválido");
+  }
+}
+
 export const setClientPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { userId: string; password: string }) =>
-    z.object({ userId: z.string().uuid(), password: z.string().min(6).max(72) }).parse(d),
+    z.object({ userId: z.string().uuid(), password: z.string().min(8).max(72) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
@@ -311,10 +332,11 @@ export const sendClientPasswordReset = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: u, error: ue } = await supabaseAdmin.auth.admin.getUserById(data.userId);
     if (ue || !u?.user?.email) throw new Error(ue?.message ?? "Cliente sem e-mail");
+    const safeRedirect = assertSafeRedirect(data.redirectTo);
     const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
       email: u.user.email,
-      options: { redirectTo: data.redirectTo },
+      options: { redirectTo: safeRedirect },
     });
     if (error) throw new Error(error.message);
     return { email: u.user.email, link: link?.properties?.action_link ?? null };

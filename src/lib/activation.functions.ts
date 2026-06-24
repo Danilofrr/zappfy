@@ -20,7 +20,7 @@ export const getActivationInfo = createServerFn({ method: "POST" })
 
 export const activateAccount = createServerFn({ method: "POST" })
   .inputValidator((d: { token: string; password: string }) =>
-    z.object({ token: z.string().min(10), password: z.string().min(6) }).parse(d),
+    z.object({ token: z.string().min(10).max(200), password: z.string().min(8).max(72) }).parse(d),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
