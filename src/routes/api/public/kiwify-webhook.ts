@@ -206,18 +206,30 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
           let cycle: Cycle | null = null;
 
           if (productId) {
-            const { data: plans } = await supabaseAdmin
+            // 1) Tenta o novo modelo: 1 plano = 1 ciclo + 1 kiwify_product_id
+            const { data: directPlan } = await supabaseAdmin
               .from("plans")
               .select("*")
-              .or(
-                `kiwify_product_id_monthly.eq.${productId},kiwify_product_id_quarterly.eq.${productId},kiwify_product_id_yearly.eq.${productId}`,
-              );
-            for (const p of plans ?? []) {
-              const c = matchPlanCycle(p, productId);
-              if (c) {
-                plan = p;
-                cycle = c;
-                break;
+              .eq("kiwify_product_id", productId)
+              .maybeSingle();
+            if (directPlan) {
+              plan = directPlan;
+              cycle = (directPlan.billing_cycle as Cycle) ?? "mensal";
+            } else {
+              // 2) Fallback: modelo antigo (3 IDs em um único plano)
+              const { data: plans } = await supabaseAdmin
+                .from("plans")
+                .select("*")
+                .or(
+                  `kiwify_product_id_monthly.eq.${productId},kiwify_product_id_quarterly.eq.${productId},kiwify_product_id_yearly.eq.${productId}`,
+                );
+              for (const p of plans ?? []) {
+                const c = legacyCycleFor(p, productId);
+                if (c) {
+                  plan = p;
+                  cycle = c;
+                  break;
+                }
               }
             }
           }
