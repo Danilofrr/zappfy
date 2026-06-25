@@ -121,10 +121,29 @@ function getCheckoutCode(payload: any): string | null {
       payload?.data?.checkout_url ??
       payload?.data?.checkout_link ??
       "",
-  );
+  ).trim();
+  if (!raw) return null;
   const match = raw.match(/pay\.kiwify\.com\.br\/([A-Za-z0-9_-]{3,64})/i);
-  return match?.[1] ?? null;
+  if (match?.[1]) return match[1];
+  // Kiwify também envia o código curto direto em `checkout_link` (ex.: "GBDQRTd")
+  if (SAFE_ID_RE.test(raw)) return raw;
+  return null;
 }
+
+function getSubscriptionFrequency(payload: any): Cycle | null {
+  const freq = String(
+    payload?.Subscription?.plan?.frequency ??
+      payload?.subscription?.plan?.frequency ??
+      payload?.data?.Subscription?.plan?.frequency ??
+      "",
+  ).toLowerCase();
+  if (!freq) return null;
+  if (/year|annual|anual/.test(freq)) return "anual";
+  if (/quarter|trimestr|3.?month/.test(freq)) return "trimestral";
+  if (/month|mensal/.test(freq)) return "mensal";
+  return null;
+}
+
 
 function getPaidAmountCents(payload: any): number | null {
   const candidates = [
