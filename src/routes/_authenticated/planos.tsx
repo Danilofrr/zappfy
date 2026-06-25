@@ -172,3 +172,25 @@ function PlanCard({ plan }: { plan: Plan }) {
   );
 }
 
+function TrustRow() {
+  const items = [
+    { icon: CreditCard, label: "Aceitamos Cartão" },
+    { icon: ShieldCheck, label: "Pagamento Seguro" },
+    { icon: XCircle, label: "Cancele quando quiser" },
+  ];
+  return (
+    <div className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-6">
+      {items.map(({ icon: Icon, label }) => (
+        <div
+          key={label}
+          className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-foreground/90"
+        >
+          <Icon className="h-4 w-4 text-primary" />
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
