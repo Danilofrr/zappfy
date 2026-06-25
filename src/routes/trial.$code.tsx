@@ -78,7 +78,7 @@ function TrialPage() {
   if (checking) {
     return (
       <div className="min-h-screen grid place-items-center bg-[#0a0a0a]">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -113,22 +113,22 @@ function TrialPage() {
       {/* Glow background */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-60"
+        className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           background:
-            "radial-gradient(60% 50% at 50% 30%, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0) 60%), radial-gradient(40% 40% at 80% 80%, rgba(245,158,11,0.10) 0%, transparent 70%)",
+            "radial-gradient(60% 50% at 50% 30%, color-mix(in oklab, var(--primary) 22%, transparent) 0%, transparent 60%), radial-gradient(40% 40% at 80% 80%, color-mix(in oklab, var(--primary) 14%, transparent) 0%, transparent 70%)",
         }}
       />
 
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-md rounded-3xl border border-amber-500/20 bg-[#141414]/95 backdrop-blur-xl p-7 sm:p-8 shadow-[0_30px_80px_-20px_rgba(245,158,11,0.35)]"
+        className="relative w-full max-w-md rounded-3xl border border-primary/25 bg-[#141414]/95 backdrop-blur-xl p-7 sm:p-8 shadow-[0_30px_80px_-20px_color-mix(in_oklab,var(--primary)_40%,transparent)]"
       >
         <div className="flex items-center gap-2 mb-2">
-          <div className="grid place-items-center h-9 w-9 rounded-xl bg-amber-500/15 text-amber-400">
+          <div className="grid place-items-center h-9 w-9 rounded-xl bg-primary/15 text-primary">
             <Zap className="h-5 w-5" fill="currentColor" />
           </div>
-          <h1 className="text-2xl font-bold text-amber-400 tracking-tight">
+          <h1 className="text-2xl font-bold text-primary tracking-tight">
             Trial grátis — {days} dias
           </h1>
         </div>
@@ -136,9 +136,9 @@ function TrialPage() {
           Preencha seus dados e receba o acesso por email na hora. Sem cartão de crédito.
         </p>
 
-        <div className="flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 mb-6">
-          <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
-          <p className="text-sm font-medium text-amber-300/90">
+        <div className="flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 mb-6">
+          <Sparkles className="h-4 w-4 text-primary shrink-0" />
+          <p className="text-sm font-medium text-primary/90">
             Sem cartão · Acesso completo · Login imediato
           </p>
         </div>
@@ -185,7 +185,7 @@ function TrialPage() {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full mt-6 h-12 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-semibold text-base shadow-[0_10px_30px_-10px_rgba(245,158,11,0.6)]"
+          className="w-full mt-6 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-[0_10px_30px_-10px_color-mix(in_oklab,var(--primary)_70%,transparent)]"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -208,6 +208,7 @@ function TrialPage() {
     </div>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
