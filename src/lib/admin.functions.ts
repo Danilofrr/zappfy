@@ -287,6 +287,8 @@ export const generateActivationToken = createServerFn({ method: "POST" })
 
 // ===== Senha do cliente =====
 const ALLOWED_REDIRECT_HOSTS = new Set([
+  "app.zappfy.shop",
+  "zappfy.shop",
   "zappfy.lovable.app",
   "localhost",
   "127.0.0.1",
