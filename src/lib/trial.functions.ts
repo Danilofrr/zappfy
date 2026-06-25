@@ -185,7 +185,7 @@ export const updateTrialInvite = createServerFn({ method: "POST" })
     }
     const { data: updated, error } = await supabaseAdmin
       .from("trial_invites")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.id)
       .select()
       .single();
