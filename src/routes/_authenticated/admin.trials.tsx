@@ -341,6 +341,80 @@ function TrialsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar convite {editing?.code}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1">
+              <Label>Rótulo</Label>
+              <Input
+                placeholder="Ex: Campanha Instagram"
+                value={editForm.label}
+                onChange={(e) => setEditForm({ ...editForm, label: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1">
+                <Label>Dias de teste grátis</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={90}
+                  value={editForm.trialDays}
+                  onChange={(e) => setEditForm({ ...editForm, trialDays: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label>Nova validade do link (dias)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={editForm.expiresInDays}
+                  onChange={(e) => setEditForm({ ...editForm, expiresInDays: e.target.value })}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Validade atual:{" "}
+              {editing?.expires_at
+                ? new Date(editing.expires_at).toLocaleDateString("pt-BR")
+                : "sem validade"}
+              . Use 0 para remover a validade, ou informe novos dias a partir de agora.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!editing) return;
+                try {
+                  await updateFn({
+                    data: {
+                      id: editing.id,
+                      label: editForm.label,
+                      trialDays: Number(editForm.trialDays) || 7,
+                      expiresInDays: Number(editForm.expiresInDays) || 0,
+                    },
+                  });
+                  toast.success("Convite atualizado");
+                  setEditing(null);
+                  invalidate();
+                } catch (e: any) {
+                  toast.error(e.message ?? "Erro ao atualizar");
+                }
+              }}
+            >
+              <Pencil className="h-4 w-4 mr-1" /> Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminShell>
   );
 }
