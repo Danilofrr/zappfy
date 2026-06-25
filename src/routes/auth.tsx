@@ -385,10 +385,15 @@ function AuthPage() {
             <div className="mt-4 text-center text-sm text-muted-foreground">
               {mode === "login" ? (
                 <>
-                  Ainda não tem conta?{" "}
-                  <button type="button" onClick={() => setMode("signup")} className="text-primary hover:underline font-medium">
-                    Cadastre-se
-                  </button>
+                  Não tem conta?{" "}
+                  <a
+                    href="https://zappfy.shop/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Conheça o Zappfy
+                  </a>
                 </>
               ) : (
                 <>
