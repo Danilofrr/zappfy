@@ -118,7 +118,7 @@ function BlockedPage() {
 
         {/* Rodapé */}
         <p className="text-center text-xs text-muted-foreground mt-8">
-          Pagamento processado com segurança pela Kiwify · Pix, cartão ou boleto · Cancele quando quiser
+          Aceitamos cartão de crédito
         </p>
       </div>
     </div>
@@ -129,21 +129,14 @@ function PlanCard({ plan }: { plan: Plan }) {
   return (
     <div
       className={cn(
-        "relative h-full rounded-2xl border bg-card p-6 flex flex-col shadow-elegant transition-all",
+        "relative h-full rounded-2xl border-2 bg-card p-6 flex flex-col transition-all",
         plan.highlight
-          ? "border-primary/60 ring-2 ring-primary/30"
-          : "border-border hover:border-primary/40",
+          ? "border-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.15),0_20px_50px_-15px_hsl(var(--primary)/0.45)]"
+          : "border-primary/40 shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.25)] hover:border-primary/70 hover:shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.4)]",
       )}
     >
       {plan.badge && (
-        <div
-          className={cn(
-            "absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap",
-            plan.highlight
-              ? "bg-primary text-primary-foreground"
-              : "bg-foreground text-background",
-          )}
-        >
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap bg-primary text-primary-foreground shadow-md shadow-primary/40">
           {plan.badge}
         </div>
       )}
@@ -168,7 +161,6 @@ function PlanCard({ plan }: { plan: Plan }) {
         )}
       </div>
 
-
       <ul className="space-y-2 mb-6 flex-1">
         {FEATURES.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm">
@@ -182,15 +174,11 @@ function PlanCard({ plan }: { plan: Plan }) {
         href={plan.link}
         target="_blank"
         rel="noopener noreferrer"
-        className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all hover:scale-[1.02]",
-          plan.highlight
-            ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/30"
-            : "bg-foreground text-background hover:opacity-90",
-        )}
+        className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all hover:scale-[1.02] bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/30"
       >
         {plan.cta}
       </a>
     </div>
   );
 }
+
