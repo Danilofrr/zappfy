@@ -129,9 +129,9 @@ function PlanCard({ plan }: { plan: Plan }) {
   return (
     <div
       className={cn(
-        "relative rounded-2xl border bg-card p-6 flex flex-col shadow-elegant transition-all",
+        "relative h-full rounded-2xl border bg-card p-6 flex flex-col shadow-elegant transition-all",
         plan.highlight
-          ? "border-primary/60 ring-2 ring-primary/30 lg:scale-[1.03]"
+          ? "border-primary/60 ring-2 ring-primary/30"
           : "border-border hover:border-primary/40",
       )}
     >
@@ -157,9 +157,17 @@ function PlanCard({ plan }: { plan: Plan }) {
           <span className="text-sm text-muted-foreground">{plan.priceSuffix}</span>
         </div>
         {plan.caption && (
-          <div className="mt-1 text-xs text-muted-foreground">{plan.caption}</div>
+          <div
+            className={cn(
+              "mt-1 text-xs",
+              plan.highlight ? "text-primary font-semibold" : "text-muted-foreground",
+            )}
+          >
+            {plan.caption}
+          </div>
         )}
       </div>
+
 
       <ul className="space-y-2 mb-6 flex-1">
         {FEATURES.map((f) => (
