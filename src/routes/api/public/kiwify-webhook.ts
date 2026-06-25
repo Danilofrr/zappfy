@@ -235,19 +235,24 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
           }
 
           if (!userId && isApproval) {
-            // Senha inicial aleatória forte — usuário recebe email/link de definição.
-            // Nunca usar CPF: previsível e o comprador poderia logar antes do reset.
-            const randomBytes = new Uint8Array(24);
-            crypto.getRandomValues(randomBytes);
-            const password = btoa(String.fromCharCode(...randomBytes))
-              .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "") + "Aa1!";
+            // Senha inicial = CPF (somente dígitos). Se não vier CPF, gera senha aleatória forte.
+            let password: string;
+            if (cpf && cpf.length >= 8) {
+              password = cpf;
+            } else {
+              const randomBytes = new Uint8Array(24);
+              crypto.getRandomValues(randomBytes);
+              password = btoa(String.fromCharCode(...randomBytes))
+                .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "") + "Aa1!";
+            }
             const { data: created, error: createErr } =
               await supabaseAdmin.auth.admin.createUser({
                 email,
                 password,
                 email_confirm: true,
-                user_metadata: { name, phone, source: "kiwify" },
+                user_metadata: { name, phone, cpf, source: "kiwify" },
               });
+
             if (createErr || !created.user) {
               await log("error", `Falha ao criar usuário: ${createErr?.message}`);
               return json(500, { error: "Falha ao criar usuário" });
