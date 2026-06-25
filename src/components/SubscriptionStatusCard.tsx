@@ -119,7 +119,7 @@ export function SubscriptionStatusCard({
 
         {!isActive && (
           <Link
-            to="/minha-assinatura"
+            to="/planos"
             className={cn(
               "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg transition-all hover:scale-[1.02] shrink-0",
               urgent || isExpired
@@ -128,7 +128,7 @@ export function SubscriptionStatusCard({
             )}
           >
             <Crown className="h-4 w-4" />
-            {isExpired ? "Assinar para continuar" : `Assinar ${brl(planPrice)}/mês`}
+            Assinar plano
           </Link>
         )}
       </div>
