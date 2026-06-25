@@ -110,7 +110,7 @@ function BlockedPage() {
         </div>
 
         {/* Planos */}
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-3 items-stretch">
           {PLANS.map((p) => (
             <PlanCard key={p.id} plan={p} />
           ))}
