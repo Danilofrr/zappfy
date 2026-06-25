@@ -101,7 +101,7 @@ export function NotificationsCard() {
       {preview && supported && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-[12px]">
           <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
-          <span>As notificações só funcionam no app publicado (não no preview do Lovable). Abra <strong>zappfy.lovable.app</strong> para ativar.</span>
+          <span>As notificações só funcionam no app publicado (não no preview do Lovable). Abra <strong>app.zappfy.shop</strong> para ativar.</span>
         </div>
       )}
 
