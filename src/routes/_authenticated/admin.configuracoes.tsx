@@ -30,7 +30,7 @@ type Settings = {
 };
 
 const DEFAULTS: Settings = {
-  platform: { name: "ZappFy", primaryColor: "#22c55e", url: "https://zappfy.lovable.app" },
+  platform: { name: "ZappFy", primaryColor: "#22c55e", url: "https://app.zappfy.shop" },
   subscription: { trialDays: 7, autoBlock: true, toleranceDays: 3, msgExpired: "Sua assinatura venceu. Renove para continuar usando o ZappFy.", msgBlocked: "Sua conta está bloqueada por falta de pagamento. Regularize para reativar." },
   payment: { gateway: "" },
   messages: {
