@@ -20,6 +20,8 @@ import {
   createTrialInvite,
   revokeTrialInvite,
   reactivateTrialInvite,
+  updateTrialInvite,
+  deleteTrialInvite,
   getTrialStats,
 } from "@/lib/trial.functions";
 import {
@@ -28,6 +30,8 @@ import {
   Copy,
   Ban,
   Play,
+  Pencil,
+  Trash2,
   Users,
   TrendingUp,
   CheckCircle2,
@@ -49,6 +53,8 @@ function TrialsPage() {
   const createFn = useServerFn(createTrialInvite);
   const revokeFn = useServerFn(revokeTrialInvite);
   const reactivateFn = useServerFn(reactivateTrialInvite);
+  const updateFn = useServerFn(updateTrialInvite);
+  const deleteFn = useServerFn(deleteTrialInvite);
 
   const { data: invites = [], isLoading } = useQuery({
     queryKey: ["trial-invites"],
@@ -62,6 +68,8 @@ function TrialsPage() {
 
   const [openCreate, setOpenCreate] = useState(false);
   const [form, setForm] = useState({ label: "", trialDays: "7", expiresInDays: "0" });
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ label: "", trialDays: "7", expiresInDays: "0" });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["trial-invites"] });
@@ -196,6 +204,21 @@ function TrialsPage() {
                         <Button size="sm" variant="ghost" title="Copiar link" onClick={() => copyLink(i.code)}>
                           <Copy className="h-4 w-4" />
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Editar"
+                          onClick={() => {
+                            setEditing(i);
+                            setEditForm({
+                              label: i.label ?? "",
+                              trialDays: String(i.trial_days ?? 7),
+                              expiresInDays: "0",
+                            });
+                          }}
+                        >
+                          <Pencil className="h-4 w-4 text-primary" />
+                        </Button>
                         {i.status === "active" ? (
                           <Button
                             size="sm"
@@ -224,6 +247,28 @@ function TrialsPage() {
                             <Play className="h-4 w-4 text-green-500" />
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Excluir"
+                          onClick={async () => {
+                            if (
+                              !confirm(
+                                `Excluir permanentemente o convite ${i.code}? Esta ação não pode ser desfeita.`,
+                              )
+                            )
+                              return;
+                            try {
+                              await deleteFn({ data: { id: i.id } });
+                              toast.success("Convite excluído");
+                              invalidate();
+                            } catch (e: any) {
+                              toast.error(e.message ?? "Erro ao excluir");
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -292,6 +337,80 @@ function TrialsPage() {
             </Button>
             <Button onClick={() => create.mutate()} disabled={create.isPending}>
               <Gift className="h-4 w-4 mr-1" /> Gerar link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar convite {editing?.code}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1">
+              <Label>Rótulo</Label>
+              <Input
+                placeholder="Ex: Campanha Instagram"
+                value={editForm.label}
+                onChange={(e) => setEditForm({ ...editForm, label: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1">
+                <Label>Dias de teste grátis</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={90}
+                  value={editForm.trialDays}
+                  onChange={(e) => setEditForm({ ...editForm, trialDays: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label>Nova validade do link (dias)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={editForm.expiresInDays}
+                  onChange={(e) => setEditForm({ ...editForm, expiresInDays: e.target.value })}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Validade atual:{" "}
+              {editing?.expires_at
+                ? new Date(editing.expires_at).toLocaleDateString("pt-BR")
+                : "sem validade"}
+              . Use 0 para remover a validade, ou informe novos dias a partir de agora.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!editing) return;
+                try {
+                  await updateFn({
+                    data: {
+                      id: editing.id,
+                      label: editForm.label,
+                      trialDays: Number(editForm.trialDays) || 7,
+                      expiresInDays: Number(editForm.expiresInDays) || 0,
+                    },
+                  });
+                  toast.success("Convite atualizado");
+                  setEditing(null);
+                  invalidate();
+                } catch (e: any) {
+                  toast.error(e.message ?? "Erro ao atualizar");
+                }
+              }}
+            >
+              <Pencil className="h-4 w-4 mr-1" /> Salvar
             </Button>
           </DialogFooter>
         </DialogContent>
