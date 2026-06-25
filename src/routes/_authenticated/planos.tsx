@@ -103,9 +103,8 @@ function PlansPage() {
           ))}
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          Aceitamos cartão de crédito
-        </p>
+        <TrustRow />
+
       </div>
     </AppShell>
   );
