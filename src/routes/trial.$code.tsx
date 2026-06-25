@@ -43,7 +43,8 @@ function TrialPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!fullName || !email) {
+    const emailNorm = email.trim().toLowerCase();
+    if (!fullName.trim() || !emailNorm) {
       toast.error("Preencha nome e e-mail.");
       return;
     }
@@ -54,22 +55,73 @@ function TrialPage() {
     }
     setLoading(true);
     try {
+      const redirectTo =
+        typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: emailNorm,
         password,
-        options: { data: { full_name: fullName, store_name: storeName || fullName } },
+        options: {
+          emailRedirectTo: redirectTo,
+          data: {
+            full_name: fullName.trim(),
+            store_name: (storeName || fullName).trim(),
+          },
+        },
       });
-      if (error) throw error;
+
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        // Conta já existe — tenta logar e ativar o trial
+        if (
+          msg.includes("already") ||
+          msg.includes("registered") ||
+          msg.includes("exists") ||
+          msg.includes("user already")
+        ) {
+          const { data: signIn, error: signErr } = await supabase.auth.signInWithPassword({
+            email: emailNorm,
+            password,
+          });
+          if (signErr || !signIn.session) {
+            toast.error(
+              "Este e-mail já tem conta. Faça login para ativar o trial ou use outro e-mail.",
+            );
+            navigate({ to: "/auth" });
+            return;
+          }
+          await redeemFn({ data: { code } });
+          toast.success(`Trial de ${info.trial_days} dias ativado!`);
+          navigate({ to: "/" });
+          return;
+        }
+        throw error;
+      }
+
+      // Sem sessão → confirmação de e-mail ativa no Supabase
       if (!data.session) {
-        toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+        toast.message("Conta criada!", {
+          description:
+            "Verifique seu e-mail para confirmar o cadastro. Depois faça login para ativar o trial.",
+          duration: 8000,
+        });
         navigate({ to: "/auth" });
         return;
       }
-      await redeemFn({ data: { code } });
+
+      try {
+        await redeemFn({ data: { code } });
+      } catch (redeemErr: any) {
+        toast.error(
+          `Conta criada, mas falhou ao ativar o trial: ${redeemErr?.message ?? "erro desconhecido"}`,
+        );
+        navigate({ to: "/" });
+        return;
+      }
       toast.success(`Trial de ${info.trial_days} dias ativado!`);
       navigate({ to: "/" });
     } catch (err: any) {
-      toast.error(err.message ?? "Erro ao criar conta");
+      console.error("[trial] signup failed", err);
+      toast.error(err?.message ?? "Erro ao criar conta");
     } finally {
       setLoading(false);
     }
@@ -168,7 +220,7 @@ function TrialPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres, com letra e número"
               autoComplete="new-password"
             />
           </Field>
