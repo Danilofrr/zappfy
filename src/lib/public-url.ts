@@ -7,7 +7,8 @@ function isPreviewHost(hostname: string) {
     host.startsWith("127.") ||
     host.startsWith("id-preview--") ||
     host.includes("preview--") ||
-    host.endsWith("-dev.lovable.app")
+    host.endsWith("-dev.lovable.app") ||
+    host === "zappfy.lovable.app"
   );
 }
 
