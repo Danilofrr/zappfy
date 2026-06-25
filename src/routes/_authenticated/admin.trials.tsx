@@ -68,6 +68,8 @@ function TrialsPage() {
 
   const [openCreate, setOpenCreate] = useState(false);
   const [form, setForm] = useState({ label: "", trialDays: "7", expiresInDays: "0" });
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ label: "", trialDays: "7", expiresInDays: "0" });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["trial-invites"] });
