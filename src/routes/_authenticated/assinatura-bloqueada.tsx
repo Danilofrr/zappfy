@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, Check, Sparkles, LogOut } from "lucide-react";
+import { Lock, Check, Sparkles, LogOut, CreditCard, ShieldCheck, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
