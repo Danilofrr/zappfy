@@ -220,7 +220,7 @@ function TrialPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres, com letra e número"
               autoComplete="new-password"
             />
           </Field>
