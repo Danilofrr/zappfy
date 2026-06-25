@@ -287,6 +287,8 @@ export const generateActivationToken = createServerFn({ method: "POST" })
 
 // ===== Senha do cliente =====
 const ALLOWED_REDIRECT_HOSTS = new Set([
+  "app.zappfy.shop",
+  "zappfy.shop",
   "zappfy.lovable.app",
   "localhost",
   "127.0.0.1",
@@ -298,6 +300,7 @@ function assertSafeRedirect(url: string | undefined): string | undefined {
     const host = u.hostname.toLowerCase();
     const ok =
       ALLOWED_REDIRECT_HOSTS.has(host) ||
+      host.endsWith(".zappfy.shop") ||
       host.endsWith(".lovable.app") ||
       host.endsWith(".lovable.dev");
     if (!ok) throw new Error("Redirect não permitido");

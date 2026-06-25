@@ -30,7 +30,7 @@ type Settings = {
 };
 
 const DEFAULTS: Settings = {
-  platform: { name: "ZappFy", primaryColor: "#22c55e", url: "https://zappfy.lovable.app" },
+  platform: { name: "ZappFy", primaryColor: "#22c55e", url: "https://app.zappfy.shop" },
   subscription: { trialDays: 7, autoBlock: true, toleranceDays: 3, msgExpired: "Sua assinatura venceu. Renove para continuar usando o ZappFy.", msgBlocked: "Sua conta está bloqueada por falta de pagamento. Regularize para reativar." },
   payment: { gateway: "" },
   messages: {
@@ -119,7 +119,7 @@ function AdminSettings() {
             <CardHeader><CardTitle>Configurações da Plataforma</CardTitle><CardDescription>Identidade e contatos oficiais do SaaS</CardDescription></CardHeader>
             <CardContent className="grid md:grid-cols-2 gap-4">
               <Field label="Nome do SaaS"><Input value={s.platform?.name ?? ""} onChange={(e) => set("platform", { name: e.target.value })} /></Field>
-              <Field label="URL oficial"><Input value={s.platform?.url ?? ""} onChange={(e) => set("platform", { url: e.target.value })} placeholder="https://zappfy.lovable.app" /></Field>
+              <Field label="URL oficial"><Input value={s.platform?.url ?? ""} onChange={(e) => set("platform", { url: e.target.value })} placeholder="https://app.zappfy.shop" /></Field>
               <div className="md:col-span-2">
                 <LogoUploader
                   value={s.platform?.logoUrl ?? null}

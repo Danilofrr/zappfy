@@ -1,4 +1,4 @@
-export const DEFAULT_OFFICIAL_PUBLIC_URL = "https://zappfy.lovable.app";
+export const DEFAULT_OFFICIAL_PUBLIC_URL = "https://app.zappfy.shop";
 
 function isPreviewHost(hostname: string) {
   const host = hostname.toLowerCase();
@@ -7,7 +7,8 @@ function isPreviewHost(hostname: string) {
     host.startsWith("127.") ||
     host.startsWith("id-preview--") ||
     host.includes("preview--") ||
-    host.endsWith("-dev.lovable.app")
+    host.endsWith("-dev.lovable.app") ||
+    host === "zappfy.lovable.app"
   );
 }
 
