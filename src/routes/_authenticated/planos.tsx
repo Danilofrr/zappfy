@@ -14,6 +14,7 @@ type Plan = {
   price: string;
   priceSuffix: string;
   caption?: string;
+  subCaption?: string;
   highlight?: boolean;
   link: string;
   cta: string;
@@ -23,20 +24,18 @@ const PLANS: Plan[] = [
   {
     id: "mensal",
     name: "Mensal",
-    price: "R$ 79",
+    price: "R$ 69,90",
     priceSuffix: "/mês",
-    caption: "Cobrança mensal recorrente",
+    caption: "Flexibilidade total · Cancele quando quiser",
     link: "https://pay.kiwify.com.br/vQT87OV",
     cta: "Assinar plano mensal",
   },
   {
     id: "trimestral",
     name: "Trimestral",
-    badge: "Mais escolhido",
-    price: "R$ 199",
+    price: "R$ 149,90",
     priceSuffix: "/trimestre",
-    caption: "Equivale a R$ 66,33/mês · economize 16%",
-    highlight: true,
+    caption: "R$ 149,90 a cada 3 meses · Economize 25%",
     link: "https://pay.kiwify.com.br/GBDQRTd",
     cta: "Assinar plano trimestral",
   },
@@ -44,9 +43,10 @@ const PLANS: Plan[] = [
     id: "anual",
     name: "Anual",
     badge: "Melhor custo-benefício",
-    price: "R$ 699",
-    priceSuffix: "/ano",
-    caption: "Equivale a R$ 58,25/mês · economize 26%",
+    price: "R$ 27,90",
+    priceSuffix: "/mês",
+    caption: "R$ 334,90 no ano · Economize 60%",
+    highlight: true,
     link: "https://pay.kiwify.com.br/zhZzzmL",
     cta: "Assinar plano anual",
   },
@@ -97,7 +97,7 @@ function PlansPage() {
           </p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-3 items-stretch">
           {PLANS.map((p) => (
             <PlanCard key={p.id} plan={p} />
           ))}
@@ -115,9 +115,9 @@ function PlanCard({ plan }: { plan: Plan }) {
   return (
     <div
       className={cn(
-        "relative rounded-2xl border bg-card p-6 flex flex-col shadow-elegant transition-all",
+        "relative h-full rounded-2xl border bg-card p-6 flex flex-col shadow-elegant transition-all",
         plan.highlight
-          ? "border-primary/60 ring-2 ring-primary/30 lg:scale-[1.03]"
+          ? "border-primary/60 ring-2 ring-primary/30"
           : "border-border hover:border-primary/40",
       )}
     >
@@ -143,7 +143,14 @@ function PlanCard({ plan }: { plan: Plan }) {
           <span className="text-sm text-muted-foreground">{plan.priceSuffix}</span>
         </div>
         {plan.caption && (
-          <div className="mt-1 text-xs text-muted-foreground">{plan.caption}</div>
+          <div
+            className={cn(
+              "mt-1 text-xs",
+              plan.highlight ? "text-primary font-semibold" : "text-muted-foreground",
+            )}
+          >
+            {plan.caption}
+          </div>
         )}
       </div>
 
