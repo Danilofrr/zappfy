@@ -45,6 +45,7 @@ const kiwifyPayloadSchema = z
       .optional(),
     customer: z.record(z.string(), z.any()).optional(),
     buyer: z.record(z.string(), z.any()).optional(),
+    data: z.record(z.string(), z.any()).optional(),
   })
   .passthrough();
 
@@ -87,11 +88,62 @@ function getEventType(payload: any): string {
 function getProductId(payload: any): string | null {
   return (
     payload?.Product?.product_id ??
+    payload?.Product?.id ??
     payload?.product_id ??
     payload?.product?.id ??
+    payload?.product?.product_id ??
     payload?.Subscription?.plan?.id ??
+    payload?.data?.Product?.product_id ??
+    payload?.data?.product_id ??
+    payload?.data?.product?.id ??
     null
   );
+}
+
+function getProductName(payload: any): string {
+  return String(
+    payload?.Product?.product_name ??
+      payload?.Product?.name ??
+      payload?.product?.name ??
+      payload?.product_name ??
+      payload?.data?.Product?.product_name ??
+      payload?.data?.product?.name ??
+      "",
+  ).toLowerCase();
+}
+
+function getCheckoutCode(payload: any): string | null {
+  const raw = String(
+    payload?.checkout_url ??
+      payload?.checkout_link ??
+      payload?.checkout?.url ??
+      payload?.Product?.checkout_url ??
+      payload?.data?.checkout_url ??
+      payload?.data?.checkout_link ??
+      "",
+  );
+  const match = raw.match(/pay\.kiwify\.com\.br\/([A-Za-z0-9_-]{3,64})/i);
+  return match?.[1] ?? null;
+}
+
+function getPaidAmountCents(payload: any): number | null {
+  const candidates = [
+    payload?.Commissions?.charge_amount,
+    payload?.Commissions?.product_base_price,
+    payload?.order?.amount,
+    payload?.order_amount,
+    payload?.amount,
+    payload?.price,
+    payload?.data?.Commissions?.charge_amount,
+    payload?.data?.amount,
+  ];
+  for (const value of candidates) {
+    if (value === undefined || value === null || value === "") continue;
+    const n = Number(String(value).replace(",", "."));
+    if (!Number.isFinite(n) || n <= 0) continue;
+    return n > 1000 ? Math.round(n) : Math.round(n * 100);
+  }
+  return null;
 }
 
 function getCustomer(payload: any): {
@@ -100,7 +152,14 @@ function getCustomer(payload: any): {
   cpf: string;
   phone: string;
 } {
-  const c = payload?.Customer ?? payload?.customer ?? payload?.buyer ?? {};
+  const c =
+    payload?.Customer ??
+    payload?.customer ??
+    payload?.buyer ??
+    payload?.data?.Customer ??
+    payload?.data?.customer ??
+    payload?.data?.buyer ??
+    {};
   return {
     email: String(c.email ?? "").trim().toLowerCase(),
     name: String(c.full_name ?? c.name ?? c.first_name ?? "Cliente Zappfy"),
@@ -114,12 +173,18 @@ function getOrderIds(payload: any): { orderId: string | null; subId: string | nu
     orderId:
       payload?.order_id ??
       payload?.Order?.id ??
+      payload?.order?.id ??
       payload?.id ??
+      payload?.data?.order_id ??
+      payload?.data?.Order?.id ??
+      payload?.data?.id ??
       null,
     subId:
       payload?.Subscription?.id ??
       payload?.subscription_id ??
       payload?.subscription?.id ??
+      payload?.data?.Subscription?.id ??
+      payload?.data?.subscription_id ??
       null,
   };
 }
@@ -137,6 +202,37 @@ function legacyDaysFor(plan: any, cycle: Cycle): number {
   if (cycle === "monthly") return plan.duration_days_monthly ?? 30;
   if (cycle === "quarterly") return plan.duration_days_quarterly ?? 90;
   return plan.duration_days_yearly ?? 365;
+}
+
+function centsFromPlanValue(value: unknown): number | null {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null;
+}
+
+function cycleFromText(text: string): Cycle | null {
+  if (/anual|annual|year|ano/.test(text)) return "anual";
+  if (/trimestral|quarter|trimestre|3\s*mes/.test(text)) return "trimestral";
+  if (/mensal|monthly|m[eê]s/.test(text)) return "mensal";
+  return null;
+}
+
+async function ensureClientScaffold(supabaseAdmin: any, userId: string, name: string, phone: string) {
+  await supabaseAdmin
+    .from("profiles")
+    .upsert({ id: userId, full_name: name }, { onConflict: "id" });
+
+  await supabaseAdmin
+    .from("settings")
+    .upsert(
+      { user_id: userId, store_name: name ? `Loja ${name}` : "Minha Loja", whatsapp: phone || "" },
+      { onConflict: "user_id", ignoreDuplicates: true },
+    );
+
+  await supabaseAdmin
+    .from("user_roles")
+    .upsert({ user_id: userId, role: "cliente" }, { onConflict: "user_id,role" });
+
+  await supabaseAdmin.rpc("apply_tracking_default_for_user", { _user_id: userId });
 }
 
 export const Route = createFileRoute("/api/public/kiwify-webhook")({
@@ -175,6 +271,9 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
         const eventType = getEventType(payload);
         const rawProductId = getProductId(payload);
         const productId = rawProductId && SAFE_ID_RE.test(rawProductId) ? rawProductId : null;
+        const checkoutCode = getCheckoutCode(payload);
+        const productName = getProductName(payload);
+        const paidAmountCents = getPaidAmountCents(payload);
         const { email: rawEmail, name: rawName, cpf, phone: rawPhone } = getCustomer(payload);
         const emailParsed = z.string().email().max(255).safeParse(rawEmail);
         const email = emailParsed.success ? emailParsed.data.toLowerCase() : "";
@@ -258,11 +357,6 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
               return json(500, { error: "Falha ao criar usuário" });
             }
             userId = created.user.id;
-
-            // cria profile básico
-            await supabaseAdmin
-              .from("profiles")
-              .upsert({ id: userId, full_name: name }, { onConflict: "id" });
           }
 
           if (!userId) {
@@ -270,6 +364,8 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
             await log("ignored", "Usuário não encontrado e evento não é aprovação");
             return json(200, { ok: true, ignored: true });
           }
+
+          await ensureClientScaffold(supabaseAdmin, userId, name, phone);
 
           // 2) Resolve plano + ciclo pelo product_id
           let plan: any = null;
@@ -304,6 +400,54 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
             }
           }
 
+          if (!plan && checkoutCode) {
+            const { data: checkoutPlan } = await supabaseAdmin
+              .from("plans")
+              .select("*")
+              .eq("kiwify_product_id", checkoutCode)
+              .maybeSingle();
+            if (checkoutPlan) {
+              plan = checkoutPlan;
+              cycle = (checkoutPlan.billing_cycle as Cycle) ?? "mensal";
+            }
+          }
+
+          if (!plan) {
+            const inferredCycle = cycleFromText(productName);
+            if (inferredCycle) {
+              const { data: cyclePlan } = await supabaseAdmin
+                .from("plans")
+                .select("*")
+                .eq("billing_cycle", inferredCycle)
+                .eq("is_active", true)
+                .order("sort_order", { ascending: true })
+                .limit(1)
+                .maybeSingle();
+              if (cyclePlan) {
+                plan = cyclePlan;
+                cycle = inferredCycle;
+              }
+            }
+          }
+
+          if (!plan && paidAmountCents) {
+            const { data: plansByPrice } = await supabaseAdmin
+              .from("plans")
+              .select("*")
+              .eq("is_active", true)
+              .order("sort_order", { ascending: true });
+            const pricePlan = (plansByPrice ?? []).find((p: any) => {
+              const values = [p.price, p.price_monthly, p.price_quarterly, p.price_yearly]
+                .map(centsFromPlanValue)
+                .filter((v: number | null): v is number => v !== null);
+              return values.some((v: number) => Math.abs(v - paidAmountCents) <= 2);
+            });
+            if (pricePlan) {
+              plan = pricePlan;
+              cycle = (pricePlan.billing_cycle as Cycle) ?? "mensal";
+            }
+          }
+
           // 3) Busca assinatura existente do usuário
           const { data: existingSub } = await supabaseAdmin
             .from("subscriptions")
@@ -318,7 +462,7 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
             if (!plan || !cycle) {
               await log(
                 "error",
-                `Plano não mapeado para product_id ${productId}. Configure em Admin → Planos.`,
+                `Plano não mapeado. product_id=${productId ?? "—"}; checkout=${checkoutCode ?? "—"}; produto=${productName || "—"}; valor_centavos=${paidAmountCents ?? "—"}. Configure em Admin → Planos.`,
               );
               return json(200, {
                 ok: false,
