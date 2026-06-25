@@ -53,6 +53,8 @@ function TrialsPage() {
   const createFn = useServerFn(createTrialInvite);
   const revokeFn = useServerFn(revokeTrialInvite);
   const reactivateFn = useServerFn(reactivateTrialInvite);
+  const updateFn = useServerFn(updateTrialInvite);
+  const deleteFn = useServerFn(deleteTrialInvite);
 
   const { data: invites = [], isLoading } = useQuery({
     queryKey: ["trial-invites"],
