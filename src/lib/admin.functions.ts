@@ -300,6 +300,7 @@ function assertSafeRedirect(url: string | undefined): string | undefined {
     const host = u.hostname.toLowerCase();
     const ok =
       ALLOWED_REDIRECT_HOSTS.has(host) ||
+      host.endsWith(".zappfy.shop") ||
       host.endsWith(".lovable.app") ||
       host.endsWith(".lovable.dev");
     if (!ok) throw new Error("Redirect não permitido");
