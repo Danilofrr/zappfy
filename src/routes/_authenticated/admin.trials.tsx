@@ -20,6 +20,8 @@ import {
   createTrialInvite,
   revokeTrialInvite,
   reactivateTrialInvite,
+  updateTrialInvite,
+  deleteTrialInvite,
   getTrialStats,
 } from "@/lib/trial.functions";
 import {
@@ -28,6 +30,8 @@ import {
   Copy,
   Ban,
   Play,
+  Pencil,
+  Trash2,
   Users,
   TrendingUp,
   CheckCircle2,
