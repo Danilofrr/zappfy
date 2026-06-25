@@ -116,7 +116,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       className={cn(
         "relative h-full rounded-2xl border-2 bg-card p-6 flex flex-col transition-all",
         plan.highlight
-          ? "border-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_0_60px_hsl(var(--primary)/0.55),0_0_120px_hsl(var(--primary)/0.35)] animate-pulse-glow"
+          ? "border-primary animate-neon-pulse"
           : "border-primary/40 shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.25)] hover:border-primary/70 hover:shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.4)]",
       )}
     >
