@@ -271,6 +271,9 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
         const eventType = getEventType(payload);
         const rawProductId = getProductId(payload);
         const productId = rawProductId && SAFE_ID_RE.test(rawProductId) ? rawProductId : null;
+        const checkoutCode = getCheckoutCode(payload);
+        const productName = getProductName(payload);
+        const paidAmountCents = getPaidAmountCents(payload);
         const { email: rawEmail, name: rawName, cpf, phone: rawPhone } = getCustomer(payload);
         const emailParsed = z.string().email().max(255).safeParse(rawEmail);
         const email = emailParsed.success ? emailParsed.data.toLowerCase() : "";
@@ -354,11 +357,6 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
               return json(500, { error: "Falha ao criar usuário" });
             }
             userId = created.user.id;
-
-            // cria profile básico
-            await supabaseAdmin
-              .from("profiles")
-              .upsert({ id: userId, full_name: name }, { onConflict: "id" });
           }
 
           if (!userId) {
@@ -366,6 +364,8 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
             await log("ignored", "Usuário não encontrado e evento não é aprovação");
             return json(200, { ok: true, ignored: true });
           }
+
+          await ensureClientScaffold(supabaseAdmin, userId, name, phone);
 
           // 2) Resolve plano + ciclo pelo product_id
           let plan: any = null;
@@ -400,6 +400,54 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
             }
           }
 
+          if (!plan && checkoutCode) {
+            const { data: checkoutPlan } = await supabaseAdmin
+              .from("plans")
+              .select("*")
+              .eq("kiwify_product_id", checkoutCode)
+              .maybeSingle();
+            if (checkoutPlan) {
+              plan = checkoutPlan;
+              cycle = (checkoutPlan.billing_cycle as Cycle) ?? "mensal";
+            }
+          }
+
+          if (!plan) {
+            const inferredCycle = cycleFromText(productName);
+            if (inferredCycle) {
+              const { data: cyclePlan } = await supabaseAdmin
+                .from("plans")
+                .select("*")
+                .eq("billing_cycle", inferredCycle)
+                .eq("is_active", true)
+                .order("sort_order", { ascending: true })
+                .limit(1)
+                .maybeSingle();
+              if (cyclePlan) {
+                plan = cyclePlan;
+                cycle = inferredCycle;
+              }
+            }
+          }
+
+          if (!plan && paidAmountCents) {
+            const { data: plansByPrice } = await supabaseAdmin
+              .from("plans")
+              .select("*")
+              .eq("is_active", true)
+              .order("sort_order", { ascending: true });
+            const pricePlan = (plansByPrice ?? []).find((p: any) => {
+              const values = [p.price, p.price_monthly, p.price_quarterly, p.price_yearly]
+                .map(centsFromPlanValue)
+                .filter((v: number | null): v is number => v !== null);
+              return values.some((v: number) => Math.abs(v - paidAmountCents) <= 2);
+            });
+            if (pricePlan) {
+              plan = pricePlan;
+              cycle = (pricePlan.billing_cycle as Cycle) ?? "mensal";
+            }
+          }
+
           // 3) Busca assinatura existente do usuário
           const { data: existingSub } = await supabaseAdmin
             .from("subscriptions")
@@ -414,7 +462,7 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
             if (!plan || !cycle) {
               await log(
                 "error",
-                `Plano não mapeado para product_id ${productId}. Configure em Admin → Planos.`,
+                `Plano não mapeado. product_id=${productId ?? "—"}; checkout=${checkoutCode ?? "—"}; produto=${productName || "—"}; valor_centavos=${paidAmountCents ?? "—"}. Configure em Admin → Planos.`,
               );
               return json(200, {
                 ok: false,
