@@ -406,13 +406,6 @@ function AuthPage() {
             </div>
           </Card>
 
-          {/* Footer */}
-          <div className="mt-8 lg:mt-6 flex flex-col items-center gap-2 lg:items-start">
-            <div className="lg:hidden h-px w-12 bg-border/60" />
-            <p className="text-center lg:text-left text-xs text-muted-foreground">
-              Zappfy Dashboard · © {new Date().getFullYear()}
-            </p>
-          </div>
         </div>
       </div>
 
