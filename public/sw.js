@@ -1,6 +1,6 @@
 // ZappFy Service Worker — push notifications + offline cache for Central Entregas.
 
-const ENTREGAS_CACHE = "entregas-zappfy-v6";
+const ENTREGAS_CACHE = "entregas-zappfy-v7";
 const ENTREGAS_PRECACHE = [
   "/entregas-zappfy/",
   "/entregas-icon-192.png?v=5",
