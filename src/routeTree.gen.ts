@@ -28,6 +28,7 @@ import { Route as AuthenticatedRastreamentoRouteImport } from './routes/_authent
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
 import { Route as AuthenticatedPorProdutoRouteImport } from './routes/_authenticated/por-produto'
+import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
 import { Route as AuthenticatedPersonalizarRastreamentoRouteImport } from './routes/_authenticated/personalizar-rastreamento'
 import { Route as AuthenticatedPersonalizarCheckoutRouteImport } from './routes/_authenticated/personalizar-checkout'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
@@ -152,6 +153,11 @@ const AuthenticatedPrecificacaoRoute =
 const AuthenticatedPorProdutoRoute = AuthenticatedPorProdutoRouteImport.update({
   id: '/por-produto',
   path: '/por-produto',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPersonalizarRastreamentoRoute =
@@ -336,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
   '/personalizar-rastreamento': typeof AuthenticatedPersonalizarRastreamentoRoute
+  '/planos': typeof AuthenticatedPlanosRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -383,6 +390,7 @@ export interface FileRoutesByTo {
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
   '/personalizar-rastreamento': typeof AuthenticatedPersonalizarRastreamentoRoute
+  '/planos': typeof AuthenticatedPlanosRoute
   '/por-produto': typeof AuthenticatedPorProdutoRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/produtos': typeof AuthenticatedProdutosRoute
@@ -433,6 +441,7 @@ export interface FileRoutesById {
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/personalizar-checkout': typeof AuthenticatedPersonalizarCheckoutRoute
   '/_authenticated/personalizar-rastreamento': typeof AuthenticatedPersonalizarRastreamentoRoute
+  '/_authenticated/planos': typeof AuthenticatedPlanosRoute
   '/_authenticated/por-produto': typeof AuthenticatedPorProdutoRoute
   '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
@@ -485,6 +494,7 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/personalizar-checkout'
     | '/personalizar-rastreamento'
+    | '/planos'
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
@@ -532,6 +542,7 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/personalizar-checkout'
     | '/personalizar-rastreamento'
+    | '/planos'
     | '/por-produto'
     | '/precificacao'
     | '/produtos'
@@ -581,6 +592,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pedidos'
     | '/_authenticated/personalizar-checkout'
     | '/_authenticated/personalizar-rastreamento'
+    | '/_authenticated/planos'
     | '/_authenticated/por-produto'
     | '/_authenticated/precificacao'
     | '/_authenticated/produtos'
@@ -762,6 +774,13 @@ declare module '@tanstack/react-router' {
       path: '/por-produto'
       fullPath: '/por-produto'
       preLoaderRoute: typeof AuthenticatedPorProdutoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/planos': {
+      id: '/_authenticated/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof AuthenticatedPlanosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/personalizar-rastreamento': {
@@ -1016,6 +1035,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedPersonalizarCheckoutRoute: typeof AuthenticatedPersonalizarCheckoutRoute
   AuthenticatedPersonalizarRastreamentoRoute: typeof AuthenticatedPersonalizarRastreamentoRoute
+  AuthenticatedPlanosRoute: typeof AuthenticatedPlanosRoute
   AuthenticatedPorProdutoRoute: typeof AuthenticatedPorProdutoRoute
   AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
@@ -1042,6 +1062,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedPersonalizarCheckoutRoute,
   AuthenticatedPersonalizarRastreamentoRoute:
     AuthenticatedPersonalizarRastreamentoRoute,
+  AuthenticatedPlanosRoute: AuthenticatedPlanosRoute,
   AuthenticatedPorProdutoRoute: AuthenticatedPorProdutoRoute,
   AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,

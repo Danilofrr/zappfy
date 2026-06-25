@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated")({
         sub.expires_at != null &&
         new Date(sub.expires_at).getTime() < Date.now();
       const blocked = sub.status === "vencido" || sub.status === "bloqueado" || trialExpired;
-      const clientWhitelist = ["/assinatura-bloqueada", "/minha-assinatura", "/configuracoes"];
+      const clientWhitelist = ["/assinatura-bloqueada", "/minha-assinatura", "/planos", "/configuracoes"];
       const onWhitelist = clientWhitelist.some((p) => location.pathname.startsWith(p));
       if (blocked && !onWhitelist) {
         throw redirect({ to: "/assinatura-bloqueada" });
