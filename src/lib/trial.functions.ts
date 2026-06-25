@@ -155,3 +155,53 @@ export const reactivateTrialInvite = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// Admin: update invite (label, trial_days, expires_at)
+export const updateTrialInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: { id: string; label?: string; trialDays?: number; expiresInDays?: number | null }) =>
+      z
+        .object({
+          id: z.string().uuid(),
+          label: z.string().max(80).optional(),
+          trialDays: z.number().int().min(1).max(90).optional(),
+          expiresInDays: z.number().int().min(0).max(365).nullable().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    await ensureAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const patch: Record<string, any> = {};
+    if (data.label !== undefined) patch.label = data.label;
+    if (data.trialDays !== undefined) patch.trial_days = data.trialDays;
+    if (data.expiresInDays !== undefined) {
+      patch.expires_at =
+        data.expiresInDays && data.expiresInDays > 0
+          ? new Date(Date.now() + data.expiresInDays * 86400000).toISOString()
+          : null;
+    }
+    const { data: updated, error } = await supabaseAdmin
+      .from("trial_invites")
+      .update(patch)
+      .eq("id", data.id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return updated;
+  });
+
+// Admin: delete invite permanently
+export const deleteTrialInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    await ensureAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("trial_invites").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
