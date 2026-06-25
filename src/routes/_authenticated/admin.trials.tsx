@@ -204,6 +204,21 @@ function TrialsPage() {
                         <Button size="sm" variant="ghost" title="Copiar link" onClick={() => copyLink(i.code)}>
                           <Copy className="h-4 w-4" />
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Editar"
+                          onClick={() => {
+                            setEditing(i);
+                            setEditForm({
+                              label: i.label ?? "",
+                              trialDays: String(i.trial_days ?? 7),
+                              expiresInDays: "0",
+                            });
+                          }}
+                        >
+                          <Pencil className="h-4 w-4 text-primary" />
+                        </Button>
                         {i.status === "active" ? (
                           <Button
                             size="sm"
@@ -232,6 +247,28 @@ function TrialsPage() {
                             <Play className="h-4 w-4 text-green-500" />
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Excluir"
+                          onClick={async () => {
+                            if (
+                              !confirm(
+                                `Excluir permanentemente o convite ${i.code}? Esta ação não pode ser desfeita.`,
+                              )
+                            )
+                              return;
+                            try {
+                              await deleteFn({ data: { id: i.id } });
+                              toast.success("Convite excluído");
+                              invalidate();
+                            } catch (e: any) {
+                              toast.error(e.message ?? "Erro ao excluir");
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
