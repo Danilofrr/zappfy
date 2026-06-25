@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Sparkles, ArrowLeft } from "lucide-react";
+import { Check, Sparkles, ArrowLeft, CreditCard, ShieldCheck, XCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";
 
