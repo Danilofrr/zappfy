@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, Check, Sparkles, LogOut } from "lucide-react";
+import { Lock, Check, Sparkles, LogOut, CreditCard, ShieldCheck, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -116,11 +116,29 @@ function BlockedPage() {
           ))}
         </div>
 
-        {/* Rodapé */}
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          Aceitamos cartão de crédito
-        </p>
+        <TrustRow />
       </div>
+    </div>
+  );
+}
+
+function TrustRow() {
+  const items = [
+    { icon: CreditCard, label: "Aceitamos Cartão" },
+    { icon: ShieldCheck, label: "Pagamento Seguro" },
+    { icon: XCircle, label: "Cancele quando quiser" },
+  ];
+  return (
+    <div className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-6">
+      {items.map(({ icon: Icon, label }) => (
+        <div
+          key={label}
+          className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-foreground/90"
+        >
+          <Icon className="h-4 w-4 text-primary" />
+          {label}
+        </div>
+      ))}
     </div>
   );
 }
@@ -131,7 +149,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       className={cn(
         "relative h-full rounded-2xl border-2 bg-card p-6 flex flex-col transition-all",
         plan.highlight
-          ? "border-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.15),0_20px_50px_-15px_hsl(var(--primary)/0.45)]"
+          ? "border-primary animate-neon-pulse"
           : "border-primary/40 shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.25)] hover:border-primary/70 hover:shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.4)]",
       )}
     >
