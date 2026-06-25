@@ -52,7 +52,7 @@ const kiwifyPayloadSchema = z
  * Kiwify webhook endpoint.
  *
  * URL para configurar na Kiwify:
- *   https://zappfy.lovable.app/api/public/kiwify-webhook?token=<KIWIFY_WEBHOOK_TOKEN>
+ *   https://app.zappfy.shop/api/public/kiwify-webhook?token=<KIWIFY_WEBHOOK_TOKEN>
  *
  * Eventos tratados:
  *  - order_approved / pedido_aprovado          → libera/renova acesso
