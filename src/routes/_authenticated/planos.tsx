@@ -173,4 +173,3 @@ function PlanCard({ plan }: { plan: Plan }) {
   );
 }
 
-}
