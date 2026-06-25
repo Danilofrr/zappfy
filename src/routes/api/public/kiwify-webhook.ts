@@ -386,12 +386,45 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
 
           await ensureClientScaffold(supabaseAdmin, userId, name, phone);
 
-          // 2) Resolve plano + ciclo pelo product_id
+          // 2) Resolve plano + ciclo
+          //    Ordem de prioridade (mais confiável → menos confiável):
+          //    a) Subscription.plan.frequency  (Kiwify diz exatamente o ciclo)
+          //    b) checkout_link / código curto do checkout
+          //    c) kiwify_product_id direto
+          //    d) nome do produto
+          //    e) valor pago
           let plan: any = null;
           let cycle: Cycle | null = null;
 
-          if (productId) {
-            // 1) Tenta o novo modelo: 1 plano = 1 ciclo + 1 kiwify_product_id
+          const subFrequency = getSubscriptionFrequency(payload);
+          if (subFrequency) {
+            const { data: freqPlan } = await supabaseAdmin
+              .from("plans")
+              .select("*")
+              .eq("billing_cycle", subFrequency)
+              .eq("is_active", true)
+              .order("sort_order", { ascending: true })
+              .limit(1)
+              .maybeSingle();
+            if (freqPlan) {
+              plan = freqPlan;
+              cycle = subFrequency;
+            }
+          }
+
+          if (!plan && checkoutCode) {
+            const { data: checkoutPlan } = await supabaseAdmin
+              .from("plans")
+              .select("*")
+              .eq("kiwify_product_id", checkoutCode)
+              .maybeSingle();
+            if (checkoutPlan) {
+              plan = checkoutPlan;
+              cycle = (checkoutPlan.billing_cycle as Cycle) ?? "mensal";
+            }
+          }
+
+          if (!plan && productId) {
             const { data: directPlan } = await supabaseAdmin
               .from("plans")
               .select("*")
@@ -401,7 +434,6 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
               plan = directPlan;
               cycle = (directPlan.billing_cycle as Cycle) ?? "mensal";
             } else {
-              // 2) Fallback: modelo antigo (3 IDs em um único plano)
               const { data: plans } = await supabaseAdmin
                 .from("plans")
                 .select("*")
@@ -419,17 +451,7 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
             }
           }
 
-          if (!plan && checkoutCode) {
-            const { data: checkoutPlan } = await supabaseAdmin
-              .from("plans")
-              .select("*")
-              .eq("kiwify_product_id", checkoutCode)
-              .maybeSingle();
-            if (checkoutPlan) {
-              plan = checkoutPlan;
-              cycle = (checkoutPlan.billing_cycle as Cycle) ?? "mensal";
-            }
-          }
+
 
           if (!plan) {
             const inferredCycle = cycleFromText(productName);
