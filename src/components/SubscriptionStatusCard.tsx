@@ -216,7 +216,7 @@ export function SubscriptionStatusCard({
             </div>
           )}
           <Link
-            to="/minha-assinatura"
+            to="/planos"
             className={cn(
               "mt-1.5 inline-flex w-full items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]",
               isExpired || trialTier === "red"
@@ -227,7 +227,7 @@ export function SubscriptionStatusCard({
             )}
           >
             <Sparkles className="h-3 w-3" />
-            {isExpired ? "Assinar agora" : `Assinar ${brl(planPrice)}/mês`}
+            Assinar plano
           </Link>
         </>
       )}
