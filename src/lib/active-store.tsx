@@ -132,6 +132,7 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
     switchStore,
     refetch: q.refetch,
     createStore,
+    deleteStore,
   };
 
   return <ActiveStoreContext.Provider value={value}>{children}</ActiveStoreContext.Provider>;
