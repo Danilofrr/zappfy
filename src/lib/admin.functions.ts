@@ -576,6 +576,30 @@ export const getMySubscription = createServerFn({ method: "GET" })
     return { subscription: sub, payments: payments ?? [] };
   });
 
+// ===== Solicitar cancelamento (cliente) =====
+export const requestSubscriptionCancellation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { reason?: string }) =>
+    z.object({ reason: z.string().max(500).optional().default("") }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("id, notes")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!sub) throw new Error("Nenhuma assinatura encontrada");
+    const stamp = `[CANCELAMENTO SOLICITADO em ${new Date().toISOString()}]${data.reason ? ` Motivo: ${data.reason}` : ""}`;
+    const notes = sub.notes ? `${sub.notes}\n${stamp}` : stamp;
+    const { error } = await supabase
+      .from("subscriptions")
+      .update({ notes, updated_at: new Date().toISOString() })
+      .eq("id", sub.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ===== Configurações do sistema =====
 export const getSystemSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
