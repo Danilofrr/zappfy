@@ -288,9 +288,9 @@ function PedidosPage() {
   .brand{display:flex;align-items:center;justify-content:center;padding:8px;border-bottom:2px solid #000;min-height:54px;background:#fff}
   .brand img{max-height:44px;max-width:280px;object-fit:contain}
   .brand .name{font-size:18px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
-  .footer-logos{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:#fff;border-top:2px solid #000}
-  .footer-logos .flogo{flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:48px}
-  .footer-logos .flogo img{max-height:48px;max-width:160px;object-fit:contain}
+  .partner-logos{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:#fff;border-bottom:2px solid #000}
+  .partner-logos .plogo{flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:54px}
+  .partner-logos .plogo img{max-height:54px;max-width:180px;object-fit:contain}
   .row{display:flex;border-bottom:2px solid #000}
   .row > div{padding:4px 8px}
   .row > div + div{border-left:2px solid #000}
