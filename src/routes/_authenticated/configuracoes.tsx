@@ -235,13 +235,10 @@ function Page() {
                 <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restaurar padrão (com emojis)
               </Button>
             </div>
-            <MessageDiagnostic
-              saved={state.settings.deliveryMessageTemplate || ""}
-              sent={deliveryDiagnostic}
-            />
           </Field>
 
           <Field label="Mensagem para o motoboy / grupo">
+
             <Textarea
               rows={10}
               value={f.motoboyMessageTemplate}
@@ -260,11 +257,8 @@ function Page() {
                 <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restaurar padrão (com emojis)
               </Button>
             </div>
-            <MessageDiagnostic
-              saved={state.settings.motoboyMessageTemplate || ""}
-              sent={motoboyDiagnostic}
-            />
           </Field>
+
 
 
           <div className="h-px bg-border my-2" />
@@ -289,18 +283,8 @@ function Page() {
                 <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restaurar padrão
               </Button>
             </div>
-            <MessageDiagnostic
-              saved={state.settings.customerTrackingMessageTemplate || ""}
-              sent={buildCustomerTrackingMessage(f.customerTrackingMessageTemplate, {
-                customer_name: "Maria Silva",
-                order_number: "1042",
-                tracking_link: trackingExampleUrl,
-                store_name: f.storeName || "Sua Loja",
-                product_name: "Camiseta Premium",
-                order_status: "aguardando",
-              })}
-            />
           </Field>
+
         </Card>
       </div>
 
