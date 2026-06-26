@@ -152,7 +152,7 @@ export const createClient = createServerFn({ method: "POST" })
     });
     if (error || !created.user) throw new Error(error?.message ?? "Falha ao criar usuário");
     const newUserId = created.user.id;
-    await supabaseAdmin.from("settings").upsert({ user_id: newUserId, store_name: data.storeName, whatsapp: data.whatsapp });
+    await supabaseAdmin.from("settings").upsert({ store_id: newUserId, user_id: newUserId, store_name: data.storeName, whatsapp: data.whatsapp });
     await supabaseAdmin.from("user_roles").upsert({ user_id: newUserId, role: "cliente" });
     const trialEnd = new Date();
     trialEnd.setDate(trialEnd.getDate() + (data.trialDays ?? 7));
