@@ -54,9 +54,9 @@ const statusList: { value: OrderStatus; label: string; color: string }[] = [
 
 const statusMap = Object.fromEntries(statusList.map((s) => [s.value, s]));
 
-const customerCpfNoteLabel = /^\s*\*?\s*(?:CPF|CPF\/CNPJ)(?:\s+do\s+cliente)?\s*\*?\s*:\s*\*?\s*/i;
-const customerEmailNoteLabel = /^\s*\*?\s*E-?mail(?:\s+do\s+cliente)?\s*\*?\s*:\s*\*?\s*/i;
-const customerPrivateNoteLabel = /^\s*\*?\s*(?:(?:CPF|CPF\/CNPJ)|E-?mail)(?:\s+do\s+cliente)?\s*\*?\s*:/i;
+const customerCpfNoteLabel = /^\s*\*?\s*(?:CPF|CPF\/CNPJ)(?:\s+do\s+(?:cliente|comprador))?\s*\*?\s*:\s*\*?\s*/i;
+const customerEmailNoteLabel = /^\s*\*?\s*E-?mail(?:\s+do\s+(?:cliente|comprador))?\s*\*?\s*:\s*\*?\s*/i;
+const customerPrivateNoteLabel = /^\s*\*?\s*(?:(?:CPF|CPF\/CNPJ)|E-?mail)(?:\s+do\s+(?:cliente|comprador))?\s*\*?\s*:/i;
 
 type MotoboyContact = { label: string; phone: string };
 
@@ -156,8 +156,9 @@ function PedidosPage() {
     const s = state.settings;
     const storeName = s.storeName || "Loja";
     const logoUrl = s.checkoutLogoUrl || "";
-    const cpfCliente = extractFromNotes(o.notes, customerCpfNoteLabel);
-    const emailCliente = extractFromNotes(o.notes, customerEmailNoteLabel);
+    const firstItemWithCustomerData = o.items.find((item) => (item as any).cpf || (item as any).email) as any;
+    const cpfCliente = extractFromNotes(o.notes, customerCpfNoteLabel) || String(firstItemWithCustomerData?.cpf ?? "").trim();
+    const emailCliente = extractFromNotes(o.notes, customerEmailNoteLabel) || String(firstItemWithCustomerData?.email ?? "").trim();
     const notesLimpas = (o.notes || "")
       .split(/\r?\n/)
       .filter((l) => !customerPrivateNoteLabel.test(l) && !/^\s*(CEP:|Ponto de refer[êe]ncia:)/i.test(l))

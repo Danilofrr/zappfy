@@ -120,6 +120,8 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         qty: Number(qty),
         price: unitPrice,
         cost: itemCost,
+        cpf: customerCpf,
+        email: customerEmail,
       }],
       shipping: shippingValue,
       total: Number(total),

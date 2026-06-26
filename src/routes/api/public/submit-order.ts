@@ -47,8 +47,8 @@ function jsonError(status: number, message: string, detail?: unknown) {
 
 function buildOrderNotes(order: z.infer<typeof submitSchema>["order"]) {
   const notes = order.notes ?? "";
-  const hasCpf = /^\s*\*?\s*(?:CPF|CPF\/CNPJ)(?:\s+do\s+cliente)?\s*\*?\s*:/im.test(notes);
-  const hasEmail = /^\s*\*?\s*E-?mail(?:\s+do\s+cliente)?\s*\*?\s*:/im.test(notes);
+  const hasCpf = /^\s*\*?\s*(?:CPF|CPF\/CNPJ)(?:\s+do\s+(?:cliente|comprador))?\s*\*?\s*:/im.test(notes);
+  const hasEmail = /^\s*\*?\s*E-?mail(?:\s+do\s+(?:cliente|comprador))?\s*\*?\s*:/im.test(notes);
   return [
     order.cpf && !hasCpf ? `CPF: ${order.cpf.trim()}` : "",
     order.email && !hasEmail ? `E-mail: ${order.email.trim()}` : "",
@@ -112,6 +112,8 @@ export const Route = createFileRoute("/api/public/submit-order")({
           _slug: slug,
           _customer: order.customer,
           _phone: order.phone,
+          _cpf: order.cpf?.trim() ?? "",
+          _email: order.email?.trim() ?? "",
           _cep: order.cep ?? "",
           _address: order.address,
           _reference: order.reference ?? "",
