@@ -369,11 +369,6 @@ function PedidosPage() {
     ${htmlEscape(itemsList)}
   </div>
 </div>
-  <div class="footer-logos">
-    <div class="flogo"><img src="${htmlEscape(zappfyLogoAbs)}" alt="Zappfy"/></div>
-    <div class="flogo"><img src="${htmlEscape(motoboyIconAbs)}" alt="Entrega motoboy"/></div>
-  </div>
-</div>
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script>
 </body></html>`;
     const w = window.open("", "_blank", "width=600,height=820");
