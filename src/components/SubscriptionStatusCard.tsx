@@ -51,17 +51,24 @@ function computeNextRenewal(
 ): Date | null {
   const now = new Date();
   const months = cycleMonths(cycle);
+  const start = startedAt ? new Date(startedAt) : null;
   if (expiresAt) {
     const exp = new Date(expiresAt);
-    if (!Number.isNaN(exp.getTime()) && exp.getTime() > now.getTime()) return exp;
-  }
-  if (startedAt) {
-    const start = new Date(startedAt);
-    if (!Number.isNaN(start.getTime())) {
-      const next = new Date(start);
-      while (next.getTime() <= now.getTime()) next.setMonth(next.getMonth() + months);
-      return next;
+    if (!Number.isNaN(exp.getTime()) && exp.getTime() > now.getTime()) {
+      if (start && !Number.isNaN(start.getTime())) {
+        const minimumExpected = new Date(start);
+        minimumExpected.setMonth(minimumExpected.getMonth() + months);
+        minimumExpected.setDate(minimumExpected.getDate() - 3);
+        if (exp.getTime() >= minimumExpected.getTime()) return exp;
+      } else {
+        return exp;
+      }
     }
+  }
+  if (start && !Number.isNaN(start.getTime())) {
+    const next = new Date(start);
+    while (next.getTime() <= now.getTime()) next.setMonth(next.getMonth() + months);
+    return next;
   }
   const fb = new Date(now);
   fb.setMonth(fb.getMonth() + months);
