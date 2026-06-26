@@ -156,8 +156,8 @@ export function SubscriptionStatusCard({
           </div>
           <div className="text-sm text-muted-foreground mt-0.5">
             {isActive
-              ? sub?.expires_at
-                ? `Próxima cobrança: ${new Date(sub.expires_at).toLocaleDateString("pt-BR")}`
+              ? nextRenewalLabel
+                ? `Próxima renovação: ${nextRenewalLabel}`
                 : `${brl(planPrice)}/mês`
               : isExpired
               ? "Assine para continuar usando o Zappfy sem interrupções."
