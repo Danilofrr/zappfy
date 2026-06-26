@@ -31,6 +31,7 @@ type Ctx = {
   switchStore: (id: string) => void;
   refetch: () => Promise<unknown>;
   createStore: (name: string, slug?: string) => Promise<Store>;
+  deleteStore: (id: string) => Promise<void>;
 };
 
 const ActiveStoreContext = createContext<Ctx | null>(null);
