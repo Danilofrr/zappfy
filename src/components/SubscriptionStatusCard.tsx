@@ -77,6 +77,7 @@ export function SubscriptionStatusCard({
   const trialDays = daysBetween(sub?.trial_ends_at);
   const expDays = daysBetween(sub?.expires_at);
 
+
   const isActive = status === "ativo";
   const isTrial = status === "teste" || (!sub && trialDays === null);
   const isExpired = status === "vencido" || status === "bloqueado" || (trialDays !== null && trialDays <= 0 && !isActive);
