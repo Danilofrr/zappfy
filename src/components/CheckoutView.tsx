@@ -102,9 +102,13 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
     const itemCost = Number.isFinite(Number(product.cost)) ? Number(product.cost) : unitPrice;
     const shippingValue = Number(shipping.price ?? 0);
 
+    const customerCpf = form.cpf.trim();
+    const customerEmail = form.email.trim();
     const payload = {
       customer: form.customer.trim(),
       phone: form.phone.trim(),
+      cpf: customerCpf,
+      email: customerEmail,
       cep: form.cep,
       address: form.address.trim(),
       reference: form.reference,
@@ -122,8 +126,8 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       payment: form.payment,
       status: "aguardando" as const,
       notes: [
-        form.cpf ? `CPF: ${form.cpf}` : "",
-        form.email ? `E-mail: ${form.email}` : "",
+        customerCpf ? `CPF: ${customerCpf}` : "",
+        customerEmail ? `E-mail: ${customerEmail}` : "",
         form.notes || "",
       ].filter(Boolean).join("\n"),
       date: new Date().toISOString(),

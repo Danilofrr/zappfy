@@ -21,6 +21,8 @@ const submitSchema = z.object({
   order: z.object({
     customer: z.string().min(1, "Nome do cliente não preenchido").max(200),
     phone: z.string().min(1, "WhatsApp inválido").max(40),
+    cpf: z.string().max(30).optional().default(""),
+    email: z.string().max(254).optional().default(""),
     cep: z.string().max(20).optional().default(""),
     address: z.string().min(1, "Endereço não preenchido").max(400),
     reference: z.string().max(400).optional().default(""),
@@ -41,6 +43,17 @@ function jsonError(status: number, message: string, detail?: unknown) {
     JSON.stringify({ error: message, detail: detail ?? null }),
     { status, headers: { "content-type": "application/json" } },
   );
+}
+
+function buildOrderNotes(order: z.infer<typeof submitSchema>["order"]) {
+  const notes = order.notes ?? "";
+  const hasCpf = /^\s*\*?\s*(?:CPF|CPF\/CNPJ)(?:\s+do\s+cliente)?\s*\*?\s*:/im.test(notes);
+  const hasEmail = /^\s*\*?\s*E-?mail(?:\s+do\s+cliente)?\s*\*?\s*:/im.test(notes);
+  return [
+    order.cpf && !hasCpf ? `CPF: ${order.cpf.trim()}` : "",
+    order.email && !hasEmail ? `E-mail: ${order.email.trim()}` : "",
+    notes,
+  ].filter((line) => line.trim()).join("\n");
 }
 
 export const Route = createFileRoute("/api/public/submit-order")({
@@ -110,7 +123,7 @@ export const Route = createFileRoute("/api/public/submit-order")({
           _shipping_value: Number(order.shipping ?? 0),
           _total: Number(order.total ?? 0),
           _payment: order.payment,
-          _notes: order.notes ?? "",
+          _notes: buildOrderNotes(order),
         };
 
         console.log("[submit-order] rpc call", { slug, productId: item.productId, qty: item.qty });

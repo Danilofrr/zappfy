@@ -54,6 +54,10 @@ const statusList: { value: OrderStatus; label: string; color: string }[] = [
 
 const statusMap = Object.fromEntries(statusList.map((s) => [s.value, s]));
 
+const customerCpfNoteLabel = /^\s*\*?\s*(?:CPF|CPF\/CNPJ)(?:\s+do\s+cliente)?\s*\*?\s*:\s*\*?\s*/i;
+const customerEmailNoteLabel = /^\s*\*?\s*E-?mail(?:\s+do\s+cliente)?\s*\*?\s*:\s*\*?\s*/i;
+const customerPrivateNoteLabel = /^\s*\*?\s*(?:(?:CPF|CPF\/CNPJ)|E-?mail)(?:\s+do\s+cliente)?\s*\*?\s*:/i;
+
 type MotoboyContact = { label: string; phone: string };
 
 function loadContacts(): MotoboyContact[] {
@@ -152,11 +156,11 @@ function PedidosPage() {
     const s = state.settings;
     const storeName = s.storeName || "Loja";
     const logoUrl = s.checkoutLogoUrl || "";
-    const cpfCliente = extractFromNotes(o.notes, /^\s*CPF:\s*/i);
-    const emailCliente = extractFromNotes(o.notes, /^\s*E-?mail:\s*/i);
+    const cpfCliente = extractFromNotes(o.notes, customerCpfNoteLabel);
+    const emailCliente = extractFromNotes(o.notes, customerEmailNoteLabel);
     const notesLimpas = (o.notes || "")
       .split(/\r?\n/)
-      .filter((l) => !/^\s*(CPF:|E-?mail:|CEP:|Ponto de refer[êe]ncia:)/i.test(l))
+      .filter((l) => !customerPrivateNoteLabel.test(l) && !/^\s*(CEP:|Ponto de refer[êe]ncia:)/i.test(l))
       .join("\n")
       .trim();
     const subtotal = o.items.reduce((a, i) => a + i.price * i.qty, 0);
