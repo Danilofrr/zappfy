@@ -1169,6 +1169,36 @@ export type Database = {
         }
         Relationships: []
       }
+      stores: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          slug: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          owner_id: string
+          slug?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          slug?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscription_payments: {
         Row: {
           amount: number
@@ -1747,6 +1777,24 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_my_store: {
+        Args: { _name: string; _slug?: string }
+        Returns: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          slug: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "stores"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       delete_courier: { Args: { _id: string }; Returns: boolean }
       finalize_delivery_tracking: {
         Args: { _tracking_id: string }
@@ -1816,6 +1864,24 @@ export type Database = {
         Returns: Json
       }
       list_my_active_deliveries: { Args: { _session: string }; Returns: Json }
+      list_my_stores: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          slug: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "stores"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       redeem_trial_invite: { Args: { _code: string }; Returns: Json }
       reset_courier_password: {
         Args: { _id: string; _password_hash: string }
@@ -1902,6 +1968,7 @@ export type Database = {
         Args: { _status: string; _token: string }
         Returns: boolean
       }
+      user_owns_store: { Args: { _store_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "cliente"
