@@ -88,6 +88,19 @@ function daysUntil(date: string | null | undefined): number | null {
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
+function cycleLabel(cycle: string | null | undefined): string {
+  switch (cycle) {
+    case "monthly":
+      return "Mensal";
+    case "quarterly":
+      return "Trimestral";
+    case "yearly":
+      return "Anual";
+    default:
+      return "—";
+  }
+}
+
 function cycleMonths(cycle: string | null | undefined): number {
   switch (cycle) {
     case "yearly":
@@ -99,6 +112,7 @@ function cycleMonths(cycle: string | null | undefined): number {
       return 1;
   }
 }
+
 
 /**
  * Calcula a próxima data de renovação com base no ciclo do plano.
