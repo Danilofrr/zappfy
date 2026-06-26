@@ -21,6 +21,7 @@ import {
   Palette,
   MapPin,
   Bike,
+  CreditCard,
 
 
 
@@ -65,6 +66,7 @@ const navGroups: { label: string; items: { to: string; label: string; icon: any 
       { to: "/precificacao", label: "Precificação", icon: Calculator },
       { to: "/ads", label: "Facebook Ads", icon: Megaphone },
       { to: "/personalizar-checkout", label: "Checkout", icon: Palette },
+      { to: "/minha-assinatura", label: "Assinatura", icon: CreditCard },
       { to: "/configuracoes", label: "Configurações", icon: Cog },
     ],
   },
