@@ -206,6 +206,28 @@ export function StoreSwitcher({ compact = false }: { compact?: boolean }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir loja</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir a loja <strong>{deleteTarget?.name}</strong>?
+              Esta ação é <strong>permanente</strong> e remove todos os pedidos, produtos,
+              despesas, motoboys e configurações desta loja.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Excluir loja
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
