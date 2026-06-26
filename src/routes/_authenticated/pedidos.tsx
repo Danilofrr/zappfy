@@ -206,9 +206,14 @@ function PedidosPage() {
 </div>
 <div class="sheet">
   <div class="head">
-    <div>
-      <h1>${htmlEscape(storeName)}</h1>
-      <div class="muted">Recibo de Pedido</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      ${logoUrl
+        ? `<img src="${htmlEscape(logoUrl)}" alt="${htmlEscape(storeName)}" style="max-height:56px;max-width:200px;object-fit:contain"/>`
+        : `<h1>${htmlEscape(storeName)}</h1>`}
+      <div>
+        ${logoUrl ? `<div style="font-size:14px;font-weight:600">${htmlEscape(storeName)}</div>` : ""}
+        <div class="muted">Recibo de Pedido</div>
+      </div>
     </div>
     <div style="text-align:right">
       <div class="badge">#${htmlEscape(o.id.slice(0, 8).toUpperCase())}</div>
@@ -220,6 +225,8 @@ function PedidosPage() {
       <h3>Cliente</h3>
       <div><strong>${htmlEscape(o.customer)}</strong></div>
       ${o.phone ? `<div class="muted">${htmlEscape(o.phone)}</div>` : ""}
+      ${cpfCliente ? `<div class="muted">CPF: ${htmlEscape(cpfCliente)}</div>` : ""}
+      ${emailCliente ? `<div class="muted">E-mail: ${htmlEscape(emailCliente)}</div>` : ""}
     </div>
     <div class="box">
       <h3>Entrega</h3>
@@ -235,7 +242,7 @@ function PedidosPage() {
       <tr class="total"><td colspan="3" class="r">TOTAL</td><td class="r">${brl(o.total)}</td></tr>
     </tfoot>
   </table>
-  ${o.notes ? `<div class="notes"><strong>Observações:</strong>\n${htmlEscape(o.notes)}</div>` : ""}
+  ${notesLimpas ? `<div class="notes"><strong>Observações:</strong>\n${htmlEscape(notesLimpas)}</div>` : ""}
   <div class="footer">Obrigado pela preferência! • ${htmlEscape(storeName)}</div>
 </div>
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script>
