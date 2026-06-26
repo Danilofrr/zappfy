@@ -92,7 +92,7 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
     async (name: string, slug?: string) => {
       const { data, error } = await supabase.rpc("create_my_store", {
         _name: name,
-        _slug: slug ?? null,
+        _slug: slug,
       });
       if (error) throw error;
       await q.refetch();
