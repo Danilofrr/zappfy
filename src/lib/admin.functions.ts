@@ -152,7 +152,7 @@ export const createClient = createServerFn({ method: "POST" })
     });
     if (error || !created.user) throw new Error(error?.message ?? "Falha ao criar usuário");
     const newUserId = created.user.id;
-    await supabaseAdmin.from("settings").upsert({ user_id: newUserId, store_name: data.storeName, whatsapp: data.whatsapp });
+    await supabaseAdmin.from("settings").upsert({ store_id: newUserId, user_id: newUserId, store_name: data.storeName, whatsapp: data.whatsapp });
     await supabaseAdmin.from("user_roles").upsert({ user_id: newUserId, role: "cliente" });
     const trialEnd = new Date();
     trialEnd.setDate(trialEnd.getDate() + (data.trialDays ?? 7));
@@ -189,7 +189,7 @@ export const updateClient = createServerFn({ method: "POST" })
       const patch: any = {};
       if (data.storeName !== undefined) patch.store_name = data.storeName;
       if (data.whatsapp !== undefined) patch.whatsapp = data.whatsapp;
-      await supabaseAdmin.from("settings").update(patch).eq("user_id", data.userId);
+      await supabaseAdmin.from("settings").update(patch).eq("store_id", data.userId);
     }
     return { ok: true };
   });

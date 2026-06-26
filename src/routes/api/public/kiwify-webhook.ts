@@ -243,8 +243,8 @@ async function ensureClientScaffold(supabaseAdmin: any, userId: string, name: st
   await supabaseAdmin
     .from("settings")
     .upsert(
-      { user_id: userId, store_name: name ? `Loja ${name}` : "Minha Loja", whatsapp: phone || "" },
-      { onConflict: "user_id", ignoreDuplicates: true },
+      { store_id: userId, user_id: userId, store_name: name ? `Loja ${name}` : "Minha Loja", whatsapp: phone || "" },
+      { onConflict: "store_id", ignoreDuplicates: true },
     );
 
   await supabaseAdmin

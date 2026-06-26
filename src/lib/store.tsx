@@ -379,7 +379,7 @@ async function seedForUser(userId: string) {
     whatsapp: "5581999990000", pix_key: "techshop@recife.com",
     address: "Av. Conselheiro Aguiar, 1000 — Boa Viagem, Recife/PE",
     delivery_fee: 12, monthly_revenue_goal: 25000, monthly_profit_goal: 8000,
-  }).eq("user_id", userId);
+  }).eq("store_id", userId);
 }
 
 const ACTIVE_STORE_KEY = "zappfy.active_store_id";
@@ -404,7 +404,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         supabase.from("orders").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("expenses").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("ads").select("*").eq("user_id", userId).order("date", { ascending: true }),
-        supabase.from("settings").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("settings").select("*").eq("store_id", sid).maybeSingle(),
       ]);
 
       setState({
@@ -711,7 +711,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.customerTrackingMessageTemplate !== undefined) patch.customer_tracking_message_template = p.customerTrackingMessageTemplate;
       if (p.motoboyFee !== undefined) patch.motoboy_fee = p.motoboyFee;
       if (p.slug !== undefined) patch.slug = p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || null : null;
-      const { data, error } = await supabase.from("settings").update(patch).eq("user_id", user.id).select().single();
+      const { data, error } = await supabase.from("settings").update(patch).eq("store_id", activeStoreId ?? user.id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
     },
