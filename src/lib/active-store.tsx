@@ -83,6 +83,9 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.setItem(ACTIVE_STORE_KEY, id);
       } catch {}
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("zappfy:active-store-change", { detail: { id } }));
+      }
       queryClient.invalidateQueries();
     },
     [queryClient],
