@@ -272,7 +272,9 @@ function PedidosPage() {
 
     const totalQty = o.items.reduce((a, i) => a + i.qty, 0);
     const itemsList = o.items.map((i) => `${i.qty}x ${htmlEscape(i.name)}`).join(" • ");
-    const cep = (o as any).cep || "00000-000";
+    const cep = extractFromNotes(o.notes, /^\s*CEP:\s*/i) || (o as any).cep || "00000-000";
+    const senderDocDigits = (senderCnpj || "").replace(/\D/g, "");
+    const senderDocLabel = senderDocDigits.length === 11 ? "CPF" : "CNPJ";
     const uf = (o as any).uf || "";
     const cityLine = [o.city, uf].filter(Boolean).join(" - ").toUpperCase();
 
