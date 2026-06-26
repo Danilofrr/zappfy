@@ -288,7 +288,7 @@ function PedidosPage() {
   .brand{display:flex;align-items:center;justify-content:center;padding:8px;border-bottom:2px solid #000;min-height:54px;background:#fff}
   .brand img{max-height:44px;max-width:280px;object-fit:contain}
   .brand .name{font-size:18px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
-  .partner-logos{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:#fff;border-bottom:2px solid #000}
+  .partner-logos{display:flex;align-items:center;justify-content:center;gap:60px;padding:10px 18px;background:#fff;border-bottom:2px solid #000}
   .partner-logos .plogo{flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:54px}
   .partner-logos .plogo img{max-height:54px;max-width:180px;object-fit:contain}
   .row{display:flex;border-bottom:2px solid #000}
