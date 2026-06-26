@@ -379,7 +379,7 @@ async function seedForUser(userId: string) {
     whatsapp: "5581999990000", pix_key: "techshop@recife.com",
     address: "Av. Conselheiro Aguiar, 1000 — Boa Viagem, Recife/PE",
     delivery_fee: 12, monthly_revenue_goal: 25000, monthly_profit_goal: 8000,
-  }).eq("user_id", userId);
+  }).eq("store_id", userId);
 }
 
 const ACTIVE_STORE_KEY = "zappfy.active_store_id";
