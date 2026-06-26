@@ -239,8 +239,8 @@ export function SubscriptionStatusCard({
       {isActive ? (
         <div className="mt-0.5 text-[11px] text-muted-foreground truncate">
           <span className="font-semibold text-foreground">{planName}</span>
-          {sub?.expires_at && (
-            <> · Renova em {new Date(sub.expires_at).toLocaleDateString("pt-BR")}</>
+          {nextRenewalLabel && (
+            <> · Renova em {nextRenewalLabel}</>
           )}
         </div>
       ) : (
