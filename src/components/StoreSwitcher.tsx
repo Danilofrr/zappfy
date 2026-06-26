@@ -97,27 +97,45 @@ export function StoreSwitcher({ compact = false }: { compact?: boolean }) {
             {stores.map((s) => {
               const active = s.id === activeStoreId;
               return (
-                <button
+                <div
                   key={s.id}
-                  type="button"
-                  onClick={() => {
-                    switchStore(s.id);
-                    setOpen(false);
-                  }}
                   className={cn(
-                    "w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-secondary transition-colors text-left",
+                    "group w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-secondary transition-colors",
                     active && "bg-primary/10",
                   )}
                 >
-                  <StoreIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium truncate">{s.name}</div>
-                    {s.slug && (
-                      <div className="text-[10px] text-muted-foreground truncate">/{s.slug}</div>
-                    )}
-                  </div>
-                  {active && <Check className="h-4 w-4 text-primary shrink-0" />}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      switchStore(s.id);
+                      setOpen(false);
+                    }}
+                    className="flex items-center gap-2 min-w-0 flex-1 text-left"
+                  >
+                    <StoreIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium truncate">{s.name}</div>
+                      {s.slug && (
+                        <div className="text-[10px] text-muted-foreground truncate">/{s.slug}</div>
+                      )}
+                    </div>
+                    {active && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  </button>
+                  {!s.is_default && stores.length > 1 && (
+                    <button
+                      type="button"
+                      title="Excluir loja"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpen(false);
+                        setDeleteTarget({ id: s.id, name: s.name });
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity rounded p-1 hover:bg-destructive/10 text-destructive shrink-0"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
