@@ -15,6 +15,43 @@ function daysBetween(target: string | null | undefined): number | null {
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
+function cycleMonths(cycle: string | null | undefined): number {
+  switch (cycle) {
+    case "yearly":
+      return 12;
+    case "quarterly":
+      return 3;
+    case "monthly":
+    default:
+      return 1;
+  }
+}
+
+function computeNextRenewal(
+  expiresAt: string | null | undefined,
+  startedAt: string | null | undefined,
+  cycle: string | null | undefined,
+): Date | null {
+  const now = new Date();
+  const months = cycleMonths(cycle);
+  if (expiresAt) {
+    const exp = new Date(expiresAt);
+    if (!Number.isNaN(exp.getTime()) && exp.getTime() > now.getTime()) return exp;
+  }
+  if (startedAt) {
+    const start = new Date(startedAt);
+    if (!Number.isNaN(start.getTime())) {
+      const next = new Date(start);
+      while (next.getTime() <= now.getTime()) next.setMonth(next.getMonth() + months);
+      return next;
+    }
+  }
+  const fb = new Date(now);
+  fb.setMonth(fb.getMonth() + months);
+  return fb;
+}
+
+
 export function SubscriptionStatusCard({
   variant = "sidebar",
   collapsedHidden = false,
@@ -39,6 +76,17 @@ export function SubscriptionStatusCard({
   // Compute trial / expiration days
   const trialDays = daysBetween(sub?.trial_ends_at);
   const expDays = daysBetween(sub?.expires_at);
+  const nextRenewal = computeNextRenewal(
+    sub?.expires_at,
+    sub?.started_at,
+    sub?.billing_cycle,
+  );
+  const nextRenewalLabel = nextRenewal
+    ? nextRenewal.toLocaleDateString("pt-BR")
+    : null;
+
+
+
 
   const isActive = status === "ativo";
   const isTrial = status === "teste" || (!sub && trialDays === null);
@@ -108,8 +156,8 @@ export function SubscriptionStatusCard({
           </div>
           <div className="text-sm text-muted-foreground mt-0.5">
             {isActive
-              ? sub?.expires_at
-                ? `Próxima cobrança: ${new Date(sub.expires_at).toLocaleDateString("pt-BR")}`
+              ? nextRenewalLabel
+                ? `Próxima renovação: ${nextRenewalLabel}`
                 : `${brl(planPrice)}/mês`
               : isExpired
               ? "Assine para continuar usando o Zappfy sem interrupções."
@@ -191,8 +239,8 @@ export function SubscriptionStatusCard({
       {isActive ? (
         <div className="mt-0.5 text-[11px] text-muted-foreground truncate">
           <span className="font-semibold text-foreground">{planName}</span>
-          {sub?.expires_at && (
-            <> · Renova em {new Date(sub.expires_at).toLocaleDateString("pt-BR")}</>
+          {nextRenewalLabel && (
+            <> · Renova em {nextRenewalLabel}</>
           )}
         </div>
       ) : (
