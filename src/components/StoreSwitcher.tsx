@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, Plus, Store as StoreIcon, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Store as StoreIcon, Loader2, Trash2 } from "lucide-react";
 import { useActiveStore } from "@/lib/active-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
