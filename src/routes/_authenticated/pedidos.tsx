@@ -241,6 +241,9 @@ function PedidosPage() {
     const s = state.settings;
     const storeName = s.storeName || "Loja";
     const logoUrl = s.checkoutLogoUrl || "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const zappfyLogoAbs = origin + zappfyLabelLogo;
+    const motoboyIconAbs = origin + motoboyLabelIcon;
     const htmlEscape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
     const sender = getSenderInfo();
     const senderName = sender.name || storeName;
