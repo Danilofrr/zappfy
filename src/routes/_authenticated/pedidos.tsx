@@ -368,6 +368,7 @@ function PedidosPage() {
     <div class="ttl">Conteúdo (${totalQty} ${totalQty === 1 ? "item" : "itens"})</div>
     ${htmlEscape(itemsList)}
   </div>
+</div>
   <div class="footer-logos">
     <div class="flogo"><img src="${htmlEscape(zappfyLogoAbs)}" alt="Zappfy"/></div>
     <div class="flogo"><img src="${htmlEscape(motoboyIconAbs)}" alt="Entrega motoboy"/></div>
