@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, Plus, Store as StoreIcon, Loader2, Trash2 } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Store as StoreIcon, Loader2 } from "lucide-react";
 import { useActiveStore } from "@/lib/active-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,28 +21,13 @@ import {
 import { toast } from "sonner";
 
 export function StoreSwitcher({ compact = false }: { compact?: boolean }) {
-  const { stores, activeStore, activeStoreId, switchStore, createStore, deleteStore, loading } = useActiveStore();
+  const { stores, activeStore, activeStoreId, switchStore, createStore, loading } = useActiveStore();
   const [open, setOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [saving, setSaving] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await deleteStore(deleteTarget.id);
-      toast.success(`Loja "${deleteTarget.name}" excluída`);
-      setDeleteTarget(null);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao excluir loja");
-    } finally {
-      setDeleting(false);
-    }
-  }
 
   async function handleCreate() {
     if (!name.trim()) {
@@ -97,45 +82,27 @@ export function StoreSwitcher({ compact = false }: { compact?: boolean }) {
             {stores.map((s) => {
               const active = s.id === activeStoreId;
               return (
-                <div
+                <button
                   key={s.id}
+                  type="button"
+                  onClick={() => {
+                    switchStore(s.id);
+                    setOpen(false);
+                  }}
                   className={cn(
-                    "group w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-secondary transition-colors",
+                    "w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-secondary transition-colors text-left",
                     active && "bg-primary/10",
                   )}
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      switchStore(s.id);
-                      setOpen(false);
-                    }}
-                    className="flex items-center gap-2 min-w-0 flex-1 text-left"
-                  >
-                    <StoreIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium truncate">{s.name}</div>
-                      {s.slug && (
-                        <div className="text-[10px] text-muted-foreground truncate">/{s.slug}</div>
-                      )}
-                    </div>
-                    {active && <Check className="h-4 w-4 text-primary shrink-0" />}
-                  </button>
-                  {!s.is_default && stores.length > 1 && (
-                    <button
-                      type="button"
-                      title="Excluir loja"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpen(false);
-                        setDeleteTarget({ id: s.id, name: s.name });
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity rounded p-1 hover:bg-destructive/10 text-destructive shrink-0"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
+                  <StoreIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium truncate">{s.name}</div>
+                    {s.slug && (
+                      <div className="text-[10px] text-muted-foreground truncate">/{s.slug}</div>
+                    )}
+                  </div>
+                  {active && <Check className="h-4 w-4 text-primary shrink-0" />}
+                </button>
               );
             })}
           </div>
@@ -202,28 +169,6 @@ export function StoreSwitcher({ compact = false }: { compact?: boolean }) {
             <Button onClick={handleCreate} disabled={saving || !name.trim()}>
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               Criar loja
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Excluir loja</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir a loja <strong>{deleteTarget?.name}</strong>?
-              Esta ação é <strong>permanente</strong> e remove todos os pedidos, produtos,
-              despesas, motoboys e configurações desta loja.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-              Excluir loja
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -20,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
+import { useActiveStore } from "@/lib/active-store";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — ZappFy" }] }),
@@ -292,7 +294,95 @@ function Page() {
       <div className="mt-6 flex justify-end">
         <Button onClick={() => { updateSettings(f); saveSenderInfo(sender); toast.success("Configurações salvas"); }}>Salvar alterações</Button>
       </div>
+
+      <DangerZone />
     </AppShell>
+  );
+}
+
+function DangerZone() {
+  const { stores, activeStore, activeStoreId, deleteStore } = useActiveStore();
+  const [open, setOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const canDelete = !!activeStore && !activeStore.is_default && stores.length > 1;
+  const expected = activeStore?.name ?? "";
+
+  async function handleDelete() {
+    if (!activeStoreId || confirmText.trim() !== expected) return;
+    setDeleting(true);
+    try {
+      await deleteStore(activeStoreId);
+      toast.success(`Loja "${expected}" excluída`);
+      setOpen(false);
+      setConfirmText("");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao excluir loja");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div className="mt-10 rounded-2xl border border-destructive/40 bg-destructive/5 p-5 lg:p-6">
+      <div className="text-sm font-semibold text-destructive mb-1 flex items-center gap-2">
+        <Trash2 className="h-4 w-4" /> Zona de perigo
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">
+        A exclusão remove permanentemente todos os pedidos, produtos, despesas, motoboys e
+        configurações desta loja. A loja principal e a última loja restante não podem ser excluídas.
+      </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="text-sm">
+          Loja ativa: <strong>{activeStore?.name ?? "—"}</strong>
+          {activeStore?.is_default && (
+            <span className="ml-2 text-[11px] text-muted-foreground">(principal — protegida)</span>
+          )}
+        </div>
+        <Button
+          variant="destructive"
+          disabled={!canDelete}
+          onClick={() => setOpen(true)}
+        >
+          <Trash2 className="h-4 w-4 mr-1" /> Excluir esta loja
+        </Button>
+      </div>
+
+      <Dialog open={open} onOpenChange={(o) => !deleting && setOpen(o)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir loja "{expected}"</DialogTitle>
+            <DialogDescription>
+              Esta ação é <strong>permanente</strong> e remove todos os pedidos, produtos,
+              despesas, motoboys e configurações desta loja. Para confirmar, digite o nome
+              exato da loja abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label className="text-xs">Digite <strong>{expected}</strong> para confirmar</Label>
+            <Input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={expected}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={deleting}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleting || confirmText.trim() !== expected}
+              onClick={handleDelete}
+            >
+              {deleting ? "Excluindo..." : "Excluir permanentemente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
