@@ -335,6 +335,10 @@ function PedidosPage() {
     <div><div class="lbl">Volume</div><div class="val">1 / 1</div></div>
     <div><div class="lbl">Peso</div><div class="val">${htmlEscape(peso)}</div></div>
   </div>
+  <div class="partner-logos">
+    <div class="plogo"><img src="${htmlEscape(zappfyLogoAbs)}" alt="Zappfy"/></div>
+    <div class="plogo"><img src="${htmlEscape(motoboyIconAbs)}" alt="Entrega motoboy"/></div>
+  </div>
   <div class="barcode">
     <div class="bars">${bars}</div>
   </div>
