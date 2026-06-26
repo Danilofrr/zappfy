@@ -352,6 +352,7 @@ async function seedForUser(userId: string) {
     const c = customers[i % customers.length];
     return {
       user_id: userId,
+      store_id: userId,
       customer: c[0], phone: c[1], address: c[2], district: c[3], city: c[4],
       items: [{ productId: p.id, name: p.name, qty, price: Number(p.price), cost: Number(p.cost) }] as any,
       total: qty * Number(p.price),
@@ -362,7 +363,7 @@ async function seedForUser(userId: string) {
   });
   await supabase.from("orders").insert(ordersPayload);
 
-  await supabase.from("expenses").insert(seedExpensesData.map((e) => ({ user_id: userId, ...fromExpense(e) })));
+  await supabase.from("expenses").insert(seedExpensesData.map((e) => ({ user_id: userId, store_id: userId, ...fromExpense(e) })));
 
   const adsPayload = Array.from({ length: 6 }).map((_, i) => {
     const invested = 700 + Math.round(Math.random() * 600);
@@ -505,7 +506,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     state, loading, user,
     async addProduct(p) {
       if (!user) return;
-      const { data, error } = await supabase.from("products").insert({ user_id: user.id, ...fromProduct(p) }).select().single();
+      const { data, error } = await supabase.from("products").insert({ user_id: user.id, store_id: user.id, ...fromProduct(p) }).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, products: [toProduct(data), ...s.products] }));
     },
@@ -530,7 +531,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     async addOrder(o) {
       if (!user) return;
-      const { data, error } = await supabase.from("orders").insert({ user_id: user.id, ...fromOrder(o) }).select().single();
+      const { data, error } = await supabase.from("orders").insert({ user_id: user.id, store_id: user.id, ...fromOrder(o) }).select().single();
       if (error) { toast.error(error.message); return; }
       // Baixa de estoque para cada item do pedido (ignora cancelado)
       if (o.status !== "cancelado") {
@@ -603,7 +604,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     async addExpense(e) {
       if (!user) return;
-      const { data, error } = await supabase.from("expenses").insert({ user_id: user.id, ...fromExpense(e) }).select().single();
+      const { data, error } = await supabase.from("expenses").insert({ user_id: user.id, store_id: user.id, ...fromExpense(e) }).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, expenses: [toExpense(data), ...s.expenses] }));
     },
