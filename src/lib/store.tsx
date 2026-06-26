@@ -717,15 +717,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     async resetSeed() {
       if (!user) return;
+      const sid = activeStoreId ?? user.id;
       setLoading(true);
       await Promise.all([
-        supabase.from("orders").delete().eq("user_id", user.id),
-        supabase.from("products").delete().eq("user_id", user.id),
-        supabase.from("expenses").delete().eq("user_id", user.id),
+        supabase.from("orders").delete().eq("store_id", sid),
+        supabase.from("products").delete().eq("store_id", sid),
+        supabase.from("expenses").delete().eq("store_id", sid),
         supabase.from("ads").delete().eq("user_id", user.id),
       ]);
       await seedForUser(user.id);
-      await loadAll(user.id);
+      await loadAll(user.id, activeStoreId);
     },
     async signOut() {
       await supabase.auth.signOut();
@@ -733,7 +734,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       loadedFor.current = null;
       if (typeof window !== "undefined") window.location.href = "/auth";
     },
-  }), [state, loading, user, loadAll]);
+  }), [state, loading, user, activeStoreId, loadAll]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
