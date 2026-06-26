@@ -54,9 +54,9 @@ const statusList: { value: OrderStatus; label: string; color: string }[] = [
 
 const statusMap = Object.fromEntries(statusList.map((s) => [s.value, s]));
 
-const customerCpfNoteLabel = /^\s*\*?\s*(?:CPF|CPF\/CNPJ)(?:\s+do\s+cliente)?\s*\*?\s*:\s*\*?\s*/i;
-const customerEmailNoteLabel = /^\s*\*?\s*E-?mail(?:\s+do\s+cliente)?\s*\*?\s*:\s*\*?\s*/i;
-const customerPrivateNoteLabel = /^\s*\*?\s*(?:(?:CPF|CPF\/CNPJ)|E-?mail)(?:\s+do\s+cliente)?\s*\*?\s*:/i;
+const customerCpfNoteLabel = /^\s*\*?\s*(?:CPF|CPF\/CNPJ)(?:\s+do\s+(?:cliente|comprador))?\s*\*?\s*:\s*\*?\s*/i;
+const customerEmailNoteLabel = /^\s*\*?\s*E-?mail(?:\s+do\s+(?:cliente|comprador))?\s*\*?\s*:\s*\*?\s*/i;
+const customerPrivateNoteLabel = /^\s*\*?\s*(?:(?:CPF|CPF\/CNPJ)|E-?mail)(?:\s+do\s+(?:cliente|comprador))?\s*\*?\s*:/i;
 
 type MotoboyContact = { label: string; phone: string };
 
