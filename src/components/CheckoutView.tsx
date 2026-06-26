@@ -121,7 +121,11 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       total: Number(total),
       payment: form.payment,
       status: "aguardando" as const,
-      notes: form.notes,
+      notes: [
+        form.cpf ? `CPF: ${form.cpf}` : "",
+        form.email ? `E-mail: ${form.email}` : "",
+        form.notes || "",
+      ].filter(Boolean).join("\n"),
       date: new Date().toISOString(),
     };
 
