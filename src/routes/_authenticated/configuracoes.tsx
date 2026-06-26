@@ -20,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
+import { useActiveStore } from "@/lib/active-store";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — ZappFy" }] }),
