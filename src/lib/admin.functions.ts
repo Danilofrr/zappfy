@@ -564,8 +564,11 @@ export const getMySubscription = createServerFn({ method: "GET" })
     const { supabase, userId } = context as any;
     const { data: sub } = await supabase
       .from("subscriptions")
-      .select("*, plans(name, description, price_monthly)")
+      .select("*, plans(name, description, billing_cycle, duration_days_monthly, duration_days_quarterly, duration_days_yearly, price_monthly, price_quarterly, price_yearly)")
       .eq("user_id", userId)
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     const { data: payments } = await supabase
       .from("subscription_payments")

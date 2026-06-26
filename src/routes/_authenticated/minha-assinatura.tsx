@@ -90,10 +90,13 @@ function daysUntil(date: string | null | undefined): number | null {
 
 function cycleLabel(cycle: string | null | undefined): string {
   switch (cycle) {
+    case "mensal":
     case "monthly":
       return "Mensal";
+    case "trimestral":
     case "quarterly":
       return "Trimestral";
+    case "anual":
     case "yearly":
       return "Anual";
     default:
@@ -103,13 +106,30 @@ function cycleLabel(cycle: string | null | undefined): string {
 
 function cycleMonths(cycle: string | null | undefined): number {
   switch (cycle) {
+    case "anual":
     case "yearly":
       return 12;
+    case "trimestral":
     case "quarterly":
       return 3;
+    case "mensal":
     case "monthly":
     default:
       return 1;
+  }
+}
+
+function normalizedCycle(subscriptionCycle: string | null | undefined, planCycle: string | null | undefined): string | null {
+  const cycle = planCycle || subscriptionCycle;
+  switch (cycle) {
+    case "yearly":
+      return "anual";
+    case "quarterly":
+      return "trimestral";
+    case "monthly":
+      return "mensal";
+    default:
+      return cycle ?? null;
   }
 }
 
@@ -172,6 +192,7 @@ function MySubPage() {
 
   const planName: string = sub?.plans?.name ?? "Plano Zappfy";
   const planPrice: number = Number(sub?.plans?.price_monthly ?? 0);
+  const billingCycle = normalizedCycle(sub?.billing_cycle, sub?.plans?.billing_cycle);
   const isTrial = status === "teste";
   const isActive = status === "ativo";
   const isExpired = status === "vencido" || status === "bloqueado";
@@ -181,7 +202,7 @@ function MySubPage() {
 
   const trialDays = daysUntil(sub?.trial_ends_at);
   const nextRenewal = isActive
-    ? computeNextRenewal(sub?.expires_at, sub?.started_at, sub?.billing_cycle)
+    ? computeNextRenewal(sub?.expires_at, sub?.started_at, billingCycle)
     : null;
   const renewalDays = nextRenewal
     ? Math.ceil((nextRenewal.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -306,7 +327,7 @@ function MySubPage() {
                 <DetailItem
                   icon={RefreshCw}
                   label="Ciclo de cobrança"
-                  value={cycleLabel(sub?.billing_cycle)}
+                  value={cycleLabel(billingCycle)}
                 />
                 <DetailItem
                   icon={Calendar}
