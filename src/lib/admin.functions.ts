@@ -189,7 +189,7 @@ export const updateClient = createServerFn({ method: "POST" })
       const patch: any = {};
       if (data.storeName !== undefined) patch.store_name = data.storeName;
       if (data.whatsapp !== undefined) patch.whatsapp = data.whatsapp;
-      await supabaseAdmin.from("settings").update(patch).eq("user_id", data.userId);
+      await supabaseAdmin.from("settings").update(patch).eq("store_id", data.userId);
     }
     return { ok: true };
   });
