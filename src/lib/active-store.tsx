@@ -152,6 +152,9 @@ export function useActiveStore() {
       createStore: async () => {
         throw new Error("ActiveStoreProvider ausente");
       },
+      deleteStore: async () => {
+        throw new Error("ActiveStoreProvider ausente");
+      },
     } satisfies Ctx;
   }
   return ctx;
