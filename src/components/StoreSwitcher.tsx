@@ -21,12 +21,28 @@ import {
 import { toast } from "sonner";
 
 export function StoreSwitcher({ compact = false }: { compact?: boolean }) {
-  const { stores, activeStore, activeStoreId, switchStore, createStore, loading } = useActiveStore();
+  const { stores, activeStore, activeStoreId, switchStore, createStore, deleteStore, loading } = useActiveStore();
   const [open, setOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteStore(deleteTarget.id);
+      toast.success(`Loja "${deleteTarget.name}" excluída`);
+      setDeleteTarget(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao excluir loja");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function handleCreate() {
     if (!name.trim()) {
