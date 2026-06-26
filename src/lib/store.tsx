@@ -342,7 +342,7 @@ type Ctx = {
 const StoreContext = createContext<Ctx | null>(null);
 
 async function seedForUser(userId: string) {
-  const productsPayload = seedProductsData.map((p) => ({ user_id: userId, ...fromProduct(p) }));
+  const productsPayload = seedProductsData.map((p) => ({ user_id: userId, store_id: userId, ...fromProduct(p) }));
   const { data: insertedProducts, error: pErr } = await supabase.from("products").insert(productsPayload).select();
   if (pErr) throw pErr;
 
