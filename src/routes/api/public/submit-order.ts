@@ -112,6 +112,8 @@ export const Route = createFileRoute("/api/public/submit-order")({
           _slug: slug,
           _customer: order.customer,
           _phone: order.phone,
+          _cpf: order.cpf?.trim() ?? "",
+          _email: order.email?.trim() ?? "",
           _cep: order.cep ?? "",
           _address: order.address,
           _reference: order.reference ?? "",

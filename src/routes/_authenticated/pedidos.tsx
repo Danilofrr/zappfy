@@ -156,8 +156,9 @@ function PedidosPage() {
     const s = state.settings;
     const storeName = s.storeName || "Loja";
     const logoUrl = s.checkoutLogoUrl || "";
-    const cpfCliente = extractFromNotes(o.notes, customerCpfNoteLabel);
-    const emailCliente = extractFromNotes(o.notes, customerEmailNoteLabel);
+    const firstItemWithCustomerData = o.items.find((item) => (item as any).cpf || (item as any).email) as any;
+    const cpfCliente = extractFromNotes(o.notes, customerCpfNoteLabel) || String(firstItemWithCustomerData?.cpf ?? "").trim();
+    const emailCliente = extractFromNotes(o.notes, customerEmailNoteLabel) || String(firstItemWithCustomerData?.email ?? "").trim();
     const notesLimpas = (o.notes || "")
       .split(/\r?\n/)
       .filter((l) => !customerPrivateNoteLabel.test(l) && !/^\s*(CEP:|Ponto de refer[êe]ncia:)/i.test(l))

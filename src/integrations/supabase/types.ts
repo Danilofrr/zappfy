@@ -1841,8 +1841,10 @@ export type Database = {
           _address: string
           _cep: string
           _city: string
+          _cpf?: string
           _customer: string
           _district: string
+          _email?: string
           _notes?: string
           _payment: string
           _phone: string

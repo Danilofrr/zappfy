@@ -26,7 +26,7 @@ export type OrderStatus =
 
 export type PaymentMethod = "pix" | "cartao" | "dinheiro";
 
-export type OrderItem = { productId: string; name: string; qty: number; price: number; cost: number };
+export type OrderItem = { productId: string; name: string; qty: number; price: number; cost: number; cpf?: string; email?: string };
 
 export type Order = {
   id: string;
