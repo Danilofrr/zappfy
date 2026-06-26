@@ -554,6 +554,7 @@ export type Database = {
           date: string
           description: string
           id: string
+          store_id: string
           updated_at: string
           user_id: string
         }
@@ -564,6 +565,7 @@ export type Database = {
           date?: string
           description: string
           id?: string
+          store_id: string
           updated_at?: string
           user_id: string
         }
@@ -574,10 +576,19 @@ export type Database = {
           date?: string
           description?: string
           id?: string
+          store_id?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expenses_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kiwify_webhook_logs: {
         Row: {
@@ -665,6 +676,7 @@ export type Database = {
           payment: string
           phone: string
           status: string
+          store_id: string
           total: number
           updated_at: string
           user_id: string
@@ -682,6 +694,7 @@ export type Database = {
           payment?: string
           phone?: string
           status?: string
+          store_id: string
           total?: number
           updated_at?: string
           user_id: string
@@ -699,11 +712,20 @@ export type Database = {
           payment?: string
           phone?: string
           status?: string
+          store_id?: string
           total?: number
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plans: {
         Row: {
@@ -792,6 +814,7 @@ export type Database = {
           name: string
           price: number
           stock: number
+          store_id: string
           updated_at: string
           user_id: string
         }
@@ -806,6 +829,7 @@ export type Database = {
           name: string
           price?: number
           stock?: number
+          store_id: string
           updated_at?: string
           user_id: string
         }
@@ -820,10 +844,19 @@ export type Database = {
           name?: string
           price?: number
           stock?: number
+          store_id?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
