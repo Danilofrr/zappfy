@@ -213,7 +213,7 @@ function Page() {
       const [{ data: roles }, { data }, { data: st }] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", uid),
         supabase.from("delivery_tracking_settings").select("*").eq("store_id", uid).maybeSingle(),
-        supabase.from("settings").select("store_name").eq("user_id", uid).maybeSingle(),
+        supabase.from("settings").select("store_name").eq("store_id", uid).maybeSingle(),
       ]);
       setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
       if (st?.store_name && st.store_name.trim()) setStoreName(st.store_name.trim());
