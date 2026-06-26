@@ -511,7 +511,9 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
               });
             }
 
-            const days = plan.duration_days ?? legacyDaysFor(plan, cycle!);
+            // Sempre usar a duração específica do ciclo (30/90/365), nunca o
+            // duration_days "genérico" do plano — senão um anual herda 30 dias.
+            const days = legacyDaysFor(plan, cycle!);
             const now = new Date();
             // Renovação estende a partir do maior entre hoje e expires_at atual
             const base =
