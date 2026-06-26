@@ -151,6 +151,14 @@ function PedidosPage() {
   function printReceipt(o: Order) {
     const s = state.settings;
     const storeName = s.storeName || "Loja";
+    const logoUrl = s.checkoutLogoUrl || "";
+    const cpfCliente = extractFromNotes(o.notes, /^\s*CPF:\s*/i);
+    const emailCliente = extractFromNotes(o.notes, /^\s*E-?mail:\s*/i);
+    const notesLimpas = (o.notes || "")
+      .split(/\r?\n/)
+      .filter((l) => !/^\s*(CPF:|E-?mail:|CEP:|Ponto de refer[êe]ncia:)/i.test(l))
+      .join("\n")
+      .trim();
     const subtotal = o.items.reduce((a, i) => a + i.price * i.qty, 0);
     const enderecoLinha = [o.address, o.district, o.city].filter(Boolean).join(", ");
     const paymentLabels: Record<string, string> = {
