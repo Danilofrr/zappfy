@@ -361,7 +361,7 @@ function PedidosPage() {
     <strong>${htmlEscape(senderName)}</strong>${hasSender ? "" : `<br/><span style="font-size:10px;color:#666">Configure o endereço do remetente em Configurações → Remetente da etiqueta.</span>`}
     ${senderAddress ? `<br/>${htmlEscape(senderAddress)}${senderDistrict ? " — " + htmlEscape(senderDistrict) : ""}` : ""}
     ${senderCity || senderCep ? `<br/>${htmlEscape(senderCity)}${senderCep ? " — CEP " + htmlEscape(senderCep) : ""}` : ""}
-    ${senderCnpj ? `<br/>CNPJ: ${htmlEscape(senderCnpj)}` : ""}
+    ${senderCnpj ? `<br/>${senderDocLabel}: ${htmlEscape(senderCnpj)}` : ""}
   </div>
   <div class="items">
     <div class="ttl">Conteúdo (${totalQty} ${totalQty === 1 ? "item" : "itens"})</div>
