@@ -288,9 +288,9 @@ function PedidosPage() {
   .brand{display:flex;align-items:center;justify-content:center;padding:8px;border-bottom:2px solid #000;min-height:54px;background:#fff}
   .brand img{max-height:44px;max-width:280px;object-fit:contain}
   .brand .name{font-size:18px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
-  .footer-logos{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:#fff;border-top:2px solid #000}
-  .footer-logos .flogo{flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:48px}
-  .footer-logos .flogo img{max-height:48px;max-width:160px;object-fit:contain}
+  .partner-logos{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:#fff;border-bottom:2px solid #000}
+  .partner-logos .plogo{flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:54px}
+  .partner-logos .plogo img{max-height:54px;max-width:180px;object-fit:contain}
   .row{display:flex;border-bottom:2px solid #000}
   .row > div{padding:4px 8px}
   .row > div + div{border-left:2px solid #000}
@@ -335,6 +335,10 @@ function PedidosPage() {
     <div><div class="lbl">Volume</div><div class="val">1 / 1</div></div>
     <div><div class="lbl">Peso</div><div class="val">${htmlEscape(peso)}</div></div>
   </div>
+  <div class="partner-logos">
+    <div class="plogo"><img src="${htmlEscape(zappfyLogoAbs)}" alt="Zappfy"/></div>
+    <div class="plogo"><img src="${htmlEscape(motoboyIconAbs)}" alt="Entrega motoboy"/></div>
+  </div>
   <div class="barcode">
     <div class="bars">${bars}</div>
   </div>
@@ -363,10 +367,6 @@ function PedidosPage() {
   <div class="items">
     <div class="ttl">Conteúdo (${totalQty} ${totalQty === 1 ? "item" : "itens"})</div>
     ${htmlEscape(itemsList)}
-  </div>
-  <div class="footer-logos">
-    <div class="flogo"><img src="${htmlEscape(zappfyLogoAbs)}" alt="Zappfy"/></div>
-    <div class="flogo"><img src="${htmlEscape(motoboyIconAbs)}" alt="Entrega motoboy"/></div>
   </div>
 </div>
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script>
