@@ -272,7 +272,9 @@ function PedidosPage() {
 
     const totalQty = o.items.reduce((a, i) => a + i.qty, 0);
     const itemsList = o.items.map((i) => `${i.qty}x ${htmlEscape(i.name)}`).join(" • ");
-    const cep = (o as any).cep || "00000-000";
+    const cep = extractFromNotes(o.notes, /^\s*CEP:\s*/i) || (o as any).cep || "00000-000";
+    const senderDocDigits = (senderCnpj || "").replace(/\D/g, "");
+    const senderDocLabel = senderDocDigits.length === 11 ? "CPF" : "CNPJ";
     const uf = (o as any).uf || "";
     const cityLine = [o.city, uf].filter(Boolean).join(" - ").toUpperCase();
 
@@ -359,7 +361,7 @@ function PedidosPage() {
     <strong>${htmlEscape(senderName)}</strong>${hasSender ? "" : `<br/><span style="font-size:10px;color:#666">Configure o endereço do remetente em Configurações → Remetente da etiqueta.</span>`}
     ${senderAddress ? `<br/>${htmlEscape(senderAddress)}${senderDistrict ? " — " + htmlEscape(senderDistrict) : ""}` : ""}
     ${senderCity || senderCep ? `<br/>${htmlEscape(senderCity)}${senderCep ? " — CEP " + htmlEscape(senderCep) : ""}` : ""}
-    ${senderCnpj ? `<br/>CNPJ: ${htmlEscape(senderCnpj)}` : ""}
+    ${senderCnpj ? `<br/>${senderDocLabel}: ${htmlEscape(senderCnpj)}` : ""}
   </div>
   <div class="items">
     <div class="ttl">Conteúdo (${totalQty} ${totalQty === 1 ? "item" : "itens"})</div>
