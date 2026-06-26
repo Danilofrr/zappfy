@@ -327,9 +327,7 @@ function PedidosPage() {
 </div>
 <div class="label">
   <div class="brand">
-    <div class="side"><img src="${htmlEscape(zappfyLogoAbs)}" alt="Zappfy"/></div>
-    <div class="center">${logoUrl ? `<img src="${htmlEscape(logoUrl)}" alt="${htmlEscape(storeName)}" onerror="this.parentNode.innerHTML='<div class=\\'name\\'>${htmlEscape(storeName)}</div>'"/>` : `<div class="name">${htmlEscape(storeName)}</div>`}</div>
-    <div class="side"><img src="${htmlEscape(motoboyIconAbs)}" alt="Entrega motoboy"/></div>
+    ${logoUrl ? `<img src="${htmlEscape(logoUrl)}" alt="${htmlEscape(storeName)}" onerror="this.parentNode.innerHTML='<div class=\\'name\\'>${htmlEscape(storeName)}</div>'"/>` : `<div class="name">${htmlEscape(storeName)}</div>`}
   </div>
   <div class="row">
     <div class="grow"><div class="lbl">NF</div><div class="val">${htmlEscape(nf)}</div></div>
