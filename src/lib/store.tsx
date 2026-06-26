@@ -382,19 +382,27 @@ async function seedForUser(userId: string) {
   }).eq("user_id", userId);
 }
 
+const ACTIVE_STORE_KEY = "zappfy.active_store_id";
+function readActiveStoreId(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(ACTIVE_STORE_KEY); } catch { return null; }
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(emptyState);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(() => readActiveStoreId());
   const loadedFor = useRef<string | null>(null);
 
-  const loadAll = useCallback(async (userId: string) => {
+  const loadAll = useCallback(async (userId: string, storeId: string | null) => {
     setLoading(true);
     try {
+      const sid = storeId ?? userId;
       const [products, orders, expenses, ads, settings] = await Promise.all([
-        supabase.from("products").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-        supabase.from("orders").select("*").eq("user_id", userId).order("date", { ascending: false }),
-        supabase.from("expenses").select("*").eq("user_id", userId).order("date", { ascending: false }),
+        supabase.from("products").select("*").eq("store_id", sid).order("created_at", { ascending: false }),
+        supabase.from("orders").select("*").eq("store_id", sid).order("date", { ascending: false }),
+        supabase.from("expenses").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("ads").select("*").eq("user_id", userId).order("date", { ascending: true }),
         supabase.from("settings").select("*").eq("user_id", userId).maybeSingle(),
       ]);
@@ -419,9 +427,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     supabase.auth.getUser().then(({ data }) => {
       if (!mounted) return;
       setUser(data.user ?? null);
-      if (data.user && loadedFor.current !== data.user.id) {
-        loadedFor.current = data.user.id;
-        loadAll(data.user.id);
+      if (data.user && loadedFor.current !== `${data.user.id}:${activeStoreId ?? data.user.id}`) {
+        loadedFor.current = `${data.user.id}:${activeStoreId ?? data.user.id}`;
+        loadAll(data.user.id, activeStoreId);
       } else if (!data.user) {
         setLoading(false);
       }
@@ -429,22 +437,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
       setUser((prev) => {
-        // Se trocou de usuário sem signOut, limpa estado antes de recarregar
         if (prev && u && prev.id !== u.id) {
           loadedFor.current = null;
           setState(emptyState);
         }
         return u;
       });
-      if ((event === "SIGNED_IN" || event === "USER_UPDATED") && u && loadedFor.current !== u.id) {
-        loadedFor.current = u.id;
-        loadAll(u.id);
+      const key = u ? `${u.id}:${activeStoreId ?? u.id}` : null;
+      if ((event === "SIGNED_IN" || event === "USER_UPDATED") && u && loadedFor.current !== key) {
+        loadedFor.current = key;
+        loadAll(u.id, activeStoreId);
       }
       if (event === "SIGNED_OUT") {
         loadedFor.current = null;
         setState(emptyState);
       }
-      // Audit log — apenas transições de identidade (ignora TOKEN_REFRESHED / INITIAL_SESSION)
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED" || event === "PASSWORD_RECOVERY") {
         const evMap = {
           SIGNED_IN: "signed_in",
@@ -464,16 +471,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     });
     return () => { mounted = false; sub.subscription.unsubscribe(); };
-  }, [loadAll]);
+  }, [loadAll, activeStoreId]);
+
+  // Reage a troca de loja ativa (StoreSwitcher dispara CustomEvent)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onChange = (e: Event) => {
+      const id = (e as CustomEvent).detail?.id ?? readActiveStoreId();
+      setActiveStoreId(id);
+      if (user) {
+        loadedFor.current = `${user.id}:${id ?? user.id}`;
+        loadAll(user.id, id);
+      }
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === ACTIVE_STORE_KEY) onChange(new CustomEvent("zappfy:active-store-change", { detail: { id: e.newValue } }));
+    };
+    window.addEventListener("zappfy:active-store-change", onChange as EventListener);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("zappfy:active-store-change", onChange as EventListener);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [user, loadAll]);
 
   // Realtime: novos pedidos do checkout público entram direto na dashboard
   useEffect(() => {
     if (!user) return;
+    const sid = activeStoreId ?? user.id;
     const channel = supabase
-      .channel(`orders-${user.id}`)
+      .channel(`orders-${sid}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
+        { event: "INSERT", schema: "public", table: "orders", filter: `store_id=eq.${sid}` },
         (payload) => {
           const next = toOrder(payload.new);
           setState((s) =>
@@ -483,7 +513,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
+        { event: "UPDATE", schema: "public", table: "orders", filter: `store_id=eq.${sid}` },
         (payload) => {
           const next = toOrder(payload.new);
           setState((s) => ({ ...s, orders: s.orders.map((o) => (o.id === next.id ? next : o)) }));
@@ -491,7 +521,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       )
       .on(
         "postgres_changes",
-        { event: "DELETE", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
+        { event: "DELETE", schema: "public", table: "orders", filter: `store_id=eq.${sid}` },
         (payload) => {
           const id = (payload.old as any)?.id;
           if (!id) return;
@@ -500,13 +530,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, activeStoreId]);
 
   const value: Ctx = useMemo(() => ({
     state, loading, user,
     async addProduct(p) {
       if (!user) return;
-      const { data, error } = await supabase.from("products").insert({ user_id: user.id, store_id: user.id, ...fromProduct(p) }).select().single();
+      const sid = activeStoreId ?? user.id;
+      const { data, error } = await supabase.from("products").insert({ user_id: user.id, store_id: sid, ...fromProduct(p) }).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, products: [toProduct(data), ...s.products] }));
     },
@@ -531,7 +562,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     async addOrder(o) {
       if (!user) return;
-      const { data, error } = await supabase.from("orders").insert({ user_id: user.id, store_id: user.id, ...fromOrder(o) }).select().single();
+      const sid = activeStoreId ?? user.id;
+      const { data, error } = await supabase.from("orders").insert({ user_id: user.id, store_id: sid, ...fromOrder(o) }).select().single();
       if (error) { toast.error(error.message); return; }
       // Baixa de estoque para cada item do pedido (ignora cancelado)
       if (o.status !== "cancelado") {
@@ -604,7 +636,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     async addExpense(e) {
       if (!user) return;
-      const { data, error } = await supabase.from("expenses").insert({ user_id: user.id, store_id: user.id, ...fromExpense(e) }).select().single();
+      const sid = activeStoreId ?? user.id;
+      const { data, error } = await supabase.from("expenses").insert({ user_id: user.id, store_id: sid, ...fromExpense(e) }).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, expenses: [toExpense(data), ...s.expenses] }));
     },
@@ -684,15 +717,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     async resetSeed() {
       if (!user) return;
+      const sid = activeStoreId ?? user.id;
       setLoading(true);
       await Promise.all([
-        supabase.from("orders").delete().eq("user_id", user.id),
-        supabase.from("products").delete().eq("user_id", user.id),
-        supabase.from("expenses").delete().eq("user_id", user.id),
+        supabase.from("orders").delete().eq("store_id", sid),
+        supabase.from("products").delete().eq("store_id", sid),
+        supabase.from("expenses").delete().eq("store_id", sid),
         supabase.from("ads").delete().eq("user_id", user.id),
       ]);
       await seedForUser(user.id);
-      await loadAll(user.id);
+      await loadAll(user.id, activeStoreId);
     },
     async signOut() {
       await supabase.auth.signOut();
@@ -700,7 +734,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       loadedFor.current = null;
       if (typeof window !== "undefined") window.location.href = "/auth";
     },
-  }), [state, loading, user, loadAll]);
+  }), [state, loading, user, activeStoreId, loadAll]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
