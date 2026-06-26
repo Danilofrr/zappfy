@@ -339,9 +339,6 @@ function PedidosPage() {
     <div class="plogo"><img src="${htmlEscape(zappfyLogoAbs)}" alt="Zappfy"/></div>
     <div class="plogo"><img src="${htmlEscape(motoboyIconAbs)}" alt="Entrega motoboy"/></div>
   </div>
-  <div class="barcode">
-    <div class="bars">${bars}</div>
-  </div>
   <div class="sec-title">Recebedor</div>
   <div class="recv">
     <div class="line"><span class="lbl2">Recebedor:</span><span class="field"></span></div>
