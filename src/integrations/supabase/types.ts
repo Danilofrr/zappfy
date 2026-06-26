@@ -1080,6 +1080,11 @@ export type Database = {
           delivery_fee: number
           delivery_label: string
           delivery_message_template: string | null
+          fb_access_token: string | null
+          fb_ad_account_id: string | null
+          fb_last_sync_at: string | null
+          fb_last_sync_error: string | null
+          fb_last_sync_status: string | null
           monthly_profit_goal: number
           monthly_revenue_goal: number
           motoboy_fee: number
@@ -1135,6 +1140,11 @@ export type Database = {
           delivery_fee?: number
           delivery_label?: string
           delivery_message_template?: string | null
+          fb_access_token?: string | null
+          fb_ad_account_id?: string | null
+          fb_last_sync_at?: string | null
+          fb_last_sync_error?: string | null
+          fb_last_sync_status?: string | null
           monthly_profit_goal?: number
           monthly_revenue_goal?: number
           motoboy_fee?: number
@@ -1190,6 +1200,11 @@ export type Database = {
           delivery_fee?: number
           delivery_label?: string
           delivery_message_template?: string | null
+          fb_access_token?: string | null
+          fb_ad_account_id?: string | null
+          fb_last_sync_at?: string | null
+          fb_last_sync_error?: string | null
+          fb_last_sync_status?: string | null
           monthly_profit_goal?: number
           monthly_revenue_goal?: number
           motoboy_fee?: number
