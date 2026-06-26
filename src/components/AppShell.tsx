@@ -32,6 +32,8 @@ import { ThemeToggle } from "@/lib/theme";
 import { SubscriptionStatusCard } from "@/components/SubscriptionStatusCard";
 import { usePlatformLogo } from "@/lib/usePlatformLogo";
 import { SupportWhatsBubble } from "@/components/SupportWhatsBubble";
+import { ActiveStoreProvider } from "@/lib/active-store";
+import { StoreSwitcher } from "@/components/StoreSwitcher";
 
 const navGroups: { label: string; items: { to: string; label: string; icon: any }[] }[] = [
   {
@@ -84,6 +86,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
   ];
 
   return (
+    <ActiveStoreProvider>
     <div className="min-h-screen bg-background text-foreground">
       {/* Mobile top bar (logo only) */}
       <header
@@ -172,11 +175,12 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
 
             <div className="border-t border-sidebar-border p-3 space-y-2 mt-4">
               <SubscriptionStatusCard variant="sidebar" />
-              <div className="rounded-lg bg-card px-2.5 py-2 border border-border/70">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Loja</div>
-                <div className="text-sm font-semibold truncate leading-tight">{state.settings.storeName}</div>
-                {user?.email && <div className="text-[10px] text-muted-foreground truncate">{user.email}</div>}
-              </div>
+              <StoreSwitcher />
+              {user?.email && (
+                <div className="text-[10px] text-muted-foreground truncate px-1">
+                  {user.email}
+                </div>
+              )}
               <button
                 onClick={() => signOut()}
                 title="Sair"
@@ -253,6 +257,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
 
       <SupportWhatsBubble mode="dashboard" />
     </div>
+    </ActiveStoreProvider>
   );
 }
 
