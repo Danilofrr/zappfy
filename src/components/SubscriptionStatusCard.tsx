@@ -15,6 +15,43 @@ function daysBetween(target: string | null | undefined): number | null {
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
+function cycleMonths(cycle: string | null | undefined): number {
+  switch (cycle) {
+    case "yearly":
+      return 12;
+    case "quarterly":
+      return 3;
+    case "monthly":
+    default:
+      return 1;
+  }
+}
+
+function computeNextRenewal(
+  expiresAt: string | null | undefined,
+  startedAt: string | null | undefined,
+  cycle: string | null | undefined,
+): Date | null {
+  const now = new Date();
+  const months = cycleMonths(cycle);
+  if (expiresAt) {
+    const exp = new Date(expiresAt);
+    if (!Number.isNaN(exp.getTime()) && exp.getTime() > now.getTime()) return exp;
+  }
+  if (startedAt) {
+    const start = new Date(startedAt);
+    if (!Number.isNaN(start.getTime())) {
+      const next = new Date(start);
+      while (next.getTime() <= now.getTime()) next.setMonth(next.getMonth() + months);
+      return next;
+    }
+  }
+  const fb = new Date(now);
+  fb.setMonth(fb.getMonth() + months);
+  return fb;
+}
+
+
 export function SubscriptionStatusCard({
   variant = "sidebar",
   collapsedHidden = false,
