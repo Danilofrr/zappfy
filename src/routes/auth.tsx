@@ -269,19 +269,19 @@ function AuthPage() {
         </div>
       </aside>
 
-      <div className="flex flex-col items-center justify-center min-h-screen lg:min-h-0 px-5 py-8 lg:px-10 lg:py-6 lg:h-screen lg:overflow-y-auto">
-        <div className="w-full max-w-md flex-1 lg:flex-none flex flex-col justify-center">
+      <div className="flex flex-col items-center justify-center min-h-screen lg:min-h-0 px-5 py-6 lg:px-10 lg:py-6 lg:h-screen lg:overflow-y-auto">
+        <div className="w-full max-w-md lg:flex-none flex flex-col justify-center my-auto">
           {/* Mobile hero — big logo + welcome */}
-          <div className="lg:hidden flex flex-col items-center text-center mb-8 mt-4">
+          <div className="lg:hidden flex flex-col items-center text-center mb-6">
             <img
               src="/logo-bubble.png"
               alt="Zappfy"
-              className="h-20 w-auto object-contain drop-shadow-[0_0_24px_rgba(34,197,94,0.55)]"
+              className="h-16 w-auto object-contain drop-shadow-[0_0_24px_rgba(34,197,94,0.55)]"
             />
-            <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
+            <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground">
               {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
             </h1>
-            <p className="mt-2 text-[15px] text-muted-foreground">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {mode === "login"
                 ? "Faça login para acessar sua conta"
                 : "Comece a vender pelo WhatsApp"}
