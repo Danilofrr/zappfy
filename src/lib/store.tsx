@@ -636,7 +636,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     async addExpense(e) {
       if (!user) return;
-      const { data, error } = await supabase.from("expenses").insert({ user_id: user.id, store_id: user.id, ...fromExpense(e) }).select().single();
+      const sid = activeStoreId ?? user.id;
+      const { data, error } = await supabase.from("expenses").insert({ user_id: user.id, store_id: sid, ...fromExpense(e) }).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, expenses: [toExpense(data), ...s.expenses] }));
     },
