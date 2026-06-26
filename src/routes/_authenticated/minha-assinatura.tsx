@@ -146,26 +146,33 @@ function computeNextRenewal(
 ): Date | null {
   const now = new Date();
   const months = cycleMonths(cycle);
+  const start = startedAt ? new Date(startedAt) : null;
 
-  // Se expires_at está no futuro, confiamos nele (Kiwify atualiza a cada renovação)
+  // Se expires_at está no futuro e coerente com o ciclo, confiamos nele.
+  // Caso tenha sido salvo como mensal por engano em um plano anual/trimestral,
+  // ignoramos esse valor curto e projetamos pela data de início + ciclo real.
   if (expiresAt) {
     const exp = new Date(expiresAt);
     if (!Number.isNaN(exp.getTime()) && exp.getTime() > now.getTime()) {
-      return exp;
+      if (start && !Number.isNaN(start.getTime())) {
+        const minimumExpected = new Date(start);
+        minimumExpected.setMonth(minimumExpected.getMonth() + months);
+        minimumExpected.setDate(minimumExpected.getDate() - 3);
+        if (exp.getTime() >= minimumExpected.getTime()) return exp;
+      } else {
+        return exp;
+      }
     }
   }
 
   // Caso contrário, projetamos a partir de started_at
-  if (startedAt) {
-    const start = new Date(startedAt);
-    if (!Number.isNaN(start.getTime())) {
-      const next = new Date(start);
-      // Avança em blocos do ciclo até ultrapassar agora
-      while (next.getTime() <= now.getTime()) {
-        next.setMonth(next.getMonth() + months);
-      }
-      return next;
+  if (start && !Number.isNaN(start.getTime())) {
+    const next = new Date(start);
+    // Avança em blocos do ciclo até ultrapassar agora
+    while (next.getTime() <= now.getTime()) {
+      next.setMonth(next.getMonth() + months);
     }
+    return next;
   }
 
   // Última opção: hoje + ciclo
