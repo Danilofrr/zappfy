@@ -382,19 +382,27 @@ async function seedForUser(userId: string) {
   }).eq("user_id", userId);
 }
 
+const ACTIVE_STORE_KEY = "zappfy.active_store_id";
+function readActiveStoreId(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(ACTIVE_STORE_KEY); } catch { return null; }
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(emptyState);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(() => readActiveStoreId());
   const loadedFor = useRef<string | null>(null);
 
-  const loadAll = useCallback(async (userId: string) => {
+  const loadAll = useCallback(async (userId: string, storeId: string | null) => {
     setLoading(true);
     try {
+      const sid = storeId ?? userId;
       const [products, orders, expenses, ads, settings] = await Promise.all([
-        supabase.from("products").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-        supabase.from("orders").select("*").eq("user_id", userId).order("date", { ascending: false }),
-        supabase.from("expenses").select("*").eq("user_id", userId).order("date", { ascending: false }),
+        supabase.from("products").select("*").eq("store_id", sid).order("created_at", { ascending: false }),
+        supabase.from("orders").select("*").eq("store_id", sid).order("date", { ascending: false }),
+        supabase.from("expenses").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("ads").select("*").eq("user_id", userId).order("date", { ascending: true }),
         supabase.from("settings").select("*").eq("user_id", userId).maybeSingle(),
       ]);
