@@ -764,7 +764,13 @@ export function useFinance(range?: { start: Date; end: Date }) {
   const motoboyCost = motoboyFee * monthOrders.length;
 
   const monthExpenses = state.expenses.filter((e) => dateOnlyToLocalDate(e.date) >= start && dateOnlyToLocalDate(e.date) < end);
-  const adsSpend = monthExpenses.filter((e) => e.category === "ads").reduce((a, e) => a + e.amount, 0);
+  const adsExpenseSpend = monthExpenses.filter((e) => e.category === "ads").reduce((a, e) => a + e.amount, 0);
+  const monthAdsEntries = state.ads.filter((a) => {
+    const d = dateOnlyToLocalDate(a.date);
+    return d >= start && d < end;
+  });
+  const adsManualSpend = monthAdsEntries.reduce((a, x) => a + (Number(x.invested) || 0), 0);
+  const adsSpend = adsExpenseSpend + adsManualSpend;
   const opEx = monthExpenses.filter((e) => e.category !== "ads").reduce((a, e) => a + e.amount, 0);
 
   const profit = revenue - cogs - adsSpend - opEx - motoboyCost;
@@ -772,9 +778,11 @@ export function useFinance(range?: { start: Date; end: Date }) {
   const paidOrders = state.orders.filter((o) => o.status !== "cancelado" && o.status !== "aguardando");
   const allRevenue = paidOrders.reduce((a, o) => a + o.total, 0);
   const allExpenses = state.expenses.reduce((a, e) => a + e.amount, 0);
+  const allAdsManual = state.ads.reduce((a, x) => a + (Number(x.invested) || 0), 0);
   const allCogs = paidOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
   const allMotoboy = motoboyFee * paidOrders.length;
-  const cash = allRevenue - allExpenses - allCogs - allMotoboy;
+  const cash = allRevenue - allExpenses - allAdsManual - allCogs - allMotoboy;
+
 
   return { revenue, cogs, adsSpend, opEx, motoboyCost, profit, cash, ordersCount: monthOrders.length };
 }
