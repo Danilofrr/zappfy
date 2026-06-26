@@ -31,6 +31,7 @@ type Ctx = {
   switchStore: (id: string) => void;
   refetch: () => Promise<unknown>;
   createStore: (name: string, slug?: string) => Promise<Store>;
+  deleteStore: (id: string) => Promise<void>;
 };
 
 const ActiveStoreContext = createContext<Ctx | null>(null);
@@ -104,6 +105,20 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
     [q],
   );
 
+  const deleteStore = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.rpc("delete_my_store", { _store_id: id });
+      if (error) throw error;
+      if (activeStoreId === id) {
+        try { localStorage.removeItem(ACTIVE_STORE_KEY); } catch {}
+        setActiveStoreId(null);
+      }
+      await q.refetch();
+      queryClient.invalidateQueries();
+    },
+    [q, activeStoreId, queryClient],
+  );
+
   const activeStore = useMemo(
     () => stores.find((s) => s.id === activeStoreId) ?? null,
     [stores, activeStoreId],
@@ -117,6 +132,7 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
     switchStore,
     refetch: q.refetch,
     createStore,
+    deleteStore,
   };
 
   return <ActiveStoreContext.Provider value={value}>{children}</ActiveStoreContext.Provider>;
@@ -134,6 +150,9 @@ export function useActiveStore() {
       switchStore: () => {},
       refetch: async () => {},
       createStore: async () => {
+        throw new Error("ActiveStoreProvider ausente");
+      },
+      deleteStore: async () => {
         throw new Error("ActiveStoreProvider ausente");
       },
     } satisfies Ctx;

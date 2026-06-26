@@ -1840,6 +1840,7 @@ export type Database = {
         }
       }
       delete_courier: { Args: { _id: string }; Returns: boolean }
+      delete_my_store: { Args: { _store_id: string }; Returns: boolean }
       finalize_delivery_tracking: {
         Args: { _tracking_id: string }
         Returns: boolean
