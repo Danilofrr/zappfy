@@ -88,17 +88,56 @@ function daysUntil(date: string | null | undefined): number | null {
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
-function cycleLabel(cycle: string | null | undefined): string {
+function cycleMonths(cycle: string | null | undefined): number {
   switch (cycle) {
-    case "monthly":
-      return "Mensal";
-    case "quarterly":
-      return "Trimestral";
     case "yearly":
-      return "Anual";
+      return 12;
+    case "quarterly":
+      return 3;
+    case "monthly":
     default:
-      return "—";
+      return 1;
   }
+}
+
+/**
+ * Calcula a próxima data de renovação com base no ciclo do plano.
+ * Usa expires_at se já estiver no futuro e coerente; caso contrário,
+ * projeta a partir de started_at somando o intervalo do ciclo até passar de hoje.
+ */
+function computeNextRenewal(
+  expiresAt: string | null | undefined,
+  startedAt: string | null | undefined,
+  cycle: string | null | undefined,
+): Date | null {
+  const now = new Date();
+  const months = cycleMonths(cycle);
+
+  // Se expires_at está no futuro, confiamos nele (Kiwify atualiza a cada renovação)
+  if (expiresAt) {
+    const exp = new Date(expiresAt);
+    if (!Number.isNaN(exp.getTime()) && exp.getTime() > now.getTime()) {
+      return exp;
+    }
+  }
+
+  // Caso contrário, projetamos a partir de started_at
+  if (startedAt) {
+    const start = new Date(startedAt);
+    if (!Number.isNaN(start.getTime())) {
+      const next = new Date(start);
+      // Avança em blocos do ciclo até ultrapassar agora
+      while (next.getTime() <= now.getTime()) {
+        next.setMonth(next.getMonth() + months);
+      }
+      return next;
+    }
+  }
+
+  // Última opção: hoje + ciclo
+  const fallback = new Date(now);
+  fallback.setMonth(fallback.getMonth() + months);
+  return fallback;
 }
 
 function MySubPage() {
@@ -127,8 +166,15 @@ function MySubPage() {
   );
 
   const trialDays = daysUntil(sub?.trial_ends_at);
+  const nextRenewal = isActive
+    ? computeNextRenewal(sub?.expires_at, sub?.started_at, sub?.billing_cycle)
+    : null;
+  const renewalDays = nextRenewal
+    ? Math.ceil((nextRenewal.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
   const expDays = daysUntil(sub?.expires_at);
-  const daysLeft = isTrial ? trialDays : expDays;
+  const daysLeft = isTrial ? trialDays : isActive ? renewalDays : expDays;
+
 
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState("");
