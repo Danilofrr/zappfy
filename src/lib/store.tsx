@@ -530,13 +530,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, activeStoreId]);
 
   const value: Ctx = useMemo(() => ({
     state, loading, user,
     async addProduct(p) {
       if (!user) return;
-      const { data, error } = await supabase.from("products").insert({ user_id: user.id, store_id: user.id, ...fromProduct(p) }).select().single();
+      const sid = activeStoreId ?? user.id;
+      const { data, error } = await supabase.from("products").insert({ user_id: user.id, store_id: sid, ...fromProduct(p) }).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, products: [toProduct(data), ...s.products] }));
     },
