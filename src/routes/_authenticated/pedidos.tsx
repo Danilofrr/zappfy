@@ -285,12 +285,12 @@ function PedidosPage() {
   .actions button{padding:7px 14px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
   .actions .print{background:#111;color:#fff}.actions .close{background:#eee;color:#111}
   .label{width:520px;margin:0 auto;background:#fff;border:2px solid #000;font-size:12px}
-  .brand{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-bottom:2px solid #000;min-height:54px;background:#fff}
-  .brand .side{display:flex;align-items:center;justify-content:center;flex:0 0 auto;width:80px;height:42px}
-  .brand .side img{max-height:42px;max-width:80px;object-fit:contain}
-  .brand .center{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 6px}
-  .brand .center img{max-height:40px;max-width:220px;object-fit:contain}
-  .brand .name{font-size:16px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+  .brand{display:flex;align-items:center;justify-content:center;padding:8px;border-bottom:2px solid #000;min-height:54px;background:#fff}
+  .brand img{max-height:44px;max-width:280px;object-fit:contain}
+  .brand .name{font-size:18px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+  .footer-logos{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:#fff;border-top:2px solid #000}
+  .footer-logos .flogo{flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:48px}
+  .footer-logos .flogo img{max-height:48px;max-width:160px;object-fit:contain}
   .row{display:flex;border-bottom:2px solid #000}
   .row > div{padding:4px 8px}
   .row > div + div{border-left:2px solid #000}
@@ -327,9 +327,7 @@ function PedidosPage() {
 </div>
 <div class="label">
   <div class="brand">
-    <div class="side"><img src="${htmlEscape(zappfyLogoAbs)}" alt="Zappfy"/></div>
-    <div class="center">${logoUrl ? `<img src="${htmlEscape(logoUrl)}" alt="${htmlEscape(storeName)}" onerror="this.parentNode.innerHTML='<div class=\\'name\\'>${htmlEscape(storeName)}</div>'"/>` : `<div class="name">${htmlEscape(storeName)}</div>`}</div>
-    <div class="side"><img src="${htmlEscape(motoboyIconAbs)}" alt="Entrega motoboy"/></div>
+    ${logoUrl ? `<img src="${htmlEscape(logoUrl)}" alt="${htmlEscape(storeName)}" onerror="this.parentNode.innerHTML='<div class=\\'name\\'>${htmlEscape(storeName)}</div>'"/>` : `<div class="name">${htmlEscape(storeName)}</div>`}
   </div>
   <div class="row">
     <div class="grow"><div class="lbl">NF</div><div class="val">${htmlEscape(nf)}</div></div>
@@ -365,6 +363,10 @@ function PedidosPage() {
   <div class="items">
     <div class="ttl">Conteúdo (${totalQty} ${totalQty === 1 ? "item" : "itens"})</div>
     ${htmlEscape(itemsList)}
+  </div>
+  <div class="footer-logos">
+    <div class="flogo"><img src="${htmlEscape(zappfyLogoAbs)}" alt="Zappfy"/></div>
+    <div class="flogo"><img src="${htmlEscape(motoboyIconAbs)}" alt="Entrega motoboy"/></div>
   </div>
 </div>
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script>
