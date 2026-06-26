@@ -210,6 +210,12 @@ function getOrderIds(payload: any): { orderId: string | null; subId: string | nu
 
 type Cycle = "mensal" | "trimestral" | "anual" | "monthly" | "quarterly" | "yearly";
 
+function normalizeCycle(cycle: Cycle): "mensal" | "trimestral" | "anual" {
+  if (cycle === "yearly" || cycle === "anual") return "anual";
+  if (cycle === "quarterly" || cycle === "trimestral") return "trimestral";
+  return "mensal";
+}
+
 function legacyCycleFor(plan: any, productId: string): Cycle | null {
   if (plan.kiwify_product_id_monthly === productId) return "monthly";
   if (plan.kiwify_product_id_quarterly === productId) return "quarterly";
@@ -218,8 +224,9 @@ function legacyCycleFor(plan: any, productId: string): Cycle | null {
 }
 
 function legacyDaysFor(plan: any, cycle: Cycle): number {
-  if (cycle === "monthly") return plan.duration_days_monthly ?? 30;
-  if (cycle === "quarterly") return plan.duration_days_quarterly ?? 90;
+  const normalized = normalizeCycle(cycle);
+  if (normalized === "mensal") return plan.duration_days_monthly ?? 30;
+  if (normalized === "trimestral") return plan.duration_days_quarterly ?? 90;
   return plan.duration_days_yearly ?? 365;
 }
 
@@ -513,7 +520,8 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
 
             // Sempre usar a duração específica do ciclo (30/90/365), nunca o
             // duration_days "genérico" do plano — senão um anual herda 30 dias.
-            const days = legacyDaysFor(plan, cycle!);
+            const normalizedBillingCycle = normalizeCycle(cycle!);
+            const days = legacyDaysFor(plan, normalizedBillingCycle);
             const now = new Date();
             // Renovação estende a partir do maior entre hoje e expires_at atual
             const base =
@@ -526,7 +534,7 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
               user_id: userId,
               plan_id: plan.id,
               status: "ativo" as const,
-              billing_cycle: cycle,
+              billing_cycle: normalizedBillingCycle,
               started_at: existingSub?.started_at ?? now.toISOString(),
               expires_at: newExpires.toISOString(),
               last_payment_at: now.toISOString(),
@@ -547,7 +555,7 @@ export const Route = createFileRoute("/api/public/kiwify-webhook")({
             await supabaseAdmin.from("access_logs").insert({
               user_id: userId,
               event: "kiwify_access_granted",
-              metadata: { event: eventType, days, cycle, order_id: orderId },
+              metadata: { event: eventType, days, cycle: normalizedBillingCycle, order_id: orderId },
             });
 
             await log("processed");

@@ -17,13 +17,30 @@ function daysBetween(target: string | null | undefined): number | null {
 
 function cycleMonths(cycle: string | null | undefined): number {
   switch (cycle) {
+    case "anual":
     case "yearly":
       return 12;
+    case "trimestral":
     case "quarterly":
       return 3;
+    case "mensal":
     case "monthly":
     default:
       return 1;
+  }
+}
+
+function normalizedCycle(subscriptionCycle: string | null | undefined, planCycle: string | null | undefined): string | null {
+  const cycle = planCycle || subscriptionCycle;
+  switch (cycle) {
+    case "yearly":
+      return "anual";
+    case "quarterly":
+      return "trimestral";
+    case "monthly":
+      return "mensal";
+    default:
+      return cycle ?? null;
   }
 }
 
@@ -72,6 +89,7 @@ export function SubscriptionStatusCard({
   const plan = sub?.plans ?? null;
   const planName: string = plan?.name ?? "Zappfy Pro";
   const planPrice: number = Number(plan?.price_monthly ?? 79);
+  const billingCycle = normalizedCycle(sub?.billing_cycle, plan?.billing_cycle);
 
   // Compute trial / expiration days
   const trialDays = daysBetween(sub?.trial_ends_at);
@@ -79,7 +97,7 @@ export function SubscriptionStatusCard({
   const nextRenewal = computeNextRenewal(
     sub?.expires_at,
     sub?.started_at,
-    sub?.billing_cycle,
+    billingCycle,
   );
   const nextRenewalLabel = nextRenewal
     ? nextRenewal.toLocaleDateString("pt-BR")
