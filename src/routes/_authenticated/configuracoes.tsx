@@ -391,19 +391,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
 }
 
-function MessageDiagnostic({ saved, sent }: { saved: string; sent: string }) {
+function MessageDiagnostic({ saved: _saved, sent }: { saved: string; sent: string }) {
   return (
     <div className="mt-3 rounded-lg border border-dashed border-border bg-muted/30 p-3 text-xs">
-      <div className="grid gap-2">
-        <div>
-          <div className="mb-1 font-medium text-muted-foreground">Mensagem salva no banco:</div>
-          <pre className="whitespace-pre-wrap break-words rounded-md bg-background/70 p-2 font-sans leading-relaxed">{saved || "—"}</pre>
-        </div>
-        <div>
-          <div className="mb-1 font-medium text-muted-foreground">Mensagem enviada ao WhatsApp:</div>
-          <pre className="whitespace-pre-wrap break-words rounded-md bg-background/70 p-2 font-sans leading-relaxed">{sent || "—"}</pre>
-        </div>
-      </div>
+      <div className="mb-1 font-medium text-muted-foreground">Mensagem enviada ao WhatsApp:</div>
+      <pre className="whitespace-pre-wrap break-words rounded-md bg-background/70 p-2 font-sans leading-relaxed">{sent || "—"}</pre>
     </div>
   );
 }
