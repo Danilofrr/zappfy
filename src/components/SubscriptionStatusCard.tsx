@@ -76,6 +76,16 @@ export function SubscriptionStatusCard({
   // Compute trial / expiration days
   const trialDays = daysBetween(sub?.trial_ends_at);
   const expDays = daysBetween(sub?.expires_at);
+  const nextRenewal = computeNextRenewal(
+    sub?.expires_at,
+    sub?.started_at,
+    sub?.billing_cycle,
+  );
+  const nextRenewalLabel = nextRenewal
+    ? nextRenewal.toLocaleDateString("pt-BR")
+    : null;
+
+
 
 
   const isActive = status === "ativo";
