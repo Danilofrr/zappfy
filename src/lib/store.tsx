@@ -404,7 +404,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         supabase.from("orders").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("expenses").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("ads").select("*").eq("user_id", userId).order("date", { ascending: true }),
-        supabase.from("settings").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("settings").select("*").eq("store_id", sid).maybeSingle(),
       ]);
 
       setState({

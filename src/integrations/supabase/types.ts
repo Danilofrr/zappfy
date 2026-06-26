@@ -1087,6 +1087,7 @@ export type Database = {
           pix_key: string
           shipping_options: Json | null
           slug: string | null
+          store_id: string
           store_name: string
           updated_at: string
           user_id: string
@@ -1141,6 +1142,7 @@ export type Database = {
           pix_key?: string
           shipping_options?: Json | null
           slug?: string | null
+          store_id: string
           store_name?: string
           updated_at?: string
           user_id: string
@@ -1195,12 +1197,21 @@ export type Database = {
           pix_key?: string
           shipping_options?: Json | null
           slug?: string | null
+          store_id?: string
           store_name?: string
           updated_at?: string
           user_id?: string
           whatsapp?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "settings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stores: {
         Row: {
