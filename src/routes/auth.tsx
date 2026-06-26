@@ -101,7 +101,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen lg:h-screen lg:min-h-0 lg:overflow-hidden bg-background relative lg:grid lg:grid-cols-[1.1fr_1fr]">
+    <div className="h-[100svh] overflow-hidden bg-background relative lg:grid lg:grid-cols-[1.1fr_1fr]">
 
       {/* LEFT — Marketing panel (desktop only) */}
       <aside className="hidden lg:block relative overflow-hidden">
@@ -269,16 +269,16 @@ function AuthPage() {
         </div>
       </aside>
 
-      <div className="flex flex-col items-center justify-center min-h-screen lg:min-h-0 px-5 py-6 lg:px-10 lg:py-6 lg:h-screen lg:overflow-y-auto">
-        <div className="w-full max-w-md lg:flex-none flex flex-col justify-center my-auto">
+      <div className="flex h-full flex-col items-center justify-center px-5 py-4 lg:px-10 lg:py-6 lg:h-screen lg:overflow-y-auto">
+        <div className="w-full max-w-md lg:flex-none flex flex-col justify-center">
           {/* Mobile hero — big logo + welcome */}
-          <div className="lg:hidden flex flex-col items-center text-center mb-6">
+          <div className="lg:hidden flex flex-col items-center text-center mb-4">
             <img
               src="/logo-bubble.png"
               alt="Zappfy"
-              className="h-16 w-auto object-contain drop-shadow-[0_0_24px_rgba(34,197,94,0.55)]"
+              className="h-14 w-auto object-contain drop-shadow-[0_0_24px_rgba(34,197,94,0.55)]"
             />
-            <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
               {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
@@ -293,7 +293,7 @@ function AuthPage() {
             <img src={logoUrl} alt="Zappfy" className="h-12 w-auto object-contain" />
           </Link>
 
-          <Card className="p-6 lg:p-7 rounded-2xl bg-card/80 backdrop-blur-xl border-border/60 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5)] card-neon lg:shadow-elegant">
+          <Card className="p-5 lg:p-7 rounded-2xl bg-card/80 backdrop-blur-xl border-border/60 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5)] card-neon lg:shadow-elegant">
             <h2 className="hidden lg:block text-2xl font-semibold tracking-tight">
               {mode === "login" ? "Entrar na sua conta" : "Criar conta grátis"}
             </h2>
@@ -303,14 +303,14 @@ function AuthPage() {
                 : "Comece a controlar suas vendas pelo WhatsApp."}
             </p>
 
-            <form onSubmit={handleSubmit} className="lg:mt-6 space-y-4">
+            <form onSubmit={handleSubmit} className="lg:mt-6 space-y-3.5 lg:space-y-4">
               {mode === "signup" && (
                 <>
                   <div className="space-y-1.5">
                     <Label htmlFor="fullName" className="text-sm font-semibold">Seu nome</Label>
                     <div className="relative">
                       <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="João Silva" className="h-12 pl-10 rounded-xl bg-background/60" />
+                    <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="João Silva" className="h-11 lg:h-12 pl-10 rounded-xl bg-background/60" />
                     </div>
                   </div>
                 </>
@@ -326,7 +326,7 @@ function AuthPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     placeholder="Digite seu email ou usuário"
-                    className="h-12 pl-10 rounded-xl bg-background/60"
+                    className="h-11 lg:h-12 pl-10 rounded-xl bg-background/60"
                   />
                 </div>
               </div>
@@ -342,7 +342,7 @@ function AuthPage() {
                     required
                     minLength={6}
                     placeholder="Digite sua senha"
-                    className="h-12 pl-10 pr-11 rounded-xl bg-background/60"
+                    className="h-11 lg:h-12 pl-10 pr-11 rounded-xl bg-background/60"
                   />
                   <button
                     type="button"
@@ -375,7 +375,7 @@ function AuthPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 text-base font-semibold rounded-xl shadow-[0_8px_24px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)] transition-all duration-300 hover:shadow-[0_0_0_1px_var(--primary),0_0_24px_2px_color-mix(in_oklab,var(--primary)_70%,transparent),0_0_60px_-4px_color-mix(in_oklab,var(--primary-glow)_80%,transparent)] hover:brightness-110 hover:-translate-y-0.5"
+                className="w-full h-11 lg:h-12 text-base font-semibold rounded-xl shadow-[0_8px_24px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)] transition-all duration-300 hover:shadow-[0_0_0_1px_var(--primary),0_0_24px_2px_color-mix(in_oklab,var(--primary)_70%,transparent),0_0_60px_-4px_color-mix(in_oklab,var(--primary-glow)_80%,transparent)] hover:brightness-110 hover:-translate-y-0.5"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 {mode === "login" ? "Entrar" : "Criar conta"}
