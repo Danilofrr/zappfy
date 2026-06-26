@@ -27,6 +27,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { dateInputToLocalISO } from "@/lib/format";
+import zappfyLabelLogo from "@/assets/zappfy-logo-label.png";
+import motoboyLabelIcon from "@/assets/motoboy-icon.png";
 
 import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
