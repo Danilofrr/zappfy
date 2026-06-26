@@ -314,6 +314,8 @@ function MySubPage() {
                   value={
                     isTrial && sub?.trial_ends_at
                       ? new Date(sub.trial_ends_at).toLocaleDateString("pt-BR")
+                      : isActive && nextRenewal
+                      ? nextRenewal.toLocaleDateString("pt-BR")
                       : sub?.expires_at
                       ? new Date(sub.expires_at).toLocaleDateString("pt-BR")
                       : "—"
