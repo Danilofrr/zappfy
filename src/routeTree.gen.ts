@@ -35,6 +35,7 @@ import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMotoboysRouteImport } from './routes/_authenticated/motoboys'
 import { Route as AuthenticatedMinhaAssinaturaRouteImport } from './routes/_authenticated/minha-assinatura'
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
+import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
 import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedDreRouteImport } from './routes/_authenticated/dre'
@@ -193,6 +194,12 @@ const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
   path: '/metas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIntegracoesRoute =
+  AuthenticatedIntegracoesRouteImport.update({
+    id: '/integracoes',
+    path: '/integracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIndicadoresRoute =
   AuthenticatedIndicadoresRouteImport.update({
     id: '/indicadores',
@@ -336,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/motoboys': typeof AuthenticatedMotoboysRoute
@@ -384,6 +392,7 @@ export interface FileRoutesByTo {
   '/dre': typeof AuthenticatedDreRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/motoboys': typeof AuthenticatedMotoboysRoute
@@ -435,6 +444,7 @@ export interface FileRoutesById {
   '/_authenticated/dre': typeof AuthenticatedDreRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
   '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/minha-assinatura': typeof AuthenticatedMinhaAssinaturaRoute
   '/_authenticated/motoboys': typeof AuthenticatedMotoboysRoute
@@ -488,6 +498,7 @@ export interface FileRouteTypes {
     | '/dre'
     | '/financeiro'
     | '/indicadores'
+    | '/integracoes'
     | '/metas'
     | '/minha-assinatura'
     | '/motoboys'
@@ -536,6 +547,7 @@ export interface FileRouteTypes {
     | '/dre'
     | '/financeiro'
     | '/indicadores'
+    | '/integracoes'
     | '/metas'
     | '/minha-assinatura'
     | '/motoboys'
@@ -586,6 +598,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dre'
     | '/_authenticated/financeiro'
     | '/_authenticated/indicadores'
+    | '/_authenticated/integracoes'
     | '/_authenticated/metas'
     | '/_authenticated/minha-assinatura'
     | '/_authenticated/motoboys'
@@ -825,6 +838,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMetasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/integracoes': {
+      id: '/_authenticated/integracoes'
+      path: '/integracoes'
+      fullPath: '/integracoes'
+      preLoaderRoute: typeof AuthenticatedIntegracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/indicadores': {
       id: '/_authenticated/indicadores'
       path: '/indicadores'
@@ -1029,6 +1049,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDreRoute: typeof AuthenticatedDreRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
   AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
+  AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedMinhaAssinaturaRoute: typeof AuthenticatedMinhaAssinaturaRoute
   AuthenticatedMotoboysRoute: typeof AuthenticatedMotoboysRoute
@@ -1054,6 +1075,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDreRoute: AuthenticatedDreRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
   AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
+  AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedMinhaAssinaturaRoute: AuthenticatedMinhaAssinaturaRoute,
   AuthenticatedMotoboysRoute: AuthenticatedMotoboysRoute,
@@ -1121,13 +1143,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

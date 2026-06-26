@@ -22,6 +22,11 @@ import {
   MapPin,
   Bike,
   CreditCard,
+  Plug,
+
+
+
+
 
 
 
@@ -66,6 +71,7 @@ const navGroups: { label: string; items: { to: string; label: string; icon: any 
       { to: "/precificacao", label: "Precificação", icon: Calculator },
       { to: "/ads", label: "Facebook Ads", icon: Megaphone },
       { to: "/personalizar-checkout", label: "Checkout", icon: Palette },
+      { to: "/integracoes", label: "Integrações", icon: Plug },
       { to: "/minha-assinatura", label: "Assinatura", icon: CreditCard },
       { to: "/configuracoes", label: "Configurações", icon: Cog },
     ],
