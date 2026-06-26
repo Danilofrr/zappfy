@@ -562,7 +562,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     async addOrder(o) {
       if (!user) return;
-      const { data, error } = await supabase.from("orders").insert({ user_id: user.id, store_id: user.id, ...fromOrder(o) }).select().single();
+      const sid = activeStoreId ?? user.id;
+      const { data, error } = await supabase.from("orders").insert({ user_id: user.id, store_id: sid, ...fromOrder(o) }).select().single();
       if (error) { toast.error(error.message); return; }
       // Baixa de estoque para cada item do pedido (ignora cancelado)
       if (o.status !== "cancelado") {
