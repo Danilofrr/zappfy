@@ -59,6 +59,7 @@ import { Route as AuthenticatedAdminCuponsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
 import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
 import { Route as AuthenticatedAdminAssinaturasRouteImport } from './routes/_authenticated/admin.assinaturas'
+import { Route as ApiPublicHooksSyncFacebookAdsRouteImport } from './routes/api/public/hooks/sync-facebook-ads'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -329,6 +330,12 @@ const AuthenticatedAdminAssinaturasRoute =
     path: '/assinaturas',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiPublicHooksSyncFacebookAdsRoute =
+  ApiPublicHooksSyncFacebookAdsRouteImport.update({
+    id: '/api/public/hooks/sync-facebook-ads',
+    path: '/api/public/hooks/sync-facebook-ads',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -380,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/entregas-zappfy/$storeSlug/': typeof EntregasZappfyStoreSlugIndexRoute
+  '/api/public/hooks/sync-facebook-ads': typeof ApiPublicHooksSyncFacebookAdsRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -429,6 +437,7 @@ export interface FileRoutesByTo {
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/entregas-zappfy/$storeSlug': typeof EntregasZappfyStoreSlugIndexRoute
+  '/api/public/hooks/sync-facebook-ads': typeof ApiPublicHooksSyncFacebookAdsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -482,6 +491,7 @@ export interface FileRoutesById {
   '/entregas-zappfy/$storeSlug/login': typeof EntregasZappfyStoreSlugLoginRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/entregas-zappfy/$storeSlug/': typeof EntregasZappfyStoreSlugIndexRoute
+  '/api/public/hooks/sync-facebook-ads': typeof ApiPublicHooksSyncFacebookAdsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/entregas-zappfy/$storeSlug/login'
     | '/admin/'
     | '/entregas-zappfy/$storeSlug/'
+    | '/api/public/hooks/sync-facebook-ads'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -584,6 +595,7 @@ export interface FileRouteTypes {
     | '/entregas-zappfy/$storeSlug/login'
     | '/admin'
     | '/entregas-zappfy/$storeSlug'
+    | '/api/public/hooks/sync-facebook-ads'
   id:
     | '__root__'
     | '/_authenticated'
@@ -636,6 +648,7 @@ export interface FileRouteTypes {
     | '/entregas-zappfy/$storeSlug/login'
     | '/_authenticated/admin/'
     | '/entregas-zappfy/$storeSlug/'
+    | '/api/public/hooks/sync-facebook-ads'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -652,6 +665,7 @@ export interface RootRouteChildren {
   EntregasZappfyIndexRoute: typeof EntregasZappfyIndexRoute
   ApiPublicKiwifyWebhookRoute: typeof ApiPublicKiwifyWebhookRoute
   ApiPublicSubmitOrderRoute: typeof ApiPublicSubmitOrderRoute
+  ApiPublicHooksSyncFacebookAdsRoute: typeof ApiPublicHooksSyncFacebookAdsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1006,6 +1020,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAssinaturasRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/public/hooks/sync-facebook-ads': {
+      id: '/api/public/hooks/sync-facebook-ads'
+      path: '/api/public/hooks/sync-facebook-ads'
+      fullPath: '/api/public/hooks/sync-facebook-ads'
+      preLoaderRoute: typeof ApiPublicHooksSyncFacebookAdsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1139,6 +1160,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntregasZappfyIndexRoute: EntregasZappfyIndexRoute,
   ApiPublicKiwifyWebhookRoute: ApiPublicKiwifyWebhookRoute,
   ApiPublicSubmitOrderRoute: ApiPublicSubmitOrderRoute,
+  ApiPublicHooksSyncFacebookAdsRoute: ApiPublicHooksSyncFacebookAdsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
