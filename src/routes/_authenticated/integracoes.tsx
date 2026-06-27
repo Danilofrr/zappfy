@@ -71,7 +71,7 @@ function Page() {
   useEffect(() => { refresh(); }, []);
 
   async function handleSave() {
-    if (!token || !account) { toast.error("Preencha o token e o ID da conta"); return; }
+    if (!account || (!token && !connected)) { toast.error("Preencha o token e o ID da conta"); return; }
     setBusy(true);
     try {
       await save({ data: { access_token: token, ad_account_id: account } });
@@ -82,10 +82,10 @@ function Page() {
     finally { setBusy(false); }
   }
 
-  async function handleSync() {
+  async function handleSync(range: "today" | "this_month" = "today") {
     setBusy(true);
     try {
-      const r = await sync({ data: { days: 1 } });
+      const r = await sync({ data: { range } });
       toast.success(`Sincronizado: ${r.imported} dia(s) importados`);
       await refresh();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao sincronizar"); }
@@ -150,7 +150,7 @@ function Page() {
               <Label className="text-xs">Access Token (System User Token)</Label>
               <Input
                 type="password"
-                placeholder={connected ? "•••••••• (token salvo)" : "EAA..."}
+                placeholder={connected ? "Token já cadastrado" : "EAA..."}
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 autoComplete="off"
@@ -178,8 +178,11 @@ function Page() {
               </Button>
               {connected && (
                 <>
-                  <Button variant="secondary" onClick={handleSync} disabled={busy}>
-                    <RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} /> Sincronizar agora
+                  <Button variant="secondary" onClick={() => handleSync("today")} disabled={busy}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} /> Gastos de hoje
+                  </Button>
+                  <Button variant="outline" onClick={() => handleSync("this_month")} disabled={busy}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} /> Mês atual
                   </Button>
                   <Button variant="ghost" onClick={handleDisconnect} disabled={busy}>
                     Desconectar
@@ -199,6 +202,9 @@ function Page() {
                       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Conta de anúncio conectada</div>
                       <div className="text-sm font-semibold text-foreground truncate">
                         {status.ad_account_name || status.ad_account_id}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground truncate">
+                        {[status.currency, status.timezone_name].filter(Boolean).join(" • ") || status.ad_account_id}
                       </div>
                     </div>
                   </div>
