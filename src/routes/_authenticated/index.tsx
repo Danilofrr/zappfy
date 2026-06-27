@@ -330,7 +330,19 @@ function Dashboard() {
               </span>
               Facebook Ads
             </span>
-            <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSyncAds}
+                disabled={syncingAds}
+                title="Sincronizar agora"
+                className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20 text-primary hover:bg-primary/20 transition disabled:opacity-60"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${syncingAds ? "animate-spin" : ""}`} />
+              </button>
+              <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
+            </div>
+
           </div>
           <div className="text-2xl font-bold">{m(brl(adsInvested))}</div>
           <div className="text-xs text-muted-foreground">Investido — {range.label}</div>
