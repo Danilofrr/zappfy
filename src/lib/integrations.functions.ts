@@ -69,12 +69,15 @@ export const getFacebookIntegrationStatus = createServerFn({ method: "GET" })
 
     let ad_account_name: string | null = null;
     if (data?.fb_access_token && data?.fb_ad_account_id) {
+      const acct = data.fb_ad_account_id.startsWith("act_")
+        ? data.fb_ad_account_id
+        : `act_${String(data.fb_ad_account_id).replace(/\D/g, "")}`;
       try {
         const r = await fetch(
-          `https://graph.facebook.com/${GRAPH_VERSION}/${data.fb_ad_account_id}?fields=name&access_token=${encodeURIComponent(data.fb_access_token)}`,
+          `https://graph.facebook.com/${GRAPH_VERSION}/${acct}?fields=name,account_name&access_token=${encodeURIComponent(data.fb_access_token)}`,
         );
         const j: any = await r.json().catch(() => ({}));
-        if (r.ok && j?.name) ad_account_name = j.name as string;
+        if (r.ok) ad_account_name = (j?.name as string) || (j?.account_name as string) || null;
       } catch {}
     }
 
@@ -109,10 +112,11 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     // Usamos o fuso de São Paulo para definir "hoje" do ponto de vista da conta,
     // pois a Meta interpreta time_range no fuso da conta de anúncios.
     const tzNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-    const since = new Date(tzNow.getTime() - (data.days - 1) * 86400000);
-    const until = new Date(tzNow.getTime() + 86400000); // +1 dia para cobrir fuso
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
     const todayStr = fmt(tzNow);
+    const since = new Date(tzNow.getTime() - (data.days - 1) * 86400000);
+    // IMPORTANTE: a Meta rejeita `until` no futuro. Usar HOJE (fuso da conta).
+    const until = tzNow;
     const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(until) }));
     const base = `https://graph.facebook.com/${GRAPH_VERSION}/${settings.fb_ad_account_id}/insights?fields=${fields}&level=account&access_token=${encodeURIComponent(settings.fb_access_token)}`;
     const url = `${base}&time_increment=1&time_range=${timeRange}`;
