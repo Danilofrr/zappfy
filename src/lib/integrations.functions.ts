@@ -4,6 +4,31 @@ import { z } from "zod";
 
 const GRAPH_VERSION = "v21.0";
 
+// Chama a Graph API enviando o token no header Authorization (mais robusto;
+// muitos proxies/WAFs bloqueiam URLs com `access_token=` na query string,
+// retornando erros do tipo "Acesso à API bloqueado").
+async function fbFetch(url: string, token: string) {
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
+  const json: any = await res.json().catch(() => ({}));
+  return { res, json };
+}
+
+function fbErrorMessage(json: any, status: number) {
+  const e = json?.error;
+  if (!e) return `Falha na Marketing API (${status})`;
+  const parts: string[] = [];
+  if (e.message) parts.push(String(e.message));
+  if (e.code) parts.push(`code ${e.code}`);
+  if (e.error_subcode) parts.push(`subcode ${e.error_subcode}`);
+  if (e.error_user_msg) parts.push(String(e.error_user_msg));
+  return parts.join(" — ");
+}
+
 const SaveSchema = z.object({
   access_token: z.string().trim().min(20, "Access Token muito curto"),
   ad_account_id: z
