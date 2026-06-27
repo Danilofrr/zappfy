@@ -102,7 +102,10 @@ function Dashboard() {
   const goalRev = state.settings.monthlyRevenueGoal;
   const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
 
+  const [showFbSpend] = useFbShowSpend();
+
   // Sync manual do Facebook Ads
+
   const syncAds = useServerFn(syncFacebookAds);
   const [syncingAds, setSyncingAds] = useState(false);
   async function handleSyncAds() {
