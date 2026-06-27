@@ -121,9 +121,10 @@ export const Route = createFileRoute("/api/public/hooks/sync-facebook-ads")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: stores, error } = await supabaseAdmin
           .from("settings")
-          .select("store_id, fb_access_token, fb_ad_account_id")
+          .select("store_id, fb_access_token, fb_ad_account_id, fb_last_sync_at")
           .not("fb_access_token", "is", null)
           .not("fb_ad_account_id", "is", null);
+
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500 });
         }
