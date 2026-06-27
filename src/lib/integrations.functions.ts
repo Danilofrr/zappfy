@@ -114,20 +114,43 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     const rows: Array<{ date_start: string; spend?: string; actions?: any[]; action_values?: any[] }> =
       json?.data ?? [];
 
+    const PURCHASE_TYPES = [
+      "purchase",
+      "omni_purchase",
+      "offsite_conversion.fb_pixel_purchase",
+      "onsite_web_purchase",
+      "onsite_web_app_purchase",
+      "web_in_store_purchase",
+    ];
+    const sumByTypes = (arr: any[] | undefined) =>
+      (arr ?? [])
+        .filter((a: any) => PURCHASE_TYPES.includes(a.action_type))
+        .reduce((acc: number, a: any) => acc + (Number(a.value) || 0), 0);
+
     let imported = 0;
     for (const r of rows) {
       const date = r.date_start;
       const invested = Number(r.spend ?? 0) || 0;
-      const purchases =
-        Number(
-          (r.actions ?? []).find((a: any) => ["purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"].includes(a.action_type))?.value ?? 0,
-        ) || 0;
-      const revenue =
-        Number(
-          (r.action_values ?? []).find((a: any) => ["purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"].includes(a.action_type))?.value ?? 0,
-        ) || 0;
+      let purchases = sumByTypes(r.actions);
+      let revenue = sumByTypes(r.action_values);
 
-      // upsert manual: existe um row do user na mesma data?
+      // Fallback: se o Pixel não envia valor/compras, usa os pedidos reais do dia
+      // (ignorando cancelados) para que o ROAS seja calculado corretamente.
+      if (revenue <= 0 || purchases <= 0) {
+        const dayStart = `${date}T00:00:00`;
+        const dayEnd = `${date}T23:59:59.999`;
+        const { data: dayOrders } = await supabase
+          .from("orders")
+          .select("total,status,date,created_at")
+          .eq("user_id", userId)
+          .or(`and(date.gte.${dayStart},date.lte.${dayEnd}),and(date.is.null,created_at.gte.${dayStart},created_at.lte.${dayEnd})`);
+        const valid = (dayOrders ?? []).filter(
+          (o: any) => !["cancelado", "cancelada"].includes(String(o.status ?? "").toLowerCase()),
+        );
+        if (revenue <= 0) revenue = valid.reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
+        if (purchases <= 0) purchases = valid.length;
+      }
+
       const { data: existing } = await supabase
         .from("ads")
         .select("id")
@@ -142,6 +165,7 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
       }
       imported += 1;
     }
+
 
     await supabase
       .from("settings")
