@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSystemSettings, saveSystemSettings } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock, Trophy } from "lucide-react";
+import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock, Trophy, Youtube } from "lucide-react";
 import { LogoUploader } from "@/components/LogoUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({ component: AdminSettings });
