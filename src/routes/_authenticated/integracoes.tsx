@@ -161,7 +161,9 @@ function Page() {
                     </div>
                     <div className="min-w-0">
                       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Conta de anúncio conectada</div>
-                      <div className="font-mono text-sm font-semibold text-foreground truncate">{status.ad_account_id}</div>
+                      <div className="text-sm font-semibold text-foreground truncate">
+                        {status.ad_account_name || status.ad_account_id}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -170,10 +172,6 @@ function Page() {
                     ) : (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
                     )}
-                    <div className="text-right">
-                      <div className="text-xs font-medium">Exibir gastos na dashboard</div>
-                      <div className="text-[10px] text-muted-foreground">{showSpend ? "Ativado" : "Oculto"}</div>
-                    </div>
                     <Switch checked={showSpend} onCheckedChange={setShowSpend} />
                   </div>
                 </div>
