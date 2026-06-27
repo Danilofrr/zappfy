@@ -66,9 +66,22 @@ export const getFacebookIntegrationStatus = createServerFn({ method: "GET" })
       .eq("store_id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
+
+    let ad_account_name: string | null = null;
+    if (data?.fb_access_token && data?.fb_ad_account_id) {
+      try {
+        const r = await fetch(
+          `https://graph.facebook.com/${GRAPH_VERSION}/${data.fb_ad_account_id}?fields=name&access_token=${encodeURIComponent(data.fb_access_token)}`,
+        );
+        const j: any = await r.json().catch(() => ({}));
+        if (r.ok && j?.name) ad_account_name = j.name as string;
+      } catch {}
+    }
+
     return {
       connected: !!data?.fb_access_token && !!data?.fb_ad_account_id,
       ad_account_id: data?.fb_ad_account_id ?? null,
+      ad_account_name,
       last_sync_at: data?.fb_last_sync_at ?? null,
       last_sync_status: data?.fb_last_sync_status ?? null,
       last_sync_error: data?.fb_last_sync_error ?? null,
