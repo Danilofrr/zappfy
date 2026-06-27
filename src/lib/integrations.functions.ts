@@ -69,12 +69,15 @@ export const getFacebookIntegrationStatus = createServerFn({ method: "GET" })
 
     let ad_account_name: string | null = null;
     if (data?.fb_access_token && data?.fb_ad_account_id) {
+      const acct = data.fb_ad_account_id.startsWith("act_")
+        ? data.fb_ad_account_id
+        : `act_${String(data.fb_ad_account_id).replace(/\D/g, "")}`;
       try {
         const r = await fetch(
-          `https://graph.facebook.com/${GRAPH_VERSION}/${data.fb_ad_account_id}?fields=name&access_token=${encodeURIComponent(data.fb_access_token)}`,
+          `https://graph.facebook.com/${GRAPH_VERSION}/${acct}?fields=name,account_name&access_token=${encodeURIComponent(data.fb_access_token)}`,
         );
         const j: any = await r.json().catch(() => ({}));
-        if (r.ok && j?.name) ad_account_name = j.name as string;
+        if (r.ok) ad_account_name = (j?.name as string) || (j?.account_name as string) || null;
       } catch {}
     }
 
