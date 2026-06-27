@@ -93,15 +93,16 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     }
 
     const fields = "spend,actions,action_values,date_start";
-    // time_range incluindo HOJE. Estendemos `until` em +1 dia para cobrir diferenças
-    // de fuso horário entre o servidor (UTC) e a conta de anúncios (geralmente
-    // America/Sao_Paulo), garantindo que o dia atual sempre seja retornado.
-    const today = new Date();
-    const since = new Date(today.getTime() - (data.days - 1) * 86400000);
-    const until = new Date(today.getTime() + 86400000);
+    // Usamos o fuso de São Paulo para definir "hoje" do ponto de vista da conta,
+    // pois a Meta interpreta time_range no fuso da conta de anúncios.
+    const tzNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+    const since = new Date(tzNow.getTime() - (data.days - 1) * 86400000);
+    const until = new Date(tzNow.getTime() + 86400000); // +1 dia para cobrir fuso
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    const todayStr = fmt(tzNow);
     const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(until) }));
-    const url = `https://graph.facebook.com/${GRAPH_VERSION}/${settings.fb_ad_account_id}/insights?fields=${fields}&time_increment=1&time_range=${timeRange}&level=account&access_token=${encodeURIComponent(settings.fb_access_token)}`;
+    const base = `https://graph.facebook.com/${GRAPH_VERSION}/${settings.fb_ad_account_id}/insights?fields=${fields}&level=account&access_token=${encodeURIComponent(settings.fb_access_token)}`;
+    const url = `${base}&time_increment=1&time_range=${timeRange}`;
 
     const res = await fetch(url);
     const json: any = await res.json().catch(() => ({}));
@@ -116,6 +117,27 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
 
     const rows: Array<{ date_start: string; spend?: string; actions?: any[]; action_values?: any[] }> =
       json?.data ?? [];
+
+    // Chamada extra forçando "hoje" via date_preset=today (fuso da conta) — garante
+    // que o dia atual apareça mesmo que o time_range não retorne ainda.
+    try {
+      const todayRes = await fetch(`${base}&date_preset=today`);
+      const todayJson: any = await todayRes.json().catch(() => ({}));
+      const todayRow = (todayJson?.data ?? [])[0];
+      if (todayRow) {
+        const normalized = { ...todayRow, date_start: todayRow.date_start || todayStr };
+        const idx = rows.findIndex((r) => r.date_start === normalized.date_start);
+        if (idx >= 0) rows[idx] = normalized; else rows.push(normalized);
+      } else if (!rows.find((r) => r.date_start === todayStr)) {
+        // Sem dados na Meta ainda: insere placeholder para o fallback de pedidos preencher.
+        rows.push({ date_start: todayStr, spend: "0" });
+      }
+    } catch {
+      if (!rows.find((r) => r.date_start === todayStr)) {
+        rows.push({ date_start: todayStr, spend: "0" });
+      }
+    }
+
 
     const PURCHASE_TYPES = [
       "purchase",
