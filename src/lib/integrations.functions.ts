@@ -93,11 +93,14 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     }
 
     const fields = "spend,actions,action_values,date_start";
-    // Use explicit time_range including TODAY (date_preset=last_Nd exclui o dia atual)
+    // time_range incluindo HOJE. Estendemos `until` em +1 dia para cobrir diferenças
+    // de fuso horário entre o servidor (UTC) e a conta de anúncios (geralmente
+    // America/Sao_Paulo), garantindo que o dia atual sempre seja retornado.
     const today = new Date();
     const since = new Date(today.getTime() - (data.days - 1) * 86400000);
+    const until = new Date(today.getTime() + 86400000);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
-    const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(today) }));
+    const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(until) }));
     const url = `https://graph.facebook.com/${GRAPH_VERSION}/${settings.fb_ad_account_id}/insights?fields=${fields}&time_increment=1&time_range=${timeRange}&level=account&access_token=${encodeURIComponent(settings.fb_access_token)}`;
 
     const res = await fetch(url);
