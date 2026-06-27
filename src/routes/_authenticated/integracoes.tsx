@@ -85,7 +85,7 @@ function Page() {
   async function handleSync() {
     setBusy(true);
     try {
-      const r = await sync({ data: { days: 30 } });
+      const r = await sync({ data: { days: 1 } });
       toast.success(`Sincronizado: ${r.imported} dia(s) importados`);
       await refresh();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao sincronizar"); }
@@ -129,8 +129,7 @@ function Page() {
                 )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Sincronize automaticamente investimento, compras e faturamento das suas campanhas para a aba
-                Facebook Ads, Dashboard e DRE.
+                Sincronize o mês atual no primeiro acesso e, depois, apenas os gastos de hoje automaticamente.
               </p>
             </div>
             {fbTutorialUrl && (
