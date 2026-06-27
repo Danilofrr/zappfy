@@ -93,7 +93,12 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     }
 
     const fields = "spend,actions,action_values,date_start";
-    const url = `https://graph.facebook.com/${GRAPH_VERSION}/${settings.fb_ad_account_id}/insights?fields=${fields}&time_increment=1&date_preset=last_${data.days}d&level=account&access_token=${encodeURIComponent(settings.fb_access_token)}`;
+    // Use explicit time_range including TODAY (date_preset=last_Nd exclui o dia atual)
+    const today = new Date();
+    const since = new Date(today.getTime() - (data.days - 1) * 86400000);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(today) }));
+    const url = `https://graph.facebook.com/${GRAPH_VERSION}/${settings.fb_ad_account_id}/insights?fields=${fields}&time_increment=1&time_range=${timeRange}&level=account&access_token=${encodeURIComponent(settings.fb_access_token)}`;
 
     const res = await fetch(url);
     const json: any = await res.json().catch(() => ({}));
