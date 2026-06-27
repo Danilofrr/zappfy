@@ -21,7 +21,12 @@ import {
   Megaphone,
   BarChart3,
   Trophy,
+  RefreshCw,
 } from "lucide-react";
+
+import { useServerFn } from "@tanstack/react-start";
+import { syncFacebookAds } from "@/lib/integrations.functions";
+import { toast } from "sonner";
 
 import {
   ResponsiveContainer,
