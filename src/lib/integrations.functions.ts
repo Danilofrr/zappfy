@@ -10,15 +10,23 @@ function normalizeAdAccountId(value: string) {
   return `act_${raw.replace(/\D/g, "")}`;
 }
 
-// Chama a Graph API enviando o token no header Authorization (mais robusto;
-// muitos proxies/WAFs bloqueiam URLs com `access_token=` na query string,
-// retornando erros do tipo "Acesso à API bloqueado").
+// Chama a Graph API enviando o token no corpo (POST form) com method=GET.
+// Esse formato é o mais compatível: evita "API access blocked" de WAF que
+// filtra `access_token=` na URL e também o erro "Access token could not be
+// decrypted" que ocorre quando a Meta recebe Authorization: Bearer em
+// alguns tokens de Usuário do Sistema.
 async function fbFetch(url: string, token: string) {
+  const cleanToken = String(token ?? "").trim();
+  const body = new URLSearchParams();
+  body.set("access_token", cleanToken);
+  body.set("method", "GET");
   const res = await fetch(url, {
+    method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/x-www-form-urlencoded",
       Accept: "application/json",
     },
+    body: body.toString(),
   });
   const json: any = await res.json().catch(() => ({}));
   return { res, json };
