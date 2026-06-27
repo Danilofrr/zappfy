@@ -161,8 +161,10 @@ function Dashboard() {
   const adsEntryRevenue = adsInRange.reduce((a, x) => a + x.revenue, 0);
   const hasAdsEntriesInRange = adsInRange.length > 0;
   const adsInvested = hasAdsEntriesInRange ? adsEntryInvested : fin.adsSpend;
-  const adsPurchases = hasAdsEntriesInRange ? adsEntryPurchases : fin.ordersCount;
-  const adsRevenue = hasAdsEntriesInRange ? adsEntryRevenue : fin.revenue;
+  // Fallback: se a Meta não envia revenue/purchases (Pixel sem valor), usa os pedidos reais do período
+  // para que o ROAS apareça sempre que houver faturamento.
+  const adsPurchases = hasAdsEntriesInRange && adsEntryPurchases > 0 ? adsEntryPurchases : fin.ordersCount;
+  const adsRevenue = hasAdsEntriesInRange && adsEntryRevenue > 0 ? adsEntryRevenue : fin.revenue;
   const adsRoas = adsInvested > 0 ? adsRevenue / adsInvested : 0;
   const adsCpa = adsPurchases > 0 ? adsInvested / adsPurchases : 0;
 
