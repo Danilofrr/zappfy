@@ -101,6 +101,23 @@ function Dashboard() {
   const goalRev = state.settings.monthlyRevenueGoal;
   const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
 
+  // Sync manual do Facebook Ads
+  const syncAds = useServerFn(syncFacebookAds);
+  const [syncingAds, setSyncingAds] = useState(false);
+  async function handleSyncAds() {
+    if (syncingAds) return;
+    setSyncingAds(true);
+    try {
+      const r = await syncAds({ data: { days: 30 } });
+      toast.success(`Sincronizado (${r?.imported ?? 0} dias)`);
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao sincronizar");
+    } finally {
+      setSyncingAds(false);
+    }
+  }
+
+
   // Champion product of the current month
   const champion = useMemo(() => {
     const { start, end } = monthRange();
