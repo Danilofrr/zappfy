@@ -93,7 +93,7 @@ function Page() {
   }
 
   async function handleDisconnect() {
-    if (!confirm("Desconectar a conta do Facebook Ads?")) return;
+    if (!confirm("Desconectar a conta do Meta Ads?")) return;
     setBusy(true);
     try {
       await disconnect({});
@@ -117,7 +117,7 @@ function Page() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold">Facebook Ads</h2>
+                <h2 className="text-lg font-semibold">Meta Ads</h2>
                 {connected ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-500">
                     <CheckCircle2 className="h-3 w-3" /> Conectado
@@ -273,7 +273,7 @@ function Page() {
         <DialogContent className="max-w-3xl p-0 overflow-hidden bg-black border-border">
           <DialogHeader className="px-5 pt-4 pb-2 bg-card">
             <DialogTitle className="flex items-center gap-2">
-              <Youtube className="h-5 w-5 text-red-500" /> Tutorial — Integração Facebook Ads
+              <Youtube className="h-5 w-5 text-red-500" /> Tutorial — Integração Meta Ads
             </DialogTitle>
             <DialogDescription>Aprenda em vídeo como gerar o token e conectar sua conta de anúncio.</DialogDescription>
           </DialogHeader>
@@ -281,7 +281,7 @@ function Page() {
             {fbEmbed ? (
               <iframe
                 src={fbEmbed}
-                title="Tutorial Facebook Ads"
+                title="Tutorial Meta Ads"
                 className="h-full w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
