@@ -158,8 +158,8 @@ function Dashboard() {
   const adsEntryInvested = adsInRange.reduce((a, x) => a + x.invested, 0);
   const adsEntryPurchases = adsInRange.reduce((a, x) => a + x.purchases, 0);
   const adsEntryRevenue = adsInRange.reduce((a, x) => a + x.revenue, 0);
-  // adsSpend (do useFinance) já vem das despesas categoria "ads" no período
-  const adsInvested = adsEntryInvested + fin.adsSpend;
+  // fin.adsSpend já soma entradas em /ads + despesas categoria "ads" no período (não somar novamente)
+  const adsInvested = fin.adsSpend;
   const adsPurchases = adsEntryPurchases > 0 ? adsEntryPurchases : fin.ordersCount;
   const adsRevenue = adsEntryRevenue > 0 ? adsEntryRevenue : fin.revenue;
   const adsRoas = adsInvested > 0 ? adsRevenue / adsInvested : 0;
