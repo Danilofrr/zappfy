@@ -31,6 +31,7 @@ function Page() {
   const [token, setToken] = useState("");
   const [account, setAccount] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showSpend, setShowSpend] = useFbShowSpend();
 
   async function refresh() {
     try {
