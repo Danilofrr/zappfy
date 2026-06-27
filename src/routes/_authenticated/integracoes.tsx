@@ -281,7 +281,7 @@ function Page() {
             {fbEmbed ? (
               <iframe
                 src={fbEmbed}
-                title="Tutorial Facebook Ads"
+                title="Tutorial Meta Ads"
                 className="h-full w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
