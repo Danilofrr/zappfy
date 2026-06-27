@@ -359,7 +359,9 @@ function Dashboard() {
             <Mini label="Faturamento" value={m(brl(adsRevenue))} />
           </div>
         </div>
+        )}
       </div>
+
 
       {/* Chart */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
