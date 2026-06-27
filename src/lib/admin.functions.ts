@@ -696,3 +696,22 @@ export const getPublicPlatformBrand = createServerFn({ method: "GET" }).handler(
     brandName: (v?.appearance?.brandName as string | undefined) ?? "ZappFy",
   };
 });
+
+// ===== Tutoriais públicos (sem auth) — URLs de vídeos =====
+export const getPublicTutorials = createServerFn({ method: "GET" }).handler(async () => {
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabasePublic = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+  );
+  const { data } = await supabasePublic
+    .from("admin_settings")
+    .select("value")
+    .eq("key", "system")
+    .maybeSingle();
+  const t = ((data?.value as any) ?? {})?.tutorials ?? {};
+  return {
+    facebookAdsYoutubeUrl: (t?.facebookAdsYoutubeUrl as string | undefined) ?? null,
+  };
+});

@@ -2,19 +2,36 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import {
   saveFacebookIntegration,
   disconnectFacebookIntegration,
   getFacebookIntegrationStatus,
   syncFacebookAds,
 } from "@/lib/integrations.functions";
+import { getPublicTutorials } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, Plug, RefreshCw, ExternalLink, Facebook, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, AlertCircle, Plug, RefreshCw, ExternalLink, Facebook, Eye, EyeOff, Youtube, PlayCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useFbShowSpend } from "@/hooks/use-fb-show-spend";
+
+function getYoutubeEmbedUrl(url?: string | null): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    let id: string | null = null;
+    if (u.hostname.includes("youtu.be")) id = u.pathname.slice(1);
+    else if (u.pathname.startsWith("/embed/")) id = u.pathname.split("/")[2];
+    else if (u.pathname.startsWith("/shorts/")) id = u.pathname.split("/")[2];
+    else id = u.searchParams.get("v");
+    if (!id) return null;
+    return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+  } catch { return null; }
+}
 
 export const Route = createFileRoute("/_authenticated/integracoes")({
   head: () => ({ meta: [{ title: "Integrações — Zappfy" }] }),
@@ -32,6 +49,15 @@ function Page() {
   const [account, setAccount] = useState("");
   const [busy, setBusy] = useState(false);
   const [showSpend, setShowSpend] = useFbShowSpend();
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const tutorialsFn = useServerFn(getPublicTutorials);
+  const tutorials = useQuery({
+    queryKey: ["public-tutorials"],
+    queryFn: () => tutorialsFn(),
+    staleTime: 5 * 60_000,
+  });
+  const fbTutorialUrl = tutorials.data?.facebookAdsYoutubeUrl ?? null;
+  const fbEmbed = getYoutubeEmbedUrl(fbTutorialUrl);
 
   async function refresh() {
     try {
@@ -107,6 +133,17 @@ function Page() {
                 Facebook Ads, Dashboard e DRE.
               </p>
             </div>
+            {fbTutorialUrl && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-red-500/40 bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+                onClick={() => setTutorialOpen(true)}
+              >
+                <Youtube className="mr-1.5 h-4 w-4" /> Ver tutorial
+              </Button>
+            )}
           </div>
 
           <div className="mt-6 grid gap-4">
@@ -214,8 +251,51 @@ function Page() {
           <div className="mt-6 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
             🔒 O token é armazenado com segurança no banco da sua loja e usado apenas para ler métricas das suas campanhas.
           </div>
+          {fbTutorialUrl && (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-4 w-full border-red-500/40 bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+              onClick={() => setTutorialOpen(true)}
+            >
+              <PlayCircle className="mr-2 h-4 w-4" /> Assistir tutorial em vídeo
+            </Button>
+          )}
         </div>
       </div>
+
+      <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-black border-border">
+          <DialogHeader className="px-5 pt-4 pb-2 bg-card">
+            <DialogTitle className="flex items-center gap-2">
+              <Youtube className="h-5 w-5 text-red-500" /> Tutorial — Integração Facebook Ads
+            </DialogTitle>
+            <DialogDescription>Aprenda em vídeo como gerar o token e conectar sua conta de anúncio.</DialogDescription>
+          </DialogHeader>
+          <div className="aspect-video w-full bg-black">
+            {fbEmbed ? (
+              <iframe
+                src={fbEmbed}
+                title="Tutorial Facebook Ads"
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                URL do tutorial inválida.
+              </div>
+            )}
+          </div>
+          {fbTutorialUrl && (
+            <div className="bg-card px-5 py-3 text-xs">
+              <a href={fbTutorialUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+                Abrir no YouTube <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

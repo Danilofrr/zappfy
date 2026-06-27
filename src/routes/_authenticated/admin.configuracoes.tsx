@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSystemSettings, saveSystemSettings } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock, Trophy } from "lucide-react";
+import { Save, MessageSquare, CreditCard, Shield, Palette, Plug, Building2, Lock, Trophy, Youtube } from "lucide-react";
 import { LogoUploader } from "@/components/LogoUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({ component: AdminSettings });
@@ -27,6 +27,7 @@ type Settings = {
   security?: { adminOnly?: boolean; accessLogs?: boolean; sessionMinutes?: number };
   appearance?: { theme?: string; brandName?: string; sidebarLogo?: string; primaryColor?: string; dashboardFaviconUrl?: string; entregasFaviconUrl?: string };
   prize?: { enabled?: boolean; goal?: number; reward?: string; period?: string };
+  tutorials?: { facebookAdsYoutubeUrl?: string };
 };
 
 const DEFAULTS: Settings = {
@@ -44,6 +45,7 @@ const DEFAULTS: Settings = {
   security: { adminOnly: true, accessLogs: true, sessionMinutes: 240 },
   appearance: { theme: "dark", brandName: "ZappFy", primaryColor: "#22c55e" },
   prize: { enabled: false, goal: 1000000, reward: "Prêmio especial ao bater a meta!", period: "mensal" },
+  tutorials: { facebookAdsYoutubeUrl: "" },
 };
 
 function AdminSettings() {
@@ -63,6 +65,7 @@ function AdminSettings() {
         security: { ...DEFAULTS.security, ...(q.data.security ?? {}) },
         appearance: { ...DEFAULTS.appearance, ...(q.data.appearance ?? {}) },
         prize: { ...DEFAULTS.prize, ...(q.data.prize ?? {}) },
+        tutorials: { ...DEFAULTS.tutorials, ...(q.data.tutorials ?? {}) },
       });
     }
   }, [q.data]);
@@ -300,7 +303,24 @@ function AdminSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="integrations">
+        <TabsContent value="integrations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Youtube className="h-4 w-4 text-red-500" />Tutoriais em vídeo</CardTitle>
+              <CardDescription>URLs do YouTube exibidas nas páginas de integração da dashboard do cliente.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <Field label="Tutorial — Integração Facebook Ads">
+                <Input
+                  value={s.tutorials?.facebookAdsYoutubeUrl ?? ""}
+                  onChange={(e) => set("tutorials", { facebookAdsYoutubeUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                <p className="text-xs text-muted-foreground mt-1">Aparece como botão "Ver tutorial" na aba Integrações → Facebook Ads do cliente.</p>
+              </Field>
+            </CardContent>
+          </Card>
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { name: "WhatsApp", desc: "Envio automático de mensagens" },
