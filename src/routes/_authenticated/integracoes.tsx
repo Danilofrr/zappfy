@@ -251,8 +251,51 @@ function Page() {
           <div className="mt-6 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
             🔒 O token é armazenado com segurança no banco da sua loja e usado apenas para ler métricas das suas campanhas.
           </div>
+          {fbTutorialUrl && (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-4 w-full border-red-500/40 bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+              onClick={() => setTutorialOpen(true)}
+            >
+              <PlayCircle className="mr-2 h-4 w-4" /> Assistir tutorial em vídeo
+            </Button>
+          )}
         </div>
       </div>
+
+      <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-black border-border">
+          <DialogHeader className="px-5 pt-4 pb-2 bg-card">
+            <DialogTitle className="flex items-center gap-2">
+              <Youtube className="h-5 w-5 text-red-500" /> Tutorial — Integração Facebook Ads
+            </DialogTitle>
+            <DialogDescription>Aprenda em vídeo como gerar o token e conectar sua conta de anúncio.</DialogDescription>
+          </DialogHeader>
+          <div className="aspect-video w-full bg-black">
+            {fbEmbed ? (
+              <iframe
+                src={fbEmbed}
+                title="Tutorial Facebook Ads"
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                URL do tutorial inválida.
+              </div>
+            )}
+          </div>
+          {fbTutorialUrl && (
+            <div className="bg-card px-5 py-3 text-xs">
+              <a href={fbTutorialUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+                Abrir no YouTube <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
