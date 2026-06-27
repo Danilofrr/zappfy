@@ -150,7 +150,8 @@ function Dashboard() {
     };
   });
 
-  // Ads metrics dentro do período selecionado (combina entradas em /ads + despesas categoria "ads")
+  // Ads metrics dentro do período selecionado. Se existir dado na aba Facebook Ads,
+  // ela é a fonte oficial do card para bater com o Gerenciador de Anúncios.
   const adsInRange = state.ads.filter((a) => {
     const d = dateOnlyToLocalDate(a.date);
     return d >= range.start && d < range.end;
@@ -158,10 +159,10 @@ function Dashboard() {
   const adsEntryInvested = adsInRange.reduce((a, x) => a + x.invested, 0);
   const adsEntryPurchases = adsInRange.reduce((a, x) => a + x.purchases, 0);
   const adsEntryRevenue = adsInRange.reduce((a, x) => a + x.revenue, 0);
-  // fin.adsSpend já soma entradas em /ads + despesas categoria "ads" no período (não somar novamente)
-  const adsInvested = fin.adsSpend;
-  const adsPurchases = adsEntryPurchases > 0 ? adsEntryPurchases : fin.ordersCount;
-  const adsRevenue = adsEntryRevenue > 0 ? adsEntryRevenue : fin.revenue;
+  const hasAdsEntriesInRange = adsInRange.length > 0;
+  const adsInvested = hasAdsEntriesInRange ? adsEntryInvested : fin.adsSpend;
+  const adsPurchases = hasAdsEntriesInRange ? adsEntryPurchases : fin.ordersCount;
+  const adsRevenue = hasAdsEntriesInRange ? adsEntryRevenue : fin.revenue;
   const adsRoas = adsInvested > 0 ? adsRevenue / adsInvested : 0;
   const adsCpa = adsPurchases > 0 ? adsInvested / adsPurchases : 0;
 
