@@ -133,6 +133,17 @@ function Page() {
                 Facebook Ads, Dashboard e DRE.
               </p>
             </div>
+            {fbTutorialUrl && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-red-500/40 bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+                onClick={() => setTutorialOpen(true)}
+              >
+                <Youtube className="mr-1.5 h-4 w-4" /> Ver tutorial
+              </Button>
+            )}
           </div>
 
           <div className="mt-6 grid gap-4">
