@@ -21,7 +21,12 @@ import {
   Megaphone,
   BarChart3,
   Trophy,
+  RefreshCw,
 } from "lucide-react";
+
+import { useServerFn } from "@tanstack/react-start";
+import { syncFacebookAds } from "@/lib/integrations.functions";
+import { toast } from "sonner";
 
 import {
   ResponsiveContainer,
@@ -95,6 +100,23 @@ function Dashboard() {
   const fin = useFinance({ start: range.start, end: range.end });
   const goalRev = state.settings.monthlyRevenueGoal;
   const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
+
+  // Sync manual do Facebook Ads
+  const syncAds = useServerFn(syncFacebookAds);
+  const [syncingAds, setSyncingAds] = useState(false);
+  async function handleSyncAds() {
+    if (syncingAds) return;
+    setSyncingAds(true);
+    try {
+      const r = await syncAds({ data: { days: 30 } });
+      toast.success(`Sincronizado (${r?.imported ?? 0} dias)`);
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao sincronizar");
+    } finally {
+      setSyncingAds(false);
+    }
+  }
+
 
   // Champion product of the current month
   const champion = useMemo(() => {
@@ -308,7 +330,19 @@ function Dashboard() {
               </span>
               Facebook Ads
             </span>
-            <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSyncAds}
+                disabled={syncingAds}
+                title="Sincronizar agora"
+                className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20 text-primary hover:bg-primary/20 transition disabled:opacity-60"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${syncingAds ? "animate-spin" : ""}`} />
+              </button>
+              <Link to="/ads" className="text-xs text-primary hover:underline">Ver detalhes</Link>
+            </div>
+
           </div>
           <div className="text-2xl font-bold">{m(brl(adsInvested))}</div>
           <div className="text-xs text-muted-foreground">Investido — {range.label}</div>
