@@ -49,6 +49,15 @@ function Page() {
   const [account, setAccount] = useState("");
   const [busy, setBusy] = useState(false);
   const [showSpend, setShowSpend] = useFbShowSpend();
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const tutorialsFn = useServerFn(getPublicTutorials);
+  const tutorials = useQuery({
+    queryKey: ["public-tutorials"],
+    queryFn: () => tutorialsFn(),
+    staleTime: 5 * 60_000,
+  });
+  const fbTutorialUrl = tutorials.data?.facebookAdsYoutubeUrl ?? null;
+  const fbEmbed = getYoutubeEmbedUrl(fbTutorialUrl);
 
   async function refresh() {
     try {
