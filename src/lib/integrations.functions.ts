@@ -24,9 +24,10 @@ function sanitizeAccessToken(value: string | null | undefined) {
 
 function isMaskedToken(value: string | null | undefined) {
   const raw = String(value ?? "").trim();
+  const compact = raw.toLowerCase().replace(/\s+/g, "");
   if (!raw) return false;
   if (/^(•|\*|x|X|\.){4,}$/u.test(raw.replace(/\s+/g, ""))) return true;
-  return raw.toLowerCase().includes("token já cadastrado") || raw.toLowerCase().includes("token salvo");
+  return compact.includes("tokenjácadastrado") || compact.includes("tokensalvo");
 }
 
 function safeMetaLog(label: string, params: { url: string; adAccountId?: string; token: string; status?: number }) {
@@ -254,6 +255,7 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     const tzNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
     const todayStr = fmt(tzNow);
+    const monthStartStr = `${todayStr.slice(0, 8)}01`;
     const base = `https://graph.facebook.com/${GRAPH_VERSION}/${adAccountId}/insights?fields=${fields}`;
     const rows: Array<{ date_start?: string; date_stop?: string; spend?: string; impressions?: string; clicks?: string }> = [];
 
@@ -267,6 +269,9 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
         throw new Error(msg);
       }
       rows.push(...(json?.data ?? []));
+      if (rows.length === 0) {
+        rows.push({ date_start: monthStartStr, date_stop: todayStr, spend: "0", impressions: "0", clicks: "0" });
+      }
     }
 
     if (data.range === "today") {
