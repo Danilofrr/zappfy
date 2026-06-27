@@ -1,15 +1,45 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 const GRAPH_VERSION = "v21.0";
+const META_INSIGHTS_FIELDS = "spend,impressions,clicks,date_start,date_stop";
 
 function normalizeAdAccountId(value: string) {
-  const raw = String(value ?? "").trim();
-  if (raw.startsWith("act_")) return raw;
-  return `act_${raw.replace(/\D/g, "")}`;
+  const raw = String(value ?? "").trim().replace(/^['"]|['"]$/g, "");
+  const withoutPrefix = raw.replace(/^act_/i, "");
+  const digits = withoutPrefix.replace(/\D/g, "");
+  return digits ? `act_${digits}` : "";
+}
+
+function sanitizeAccessToken(value: string | null | undefined) {
+  let token = String(value ?? "").trim();
+  token = token.replace(/^['"]|['"]$/g, "").trim();
+  token = token.replace(/^Bearer\s+/i, "").trim();
+  token = token.replace(/[\r\n\t ]+/g, "");
+  token = token.replace(/^['"]|['"]$/g, "").trim();
+  return token;
+}
+
+function safeMetaLog(label: string, params: { url: string; adAccountId?: string; token: string; status?: number }) {
+  try {
+    const parsed = new URL(params.url);
+    const token = sanitizeAccessToken(params.token);
+    console.log(label, {
+      endpoint: parsed.pathname,
+      fields: parsed.searchParams.get("fields") ?? null,
+      datePreset: parsed.searchParams.get("date_preset") ?? null,
+      adAccountId: params.adAccountId ?? null,
+      tokenExists: token.length > 0,
+      tokenLength: token.length,
+      tokenLast4: token ? token.slice(-4) : null,
+      metaStatus: params.status ?? null,
+    });
+  } catch {
+    console.log(label, { endpoint: "unknown", adAccountId: params.adAccountId ?? null, metaStatus: params.status ?? null });
+  }
 }
 
 async function fbFetch(url: string, token: string) {
-  const cleanToken = String(token ?? "").trim();
+  const cleanToken = sanitizeAccessToken(token);
   const body = new URLSearchParams();
   body.set("access_token", cleanToken);
   body.set("method", "GET");
@@ -22,12 +52,21 @@ async function fbFetch(url: string, token: string) {
     body: body.toString(),
   });
   const json: any = await res.json().catch(() => ({}));
+  const adAccountId = new URL(url).pathname.split("/").find((part) => part.startsWith("act_"));
+  safeMetaLog("meta_ads_cron_graph_get", { url, adAccountId, token: cleanToken, status: res.status });
   return { res, json };
 }
 
 function fbErrorMessage(json: any, status: number) {
   const e = json?.error;
   if (!e) return `Falha na Marketing API (${status})`;
+  const rawMessage = String(e.message ?? "");
+  if (Number(e.code) === 100 && rawMessage.toLowerCase().includes("account_name")) {
+    return "Erro interno na integração: o campo account_name é inválido. A integração foi ajustada para usar o campo name.";
+  }
+  if (Number(e.code) === 190) {
+    return "Token inválido, expirado ou copiado incorretamente. Gere um novo token de usuário do sistema com permissão ads_read.";
+  }
   if (String(e.message ?? "").toLowerCase().includes("api access blocked")) {
     return "Acesso à API da Meta bloqueado para este token/app. Gere um novo token de Usuário do Sistema com ads_read, confirme que a conta de anúncios foi atribuída a esse usuário e que o app tem acesso à Marketing API.";
   }
@@ -63,14 +102,14 @@ async function syncStore(
   const tzNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   const todayStr = fmt(tzNow);
-  const fields = "spend,actions,action_values,date_start";
+  const fields = META_INSIGHTS_FIELDS;
   const adAccountId = normalizeAdAccountId(store.fb_ad_account_id);
-  const base = `https://graph.facebook.com/${GRAPH_VERSION}/${adAccountId}/insights?fields=${fields}&level=account`;
+  const base = `https://graph.facebook.com/${GRAPH_VERSION}/${adAccountId}/insights?fields=${fields}`;
 
-  let rows: Array<{ date_start: string; spend?: string; actions?: any[]; action_values?: any[] }> = [];
+  let rows: Array<{ date_start?: string; date_stop?: string; spend?: string; impressions?: string; clicks?: string }> = [];
 
   if (isFirstSync) {
-    const { res, json } = await fbFetch(`${base}&time_increment=1&date_preset=this_month`, store.fb_access_token);
+    const { res, json } = await fbFetch(`${base}&date_preset=this_month`, store.fb_access_token);
     if (!res.ok || json?.error) {
       const msg = fbErrorMessage(json, res.status);
       await supabaseAdmin
@@ -104,10 +143,10 @@ async function syncStore(
 
   let imported = 0;
   for (const r of rows) {
-    const date = r.date_start;
+    const date = r.date_start || r.date_stop || todayStr;
     const invested = Number(r.spend ?? 0) || 0;
-    let purchases = sumByTypes(r.actions);
-    let revenue = sumByTypes(r.action_values);
+    let purchases = 0;
+    let revenue = 0;
 
     if (revenue <= 0 || purchases <= 0) {
       const dayStart = `${date}T00:00:00`;
