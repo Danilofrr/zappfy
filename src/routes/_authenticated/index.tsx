@@ -326,6 +326,7 @@ function Dashboard() {
         </div>
 
         {/* Ads card */}
+        {showFbSpend && (
         <div className="rounded-2xl border border-border bg-card p-6 shadow-elegant">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
