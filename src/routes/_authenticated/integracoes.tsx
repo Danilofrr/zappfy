@@ -153,20 +153,45 @@ function Page() {
             </div>
 
             {status && connected && (
-              <div className="mt-2 rounded-lg border border-border bg-secondary/30 p-3 text-xs">
-                <div>Conta: <span className="font-medium text-foreground">{status.ad_account_id}</span></div>
-                <div>
-                  Última sincronização:{" "}
-                  <span className="font-medium text-foreground">
-                    {status.last_sync_at ? new Date(status.last_sync_at).toLocaleString("pt-BR") : "—"}
-                  </span>
-                  {status.last_sync_status === "ok" && <span className="ml-2 text-emerald-500">OK</span>}
-                  {status.last_sync_status === "error" && <span className="ml-2 text-red-500">Erro</span>}
+              <>
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-border bg-gradient-to-br from-primary/5 to-transparent p-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#1877F2]/15 ring-1 ring-[#1877F2]/30 shrink-0">
+                      <Facebook className="h-5 w-5 text-[#1877F2]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Conta de anúncio conectada</div>
+                      <div className="font-mono text-sm font-semibold text-foreground truncate">{status.ad_account_id}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {showSpend ? (
+                      <Eye className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <div className="text-right">
+                      <div className="text-xs font-medium">Exibir gastos na dashboard</div>
+                      <div className="text-[10px] text-muted-foreground">{showSpend ? "Ativado" : "Oculto"}</div>
+                    </div>
+                    <Switch checked={showSpend} onCheckedChange={setShowSpend} />
+                  </div>
                 </div>
-                {status.last_sync_error && (
-                  <div className="mt-1 text-red-400">{status.last_sync_error}</div>
-                )}
-              </div>
+
+                <div className="mt-2 rounded-lg border border-border bg-secondary/30 p-3 text-xs">
+                  <div>
+                    Última sincronização:{" "}
+                    <span className="font-medium text-foreground">
+                      {status.last_sync_at ? new Date(status.last_sync_at).toLocaleString("pt-BR") : "—"}
+                    </span>
+                    {status.last_sync_status === "ok" && <span className="ml-2 text-emerald-500">OK</span>}
+                    {status.last_sync_status === "error" && <span className="ml-2 text-red-500">Erro</span>}
+                  </div>
+                  {status.last_sync_error && (
+                    <div className="mt-1 text-red-400">{status.last_sync_error}</div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
