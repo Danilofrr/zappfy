@@ -50,7 +50,7 @@ function MotoboysPage() {
     setLoading(true);
     const { data, error } = await (supabase as any)
       .from("couriers")
-      .select("*")
+      .select("id, store_id, name, phone, vehicle_type, plate, active, last_login_at, created_at, updated_at")
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     setList((data as Courier[]) || []);
