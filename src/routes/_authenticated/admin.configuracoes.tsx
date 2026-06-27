@@ -65,6 +65,7 @@ function AdminSettings() {
         security: { ...DEFAULTS.security, ...(q.data.security ?? {}) },
         appearance: { ...DEFAULTS.appearance, ...(q.data.appearance ?? {}) },
         prize: { ...DEFAULTS.prize, ...(q.data.prize ?? {}) },
+        tutorials: { ...DEFAULTS.tutorials, ...(q.data.tutorials ?? {}) },
       });
     }
   }, [q.data]);
