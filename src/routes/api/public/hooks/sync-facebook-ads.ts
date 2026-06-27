@@ -105,6 +105,9 @@ async function syncStore(
       return { store_id: store.store_id, ok: false, error: msg };
     }
     rows = json?.data ?? [];
+    if (rows.length === 0) {
+      rows.push({ date_start: `${todayStr.slice(0, 8)}01`, date_stop: todayStr, spend: "0", impressions: "0", clicks: "0" });
+    }
   }
 
   // Sempre busca o dia atual com date_preset=today (fuso da conta), garante linha de hoje.
