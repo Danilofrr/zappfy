@@ -40,6 +40,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePrivacy, mask } from "@/hooks/use-privacy";
+import { useFbShowSpend } from "@/hooks/use-fb-show-spend";
 
 
 import { redirect } from "@tanstack/react-router";
