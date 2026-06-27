@@ -9,11 +9,17 @@ function normalizeAdAccountId(value: string) {
 }
 
 async function fbFetch(url: string, token: string) {
+  const cleanToken = String(token ?? "").trim();
+  const body = new URLSearchParams();
+  body.set("access_token", cleanToken);
+  body.set("method", "GET");
   const res = await fetch(url, {
+    method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/x-www-form-urlencoded",
       Accept: "application/json",
     },
+    body: body.toString(),
   });
   const json: any = await res.json().catch(() => ({}));
   return { res, json };
