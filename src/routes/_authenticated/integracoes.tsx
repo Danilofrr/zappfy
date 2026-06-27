@@ -2,19 +2,36 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import {
   saveFacebookIntegration,
   disconnectFacebookIntegration,
   getFacebookIntegrationStatus,
   syncFacebookAds,
 } from "@/lib/integrations.functions";
+import { getPublicTutorials } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, Plug, RefreshCw, ExternalLink, Facebook, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, AlertCircle, Plug, RefreshCw, ExternalLink, Facebook, Eye, EyeOff, Youtube, PlayCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useFbShowSpend } from "@/hooks/use-fb-show-spend";
+
+function getYoutubeEmbedUrl(url?: string | null): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    let id: string | null = null;
+    if (u.hostname.includes("youtu.be")) id = u.pathname.slice(1);
+    else if (u.pathname.startsWith("/embed/")) id = u.pathname.split("/")[2];
+    else if (u.pathname.startsWith("/shorts/")) id = u.pathname.split("/")[2];
+    else id = u.searchParams.get("v");
+    if (!id) return null;
+    return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+  } catch { return null; }
+}
 
 export const Route = createFileRoute("/_authenticated/integracoes")({
   head: () => ({ meta: [{ title: "Integrações — Zappfy" }] }),
