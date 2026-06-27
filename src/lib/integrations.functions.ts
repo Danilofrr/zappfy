@@ -162,7 +162,6 @@ export const saveFacebookIntegration = createServerFn({ method: "POST" })
     // ler métricas da conta corretamente.
     const account = await validateAdAccountAccess(token, data.ad_account_id);
     const { error } = await settingsTable
-      .from("settings")
       .update({
         fb_access_token: sanitizeAccessToken(token),
         fb_ad_account_id: account.adAccountId,
@@ -183,7 +182,6 @@ export const disconnectFacebookIntegration = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { error } = await (supabase.from("settings") as any)
-      .from("settings")
       .update({
         fb_access_token: null,
         fb_ad_account_id: null,
@@ -206,7 +204,6 @@ export const getFacebookIntegrationStatus = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data, error } = await (supabase.from("settings") as any)
-      .from("settings")
       .select("fb_ad_account_id, fb_account_id, fb_ad_account_name, fb_currency, fb_timezone_name, fb_connection_status, fb_last_sync_at, fb_last_sync_status, fb_last_sync_error, fb_access_token")
       .eq("store_id", userId)
       .maybeSingle();
@@ -242,7 +239,6 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: settings, error: setErr } = await (supabase.from("settings") as any)
-      .from("settings")
       .select("fb_access_token, fb_ad_account_id, fb_last_sync_at")
       .eq("store_id", userId)
       .maybeSingle();
@@ -252,7 +248,6 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     }
 
     const adAccountId = normalizeAdAccountId(settings.fb_ad_account_id);
-    const shouldSyncMonth = data.range === "this_month" || !settings.fb_last_sync_at;
     const fields = META_INSIGHTS_FIELDS;
     // Usamos o fuso de São Paulo para definir "hoje" do ponto de vista da conta,
     // pois a Meta interpreta time_range no fuso da conta de anúncios.
@@ -262,12 +257,11 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     const base = `https://graph.facebook.com/${GRAPH_VERSION}/${adAccountId}/insights?fields=${fields}`;
     const rows: Array<{ date_start?: string; date_stop?: string; spend?: string; impressions?: string; clicks?: string }> = [];
 
-    if (shouldSyncMonth) {
+    if (data.range === "this_month") {
       const { res, json } = await fbFetch(`${base}&date_preset=this_month`, settings.fb_access_token);
       if (!res.ok || json?.error) {
         const msg = fbErrorMessage(json, res.status);
         await (supabase.from("settings") as any)
-          .from("settings")
           .update({ fb_last_sync_status: "error", fb_last_sync_error: msg, fb_last_sync_at: new Date().toISOString() })
           .eq("store_id", userId);
         throw new Error(msg);
@@ -275,12 +269,11 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
       rows.push(...(json?.data ?? []));
     }
 
-    if (data.range === "today" || !settings.fb_last_sync_at) {
+    if (data.range === "today") {
       const { res: todayRes, json: todayJson } = await fbFetch(`${base}&date_preset=today`, settings.fb_access_token);
       if (!todayRes.ok || todayJson?.error) {
         const msg = fbErrorMessage(todayJson, todayRes.status);
         await (supabase.from("settings") as any)
-          .from("settings")
           .update({ fb_last_sync_status: "error", fb_last_sync_error: msg, fb_last_sync_at: new Date().toISOString() })
           .eq("store_id", userId);
         throw new Error(msg);
@@ -294,21 +287,6 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
         rows.push({ date_start: todayStr, date_stop: todayStr, spend: "0", impressions: "0", clicks: "0" });
       }
     }
-
-
-    const PURCHASE_TYPES = [
-      "purchase",
-      "omni_purchase",
-      "offsite_conversion.fb_pixel_purchase",
-      "onsite_web_purchase",
-      "onsite_web_app_purchase",
-      "web_in_store_purchase",
-    ];
-    const sumByTypes = (arr: any[] | undefined) =>
-      (arr ?? [])
-        .filter((a: any) => PURCHASE_TYPES.includes(a.action_type))
-        .reduce((acc: number, a: any) => acc + (Number(a.value) || 0), 0);
-
     let imported = 0;
     for (const r of rows) {
       const date = r.date_start || r.date_stop || todayStr;
@@ -350,7 +328,6 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
 
 
     await (supabase.from("settings") as any)
-      .from("settings")
       .update({
         fb_last_sync_at: new Date().toISOString(),
         fb_last_sync_status: "ok",
