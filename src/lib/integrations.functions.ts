@@ -4,6 +4,12 @@ import { z } from "zod";
 
 const GRAPH_VERSION = "v21.0";
 
+function normalizeAdAccountId(value: string) {
+  const raw = String(value ?? "").trim();
+  if (raw.startsWith("act_")) return raw;
+  return `act_${raw.replace(/\D/g, "")}`;
+}
+
 // Chama a Graph API enviando o token no header Authorization (mais robusto;
 // muitos proxies/WAFs bloqueiam URLs com `access_token=` na query string,
 // retornando erros do tipo "Acesso à API bloqueado").
@@ -35,7 +41,7 @@ const SaveSchema = z.object({
     .string()
     .trim()
     .min(3)
-    .transform((v) => (v.startsWith("act_") ? v : `act_${v.replace(/\D/g, "")}`)),
+    .transform(normalizeAdAccountId),
 });
 
 export const saveFacebookIntegration = createServerFn({ method: "POST" })
@@ -44,12 +50,9 @@ export const saveFacebookIntegration = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     // sanity check: token reaches /me
-    const test = await fetch(
-      `https://graph.facebook.com/${GRAPH_VERSION}/me?access_token=${encodeURIComponent(data.access_token)}`,
-    );
-    if (!test.ok) {
-      const j = await test.json().catch(() => ({}));
-      throw new Error(j?.error?.message || "Token inválido ou sem permissão");
+    const test = await fbFetch(`https://graph.facebook.com/${GRAPH_VERSION}/me`, data.access_token);
+    if (!test.res.ok || test.json?.error) {
+      throw new Error(fbErrorMessage(test.json, test.res.status) || "Token inválido ou sem permissão");
     }
     const { error } = await supabase
       .from("settings")
@@ -94,15 +97,13 @@ export const getFacebookIntegrationStatus = createServerFn({ method: "GET" })
 
     let ad_account_name: string | null = null;
     if (data?.fb_access_token && data?.fb_ad_account_id) {
-      const acct = data.fb_ad_account_id.startsWith("act_")
-        ? data.fb_ad_account_id
-        : `act_${String(data.fb_ad_account_id).replace(/\D/g, "")}`;
+      const acct = normalizeAdAccountId(data.fb_ad_account_id);
       try {
-        const r = await fetch(
-          `https://graph.facebook.com/${GRAPH_VERSION}/${acct}?fields=name,account_name&access_token=${encodeURIComponent(data.fb_access_token)}`,
+        const { res, json } = await fbFetch(
+          `https://graph.facebook.com/${GRAPH_VERSION}/${acct}?fields=name,account_name`,
+          data.fb_access_token,
         );
-        const j: any = await r.json().catch(() => ({}));
-        if (r.ok) ad_account_name = (j?.name as string) || (j?.account_name as string) || null;
+        if (res.ok && !json?.error) ad_account_name = (json?.name as string) || (json?.account_name as string) || null;
       } catch {}
     }
 
@@ -133,6 +134,7 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
       throw new Error("Conecte sua conta do Facebook Ads antes de sincronizar.");
     }
 
+    const adAccountId = normalizeAdAccountId(settings.fb_ad_account_id);
     const fields = "spend,actions,action_values,date_start";
     // Usamos o fuso de São Paulo para definir "hoje" do ponto de vista da conta,
     // pois a Meta interpreta time_range no fuso da conta de anúncios.
@@ -143,13 +145,12 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     // IMPORTANTE: a Meta rejeita `until` no futuro. Usar HOJE (fuso da conta).
     const until = tzNow;
     const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(until) }));
-    const base = `https://graph.facebook.com/${GRAPH_VERSION}/${settings.fb_ad_account_id}/insights?fields=${fields}&level=account&access_token=${encodeURIComponent(settings.fb_access_token)}`;
+    const base = `https://graph.facebook.com/${GRAPH_VERSION}/${adAccountId}/insights?fields=${fields}&level=account`;
     const url = `${base}&time_increment=1&time_range=${timeRange}`;
 
-    const res = await fetch(url);
-    const json: any = await res.json().catch(() => ({}));
+    const { res, json } = await fbFetch(url, settings.fb_access_token);
     if (!res.ok || json?.error) {
-      const msg = json?.error?.message || `Falha na Marketing API (${res.status})`;
+      const msg = fbErrorMessage(json, res.status);
       await supabase
         .from("settings")
         .update({ fb_last_sync_status: "error", fb_last_sync_error: msg, fb_last_sync_at: new Date().toISOString() })
@@ -163,8 +164,8 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
     // Chamada extra forçando "hoje" via date_preset=today (fuso da conta) — garante
     // que o dia atual apareça mesmo que o time_range não retorne ainda.
     try {
-      const todayRes = await fetch(`${base}&date_preset=today`);
-      const todayJson: any = await todayRes.json().catch(() => ({}));
+      const { res: todayRes, json: todayJson } = await fbFetch(`${base}&date_preset=today`, settings.fb_access_token);
+      if (!todayRes.ok || todayJson?.error) throw new Error(fbErrorMessage(todayJson, todayRes.status));
       const todayRow = (todayJson?.data ?? [])[0];
       if (todayRow) {
         const normalized = { ...todayRow, date_start: todayRow.date_start || todayStr };
