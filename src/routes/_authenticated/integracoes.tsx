@@ -12,7 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, Plug, RefreshCw, ExternalLink, Facebook } from "lucide-react";
+import { CheckCircle2, AlertCircle, Plug, RefreshCw, ExternalLink, Facebook, Eye, EyeOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useFbShowSpend } from "@/hooks/use-fb-show-spend";
 
 export const Route = createFileRoute("/_authenticated/integracoes")({
   head: () => ({ meta: [{ title: "Integrações — Zappfy" }] }),
