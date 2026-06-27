@@ -45,6 +45,7 @@ const DEFAULTS: Settings = {
   security: { adminOnly: true, accessLogs: true, sessionMinutes: 240 },
   appearance: { theme: "dark", brandName: "ZappFy", primaryColor: "#22c55e" },
   prize: { enabled: false, goal: 1000000, reward: "Prêmio especial ao bater a meta!", period: "mensal" },
+  tutorials: { facebookAdsYoutubeUrl: "" },
 };
 
 function AdminSettings() {
