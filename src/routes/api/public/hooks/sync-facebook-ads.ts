@@ -25,7 +25,8 @@ async function syncStore(
   const days = isFirstSync ? 35 : 1;
   const tzNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const since = new Date(tzNow.getTime() - (days - 1) * 86400000);
-  const until = new Date(tzNow.getTime() + 86400000);
+  // IMPORTANTE: a Meta rejeita `until` no futuro. Usar HOJE (fuso da conta).
+  const until = tzNow;
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   const todayStr = fmt(tzNow);
   const fields = "spend,actions,action_values,date_start";
