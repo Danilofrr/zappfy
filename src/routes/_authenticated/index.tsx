@@ -40,6 +40,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePrivacy, mask } from "@/hooks/use-privacy";
+import { useFbShowSpend } from "@/hooks/use-fb-show-spend";
 
 
 import { redirect } from "@tanstack/react-router";
@@ -101,7 +102,10 @@ function Dashboard() {
   const goalRev = state.settings.monthlyRevenueGoal;
   const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
 
+  const [showFbSpend] = useFbShowSpend();
+
   // Sync manual do Facebook Ads
+
   const syncAds = useServerFn(syncFacebookAds);
   const [syncingAds, setSyncingAds] = useState(false);
   async function handleSyncAds() {
@@ -322,6 +326,7 @@ function Dashboard() {
         </div>
 
         {/* Ads card */}
+        {showFbSpend && (
         <div className="rounded-2xl border border-border bg-card p-6 shadow-elegant">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -354,7 +359,9 @@ function Dashboard() {
             <Mini label="Faturamento" value={m(brl(adsRevenue))} />
           </div>
         </div>
+        )}
       </div>
+
 
       {/* Chart */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
