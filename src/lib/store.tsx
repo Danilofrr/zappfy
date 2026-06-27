@@ -769,8 +769,11 @@ export function useFinance(range?: { start: Date; end: Date }) {
     const d = dateOnlyToLocalDate(a.date);
     return d >= start && d < end;
   });
-  const adsManualSpend = monthAdsEntries.reduce((a, x) => a + (Number(x.invested) || 0), 0);
-  const adsSpend = adsExpenseSpend + adsManualSpend;
+  const adsEntrySpend = monthAdsEntries.reduce((a, x) => a + (Number(x.invested) || 0), 0);
+  // Quando há dados na aba Facebook Ads para o período, ela vira a fonte oficial
+  // do investimento. Isso evita somar despesas antigas de categoria "ads" e
+  // mantém Dashboard/Lucro iguais ao Gerenciador de Anúncios por dia.
+  const adsSpend = monthAdsEntries.length > 0 ? adsEntrySpend : adsExpenseSpend;
   const opEx = monthExpenses.filter((e) => e.category !== "ads").reduce((a, e) => a + e.amount, 0);
 
   const profit = revenue - cogs - adsSpend - opEx - motoboyCost;
