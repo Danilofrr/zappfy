@@ -78,20 +78,6 @@ function fbErrorMessage(json: any, status: number) {
   return parts.join(" — ");
 }
 
-const PURCHASE_TYPES = [
-  "purchase",
-  "omni_purchase",
-  "offsite_conversion.fb_pixel_purchase",
-  "onsite_web_purchase",
-  "onsite_web_app_purchase",
-  "web_in_store_purchase",
-];
-
-const sumByTypes = (arr: any[] | undefined) =>
-  (arr ?? [])
-    .filter((a: any) => PURCHASE_TYPES.includes(a.action_type))
-    .reduce((acc: number, a: any) => acc + (Number(a.value) || 0), 0);
-
 async function syncStore(
   supabaseAdmin: any,
   store: { store_id: string; fb_access_token: string; fb_ad_account_id: string; fb_last_sync_at: string | null },
