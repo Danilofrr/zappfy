@@ -22,6 +22,9 @@ async function fbFetch(url: string, token: string) {
 function fbErrorMessage(json: any, status: number) {
   const e = json?.error;
   if (!e) return `Falha na Marketing API (${status})`;
+  if (String(e.message ?? "").toLowerCase().includes("api access blocked")) {
+    return "Acesso à API da Meta bloqueado para este token/app. Gere um novo token de Usuário do Sistema com ads_read, confirme que a conta de anúncios foi atribuída a esse usuário e que o app tem acesso à Marketing API.";
+  }
   const parts: string[] = [];
   if (e.message) parts.push(String(e.message));
   if (e.code) parts.push(`code ${e.code}`);
@@ -48,14 +51,10 @@ async function syncStore(
   supabaseAdmin: any,
   store: { store_id: string; fb_access_token: string; fb_ad_account_id: string; fb_last_sync_at: string | null },
 ) {
-  // Primeiro acesso (sem histórico): puxa o mês inteiro (35 dias).
+  // Primeiro acesso (sem histórico): puxa o mês atual.
   // Depois: apenas o dia de hoje, todos os dias.
   const isFirstSync = !store.fb_last_sync_at;
-  const days = isFirstSync ? 35 : 1;
   const tzNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  const since = new Date(tzNow.getTime() - (days - 1) * 86400000);
-  // IMPORTANTE: a Meta rejeita `until` no futuro. Usar HOJE (fuso da conta).
-  const until = tzNow;
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   const todayStr = fmt(tzNow);
   const fields = "spend,actions,action_values,date_start";
@@ -65,8 +64,7 @@ async function syncStore(
   let rows: Array<{ date_start: string; spend?: string; actions?: any[]; action_values?: any[] }> = [];
 
   if (isFirstSync) {
-    const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(until) }));
-    const { res, json } = await fbFetch(`${base}&time_increment=1&time_range=${timeRange}`, store.fb_access_token);
+    const { res, json } = await fbFetch(`${base}&time_increment=1&date_preset=this_month`, store.fb_access_token);
     if (!res.ok || json?.error) {
       const msg = fbErrorMessage(json, res.status);
       await supabaseAdmin
@@ -79,22 +77,23 @@ async function syncStore(
   }
 
   // Sempre busca o dia atual com date_preset=today (fuso da conta), garante linha de hoje.
-  try {
-    const { res: todayRes, json: todayJson } = await fbFetch(`${base}&date_preset=today`, store.fb_access_token);
-    if (!todayRes.ok || todayJson?.error) throw new Error(fbErrorMessage(todayJson, todayRes.status));
-    const todayRow = (todayJson?.data ?? [])[0];
-    if (todayRow) {
-      const normalized = { ...todayRow, date_start: todayRow.date_start || todayStr };
-      const idx = rows.findIndex((r) => r.date_start === normalized.date_start);
-      if (idx >= 0) rows[idx] = normalized;
-      else rows.push(normalized);
-    } else if (!rows.find((r) => r.date_start === todayStr)) {
-      rows.push({ date_start: todayStr, spend: "0" });
-    }
-  } catch {
-    if (!rows.find((r) => r.date_start === todayStr)) {
-      rows.push({ date_start: todayStr, spend: "0" });
-    }
+  const { res: todayRes, json: todayJson } = await fbFetch(`${base}&date_preset=today`, store.fb_access_token);
+  if (!todayRes.ok || todayJson?.error) {
+    const msg = fbErrorMessage(todayJson, todayRes.status);
+    await supabaseAdmin
+      .from("settings")
+      .update({ fb_last_sync_status: "error", fb_last_sync_error: msg, fb_last_sync_at: new Date().toISOString() })
+      .eq("store_id", store.store_id);
+    return { store_id: store.store_id, ok: false, error: msg };
+  }
+  const todayRow = (todayJson?.data ?? [])[0];
+  if (todayRow) {
+    const normalized = { ...todayRow, date_start: todayRow.date_start || todayStr };
+    const idx = rows.findIndex((r) => r.date_start === normalized.date_start);
+    if (idx >= 0) rows[idx] = normalized;
+    else rows.push(normalized);
+  } else if (!rows.find((r) => r.date_start === todayStr)) {
+    rows.push({ date_start: todayStr, spend: "0" });
   }
 
   let imported = 0;
