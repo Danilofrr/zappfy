@@ -303,7 +303,24 @@ function AdminSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="integrations">
+        <TabsContent value="integrations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Youtube className="h-4 w-4 text-red-500" />Tutoriais em vídeo</CardTitle>
+              <CardDescription>URLs do YouTube exibidas nas páginas de integração da dashboard do cliente.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <Field label="Tutorial — Integração Facebook Ads">
+                <Input
+                  value={s.tutorials?.facebookAdsYoutubeUrl ?? ""}
+                  onChange={(e) => set("tutorials", { facebookAdsYoutubeUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                <p className="text-xs text-muted-foreground mt-1">Aparece como botão "Ver tutorial" na aba Integrações → Facebook Ads do cliente.</p>
+              </Field>
+            </CardContent>
+          </Card>
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { name: "WhatsApp", desc: "Envio automático de mensagens" },
