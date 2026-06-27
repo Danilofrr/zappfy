@@ -55,6 +55,31 @@ async function getAdAccountName(token: string, adAccountId: string) {
   return null;
 }
 
+async function validateAdAccountAccess(token: string, adAccountId: string) {
+  const acct = normalizeAdAccountId(adAccountId);
+  const account = await fbFetch(
+    `https://graph.facebook.com/${GRAPH_VERSION}/${acct}?fields=name,account_name,account_id,account_status`,
+    token,
+  );
+
+  if (!account.res.ok || account.json?.error) {
+    throw new Error(fbErrorMessage(account.json, account.res.status));
+  }
+
+  const probe = await fbFetch(
+    `https://graph.facebook.com/${GRAPH_VERSION}/${acct}/insights?fields=spend,date_start&level=account&date_preset=today&limit=1`,
+    token,
+  );
+
+  if (!probe.res.ok || probe.json?.error) {
+    throw new Error(fbErrorMessage(probe.json, probe.res.status));
+  }
+
+  return {
+    name: (account.json?.name as string) || (account.json?.account_name as string) || null,
+  };
+}
+
 function fbErrorMessage(json: any, status: number) {
   const e = json?.error;
   if (!e) return `Falha na Marketing API (${status})`;
@@ -83,11 +108,10 @@ export const saveFacebookIntegration = createServerFn({ method: "POST" })
   .inputValidator((input) => SaveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    // sanity check: token reaches /me
-    const test = await fbFetch(`https://graph.facebook.com/${GRAPH_VERSION}/me`, data.access_token);
-    if (!test.res.ok || test.json?.error) {
-      throw new Error(fbErrorMessage(test.json, test.res.status) || "Token inválido ou sem permissão");
-    }
+    // Valida o token diretamente na conta de anúncios. Tokens de Usuário do
+    // Sistema com apenas ads_read podem falhar no /me, mesmo quando conseguem
+    // ler métricas da conta corretamente.
+    await validateAdAccountAccess(data.access_token, data.ad_account_id);
     const { error } = await supabase
       .from("settings")
       .update({
