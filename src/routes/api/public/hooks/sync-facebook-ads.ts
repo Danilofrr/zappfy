@@ -1,6 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 const GRAPH_VERSION = "v21.0";
+
+function normalizeAdAccountId(value: string) {
+  const raw = String(value ?? "").trim();
+  if (raw.startsWith("act_")) return raw;
+  return `act_${raw.replace(/\D/g, "")}`;
+}
+
+async function fbFetch(url: string, token: string) {
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
+  const json: any = await res.json().catch(() => ({}));
+  return { res, json };
+}
+
+function fbErrorMessage(json: any, status: number) {
+  const e = json?.error;
+  if (!e) return `Falha na Marketing API (${status})`;
+  const parts: string[] = [];
+  if (e.message) parts.push(String(e.message));
+  if (e.code) parts.push(`code ${e.code}`);
+  if (e.error_subcode) parts.push(`subcode ${e.error_subcode}`);
+  if (e.error_user_msg) parts.push(String(e.error_user_msg));
+  return parts.join(" — ");
+}
+
 const PURCHASE_TYPES = [
   "purchase",
   "omni_purchase",
@@ -30,16 +59,16 @@ async function syncStore(
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   const todayStr = fmt(tzNow);
   const fields = "spend,actions,action_values,date_start";
-  const base = `https://graph.facebook.com/${GRAPH_VERSION}/${store.fb_ad_account_id}/insights?fields=${fields}&level=account&access_token=${encodeURIComponent(store.fb_access_token)}`;
+  const adAccountId = normalizeAdAccountId(store.fb_ad_account_id);
+  const base = `https://graph.facebook.com/${GRAPH_VERSION}/${adAccountId}/insights?fields=${fields}&level=account`;
 
   let rows: Array<{ date_start: string; spend?: string; actions?: any[]; action_values?: any[] }> = [];
 
   if (isFirstSync) {
     const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(until) }));
-    const res = await fetch(`${base}&time_increment=1&time_range=${timeRange}`);
-    const json: any = await res.json().catch(() => ({}));
+    const { res, json } = await fbFetch(`${base}&time_increment=1&time_range=${timeRange}`, store.fb_access_token);
     if (!res.ok || json?.error) {
-      const msg = json?.error?.message || `Falha na Marketing API (${res.status})`;
+      const msg = fbErrorMessage(json, res.status);
       await supabaseAdmin
         .from("settings")
         .update({ fb_last_sync_status: "error", fb_last_sync_error: msg, fb_last_sync_at: new Date().toISOString() })
@@ -51,8 +80,8 @@ async function syncStore(
 
   // Sempre busca o dia atual com date_preset=today (fuso da conta), garante linha de hoje.
   try {
-    const todayRes = await fetch(`${base}&date_preset=today`);
-    const todayJson: any = await todayRes.json().catch(() => ({}));
+    const { res: todayRes, json: todayJson } = await fbFetch(`${base}&date_preset=today`, store.fb_access_token);
+    if (!todayRes.ok || todayJson?.error) throw new Error(fbErrorMessage(todayJson, todayRes.status));
     const todayRow = (todayJson?.data ?? [])[0];
     if (todayRow) {
       const normalized = { ...todayRow, date_start: todayRow.date_start || todayStr };
