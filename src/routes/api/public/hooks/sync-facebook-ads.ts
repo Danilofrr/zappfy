@@ -15,27 +15,58 @@ const sumByTypes = (arr: any[] | undefined) =>
     .filter((a: any) => PURCHASE_TYPES.includes(a.action_type))
     .reduce((acc: number, a: any) => acc + (Number(a.value) || 0), 0);
 
-async function syncStore(supabaseAdmin: any, store: { store_id: string; fb_access_token: string; fb_ad_account_id: string }) {
-  const days = 35;
-  const today = new Date();
-  const since = new Date(today.getTime() - (days - 1) * 86400000);
-  const until = new Date(today.getTime() + 86400000);
+async function syncStore(
+  supabaseAdmin: any,
+  store: { store_id: string; fb_access_token: string; fb_ad_account_id: string; fb_last_sync_at: string | null },
+) {
+  // Primeiro acesso (sem histórico): puxa o mês inteiro (35 dias).
+  // Depois: apenas o dia de hoje, todos os dias.
+  const isFirstSync = !store.fb_last_sync_at;
+  const days = isFirstSync ? 35 : 1;
+  const tzNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const since = new Date(tzNow.getTime() - (days - 1) * 86400000);
+  const until = new Date(tzNow.getTime() + 86400000);
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(until) }));
+  const todayStr = fmt(tzNow);
   const fields = "spend,actions,action_values,date_start";
-  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${store.fb_ad_account_id}/insights?fields=${fields}&time_increment=1&time_range=${timeRange}&level=account&access_token=${encodeURIComponent(store.fb_access_token)}`;
+  const base = `https://graph.facebook.com/${GRAPH_VERSION}/${store.fb_ad_account_id}/insights?fields=${fields}&level=account&access_token=${encodeURIComponent(store.fb_access_token)}`;
 
-  const res = await fetch(url);
-  const json: any = await res.json().catch(() => ({}));
-  if (!res.ok || json?.error) {
-    const msg = json?.error?.message || `Falha na Marketing API (${res.status})`;
-    await supabaseAdmin
-      .from("settings")
-      .update({ fb_last_sync_status: "error", fb_last_sync_error: msg, fb_last_sync_at: new Date().toISOString() })
-      .eq("store_id", store.store_id);
-    return { store_id: store.store_id, ok: false, error: msg };
+  let rows: Array<{ date_start: string; spend?: string; actions?: any[]; action_values?: any[] }> = [];
+
+  if (isFirstSync) {
+    const timeRange = encodeURIComponent(JSON.stringify({ since: fmt(since), until: fmt(until) }));
+    const res = await fetch(`${base}&time_increment=1&time_range=${timeRange}`);
+    const json: any = await res.json().catch(() => ({}));
+    if (!res.ok || json?.error) {
+      const msg = json?.error?.message || `Falha na Marketing API (${res.status})`;
+      await supabaseAdmin
+        .from("settings")
+        .update({ fb_last_sync_status: "error", fb_last_sync_error: msg, fb_last_sync_at: new Date().toISOString() })
+        .eq("store_id", store.store_id);
+      return { store_id: store.store_id, ok: false, error: msg };
+    }
+    rows = json?.data ?? [];
   }
-  const rows: Array<{ date_start: string; spend?: string; actions?: any[]; action_values?: any[] }> = json?.data ?? [];
+
+  // Sempre busca o dia atual com date_preset=today (fuso da conta), garante linha de hoje.
+  try {
+    const todayRes = await fetch(`${base}&date_preset=today`);
+    const todayJson: any = await todayRes.json().catch(() => ({}));
+    const todayRow = (todayJson?.data ?? [])[0];
+    if (todayRow) {
+      const normalized = { ...todayRow, date_start: todayRow.date_start || todayStr };
+      const idx = rows.findIndex((r) => r.date_start === normalized.date_start);
+      if (idx >= 0) rows[idx] = normalized;
+      else rows.push(normalized);
+    } else if (!rows.find((r) => r.date_start === todayStr)) {
+      rows.push({ date_start: todayStr, spend: "0" });
+    }
+  } catch {
+    if (!rows.find((r) => r.date_start === todayStr)) {
+      rows.push({ date_start: todayStr, spend: "0" });
+    }
+  }
+
   let imported = 0;
   for (const r of rows) {
     const date = r.date_start;
@@ -79,8 +110,9 @@ async function syncStore(supabaseAdmin: any, store: { store_id: string; fb_acces
       fb_last_sync_error: null,
     })
     .eq("store_id", store.store_id);
-  return { store_id: store.store_id, ok: true, imported };
+  return { store_id: store.store_id, ok: true, imported, mode: isFirstSync ? "backfill" : "today" };
 }
+
 
 export const Route = createFileRoute("/api/public/hooks/sync-facebook-ads")({
   server: {
@@ -89,9 +121,10 @@ export const Route = createFileRoute("/api/public/hooks/sync-facebook-ads")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: stores, error } = await supabaseAdmin
           .from("settings")
-          .select("store_id, fb_access_token, fb_ad_account_id")
+          .select("store_id, fb_access_token, fb_ad_account_id, fb_last_sync_at")
           .not("fb_access_token", "is", null)
           .not("fb_ad_account_id", "is", null);
+
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500 });
         }
