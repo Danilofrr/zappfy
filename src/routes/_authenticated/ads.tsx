@@ -11,7 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/ads")({
-  head: () => ({ meta: [{ title: "Facebook Ads — ZappFy" }] }),
+  head: () => ({ meta: [{ title: "Meta Ads — ZappFy" }] }),
   component: Page,
 });
 
@@ -87,7 +87,7 @@ function Page() {
   }
 
   return (
-    <AppShell title="Facebook Ads" subtitle="Performance dos seus anúncios">
+    <AppShell title="Meta Ads" subtitle="Performance dos seus anúncios">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <StatCard label="Investido" value={brl(totals.inv)} icon={Megaphone} neon="167 139 250"/>
         <StatCard label="ROAS Médio" value={`${roas.toFixed(2)}x`} tone="success" icon={Target} neon="56 189 248"/>

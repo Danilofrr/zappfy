@@ -209,7 +209,7 @@ function Page() {
             <div className="grid gap-2 sm:grid-cols-2 text-sm">
               <Row label="Preço sugerido" value={brl(data.price)} strong />
               <Row label="Custo real do produto" value={brl(data.realCost)} />
-              <Row label="Gasto em Facebook Ads" value={brl(data.adsSpend)} tone="bad" />
+              <Row label="Gasto em Meta Ads" value={brl(data.adsSpend)} tone="bad" />
               <Row label="Imposto sobre Ads" value={brl(data.adsTaxValue)} tone="bad" />
               <Row label="Custo total de marketing (Ads + imposto)" value={brl(data.adsCost)} strong tone="bad" />
               <Row label="Outras despesas variáveis" value={brl(data.otherVariableCost)} />
