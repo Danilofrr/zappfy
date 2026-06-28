@@ -17,7 +17,42 @@ export const Route = createFileRoute("/_authenticated/ads")({
 
 function Page() {
   const { state, addAd, deleteAd } = useStore();
-  const ads = state.ads;
+  const rawAds = state.ads;
+
+  // Calcula pedidos válidos (não cancelados) agrupados por dia (YYYY-MM-DD)
+  // para refletir, em tempo real, o que aparece na Dashboard.
+  const ordersByDay = (() => {
+    const map = new Map<string, { count: number; revenue: number }>();
+    for (const o of state.orders) {
+      const status = String(o.status ?? "").toLowerCase();
+      if (status === "cancelado" || status === "cancelada") continue;
+      const d = o.date ? new Date(o.date) : null;
+      if (!d || Number.isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const cur = map.get(key) ?? { count: 0, revenue: 0 };
+      cur.count += 1;
+      cur.revenue += Number(o.total) || 0;
+      map.set(key, cur);
+    }
+    return map;
+  })();
+
+  function dayKey(dateStr: string) {
+    const d = dateOnlyToLocalDate(dateStr);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  // Sobrescreve purchases/revenue de cada gasto com os pedidos reais do dia,
+  // garantindo bater com a Dashboard e atualizar quando um novo pedido entra.
+  const ads = rawAds.map((a) => {
+    const day = ordersByDay.get(dayKey(a.date));
+    return {
+      ...a,
+      purchases: day?.count ?? 0,
+      revenue: day?.revenue ?? 0,
+    };
+  });
+
   const totals = ads.reduce(
     (a, x) => ({ inv: a.inv + x.invested, rev: a.rev + x.revenue, p: a.p + x.purchases }),
     { inv: 0, rev: 0, p: 0 },
