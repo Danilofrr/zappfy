@@ -245,7 +245,7 @@ export const syncFacebookAds = createServerFn({ method: "POST" })
       .maybeSingle();
     if (setErr) throw new Error(setErr.message);
     if (!settings?.fb_access_token || !settings?.fb_ad_account_id) {
-      throw new Error("Conecte sua conta do Facebook Ads antes de sincronizar.");
+      throw new Error("Conecte sua conta do Meta Ads antes de sincronizar.");
     }
 
     const adAccountId = normalizeAdAccountId(settings.fb_ad_account_id);

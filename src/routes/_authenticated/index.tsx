@@ -104,7 +104,7 @@ function Dashboard() {
 
   const [showFbSpend] = useFbShowSpend();
 
-  // Sync manual do Facebook Ads
+  // Sync manual do Meta Ads
 
   const syncAds = useServerFn(syncFacebookAds);
   const [syncingAds, setSyncingAds] = useState(false);
@@ -176,7 +176,7 @@ function Dashboard() {
     };
   });
 
-  // Ads metrics dentro do período selecionado. Se existir dado na aba Facebook Ads,
+  // Ads metrics dentro do período selecionado. Se existir dado na aba Meta Ads,
   // ela é a fonte oficial do card para bater com o Gerenciador de Anúncios.
   const adsInRange = state.ads.filter((a) => {
     const d = dateOnlyToLocalDate(a.date);
@@ -313,7 +313,7 @@ function Dashboard() {
           <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <Row label="Faturamento Total" value={m(brl(fin.revenue))} positive />
             <Row label="(-) Custos dos Produtos" value={`- ${m(brl(fin.cogs))}`} />
-            <Row label="(-) Facebook Ads" value={`- ${m(brl(fin.adsSpend))}`} />
+            <Row label="(-) Meta Ads" value={`- ${m(brl(fin.adsSpend))}`} />
             <Row label="(-) Despesas Operacionais" value={`- ${m(brl(fin.opEx))}`} />
             <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${m(brl(fin.motoboyCost))}`} />
             <div className="sm:col-span-2 border-t border-border pt-3 flex items-center justify-between">
@@ -330,7 +330,7 @@ function Dashboard() {
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
                 <Megaphone className="h-3.5 w-3.5 text-primary" />
               </span>
-              Facebook Ads
+              Meta Ads
             </span>
             <div className="flex items-center gap-2">
               <button

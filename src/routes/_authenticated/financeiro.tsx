@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/financeiro")({
 });
 
 const catList: { value: ExpenseCategory; label: string }[] = [
-  { value: "ads", label: "Facebook Ads" },
+  { value: "ads", label: "Meta Ads" },
   { value: "mercadorias", label: "Mercadorias" },
   { value: "motoboy", label: "Motoboy" },
   { value: "embalagens", label: "Embalagens" },

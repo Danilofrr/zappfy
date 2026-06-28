@@ -310,13 +310,13 @@ function AdminSettings() {
               <CardDescription>URLs do YouTube exibidas nas páginas de integração da dashboard do cliente.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <Field label="Tutorial — Integração Facebook Ads">
+              <Field label="Tutorial — Integração Meta Ads">
                 <Input
                   value={s.tutorials?.facebookAdsYoutubeUrl ?? ""}
                   onChange={(e) => set("tutorials", { facebookAdsYoutubeUrl: e.target.value })}
                   placeholder="https://www.youtube.com/watch?v=..."
                 />
-                <p className="text-xs text-muted-foreground mt-1">Aparece como botão "Ver tutorial" na aba Integrações → Facebook Ads do cliente.</p>
+                <p className="text-xs text-muted-foreground mt-1">Aparece como botão "Ver tutorial" na aba Integrações → Meta Ads do cliente.</p>
               </Field>
             </CardContent>
           </Card>
