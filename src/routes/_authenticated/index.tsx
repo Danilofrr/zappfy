@@ -183,14 +183,12 @@ function Dashboard() {
     return d >= range.start && d < range.end;
   });
   const adsEntryInvested = adsInRange.reduce((a, x) => a + x.invested, 0);
-  const adsEntryPurchases = adsInRange.reduce((a, x) => a + x.purchases, 0);
-  const adsEntryRevenue = adsInRange.reduce((a, x) => a + x.revenue, 0);
   const hasAdsEntriesInRange = adsInRange.length > 0;
   const adsInvested = hasAdsEntriesInRange ? adsEntryInvested : fin.adsSpend;
-  // Fallback: se a Meta não envia revenue/purchases (Pixel sem valor), usa os pedidos reais do período
-  // para que o ROAS apareça sempre que houver faturamento.
-  const adsPurchases = hasAdsEntriesInRange && adsEntryPurchases > 0 ? adsEntryPurchases : fin.ordersCount;
-  const adsRevenue = hasAdsEntriesInRange && adsEntryRevenue > 0 ? adsEntryRevenue : fin.revenue;
+  // Compras e faturamento do card devem bater exatamente com a Dashboard.
+  // O Meta Ads fornece apenas o investimento; vendas entram pelos pedidos reais do período.
+  const adsPurchases = fin.ordersCount;
+  const adsRevenue = fin.revenue;
   const adsRoas = adsInvested > 0 ? adsRevenue / adsInvested : 0;
   const adsCpa = adsPurchases > 0 ? adsInvested / adsPurchases : 0;
 
