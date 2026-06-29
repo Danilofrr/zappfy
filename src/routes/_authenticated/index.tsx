@@ -294,8 +294,9 @@ function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
 
         <StatCard label="Faturamento" value={m(brl(fin.revenue))} hint={range.label} icon={DollarSign} />
-        <StatCard label="Lucro Líquido" value={m(brl(fin.profit))} hint={range.label} icon={TrendingUp} tone="success" />
-        <StatCard label="Total Gastos" value={m(brl(fin.cogs + fin.adsSpend + fin.opEx + fin.motoboyCost))} hint={range.label} icon={TrendingDown} tone="danger" />
+        <StatCard label="Lucro Líquido" value={m(brl(adjustedProfit))} hint={range.label} icon={TrendingUp} tone="success" />
+        <StatCard label="Total Gastos" value={m(brl(totalExpenses))} hint={range.label} icon={TrendingDown} tone="danger" />
+
         <StatCard label="Saldo em Caixa" value={m(brl(fin.cash))} hint="acumulado" icon={Wallet} />
         <StatCard label="Pedidos" value={String(fin.ordersCount)} hint={range.label} icon={ShoppingCart} />
         <StatCard label="Meta" value={pct(goalPct)} hint={m(brl(goalRev))} icon={Target} tone="warning" />
