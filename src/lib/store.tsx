@@ -194,6 +194,11 @@ const emptySettings: Settings = {
   deliveryMessageTemplate: DEFAULT_DELIVERY_TEMPLATE,
   customerTrackingMessageTemplate: "",
   motoboyFee: 0,
+  taxPct: 0,
+  cardFeePct: 0,
+  platformFeePct: 0,
+  adsTaxPct: 0,
+  otherFeesPct: 0,
   slug: "",
 };
 
