@@ -315,19 +315,23 @@ function Dashboard() {
             </span>
             <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2.5 py-1">Indicador principal</span>
           </div>
-          <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{m(brl(fin.profit))}</div>
+          <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{m(brl(adjustedProfit))}</div>
 
           <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <Row label="Faturamento Total" value={m(brl(fin.revenue))} positive />
             <Row label="(-) Custos dos Produtos" value={`- ${m(brl(fin.cogs))}`} />
-            <Row label="(-) Meta Ads" value={`- ${m(brl(fin.adsSpend))}`} />
+            <Row label="(-) Meta Ads" value={`- ${m(brl(adsInvested))}`} />
+            {adsTaxPct > 0 && (
+              <Row label={`(-) Imposto Meta Ads (${adsTaxPct.toFixed(2)}%)`} value={`- ${m(brl(adsTaxValue))}`} />
+            )}
             <Row label="(-) Despesas Operacionais" value={`- ${m(brl(fin.opEx))}`} />
             <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${m(brl(fin.motoboyCost))}`} />
             <div className="sm:col-span-2 border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold">(=) Lucro Líquido</span>
-              <span className="text-primary font-bold text-lg">{m(brl(fin.profit))}</span>
+              <span className="text-primary font-bold text-lg">{m(brl(adjustedProfit))}</span>
             </div>
           </div>
+
         </div>
 
         {/* Ads card */}
