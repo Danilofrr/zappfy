@@ -580,15 +580,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const sid = activeStoreId ?? user.id;
       const { data, error } = await supabase.from("orders").insert({ user_id: user.id, store_id: sid, ...fromOrder(o) }).select().single();
       if (error) { toast.error(error.message); return; }
-      // Dispara push de "Venda aprovada!" no celular do dono (fire-and-forget).
-      try {
-        const { notifyOrderCreated } = await import("@/lib/order-notifications.functions");
-        void notifyOrderCreated({ data: { orderId: data.id } }).catch((e) =>
-          console.warn("[order] notify failed", e),
-        );
-      } catch (e) {
-        console.warn("[order] notify import failed", e);
-      }
       // Baixa de estoque para cada item do pedido (ignora cancelado)
       if (o.status !== "cancelado") {
         const updatedProducts: Product[] = [];
@@ -615,7 +606,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }));
       }
     },
-
     async updateOrder(id, patch) {
       const body: any = {};
       if (patch.customer !== undefined) body.customer = patch.customer;
