@@ -171,7 +171,7 @@ export async function subscribeToPush(): Promise<{
 }
 
 export async function unsubscribeFromPush(): Promise<string | null> {
-  if (!isPushSupported()) return null;
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
   const reg = await navigator.serviceWorker.getRegistration("/");
   const sub = await reg?.pushManager.getSubscription();
   if (!sub) return null;
