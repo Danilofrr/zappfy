@@ -119,7 +119,21 @@ export async function subscribeToPush(): Promise<{
   auth: string;
   userAgent: string;
 }> {
-  if (!isPushSupported()) throw new Error("Notificações não são suportadas neste navegador.");
+  const status = getPushSupportStatus();
+  if (status === "ios-needs-pwa") {
+    throw new Error(
+      "Para ativar notificações no iPhone, adicione o Zappfy à Tela de Início. Abra pelo Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.",
+    );
+  }
+  if (status !== "ok") {
+    throw new Error("Notificações não são suportadas neste navegador.");
+  }
+
+  if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+    throw new Error(
+      "Você bloqueou as notificações deste dispositivo. Vá em Ajustes > Notificações > Zappfy e ative Permitir Notificações. Se não aparecer, remova o app da tela inicial e adicione novamente.",
+    );
+  }
 
   const reg = (await navigator.serviceWorker.getRegistration("/")) || (await registerServiceWorker());
   if (!reg) throw new Error("Não foi possível registrar o Service Worker.");
