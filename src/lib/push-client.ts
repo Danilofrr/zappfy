@@ -10,9 +10,50 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return output;
 }
 
-export function isPushSupported(): boolean {
+export function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const iPad = /iPad|iPhone|iPod/.test(ua);
+  // iPadOS 13+ reports as Mac; detect via touch points.
+  const iPadOS = ua.includes("Macintosh") && (navigator as any).maxTouchPoints > 1;
+  return iPad || iPadOS;
+}
+
+export function isStandalonePWA(): boolean {
   if (typeof window === "undefined") return false;
-  return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const mq = window.matchMedia?.("(display-mode: standalone)").matches;
+  const iosStandalone = (window.navigator as any).standalone === true;
+  return !!(mq || iosStandalone);
+}
+
+export function getDeviceType(): "ios" | "android" | "desktop" {
+  if (typeof navigator === "undefined") return "desktop";
+  const ua = navigator.userAgent || "";
+  if (isIOS()) return "ios";
+  if (/Android/i.test(ua)) return "android";
+  return "desktop";
+}
+
+export type PushUnsupportedReason =
+  | "ok"
+  | "ssr"
+  | "ios-needs-pwa"
+  | "no-serviceworker"
+  | "no-pushmanager"
+  | "no-notification";
+
+export function getPushSupportStatus(): PushUnsupportedReason {
+  if (typeof window === "undefined") return "ssr";
+  // iOS only allows Web Push when the site is installed to the Home Screen.
+  if (isIOS() && !isStandalonePWA()) return "ios-needs-pwa";
+  if (!("serviceWorker" in navigator)) return "no-serviceworker";
+  if (!("PushManager" in window)) return "no-pushmanager";
+  if (!("Notification" in window)) return "no-notification";
+  return "ok";
+}
+
+export function isPushSupported(): boolean {
+  return getPushSupportStatus() === "ok";
 }
 
 export function isLovablePreviewHost(): boolean {
