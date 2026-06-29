@@ -23,6 +23,7 @@ import {
   Bike,
   CreditCard,
   Plug,
+  Percent,
 
 
 
