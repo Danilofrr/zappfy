@@ -54,5 +54,9 @@ export const Route = createFileRoute("/_authenticated")({
     return { user: data.user, isAdmin, subscriptionStatus: sub?.status ?? null };
   },
   head: () => ({ links: [{ rel: "manifest", href: "/manifest.webmanifest" }] }),
-  component: () => <Outlet />,
+  component: () => (
+    <ActiveStoreProvider>
+      <Outlet />
+    </ActiveStoreProvider>
+  ),
 });
