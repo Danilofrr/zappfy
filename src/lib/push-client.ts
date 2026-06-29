@@ -10,50 +10,9 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return output;
 }
 
-export function isIOS(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent || "";
-  const iPad = /iPad|iPhone|iPod/.test(ua);
-  // iPadOS 13+ reports as Mac; detect via touch points.
-  const iPadOS = ua.includes("Macintosh") && (navigator as any).maxTouchPoints > 1;
-  return iPad || iPadOS;
-}
-
-export function isStandalonePWA(): boolean {
-  if (typeof window === "undefined") return false;
-  const mq = window.matchMedia?.("(display-mode: standalone)").matches;
-  const iosStandalone = (window.navigator as any).standalone === true;
-  return !!(mq || iosStandalone);
-}
-
-export function getDeviceType(): "ios" | "android" | "desktop" {
-  if (typeof navigator === "undefined") return "desktop";
-  const ua = navigator.userAgent || "";
-  if (isIOS()) return "ios";
-  if (/Android/i.test(ua)) return "android";
-  return "desktop";
-}
-
-export type PushUnsupportedReason =
-  | "ok"
-  | "ssr"
-  | "ios-needs-pwa"
-  | "no-serviceworker"
-  | "no-pushmanager"
-  | "no-notification";
-
-export function getPushSupportStatus(): PushUnsupportedReason {
-  if (typeof window === "undefined") return "ssr";
-  // iOS only allows Web Push when the site is installed to the Home Screen.
-  if (isIOS() && !isStandalonePWA()) return "ios-needs-pwa";
-  if (!("serviceWorker" in navigator)) return "no-serviceworker";
-  if (!("PushManager" in window)) return "no-pushmanager";
-  if (!("Notification" in window)) return "no-notification";
-  return "ok";
-}
-
 export function isPushSupported(): boolean {
-  return getPushSupportStatus() === "ok";
+  if (typeof window === "undefined") return false;
+  return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
 
 export function isLovablePreviewHost(): boolean {
@@ -119,21 +78,7 @@ export async function subscribeToPush(): Promise<{
   auth: string;
   userAgent: string;
 }> {
-  const status = getPushSupportStatus();
-  if (status === "ios-needs-pwa") {
-    throw new Error(
-      "Para ativar notificações no iPhone, adicione o Zappfy à Tela de Início. Abra pelo Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.",
-    );
-  }
-  if (status !== "ok") {
-    throw new Error("Notificações não são suportadas neste navegador.");
-  }
-
-  if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-    throw new Error(
-      "Você bloqueou as notificações deste dispositivo. Vá em Ajustes > Notificações > Zappfy e ative Permitir Notificações. Se não aparecer, remova o app da tela inicial e adicione novamente.",
-    );
-  }
+  if (!isPushSupported()) throw new Error("Notificações não são suportadas neste navegador.");
 
   const reg = (await navigator.serviceWorker.getRegistration("/")) || (await registerServiceWorker());
   if (!reg) throw new Error("Não foi possível registrar o Service Worker.");
@@ -152,11 +97,6 @@ export async function subscribeToPush(): Promise<{
   }
 
   const permission = await Notification.requestPermission();
-  if (permission === "denied") {
-    throw new Error(
-      "Você bloqueou as notificações deste dispositivo. Vá em Ajustes > Notificações > Zappfy e ative Permitir Notificações. Se não aparecer, remova o app da tela inicial e adicione novamente.",
-    );
-  }
   if (permission !== "granted") throw new Error("Permissão de notificação negada.");
 
   let sub = await reg.pushManager.getSubscription();
@@ -171,7 +111,7 @@ export async function subscribeToPush(): Promise<{
 }
 
 export async function unsubscribeFromPush(): Promise<string | null> {
-  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
+  if (!isPushSupported()) return null;
   const reg = await navigator.serviceWorker.getRegistration("/");
   const sub = await reg?.pushManager.getSubscription();
   if (!sub) return null;
