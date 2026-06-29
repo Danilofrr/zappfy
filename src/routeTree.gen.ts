@@ -23,6 +23,7 @@ import { Route as EntregaCourierTokenRouteImport } from './routes/entrega.$couri
 import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
 import { Route as AtivarContaTokenRouteImport } from './routes/ativar-conta.$token'
 import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
+import { Route as AuthenticatedTaxasRouteImport } from './routes/_authenticated/taxas'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedRastreamentoRouteImport } from './routes/_authenticated/rastreamento'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
@@ -128,6 +129,11 @@ const AtivarContaTokenRoute = AtivarContaTokenRouteImport.update({
 const AuthenticatedTrocasRoute = AuthenticatedTrocasRouteImport.update({
   id: '/trocas',
   path: '/trocas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTaxasRoute = AuthenticatedTaxasRouteImport.update({
+  id: '/taxas',
+  path: '/taxas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
@@ -363,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/produtos': typeof AuthenticatedProdutosRoute
   '/rastreamento': typeof AuthenticatedRastreamentoRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/taxas': typeof AuthenticatedTaxasRoute
   '/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
@@ -413,6 +420,7 @@ export interface FileRoutesByTo {
   '/produtos': typeof AuthenticatedProdutosRoute
   '/rastreamento': typeof AuthenticatedRastreamentoRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/taxas': typeof AuthenticatedTaxasRoute
   '/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
@@ -466,6 +474,7 @@ export interface FileRoutesById {
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/rastreamento': typeof AuthenticatedRastreamentoRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/_authenticated/taxas': typeof AuthenticatedTaxasRoute
   '/_authenticated/trocas': typeof AuthenticatedTrocasRoute
   '/ativar-conta/$token': typeof AtivarContaTokenRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
@@ -521,6 +530,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/rastreamento'
     | '/relatorios'
+    | '/taxas'
     | '/trocas'
     | '/ativar-conta/$token'
     | '/checkout/$slug'
@@ -571,6 +581,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/rastreamento'
     | '/relatorios'
+    | '/taxas'
     | '/trocas'
     | '/ativar-conta/$token'
     | '/checkout/$slug'
@@ -623,6 +634,7 @@ export interface FileRouteTypes {
     | '/_authenticated/produtos'
     | '/_authenticated/rastreamento'
     | '/_authenticated/relatorios'
+    | '/_authenticated/taxas'
     | '/_authenticated/trocas'
     | '/ativar-conta/$token'
     | '/checkout/$slug'
@@ -766,6 +778,13 @@ declare module '@tanstack/react-router' {
       path: '/trocas'
       fullPath: '/trocas'
       preLoaderRoute: typeof AuthenticatedTrocasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/taxas': {
+      id: '/_authenticated/taxas'
+      path: '/taxas'
+      fullPath: '/taxas'
+      preLoaderRoute: typeof AuthenticatedTaxasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/relatorios': {
@@ -1083,6 +1102,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRastreamentoRoute: typeof AuthenticatedRastreamentoRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+  AuthenticatedTaxasRoute: typeof AuthenticatedTaxasRoute
   AuthenticatedTrocasRoute: typeof AuthenticatedTrocasRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -1111,6 +1131,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRastreamentoRoute: AuthenticatedRastreamentoRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+  AuthenticatedTaxasRoute: AuthenticatedTaxasRoute,
   AuthenticatedTrocasRoute: AuthenticatedTrocasRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

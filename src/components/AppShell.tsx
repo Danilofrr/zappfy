@@ -23,6 +23,7 @@ import {
   Bike,
   CreditCard,
   Plug,
+  Percent,
 
 
 
@@ -69,6 +70,7 @@ const navGroups: { label: string; items: { to: string; label: string; icon: any 
     items: [
       { to: "/financeiro", label: "Financeiro", icon: Wallet },
       { to: "/precificacao", label: "Precificação", icon: Calculator },
+      { to: "/taxas", label: "Taxas", icon: Percent },
       { to: "/ads", label: "Meta Ads", icon: Megaphone },
       { to: "/personalizar-checkout", label: "Checkout", icon: Palette },
       { to: "/integracoes", label: "Integrações", icon: Plug },
