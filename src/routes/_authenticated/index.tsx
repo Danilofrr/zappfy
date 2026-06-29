@@ -357,13 +357,22 @@ function Dashboard() {
             <Mini label="CPA" value={m(brl(adsCpa))} />
             <Mini label="Compras" value={String(adsPurchases)} />
             <Mini label="Faturamento" value={m(brl(adsRevenue))} />
-            {adsTaxPct > 0 && (
-              <Mini
-                label={`Imposto Meta Ads (${adsTaxPct.toFixed(2)}%)`}
-                value={`${m(brl(adsTaxValue))} • Total ${m(brl(adsTotalCost))}`}
-              />
-            )}
           </div>
+          {adsTaxPct > 0 && (
+            <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+              <div className="text-[11px] uppercase tracking-wider text-destructive font-semibold">
+                Imposto Meta Ads ({adsTaxPct.toFixed(2)}%)
+              </div>
+              <div className="mt-1 flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Valor do imposto</span>
+                <span className="font-semibold text-destructive">{m(brl(adsTaxValue))}</span>
+              </div>
+              <div className="mt-0.5 flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total com imposto</span>
+                <span className="font-semibold">{m(brl(adsTotalCost))}</span>
+              </div>
+            </div>
+          )}
         </div>
 
 
