@@ -122,6 +122,11 @@ export type Settings = {
   deliveryMessageTemplate: string;
   customerTrackingMessageTemplate: string;
   motoboyFee: number;
+  taxPct: number;
+  cardFeePct: number;
+  platformFeePct: number;
+  adsTaxPct: number;
+  otherFeesPct: number;
   slug: string;
 };
 
@@ -189,6 +194,11 @@ const emptySettings: Settings = {
   deliveryMessageTemplate: DEFAULT_DELIVERY_TEMPLATE,
   customerTrackingMessageTemplate: "",
   motoboyFee: 0,
+  taxPct: 0,
+  cardFeePct: 0,
+  platformFeePct: 0,
+  adsTaxPct: 0,
+  otherFeesPct: 0,
   slug: "",
 };
 
@@ -315,6 +325,11 @@ const toSettings = (r: any): Settings => ({
   deliveryMessageTemplate: r.delivery_message_template ?? emptySettings.deliveryMessageTemplate,
   customerTrackingMessageTemplate: r.customer_tracking_message_template ?? "",
   motoboyFee: Number(r.motoboy_fee ?? 0),
+  taxPct: Number(r.tax_pct ?? 0),
+  cardFeePct: Number(r.card_fee_pct ?? 0),
+  platformFeePct: Number(r.platform_fee_pct ?? 0),
+  adsTaxPct: Number(r.ads_tax_pct ?? 0),
+  otherFeesPct: Number(r.other_fees_pct ?? 0),
   slug: r.slug ?? "",
 });
 
@@ -710,6 +725,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.deliveryMessageTemplate !== undefined) patch.delivery_message_template = p.deliveryMessageTemplate;
       if (p.customerTrackingMessageTemplate !== undefined) patch.customer_tracking_message_template = p.customerTrackingMessageTemplate;
       if (p.motoboyFee !== undefined) patch.motoboy_fee = p.motoboyFee;
+      if (p.taxPct !== undefined) patch.tax_pct = p.taxPct;
+      if (p.cardFeePct !== undefined) patch.card_fee_pct = p.cardFeePct;
+      if (p.platformFeePct !== undefined) patch.platform_fee_pct = p.platformFeePct;
+      if (p.adsTaxPct !== undefined) patch.ads_tax_pct = p.adsTaxPct;
+      if (p.otherFeesPct !== undefined) patch.other_fees_pct = p.otherFeesPct;
       if (p.slug !== undefined) patch.slug = p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || null : null;
       const { data, error } = await supabase.from("settings").update(patch).eq("store_id", activeStoreId ?? user.id).select().single();
       if (error) { toast.error(error.message); return; }

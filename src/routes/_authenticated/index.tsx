@@ -191,6 +191,9 @@ function Dashboard() {
   const adsRevenue = fin.revenue;
   const adsRoas = adsInvested > 0 ? adsRevenue / adsInvested : 0;
   const adsCpa = adsPurchases > 0 ? adsInvested / adsPurchases : 0;
+  const adsTaxPct = Number(state.settings.adsTaxPct ?? 0);
+  const adsTaxValue = adsInvested * (adsTaxPct / 100);
+  const adsTotalCost = adsInvested + adsTaxValue;
 
   const periodBtns: { id: Period; label: string }[] = [
     { id: "today", label: "Hoje" },
@@ -349,6 +352,19 @@ function Dashboard() {
           <div className="text-2xl font-bold">{m(brl(adsInvested))}</div>
           <div className="text-xs text-muted-foreground">Investido — {range.label}</div>
 
+          {adsTaxPct > 0 && (
+            <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Imposto Meta Ads ({adsTaxPct.toFixed(2)}%)</span>
+                <span className="font-semibold text-destructive">+ {m(brl(adsTaxValue))}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between border-t border-destructive/20 pt-1.5">
+                <span className="text-muted-foreground">Custo total c/ imposto</span>
+                <span className="font-bold">{m(brl(adsTotalCost))}</span>
+              </div>
+            </div>
+          )}
+
           <div className="mt-5 grid grid-cols-2 gap-3">
             <Mini label="ROAS" value={`${adsRoas.toFixed(2)}x`} />
             <Mini label="CPA" value={m(brl(adsCpa))} />
@@ -356,6 +372,7 @@ function Dashboard() {
             <Mini label="Faturamento" value={m(brl(adsRevenue))} />
           </div>
         </div>
+
 
       </div>
 
