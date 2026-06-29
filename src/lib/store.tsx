@@ -725,6 +725,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.deliveryMessageTemplate !== undefined) patch.delivery_message_template = p.deliveryMessageTemplate;
       if (p.customerTrackingMessageTemplate !== undefined) patch.customer_tracking_message_template = p.customerTrackingMessageTemplate;
       if (p.motoboyFee !== undefined) patch.motoboy_fee = p.motoboyFee;
+      if (p.taxPct !== undefined) patch.tax_pct = p.taxPct;
+      if (p.cardFeePct !== undefined) patch.card_fee_pct = p.cardFeePct;
+      if (p.platformFeePct !== undefined) patch.platform_fee_pct = p.platformFeePct;
+      if (p.adsTaxPct !== undefined) patch.ads_tax_pct = p.adsTaxPct;
+      if (p.otherFeesPct !== undefined) patch.other_fees_pct = p.otherFeesPct;
       if (p.slug !== undefined) patch.slug = p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || null : null;
       const { data, error } = await supabase.from("settings").update(patch).eq("store_id", activeStoreId ?? user.id).select().single();
       if (error) { toast.error(error.message); return; }
