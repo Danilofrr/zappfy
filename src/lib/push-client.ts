@@ -152,6 +152,11 @@ export async function subscribeToPush(): Promise<{
   }
 
   const permission = await Notification.requestPermission();
+  if (permission === "denied") {
+    throw new Error(
+      "Você bloqueou as notificações deste dispositivo. Vá em Ajustes > Notificações > Zappfy e ative Permitir Notificações. Se não aparecer, remova o app da tela inicial e adicione novamente.",
+    );
+  }
   if (permission !== "granted") throw new Error("Permissão de notificação negada.");
 
   let sub = await reg.pushManager.getSubscription();
