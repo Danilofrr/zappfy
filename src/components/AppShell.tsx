@@ -96,7 +96,6 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
   ];
 
   return (
-    <ActiveStoreProvider>
     <div className="min-h-screen bg-background text-foreground">
       {/* Mobile top bar (logo only) */}
       <header
