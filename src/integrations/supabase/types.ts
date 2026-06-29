@@ -1773,6 +1773,7 @@ export type Database = {
       }
     }
     Functions: {
+      _can_manage_store: { Args: { _store_id: string }; Returns: boolean }
       _resolve_courier_session: {
         Args: { _session: string }
         Returns: {
@@ -1837,6 +1838,11 @@ export type Database = {
       }
       courier_logout: { Args: { _session: string }; Returns: boolean }
       courier_me: { Args: { _session: string }; Returns: Json }
+      courier_phone_matches: {
+        Args: { _input_phone: string; _stored_phone: string }
+        Returns: boolean
+      }
+      courier_phone_without_ddi: { Args: { _phone: string }; Returns: string }
       create_courier: {
         Args: {
           _active?: boolean
@@ -1866,6 +1872,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_courier_for_store: {
+        Args: {
+          _active?: boolean
+          _name: string
+          _password: string
+          _phone: string
+          _plate?: string
+          _store_id: string
+          _vehicle?: string
+        }
+        Returns: Json
+      }
       create_my_store: {
         Args: { _name: string; _slug?: string }
         Returns: {
@@ -1885,6 +1903,10 @@ export type Database = {
         }
       }
       delete_courier: { Args: { _id: string }; Returns: boolean }
+      delete_courier_for_store: {
+        Args: { _id: string; _store_id: string }
+        Returns: boolean
+      }
       delete_my_store: { Args: { _store_id: string }; Returns: boolean }
       finalize_delivery_tracking: {
         Args: { _tracking_id: string }
@@ -1953,6 +1975,7 @@ export type Database = {
         Args: { _session: string }
         Returns: Json
       }
+      list_couriers_for_store: { Args: { _store_id: string }; Returns: Json }
       list_my_active_deliveries: { Args: { _session: string }; Returns: Json }
       list_my_stores: {
         Args: never
@@ -1972,9 +1995,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      normalize_courier_phone: { Args: { _phone: string }; Returns: string }
       redeem_trial_invite: { Args: { _code: string }; Returns: Json }
       reset_courier_password: {
         Args: { _id: string; _password_hash: string }
+        Returns: boolean
+      }
+      reset_courier_password_for_store: {
+        Args: { _id: string; _password: string; _store_id: string }
         Returns: boolean
       }
       set_tracking_destination:
@@ -2042,6 +2070,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      update_courier_for_store: {
+        Args: {
+          _active: boolean
+          _id: string
+          _name: string
+          _phone: string
+          _plate: string
+          _store_id: string
+          _vehicle: string
+        }
+        Returns: Json
       }
       update_courier_location: {
         Args: {
