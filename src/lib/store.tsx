@@ -325,6 +325,11 @@ const toSettings = (r: any): Settings => ({
   deliveryMessageTemplate: r.delivery_message_template ?? emptySettings.deliveryMessageTemplate,
   customerTrackingMessageTemplate: r.customer_tracking_message_template ?? "",
   motoboyFee: Number(r.motoboy_fee ?? 0),
+  taxPct: Number(r.tax_pct ?? 0),
+  cardFeePct: Number(r.card_fee_pct ?? 0),
+  platformFeePct: Number(r.platform_fee_pct ?? 0),
+  adsTaxPct: Number(r.ads_tax_pct ?? 0),
+  otherFeesPct: Number(r.other_fees_pct ?? 0),
   slug: r.slug ?? "",
 });
 
