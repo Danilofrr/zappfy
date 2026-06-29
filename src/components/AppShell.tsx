@@ -266,7 +266,6 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
 
       <SupportWhatsBubble mode="dashboard" />
     </div>
-    </ActiveStoreProvider>
   );
 }
 
