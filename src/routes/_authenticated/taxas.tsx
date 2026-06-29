@@ -21,8 +21,6 @@ function Page() {
 
   function save() {
     updateSettings({
-      deliveryLabel: f.deliveryLabel,
-      deliveryFee: Number(f.deliveryFee) || 0,
       motoboyFee: Number(f.motoboyFee) || 0,
       taxPct: Number(f.taxPct) || 0,
       cardFeePct: Number(f.cardFeePct) || 0,
@@ -39,25 +37,7 @@ function Page() {
       subtitle="Centralize aqui todas as taxas e custos operacionais da sua loja"
     >
       <div className="grid lg:grid-cols-2 gap-6">
-        <Card title="Taxa de entrega" icon={Truck} description="Valor cobrado do cliente pela entrega do pedido.">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Nome da entrega">
-              <Input
-                value={f.deliveryLabel}
-                onChange={(e) => setF({ ...f, deliveryLabel: e.target.value })}
-                placeholder="Motoboy, Correios..."
-              />
-            </Field>
-            <Field label="Valor (R$)">
-              <Input
-                type="number"
-                step="0.01"
-                value={f.deliveryFee}
-                onChange={(e) => setF({ ...f, deliveryFee: Number(e.target.value) })}
-              />
-            </Field>
-          </div>
-        </Card>
+
 
         <Card title="Taxa do motoboy" icon={Bike} description="Quanto você paga ao motoboy por entrega. Descontado do lucro.">
           <Field label="Valor por entrega (R$)">
