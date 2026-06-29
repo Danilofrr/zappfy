@@ -191,6 +191,9 @@ function Dashboard() {
   const adsRevenue = fin.revenue;
   const adsRoas = adsInvested > 0 ? adsRevenue / adsInvested : 0;
   const adsCpa = adsPurchases > 0 ? adsInvested / adsPurchases : 0;
+  const adsTaxPct = Number(state.settings.adsTaxPct ?? 0);
+  const adsTaxValue = adsInvested * (adsTaxPct / 100);
+  const adsTotalCost = adsInvested + adsTaxValue;
 
   const periodBtns: { id: Period; label: string }[] = [
     { id: "today", label: "Hoje" },
