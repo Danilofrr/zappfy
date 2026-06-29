@@ -38,6 +38,7 @@ const VEHICLES = [
 ];
 
 function MotoboysPage() {
+  const { activeStoreId } = useActiveStore();
   const [list, setList] = useState<Courier[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -48,17 +49,19 @@ function MotoboysPage() {
   const [saving, setSaving] = useState(false);
 
   async function load() {
+    if (!activeStoreId) { setList([]); setLoading(false); return; }
     setLoading(true);
     const { data, error } = await (supabase as any)
       .from("couriers")
       .select("id, store_id, name, phone, vehicle_type, plate, active, last_login_at, created_at, updated_at")
+      .eq("store_id", activeStoreId)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     setList((data as Courier[]) || []);
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [activeStoreId]);
 
   function openCreate() {
     setEditing(null);
@@ -74,10 +77,8 @@ function MotoboysPage() {
 
   async function submit() {
     if (!form.name.trim() || !form.phone.trim()) { toast.error("Nome e WhatsApp obrigatórios"); return; }
+    if (!activeStoreId) { toast.error("Selecione uma loja ativa"); return; }
     setSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (!uid) { toast.error("Sessão expirada"); setSaving(false); return; }
     if (editing) {
       const { error } = await (supabase as any)
         .from("couriers")
@@ -89,14 +90,15 @@ function MotoboysPage() {
           active: form.active,
         })
         .eq("id", editing.id)
-        .eq("store_id", uid);
+        .eq("store_id", activeStoreId);
       if (error) { toast.error(error.message); setSaving(false); return; }
       toast.success("Motoboy atualizado");
     } else {
       if (!form.password || form.password.length < 6) { toast.error("Senha do motoboy deve ter ao menos 6 caracteres"); setSaving(false); return; }
+      // pgcrypto crypt() espera prefixo $2a$ (Blowfish). bcryptjs gera $2a$ por padrão.
       const password_hash = await bcrypt.hash(form.password, 10);
       const { error } = await (supabase as any).from("couriers").insert({
-        store_id: uid,
+        store_id: activeStoreId,
         name: form.name.trim(),
         phone: form.phone.trim(),
         password_hash,
@@ -113,28 +115,24 @@ function MotoboysPage() {
   }
 
   async function toggleActive(c: Courier) {
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (!uid) return;
+    if (!activeStoreId) return;
     const { error } = await (supabase as any)
       .from("couriers")
       .update({ active: !c.active })
       .eq("id", c.id)
-      .eq("store_id", uid);
+      .eq("store_id", activeStoreId);
     if (error) { toast.error(error.message); return; }
     load();
   }
 
   async function remove(c: Courier) {
     if (!confirm(`Excluir motoboy "${c.name}"?`)) return;
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (!uid) return;
+    if (!activeStoreId) return;
     const { error } = await (supabase as any)
       .from("couriers")
       .delete()
       .eq("id", c.id)
-      .eq("store_id", uid);
+      .eq("store_id", activeStoreId);
     if (error) { toast.error(error.message); return; }
     toast.success("Motoboy excluído");
     load();
@@ -143,15 +141,13 @@ function MotoboysPage() {
   async function confirmReset() {
     if (!resetting) return;
     if (resetPwd.length < 6) { toast.error("Senha do motoboy deve ter ao menos 6 caracteres"); return; }
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (!uid) return;
+    if (!activeStoreId) return;
     const password_hash = await bcrypt.hash(resetPwd, 10);
     const { error } = await (supabase as any)
       .from("couriers")
       .update({ password_hash })
       .eq("id", resetting.id)
-      .eq("store_id", uid);
+      .eq("store_id", activeStoreId);
     if (error) { toast.error(error.message); return; }
     toast.success("Senha redefinida");
     setResetting(null); setResetPwd("");
