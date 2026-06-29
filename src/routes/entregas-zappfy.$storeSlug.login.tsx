@@ -9,6 +9,23 @@ import { toast } from "sonner";
 import { getCourierSession, setCourierSession, clearCourierSession } from "@/lib/courier-session";
 import { rememberEntregasPwa } from "@/lib/entregas-pwa";
 
+const normalizePhone = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  return digits.length === 10 || digits.length === 11 ? `55${digits}` : digits;
+};
+
+const logCourierLoginDebug = (debug: any) => {
+  if (!debug) return;
+  console.log("[Zappfy Courier Login Debug]", {
+    whatsapp_normalizado_digitado: debug.input_phone_normalized ?? null,
+    whatsapp_encontrado_no_banco: debug.matched_phone ?? null,
+    store_id_usado_na_busca: debug.store_id ?? null,
+    motoboy_encontrado: Boolean(debug.courier_found),
+    senha_bateu: Boolean(debug.password_match),
+    motoboy_ativo: debug.active ?? null,
+    pertence_a_loja: debug.belongs_to_store ?? null,
+  });
+};
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug/login")({
   ssr: false,
@@ -73,16 +90,23 @@ function LoginPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.phone.trim() || !form.password) { toast.error("Informe WhatsApp e senha"); return; }
+    const normalizedPhone = normalizePhone(form.phone);
     setLoading(true);
     try {
+      console.log("[Zappfy Courier Login Debug] WhatsApp digitado normalizado", normalizedPhone);
       const { data: result, error: loginError } = await (supabase as any).rpc("courier_login", {
         _slug: storeSlug,
-        _phone: form.phone.trim(),
+        _phone: normalizedPhone,
         _password: form.password,
       });
+      logCourierLoginDebug(result?.debug);
       if (loginError) {
         const msg = loginError.message || "WhatsApp ou senha inválidos";
-        toast.error(msg.includes("desativado") ? msg : "WhatsApp ou senha inválidos");
+        toast.error(msg);
+        return;
+      }
+      if (result?.ok === false) {
+        toast.error(result.error || "WhatsApp ou senha inválidos");
         return;
       }
       if (!result?.session_token) { toast.error("WhatsApp ou senha inválidos"); return; }
