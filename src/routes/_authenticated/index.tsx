@@ -194,6 +194,9 @@ function Dashboard() {
   const adsTaxPct = Number(state.settings.adsTaxPct ?? 0);
   const adsTaxValue = adsInvested * (adsTaxPct / 100);
   const adsTotalCost = adsInvested + adsTaxValue;
+  const totalExpenses = fin.cogs + adsTotalCost + fin.opEx + fin.motoboyCost;
+  const adjustedProfit = fin.profit - adsTaxValue;
+
 
   const periodBtns: { id: Period; label: string }[] = [
     { id: "today", label: "Hoje" },
@@ -291,8 +294,9 @@ function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
 
         <StatCard label="Faturamento" value={m(brl(fin.revenue))} hint={range.label} icon={DollarSign} />
-        <StatCard label="Lucro Líquido" value={m(brl(fin.profit))} hint={range.label} icon={TrendingUp} tone="success" />
-        <StatCard label="Total Gastos" value={m(brl(fin.cogs + fin.adsSpend + fin.opEx + fin.motoboyCost))} hint={range.label} icon={TrendingDown} tone="danger" />
+        <StatCard label="Lucro Líquido" value={m(brl(adjustedProfit))} hint={range.label} icon={TrendingUp} tone="success" />
+        <StatCard label="Total Gastos" value={m(brl(totalExpenses))} hint={range.label} icon={TrendingDown} tone="danger" />
+
         <StatCard label="Saldo em Caixa" value={m(brl(fin.cash))} hint="acumulado" icon={Wallet} />
         <StatCard label="Pedidos" value={String(fin.ordersCount)} hint={range.label} icon={ShoppingCart} />
         <StatCard label="Meta" value={pct(goalPct)} hint={m(brl(goalRev))} icon={Target} tone="warning" />
@@ -311,19 +315,23 @@ function Dashboard() {
             </span>
             <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2.5 py-1">Indicador principal</span>
           </div>
-          <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{m(brl(fin.profit))}</div>
+          <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{m(brl(adjustedProfit))}</div>
 
           <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <Row label="Faturamento Total" value={m(brl(fin.revenue))} positive />
             <Row label="(-) Custos dos Produtos" value={`- ${m(brl(fin.cogs))}`} />
-            <Row label="(-) Meta Ads" value={`- ${m(brl(fin.adsSpend))}`} />
+            <Row label="(-) Meta Ads" value={`- ${m(brl(adsInvested))}`} />
+            {adsTaxPct > 0 && (
+              <Row label={`(-) Imposto Meta Ads (${adsTaxPct.toFixed(2)}%)`} value={`- ${m(brl(adsTaxValue))}`} />
+            )}
             <Row label="(-) Despesas Operacionais" value={`- ${m(brl(fin.opEx))}`} />
             <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${m(brl(fin.motoboyCost))}`} />
             <div className="sm:col-span-2 border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold">(=) Lucro Líquido</span>
-              <span className="text-primary font-bold text-lg">{m(brl(fin.profit))}</span>
+              <span className="text-primary font-bold text-lg">{m(brl(adjustedProfit))}</span>
             </div>
           </div>
+
         </div>
 
         {/* Ads card */}
