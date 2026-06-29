@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getEntregasStandaloneRedirectSlug } from "@/lib/entregas-pwa";
+import { ActiveStoreProvider } from "@/lib/active-store";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -53,5 +54,9 @@ export const Route = createFileRoute("/_authenticated")({
     return { user: data.user, isAdmin, subscriptionStatus: sub?.status ?? null };
   },
   head: () => ({ links: [{ rel: "manifest", href: "/manifest.webmanifest" }] }),
-  component: () => <Outlet />,
+  component: () => (
+    <ActiveStoreProvider>
+      <Outlet />
+    </ActiveStoreProvider>
+  ),
 });
