@@ -1040,6 +1040,8 @@ export type Database = {
       settings: {
         Row: {
           address: string
+          ads_tax_pct: number
+          card_fee_pct: number
           checkout_bg_color: string
           checkout_button_color: string
           checkout_button_label: string
@@ -1094,17 +1096,22 @@ export type Database = {
           monthly_revenue_goal: number
           motoboy_fee: number
           motoboy_message_template: string | null
+          other_fees_pct: number
           pix_key: string
+          platform_fee_pct: number
           shipping_options: Json | null
           slug: string | null
           store_id: string
           store_name: string
+          tax_pct: number
           updated_at: string
           user_id: string
           whatsapp: string
         }
         Insert: {
           address?: string
+          ads_tax_pct?: number
+          card_fee_pct?: number
           checkout_bg_color?: string
           checkout_button_color?: string
           checkout_button_label?: string
@@ -1159,17 +1166,22 @@ export type Database = {
           monthly_revenue_goal?: number
           motoboy_fee?: number
           motoboy_message_template?: string | null
+          other_fees_pct?: number
           pix_key?: string
+          platform_fee_pct?: number
           shipping_options?: Json | null
           slug?: string | null
           store_id: string
           store_name?: string
+          tax_pct?: number
           updated_at?: string
           user_id: string
           whatsapp?: string
         }
         Update: {
           address?: string
+          ads_tax_pct?: number
+          card_fee_pct?: number
           checkout_bg_color?: string
           checkout_button_color?: string
           checkout_button_label?: string
@@ -1224,11 +1236,14 @@ export type Database = {
           monthly_revenue_goal?: number
           motoboy_fee?: number
           motoboy_message_template?: string | null
+          other_fees_pct?: number
           pix_key?: string
+          platform_fee_pct?: number
           shipping_options?: Json | null
           slug?: string | null
           store_id?: string
           store_name?: string
+          tax_pct?: number
           updated_at?: string
           user_id?: string
           whatsapp?: string

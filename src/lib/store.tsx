@@ -122,6 +122,11 @@ export type Settings = {
   deliveryMessageTemplate: string;
   customerTrackingMessageTemplate: string;
   motoboyFee: number;
+  taxPct: number;
+  cardFeePct: number;
+  platformFeePct: number;
+  adsTaxPct: number;
+  otherFeesPct: number;
   slug: string;
 };
 

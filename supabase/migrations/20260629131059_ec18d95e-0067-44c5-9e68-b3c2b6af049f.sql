@@ -1,0 +1,6 @@
+ALTER TABLE public.settings
+  ADD COLUMN IF NOT EXISTS tax_pct numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS card_fee_pct numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS platform_fee_pct numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS ads_tax_pct numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS other_fees_pct numeric NOT NULL DEFAULT 0;
