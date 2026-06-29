@@ -37,6 +37,9 @@ const VEHICLES = [
   { v: "a-pe", l: "A pé" },
 ];
 
+const normalizePhone = (value: string) => value.replace(/\D/g, "");
+const toPgcryptoBcryptHash = (hash: string) => hash.replace(/^\$2b\$/, "$2a$");
+
 function MotoboysPage() {
   const { activeStoreId } = useActiveStore();
   const [list, setList] = useState<Courier[]>([]);
@@ -77,6 +80,8 @@ function MotoboysPage() {
 
   async function submit() {
     if (!form.name.trim() || !form.phone.trim()) { toast.error("Nome e WhatsApp obrigatórios"); return; }
+    const phone = normalizePhone(form.phone);
+    if (phone.length < 10) { toast.error("Informe um WhatsApp válido com DDD"); return; }
     if (!activeStoreId) { toast.error("Selecione uma loja ativa"); return; }
     setSaving(true);
     if (editing) {
@@ -84,7 +89,7 @@ function MotoboysPage() {
         .from("couriers")
         .update({
           name: form.name.trim(),
-          phone: form.phone.trim(),
+          phone,
           vehicle_type: form.vehicle_type,
           plate: form.plate.trim() || null,
           active: form.active,
@@ -95,12 +100,12 @@ function MotoboysPage() {
       toast.success("Motoboy atualizado");
     } else {
       if (!form.password || form.password.length < 6) { toast.error("Senha do motoboy deve ter ao menos 6 caracteres"); setSaving(false); return; }
-      // pgcrypto crypt() espera prefixo $2a$ (Blowfish). bcryptjs gera $2a$ por padrão.
-      const password_hash = await bcrypt.hash(form.password, 10);
+      // pgcrypto crypt() valida bcrypt com prefixo $2a$; bcryptjs pode gerar $2b$.
+      const password_hash = toPgcryptoBcryptHash(await bcrypt.hash(form.password, 10));
       const { error } = await (supabase as any).from("couriers").insert({
         store_id: activeStoreId,
         name: form.name.trim(),
-        phone: form.phone.trim(),
+        phone,
         password_hash,
         vehicle_type: form.vehicle_type,
         plate: form.plate.trim() || null,
@@ -142,7 +147,7 @@ function MotoboysPage() {
     if (!resetting) return;
     if (resetPwd.length < 6) { toast.error("Senha do motoboy deve ter ao menos 6 caracteres"); return; }
     if (!activeStoreId) return;
-    const password_hash = await bcrypt.hash(resetPwd, 10);
+    const password_hash = toPgcryptoBcryptHash(await bcrypt.hash(resetPwd, 10));
     const { error } = await (supabase as any)
       .from("couriers")
       .update({ password_hash })
@@ -212,7 +217,7 @@ function MotoboysPage() {
             <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div><Label>WhatsApp (login) *</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="5581999990000" /></div>
             {!editing && (
-              <div><Label>Senha *</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mínimo 4 caracteres" /></div>
+              <div><Label>Senha *</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mínimo 6 caracteres" /></div>
             )}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -250,7 +255,7 @@ function MotoboysPage() {
           </DialogHeader>
           <div>
             <Label>Nova senha</Label>
-            <Input type="password" value={resetPwd} onChange={(e) => setResetPwd(e.target.value)} placeholder="mínimo 4 caracteres" />
+            <Input type="password" value={resetPwd} onChange={(e) => setResetPwd(e.target.value)} placeholder="mínimo 6 caracteres" />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setResetting(null)}>Cancelar</Button>
