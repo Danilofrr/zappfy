@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Truck, Bike, Receipt, CreditCard, Building2, Megaphone, Percent } from "lucide-react";
+import { Bike, Receipt, CreditCard, Building2, Megaphone, Percent } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/taxas")({
   head: () => ({ meta: [{ title: "Taxas — ZappFy" }] }),
