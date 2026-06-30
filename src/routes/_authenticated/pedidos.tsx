@@ -933,6 +933,7 @@ function loadMachineFees(): MachineFees {
 function saveMachineFees(f: MachineFees) {
   if (typeof window !== "undefined") localStorage.setItem("machineFees", JSON.stringify(f));
 }
+function noInstallmentBrand(b: string) { return b === "DÉBITO" || b === "PIX" || b === "DINHEIRO"; }
 
 function SectionLabel({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
   return (
