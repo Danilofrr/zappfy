@@ -945,7 +945,7 @@ function SectionLabel({ icon: Icon, children }: { icon: any; children: React.Rea
 }
 
 function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (v: boolean) => void; onCreate: (o: Omit<Order, "id">) => void }) {
-  const { state } = useStore();
+  const { state, updateSettings } = useStore();
   const [form, setForm] = useState({
     customer: "", phone: "", address: "", district: "", city: "",
     payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
