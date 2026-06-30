@@ -49,6 +49,7 @@ function toSettings(r: any): Settings {
     platformFeePct: Number(r.platform_fee_pct ?? 0),
     adsTaxPct: Number(r.ads_tax_pct ?? 0),
     otherFeesPct: Number(r.other_fees_pct ?? 0),
+    cardMachineFees: (r.card_machine_fees && typeof r.card_machine_fees === "object") ? r.card_machine_fees : {},
     deliveryLabel: r.delivery_label ?? "Entrega",
     monthlyRevenueGoal: Number(r.monthly_revenue_goal ?? 0),
     monthlyProfitGoal: Number(r.monthly_profit_goal ?? 0),
