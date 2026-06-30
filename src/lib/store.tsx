@@ -733,6 +733,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.platformFeePct !== undefined) patch.platform_fee_pct = p.platformFeePct;
       if (p.adsTaxPct !== undefined) patch.ads_tax_pct = p.adsTaxPct;
       if (p.otherFeesPct !== undefined) patch.other_fees_pct = p.otherFeesPct;
+      if (p.cardMachineFees !== undefined) patch.card_machine_fees = p.cardMachineFees as any;
       if (p.slug !== undefined) patch.slug = p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || null : null;
       const { data, error } = await supabase.from("settings").update(patch).eq("store_id", activeStoreId ?? user.id).select().single();
       if (error) { toast.error(error.message); return; }
