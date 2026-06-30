@@ -329,7 +329,7 @@ function Dashboard() {
             />
             <Row label="(-) Despesas Operacionais" value={`- ${m(brl(fin.opEx))}`} />
             <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${m(brl(fin.motoboyCost))}`} />
-            <div className="sm:col-span-2 border-t border-border pt-3 flex items-center justify-between">
+            <div className="border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold">(=) Lucro Líquido</span>
               <span className="text-primary font-bold text-lg">{m(brl(adjustedProfit))}</span>
             </div>
