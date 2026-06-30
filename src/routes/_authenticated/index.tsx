@@ -320,7 +320,7 @@ function Dashboard() {
           </div>
           <div className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">{m(brl(adjustedProfit))}</div>
 
-          <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          <div className="mt-6 flex flex-col gap-2.5 text-sm">
             <Row label="Faturamento Total" value={m(brl(fin.revenue))} positive />
             <Row label="(-) Custos dos Produtos" value={`- ${m(brl(fin.cogs))}`} />
             <Row
