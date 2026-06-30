@@ -371,7 +371,7 @@ function Dashboard() {
           {adsTaxPct > 0 && (
             <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Imposto Meta Ads ({adsTaxPct.toFixed(2)}%)</span>
+                <span className="text-muted-foreground">Imposto ({adsTaxPct.toFixed(2)}%)</span>
                 <span className="font-semibold text-destructive">+ {m(brl(adsTaxValue))}</span>
               </div>
               <div className="mt-1 flex items-center justify-between border-t border-destructive/20 pt-1.5">
