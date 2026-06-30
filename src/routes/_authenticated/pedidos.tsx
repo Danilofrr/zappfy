@@ -948,7 +948,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   const { state, updateSettings } = useStore();
   const [form, setForm] = useState({
     customer: "", phone: "", address: "", district: "", city: "",
-    payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
+    payment: "pix" as "pix" | "cartao" | "dinheiro", status: "aguardando" as OrderStatus, notes: "",
   });
   const [orderDate, setOrderDate] = useState<string>(() => {
     const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
