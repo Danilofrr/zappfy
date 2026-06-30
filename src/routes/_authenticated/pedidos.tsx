@@ -974,6 +974,15 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   // Modal de taxas de maquininha
   const [feesOpen, setFeesOpen] = useState(false);
 
+  // Bandeira / parcelas (somente quando pagamento = cartão)
+  const [cardBrand, setCardBrand] = useState<string>("VISA");
+  const [cardInstallments, setCardInstallments] = useState<number>(1);
+  const machineFees: MachineFees = (state.settings.cardMachineFees && Object.keys(state.settings.cardMachineFees).length > 0)
+    ? state.settings.cardMachineFees
+    : loadMachineFees();
+  const currentCardFeePct = machineFees[cardBrand]?.[cardInstallments] ?? 0;
+
+
   const selectedIds = new Set(lines.map((l) => l.productId));
   const available = state.products.filter((p) => !selectedIds.has(p.id));
   const subtotal = lines.reduce((sum, l) => {
