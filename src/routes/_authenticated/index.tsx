@@ -323,9 +323,14 @@ function Dashboard() {
           <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <Row label="Faturamento Total" value={m(brl(fin.revenue))} positive />
             <Row label="(-) Custos dos Produtos" value={`- ${m(brl(fin.cogs))}`} />
-            <Row label="(-) Meta Ads" value={`- ${m(brl(adsInvested))}`} />
+            <Row
+              label={adsTaxPct > 0 ? `(-) Meta Ads (com imposto ${adsTaxPct.toFixed(2)}%)` : "(-) Meta Ads"}
+              value={`- ${m(brl(adsTotalCost))}`}
+            />
             {adsTaxPct > 0 && (
-              <Row label={`(-) Imposto Meta Ads (${adsTaxPct.toFixed(2)}%)`} value={`- ${m(brl(adsTaxValue))}`} />
+              <div className="sm:col-span-2 -mt-2 text-[11px] text-muted-foreground pl-1">
+                Investimento {m(brl(adsInvested))} + Imposto {m(brl(adsTaxValue))} = {m(brl(adsTotalCost))}
+              </div>
             )}
             <Row label="(-) Despesas Operacionais" value={`- ${m(brl(fin.opEx))}`} />
             <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${m(brl(fin.motoboyCost))}`} />
