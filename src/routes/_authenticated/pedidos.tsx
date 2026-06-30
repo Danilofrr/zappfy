@@ -1403,7 +1403,7 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Settings className="h-4 w-4" /> Taxas de maquininha</DialogTitle>
-          <DialogDescription>Configure a taxa (%) por bandeira e por parcela. Salvo neste navegador.</DialogDescription>
+          <DialogDescription>Configure a taxa (%) por bandeira e por parcela. Salvo nas configurações da loja (aba Taxas).</DialogDescription>
         </DialogHeader>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
