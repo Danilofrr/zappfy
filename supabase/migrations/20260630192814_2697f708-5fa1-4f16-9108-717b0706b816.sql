@@ -1,0 +1,1 @@
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS card_machine_fees jsonb NOT NULL DEFAULT '{}'::jsonb;

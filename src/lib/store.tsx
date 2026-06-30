@@ -127,6 +127,7 @@ export type Settings = {
   platformFeePct: number;
   adsTaxPct: number;
   otherFeesPct: number;
+  cardMachineFees: Record<string, Record<number, number>>;
   slug: string;
 };
 

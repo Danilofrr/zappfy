@@ -1042,6 +1042,7 @@ export type Database = {
           address: string
           ads_tax_pct: number
           card_fee_pct: number
+          card_machine_fees: Json
           checkout_bg_color: string
           checkout_button_color: string
           checkout_button_label: string
@@ -1112,6 +1113,7 @@ export type Database = {
           address?: string
           ads_tax_pct?: number
           card_fee_pct?: number
+          card_machine_fees?: Json
           checkout_bg_color?: string
           checkout_button_color?: string
           checkout_button_label?: string
@@ -1182,6 +1184,7 @@ export type Database = {
           address?: string
           ads_tax_pct?: number
           card_fee_pct?: number
+          card_machine_fees?: Json
           checkout_bg_color?: string
           checkout_button_color?: string
           checkout_button_label?: string
