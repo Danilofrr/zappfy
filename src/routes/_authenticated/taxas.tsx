@@ -111,6 +111,50 @@ function Page() {
         </Card>
       </div>
 
+      <div className="mt-6">
+        <Card title="Taxas da maquininha (Crédito / Débito)" icon={Calculator} description="Configure a taxa (%) por bandeira e por parcela. Ao criar um pedido com cartão, você escolhe a bandeira e em quantas parcelas — a taxa é aplicada automaticamente.">
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs uppercase tracking-wider text-muted-foreground">
+                  <th className="text-left px-2 py-2 font-medium">Parcelas</th>
+                  {MACHINE_BRANDS.map((b) => (
+                    <th key={b} className="text-left px-2 py-2 font-medium">{b}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((parcela) => (
+                  <tr key={parcela} className="border-t border-border">
+                    <td className="px-2 py-2 text-muted-foreground font-medium whitespace-nowrap">{parcela}x</td>
+                    {MACHINE_BRANDS.map((b) => {
+                      if (parcela > 1 && noInstallment(b)) {
+                        return <td key={b} className="px-2 py-2 text-muted-foreground text-center">—</td>;
+                      }
+                      const val = (f.cardMachineFees ?? {})[b]?.[parcela] ?? 0;
+                      return (
+                        <td key={b} className="px-2 py-2">
+                          <div className="relative min-w-[90px]">
+                            <Input
+                              type="number" min={0} step="0.01"
+                              value={val || ""}
+                              onChange={(e) => setMachineFee(b, parcela, Number(e.target.value))}
+                              className="h-8 pr-7 text-sm"
+                              placeholder="0"
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+
       <div className="mt-6 flex justify-end">
         <Button onClick={save}>Salvar taxas</Button>
       </div>
