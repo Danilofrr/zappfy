@@ -332,6 +332,7 @@ const toSettings = (r: any): Settings => ({
   platformFeePct: Number(r.platform_fee_pct ?? 0),
   adsTaxPct: Number(r.ads_tax_pct ?? 0),
   otherFeesPct: Number(r.other_fees_pct ?? 0),
+  cardMachineFees: (r.card_machine_fees && typeof r.card_machine_fees === "object") ? r.card_machine_fees as Record<string, Record<number, number>> : {},
   slug: r.slug ?? "",
 });
 
