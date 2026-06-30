@@ -30,8 +30,19 @@ function Page() {
       platformFeePct: Number(f.platformFeePct) || 0,
       adsTaxPct: Number(f.adsTaxPct) || 0,
       otherFeesPct: Number(f.otherFeesPct) || 0,
+      cardMachineFees: f.cardMachineFees ?? {},
     });
     toast.success("Taxas salvas");
+  }
+
+  function setMachineFee(brand: string, parcela: number, value: number) {
+    setF((prev) => ({
+      ...prev,
+      cardMachineFees: {
+        ...(prev.cardMachineFees ?? {}),
+        [brand]: { ...((prev.cardMachineFees ?? {})[brand] || {}), [parcela]: value },
+      },
+    }));
   }
 
   return (
