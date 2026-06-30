@@ -324,7 +324,7 @@ function Dashboard() {
             <Row label="Faturamento Total" value={m(brl(fin.revenue))} positive />
             <Row label="(-) Custos dos Produtos" value={`- ${m(brl(fin.cogs))}`} />
             <Row
-              label={adsTaxPct > 0 ? `(-) Meta Ads (com imposto ${adsTaxPct.toFixed(2)}%)` : "(-) Meta Ads"}
+              label="(-) Meta Ads"
               value={`- ${m(brl(adsTotalCost))}`}
             />
             {adsTaxPct > 0 && (
