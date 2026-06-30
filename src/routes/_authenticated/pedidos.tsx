@@ -1232,9 +1232,48 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 </Select>
               </Field>
             </div>
+
+            {form.payment === "cartao" && (
+              <div className="rounded-lg border border-border/60 bg-background/40 p-2.5 space-y-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                  <CreditCard className="h-3.5 w-3.5" />
+                  <span>Maquininha — bandeira e parcelas</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="BANDEIRA">
+                    <Select value={cardBrand} onValueChange={(v) => { setCardBrand(v); if (noInstallmentBrand(v)) setCardInstallments(1); }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {MACHINE_BRANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="PARCELAS">
+                    <Select
+                      value={String(cardInstallments)}
+                      onValueChange={(v) => setCardInstallments(Number(v))}
+                      disabled={noInstallmentBrand(cardBrand)}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                  <span>Taxa configurada: <strong className="text-foreground">{currentCardFeePct.toFixed(2)}%</strong></span>
+                  <span>Custo estimado: <strong className="text-foreground">{brl(total * currentCardFeePct / 100)}</strong></span>
+                </div>
+              </div>
+            )}
+
             <Field label="Data do pedido" icon={CalendarIcon} iconTone="primary">
               <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
             </Field>
+
 
             {/* Segundo pagamento (opcional) */}
             <div className="pt-1 border-t border-border/60 mt-1">
