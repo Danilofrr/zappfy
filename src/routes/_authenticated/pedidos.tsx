@@ -933,6 +933,7 @@ function loadMachineFees(): MachineFees {
 function saveMachineFees(f: MachineFees) {
   if (typeof window !== "undefined") localStorage.setItem("machineFees", JSON.stringify(f));
 }
+function noInstallmentBrand(b: string) { return b === "DÉBITO" || b === "PIX" || b === "DINHEIRO"; }
 
 function SectionLabel({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
   return (
@@ -944,10 +945,10 @@ function SectionLabel({ icon: Icon, children }: { icon: any; children: React.Rea
 }
 
 function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (v: boolean) => void; onCreate: (o: Omit<Order, "id">) => void }) {
-  const { state } = useStore();
+  const { state, updateSettings } = useStore();
   const [form, setForm] = useState({
     customer: "", phone: "", address: "", district: "", city: "",
-    payment: "pix" as const, status: "aguardando" as OrderStatus, notes: "",
+    payment: "pix" as "pix" | "cartao" | "dinheiro", status: "aguardando" as OrderStatus, notes: "",
   });
   const [orderDate, setOrderDate] = useState<string>(() => {
     const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -972,6 +973,15 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
 
   // Modal de taxas de maquininha
   const [feesOpen, setFeesOpen] = useState(false);
+
+  // Bandeira / parcelas (somente quando pagamento = cartão)
+  const [cardBrand, setCardBrand] = useState<string>("VISA");
+  const [cardInstallments, setCardInstallments] = useState<number>(1);
+  const machineFees: MachineFees = (state.settings.cardMachineFees && Object.keys(state.settings.cardMachineFees).length > 0)
+    ? state.settings.cardMachineFees
+    : loadMachineFees();
+  const currentCardFeePct = machineFees[cardBrand]?.[cardInstallments] ?? 0;
+
 
   const selectedIds = new Set(lines.map((l) => l.productId));
   const available = state.products.filter((p) => !selectedIds.has(p.id));
@@ -1222,9 +1232,48 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 </Select>
               </Field>
             </div>
+
+            {form.payment === "cartao" && (
+              <div className="rounded-lg border border-border/60 bg-background/40 p-2.5 space-y-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                  <CreditCard className="h-3.5 w-3.5" />
+                  <span>Maquininha — bandeira e parcelas</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="BANDEIRA">
+                    <Select value={cardBrand} onValueChange={(v) => { setCardBrand(v); if (noInstallmentBrand(v)) setCardInstallments(1); }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {MACHINE_BRANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="PARCELAS">
+                    <Select
+                      value={String(cardInstallments)}
+                      onValueChange={(v) => setCardInstallments(Number(v))}
+                      disabled={noInstallmentBrand(cardBrand)}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                  <span>Taxa configurada: <strong className="text-foreground">{currentCardFeePct.toFixed(2)}%</strong></span>
+                  <span>Custo estimado: <strong className="text-foreground">{brl(total * currentCardFeePct / 100)}</strong></span>
+                </div>
+              </div>
+            )}
+
             <Field label="Data do pedido" icon={CalendarIcon} iconTone="primary">
               <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
             </Field>
+
 
             {/* Segundo pagamento (opcional) */}
             <div className="pt-1 border-t border-border/60 mt-1">
@@ -1295,6 +1344,10 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
               if (shippingValue > 0) extraNotesLines.push(`Entrega: ${brl(shippingValue)}`);
               if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
               if (discountAmount > 0) extraNotesLines.push(`Desconto${couponApplied ? ` (cupom ${couponApplied})` : ""}: -${brl(discountAmount)}`);
+              if (form.payment === "cartao") {
+                const feeCost = total * currentCardFeePct / 100;
+                extraNotesLines.push(`Cartão: ${cardBrand} ${cardInstallments}x — Taxa ${currentCardFeePct.toFixed(2)}% (${brl(feeCost)})`);
+              }
               if (secondPayment !== "none" && secondPaymentValue > 0) {
                 const label = paymentOptions.find((p) => p.value === secondPayment)?.label || secondPayment;
                 extraNotesLines.push(`Segundo pagamento: ${label} — ${brl(secondPaymentValue)}`);
@@ -1325,8 +1378,15 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
 }
 
 function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { state, updateSettings } = useStore();
   const [fees, setFees] = useState<MachineFees>({});
-  useMemo(() => { if (open) setFees(loadMachineFees()); }, [open]);
+  useEffect(() => {
+    if (open) {
+      const fromSettings = state.settings.cardMachineFees ?? {};
+      const initial = Object.keys(fromSettings).length > 0 ? fromSettings : loadMachineFees();
+      setFees(initial);
+    }
+  }, [open, state.settings.cardMachineFees]);
 
   function setFee(brand: string, parcela: number, value: number) {
     setFees((prev) => ({
@@ -1336,14 +1396,14 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
   }
 
   // Brands sem parcelamento
-  const noInstallment = (brand: string) => brand === "DÉBITO" || brand === "PIX";
+  const noInstallment = (brand: string) => brand === "DÉBITO" || brand === "PIX" || brand === "DINHEIRO";
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Settings className="h-4 w-4" /> Taxas de maquininha</DialogTitle>
-          <DialogDescription>Configure a taxa (%) por bandeira e por parcela. Salvo neste navegador.</DialogDescription>
+          <DialogDescription>Configure a taxa (%) por bandeira e por parcela. Salvo nas configurações da loja (aba Taxas).</DialogDescription>
         </DialogHeader>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -1388,7 +1448,12 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
           <Button variant="outline" onClick={onClose}>Fechar</Button>
           <Button
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-            onClick={() => { saveMachineFees(fees); toast.success("Taxas salvas!"); onClose(); }}
+            onClick={async () => {
+              saveMachineFees(fees);
+              await updateSettings({ cardMachineFees: fees });
+              toast.success("Taxas salvas!");
+              onClose();
+            }}
           >
             <Save className="mr-2 h-4 w-4" /> Salvar Taxas
           </Button>
