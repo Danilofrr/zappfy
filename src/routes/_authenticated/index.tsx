@@ -195,7 +195,10 @@ function Dashboard() {
   const adsTaxValue = adsInvested * (adsTaxPct / 100);
   const adsTotalCost = adsInvested + adsTaxValue;
   const totalExpenses = fin.cogs + adsTotalCost + fin.opEx + fin.motoboyCost;
-  const adjustedProfit = fin.profit - adsTaxValue;
+  // Lucro = Faturamento - COGS - (Meta Ads + Imposto Meta Ads) - OpEx - Motoboy
+  // Usa adsInvested (fonte oficial do card) em vez de fin.adsSpend para evitar dupla contagem
+  // ou divergência quando o investimento vem da aba Meta Ads.
+  const adjustedProfit = fin.revenue - fin.cogs - adsTotalCost - fin.opEx - fin.motoboyCost;
 
 
   const periodBtns: { id: Period; label: string }[] = [
