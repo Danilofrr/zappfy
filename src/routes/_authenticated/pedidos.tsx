@@ -1378,8 +1378,15 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
 }
 
 function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { state, updateSettings } = useStore();
   const [fees, setFees] = useState<MachineFees>({});
-  useMemo(() => { if (open) setFees(loadMachineFees()); }, [open]);
+  useEffect(() => {
+    if (open) {
+      const fromSettings = state.settings.cardMachineFees ?? {};
+      const initial = Object.keys(fromSettings).length > 0 ? fromSettings : loadMachineFees();
+      setFees(initial);
+    }
+  }, [open, state.settings.cardMachineFees]);
 
   function setFee(brand: string, parcela: number, value: number) {
     setFees((prev) => ({
@@ -1389,7 +1396,7 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
   }
 
   // Brands sem parcelamento
-  const noInstallment = (brand: string) => brand === "DÉBITO" || brand === "PIX";
+  const noInstallment = (brand: string) => brand === "DÉBITO" || brand === "PIX" || brand === "DINHEIRO";
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
