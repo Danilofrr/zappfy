@@ -69,6 +69,7 @@ const emptySettings: Settings = {
   platformFeePct: 0,
   adsTaxPct: 0,
   otherFeesPct: 0,
+  cardMachineFees: {},
   slug: "",
 };
 
