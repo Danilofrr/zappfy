@@ -1448,7 +1448,12 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
           <Button variant="outline" onClick={onClose}>Fechar</Button>
           <Button
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-            onClick={() => { saveMachineFees(fees); toast.success("Taxas salvas!"); onClose(); }}
+            onClick={async () => {
+              saveMachineFees(fees);
+              await updateSettings({ cardMachineFees: fees });
+              toast.success("Taxas salvas!");
+              onClose();
+            }}
           >
             <Save className="mr-2 h-4 w-4" /> Salvar Taxas
           </Button>
