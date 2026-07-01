@@ -190,35 +190,62 @@ function KPI({ label, value, hint, tone, neon }: { label: React.ReactNode; value
   );
 }
 
-function NewReturnDialog({
-  open, setOpen, products, onSaved, initialType,
+function ReturnDialog({
+  open, setOpen, products, onSaved, initialType, editing,
 }: {
   open: boolean; setOpen: (v: boolean) => void;
-  products: any[]; onSaved: (r: ReturnRow) => void; initialType: "cliente" | "fornecedor";
+  products: any[]; onSaved: (r: ReturnRow, mode: "create" | "edit") => void;
+  initialType: "cliente" | "fornecedor";
+  editing: ReturnRow | null;
 }) {
   const { user } = useStore();
-  const [form, setForm] = useState({
+  const empty = {
     type: initialType, party_name: "", product_id: "", product_name: "",
-    new_product_name: "", quantity: 1, reason: "", status: "parado_loja" as const, value_at_risk: 0, notes: "",
-  });
-  useEffect(() => { setForm((f) => ({ ...f, type: initialType })); }, [initialType]);
+    new_product_name: "", quantity: 1, reason: "", status: "parado_loja" as ReturnRow["status"], value_at_risk: 0, notes: "",
+  };
+  const [form, setForm] = useState(empty);
+  useEffect(() => {
+    if (editing) {
+      setForm({
+        type: editing.type,
+        party_name: editing.party_name ?? "",
+        product_id: editing.product_id ?? "",
+        product_name: editing.product_name ?? "",
+        new_product_name: editing.new_product_name ?? "",
+        quantity: Number(editing.quantity) || 1,
+        reason: editing.reason ?? "",
+        status: editing.status,
+        value_at_risk: Number(editing.value_at_risk) || 0,
+        notes: editing.notes ?? "",
+      });
+    } else {
+      setForm({ ...empty, type: initialType });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, initialType, open]);
 
   async function save() {
     if (!user) return;
     if (!form.product_name) return toast.error("Informe o produto devolvido");
-    const payload: any = { user_id: user.id, ...form, product_id: form.product_id || null };
-    const { data, error } = await (supabase.from("returns" as any) as any).insert(payload).select().single();
-    if (error) return toast.error(error.message);
-    onSaved(data as ReturnRow);
-    toast.success("Troca registrada");
-    setForm({ type: initialType, party_name: "", product_id: "", product_name: "", new_product_name: "", quantity: 1, reason: "", status: "parado_loja", value_at_risk: 0, notes: "" });
+    const payload: any = { ...form, product_id: form.product_id || null };
+    if (editing) {
+      const { data, error } = await (supabase.from("returns" as any) as any).update(payload).eq("id", editing.id).select().single();
+      if (error) return toast.error(error.message);
+      onSaved(data as ReturnRow, "edit");
+      toast.success("Registro atualizado");
+    } else {
+      const { data, error } = await (supabase.from("returns" as any) as any).insert({ ...payload, user_id: user.id }).select().single();
+      if (error) return toast.error(error.message);
+      onSaved(data as ReturnRow, "create");
+      toast.success("Troca registrada");
+    }
     setOpen(false);
   }
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Nova troca/devolução</DialogTitle>
+          <DialogTitle>{editing ? "Editar troca/devolução" : "Nova troca/devolução"}</DialogTitle>
           <DialogDescription>Registre um produto devolvido pelo cliente ou ao fornecedor.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
@@ -266,10 +293,19 @@ function NewReturnDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={save}>Salvar</Button>
+          <Button onClick={save}>{editing ? "Salvar alterações" : "Salvar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{label}</Label>
+      {children}
+    </div>
   );
 }
 
