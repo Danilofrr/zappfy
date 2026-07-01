@@ -961,18 +961,23 @@ export type Database = {
       returns: {
         Row: {
           created_at: string
+          customer_phone: string | null
           id: string
+          new_product_id: string | null
           new_product_name: string | null
           notes: string | null
+          order_date: string | null
           order_id: string | null
           party_name: string
           product_id: string | null
           product_name: string
+          product_price: number
           quantity: number
           reason: string | null
           restocked: boolean
           return_date: string
           status: string
+          store_id: string | null
           type: string
           updated_at: string
           user_id: string
@@ -980,18 +985,23 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_phone?: string | null
           id?: string
+          new_product_id?: string | null
           new_product_name?: string | null
           notes?: string | null
+          order_date?: string | null
           order_id?: string | null
           party_name?: string
           product_id?: string | null
           product_name: string
+          product_price?: number
           quantity?: number
           reason?: string | null
           restocked?: boolean
           return_date?: string
           status?: string
+          store_id?: string | null
           type?: string
           updated_at?: string
           user_id: string
@@ -999,18 +1009,23 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_phone?: string | null
           id?: string
+          new_product_id?: string | null
           new_product_name?: string | null
           notes?: string | null
+          order_date?: string | null
           order_id?: string | null
           party_name?: string
           product_id?: string | null
           product_name?: string
+          product_price?: number
           quantity?: number
           reason?: string | null
           restocked?: boolean
           return_date?: string
           status?: string
+          store_id?: string | null
           type?: string
           updated_at?: string
           user_id?: string
