@@ -3,7 +3,8 @@ import { AppShell, StatCard } from "@/components/AppShell";
 import { DashboardTopBar } from "@/components/DashboardTopBar";
 import { useFinance, useStore, monthRange } from "@/lib/store";
 import { brl, dateOnlyToLocalDate, pct } from "@/lib/format";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign,
   TrendingUp,
