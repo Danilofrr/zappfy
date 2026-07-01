@@ -444,6 +444,7 @@ function OrderSearchSection({
   }, [query, orders]);
 
   const selectedOrder = form.order_id ? orders.find((o) => o.id === form.order_id) : null;
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   function pickOrder(o: Order, item: OrderItem) {
     const prod = products.find((p) => p.id === item.productId);
@@ -454,20 +455,34 @@ function OrderSearchSection({
       party_name: o.customer,
       customer_phone: o.phone,
       product_id: item.productId || "",
-      product_name: item.name,
+      product_name: item.name || prod?.name || "",
       quantity: item.qty,
       product_price: item.price,
       value_at_risk: item.price * item.qty,
       notes: form.notes || (o.address ? `Endereço: ${o.address}${o.district ? `, ${o.district}` : ""}${o.city ? ` - ${o.city}` : ""}\nPagamento: ${o.payment}` : ""),
     });
-    // ensure product info reflects catalog if available
-    if (prod && !form.product_name) {
-      setForm({ ...form, product_name: prod.name });
+  }
+
+  function handleCardClick(o: Order) {
+    const items = o.items || [];
+    if (items.length === 1) {
+      pickOrder(o, items[0]);
+    } else {
+      setExpandedId((cur) => (cur === o.id ? null : o.id));
     }
   }
 
   function clearOrder() {
-    setForm({ ...form, order_id: null, order_date: null });
+    setForm({
+      ...form,
+      order_id: null,
+      order_date: null,
+      product_id: "",
+      product_name: "",
+      product_price: 0,
+      value_at_risk: 0,
+    });
+    setExpandedId(null);
   }
 
   return (
@@ -495,47 +510,64 @@ function OrderSearchSection({
 
           {results.length > 0 && (
             <div className="max-h-64 overflow-y-auto rounded-lg border border-border divide-y divide-border">
-              {results.map((o) => (
-                <div key={o.id} className="p-3 hover:bg-secondary/40">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-sm">{o.customer}</div>
-                      <div className="text-xs text-muted-foreground">{o.phone} · {fmtDate(o.date)} · {brl(o.total)}</div>
+              {results.map((o) => {
+                const items = o.items || [];
+                const isExpanded = expandedId === o.id;
+                return (
+                  <div
+                    key={o.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleCardClick(o)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleCardClick(o); } }}
+                    className="p-3 cursor-pointer hover:bg-secondary/40 transition"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-sm">{o.customer}</div>
+                        <div className="text-xs text-muted-foreground">{o.phone} · {fmtDate(o.date)} · {brl(o.total)}</div>
+                      </div>
+                      <div className="text-[10px] uppercase text-muted-foreground">#{o.id.slice(0, 6)}</div>
                     </div>
-                    <div className="text-[10px] uppercase text-muted-foreground">#{o.id.slice(0, 6)}</div>
+                    {items.length > 1 && !isExpanded && (
+                      <div className="mt-1 text-[11px] text-muted-foreground">{items.length} itens · clique para escolher</div>
+                    )}
+                    {(items.length === 1 || isExpanded) && (
+                      <div className="mt-2 grid gap-1" onClick={(e) => e.stopPropagation()}>
+                        {items.map((it, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => pickOrder(o, it)}
+                            className="text-left text-xs bg-secondary/50 hover:bg-primary/20 rounded-md px-2 py-1.5 flex items-center justify-between"
+                          >
+                            <span className="flex items-center gap-1.5"><Package className="h-3 w-3 text-primary" /> {it.qty}x {it.name}</span>
+                            <span className="text-muted-foreground">{brl(it.price)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-2 grid gap-1">
-                    {(o.items || []).map((it, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => pickOrder(o, it)}
-                        className="text-left text-xs bg-secondary/50 hover:bg-primary/20 rounded-md px-2 py-1.5 flex items-center justify-between"
-                      >
-                        <span className="flex items-center gap-1.5"><Package className="h-3 w-3 text-primary" /> {it.qty}x {it.name}</span>
-                        <span className="text-muted-foreground">{brl(it.price)}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </>
       )}
 
       {selectedOrder && (
-        <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+        <div className="rounded-lg border-2 border-emerald-500/60 bg-emerald-500/10 p-3">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-[10px] uppercase text-muted-foreground">Pedido vinculado</div>
-              <div className="font-semibold text-sm">{selectedOrder.customer}</div>
-              <div className="text-xs text-muted-foreground">{selectedOrder.phone} · {fmtDate(selectedOrder.date)}</div>
+              <div className="text-[10px] uppercase text-emerald-400 font-semibold">Pedido selecionado</div>
+              <div className="font-semibold text-sm mt-0.5">{selectedOrder.customer}</div>
+              <div className="text-xs text-muted-foreground">{selectedOrder.phone} · {fmtDate(selectedOrder.date)} · {brl(selectedOrder.total)}</div>
             </div>
             <Button type="button" variant="ghost" size="sm" onClick={clearOrder}>Trocar</Button>
           </div>
-          <div className="mt-2 text-xs bg-secondary/40 rounded px-2 py-1.5">
-            {form.quantity}x {form.product_name} · {brl(form.product_price)}
+          <div className="mt-2 text-xs bg-background/60 rounded px-2 py-1.5 flex items-center justify-between">
+            <span className="flex items-center gap-1.5"><Package className="h-3 w-3 text-emerald-400" /> {form.quantity}x {form.product_name}</span>
+            <span className="font-medium">{brl(form.product_price)}</span>
           </div>
         </div>
       )}
@@ -561,6 +593,7 @@ function OrderSearchSection({
     </div>
   );
 }
+
 
 function ManualSection({
   form, setForm, products,
