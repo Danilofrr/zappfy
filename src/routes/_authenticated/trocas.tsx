@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Pencil } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -42,6 +42,7 @@ function TrocasPage() {
   const [rows, setRows] = useState<ReturnRow[]>([]);
   const [tab, setTab] = useState<"cliente" | "fornecedor">("cliente");
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<ReturnRow | null>(null);
 
   async function load() {
     if (!user) return;
@@ -81,7 +82,7 @@ function TrocasPage() {
       title="Trocas & Devoluções"
       subtitle="Gestão de produtos devolvidos e trocas"
       actions={
-        <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" />Nova Troca</Button>
+        <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Nova Troca</Button>
       }
     >
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -142,9 +143,14 @@ function TrocasPage() {
                       </Select>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => del(r.id)} className="text-muted-foreground hover:text-destructive p-1">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="inline-flex items-center gap-1">
+                        <button onClick={() => { setEditing(r); setOpen(true); }} className="text-muted-foreground hover:text-primary p-1" title="Editar">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => del(r.id)} className="text-muted-foreground hover:text-destructive p-1" title="Excluir">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -154,7 +160,17 @@ function TrocasPage() {
         </div>
       </div>
 
-      <NewReturnDialog open={open} setOpen={setOpen} products={state.products} onSaved={(r) => setRows((p) => [r, ...p])} initialType={tab} />
+      <ReturnDialog
+        open={open}
+        setOpen={(v) => { setOpen(v); if (!v) setEditing(null); }}
+        products={state.products}
+        editing={editing}
+        onSaved={(r, mode) => {
+          if (mode === "edit") setRows((p) => p.map((x) => x.id === r.id ? r : x));
+          else setRows((p) => [r, ...p]);
+        }}
+        initialType={tab}
+      />
     </AppShell>
   );
 }
@@ -174,35 +190,62 @@ function KPI({ label, value, hint, tone, neon }: { label: React.ReactNode; value
   );
 }
 
-function NewReturnDialog({
-  open, setOpen, products, onSaved, initialType,
+function ReturnDialog({
+  open, setOpen, products, onSaved, initialType, editing,
 }: {
   open: boolean; setOpen: (v: boolean) => void;
-  products: any[]; onSaved: (r: ReturnRow) => void; initialType: "cliente" | "fornecedor";
+  products: any[]; onSaved: (r: ReturnRow, mode: "create" | "edit") => void;
+  initialType: "cliente" | "fornecedor";
+  editing: ReturnRow | null;
 }) {
   const { user } = useStore();
-  const [form, setForm] = useState({
+  const empty = {
     type: initialType, party_name: "", product_id: "", product_name: "",
-    new_product_name: "", quantity: 1, reason: "", status: "parado_loja" as const, value_at_risk: 0, notes: "",
-  });
-  useEffect(() => { setForm((f) => ({ ...f, type: initialType })); }, [initialType]);
+    new_product_name: "", quantity: 1, reason: "", status: "parado_loja" as ReturnRow["status"], value_at_risk: 0, notes: "",
+  };
+  const [form, setForm] = useState(empty);
+  useEffect(() => {
+    if (editing) {
+      setForm({
+        type: editing.type,
+        party_name: editing.party_name ?? "",
+        product_id: editing.product_id ?? "",
+        product_name: editing.product_name ?? "",
+        new_product_name: editing.new_product_name ?? "",
+        quantity: Number(editing.quantity) || 1,
+        reason: editing.reason ?? "",
+        status: editing.status,
+        value_at_risk: Number(editing.value_at_risk) || 0,
+        notes: editing.notes ?? "",
+      });
+    } else {
+      setForm({ ...empty, type: initialType });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, initialType, open]);
 
   async function save() {
     if (!user) return;
     if (!form.product_name) return toast.error("Informe o produto devolvido");
-    const payload: any = { user_id: user.id, ...form, product_id: form.product_id || null };
-    const { data, error } = await (supabase.from("returns" as any) as any).insert(payload).select().single();
-    if (error) return toast.error(error.message);
-    onSaved(data as ReturnRow);
-    toast.success("Troca registrada");
-    setForm({ type: initialType, party_name: "", product_id: "", product_name: "", new_product_name: "", quantity: 1, reason: "", status: "parado_loja", value_at_risk: 0, notes: "" });
+    const payload: any = { ...form, product_id: form.product_id || null };
+    if (editing) {
+      const { data, error } = await (supabase.from("returns" as any) as any).update(payload).eq("id", editing.id).select().single();
+      if (error) return toast.error(error.message);
+      onSaved(data as ReturnRow, "edit");
+      toast.success("Registro atualizado");
+    } else {
+      const { data, error } = await (supabase.from("returns" as any) as any).insert({ ...payload, user_id: user.id }).select().single();
+      if (error) return toast.error(error.message);
+      onSaved(data as ReturnRow, "create");
+      toast.success("Troca registrada");
+    }
     setOpen(false);
   }
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Nova troca/devolução</DialogTitle>
+          <DialogTitle>{editing ? "Editar troca/devolução" : "Nova troca/devolução"}</DialogTitle>
           <DialogDescription>Registre um produto devolvido pelo cliente ou ao fornecedor.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
@@ -250,7 +293,7 @@ function NewReturnDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={save}>Salvar</Button>
+          <Button onClick={save}>{editing ? "Salvar alterações" : "Salvar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

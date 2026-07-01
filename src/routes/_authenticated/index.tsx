@@ -3,7 +3,8 @@ import { AppShell, StatCard } from "@/components/AppShell";
 import { DashboardTopBar } from "@/components/DashboardTopBar";
 import { useFinance, useStore, monthRange } from "@/lib/store";
 import { brl, dateOnlyToLocalDate, pct } from "@/lib/format";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign,
   TrendingUp,
@@ -194,11 +195,30 @@ function Dashboard() {
   const adsTaxPct = Number(state.settings.adsTaxPct ?? 0);
   const adsTaxValue = adsInvested * (adsTaxPct / 100);
   const adsTotalCost = adsInvested + adsTaxValue;
-  const totalExpenses = fin.cogs + adsTotalCost + fin.opEx + fin.motoboyCost;
-  // Lucro = Faturamento - COGS - (Meta Ads + Imposto Meta Ads) - OpEx - Motoboy
-  // Usa adsInvested (fonte oficial do card) em vez de fin.adsSpend para evitar dupla contagem
-  // ou divergência quando o investimento vem da aba Meta Ads.
-  const adjustedProfit = fin.revenue - fin.cogs - adsTotalCost - fin.opEx - fin.motoboyCost;
+
+  // Perdas em trocas/devoluções (status = "perdido") dentro do período
+  const [returnsLost, setReturnsLost] = useState<Array<{ value_at_risk: number; return_date: string }>>([]);
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      const { data } = await (supabase.from("returns" as any) as any)
+        .select("value_at_risk, return_date, status")
+        .eq("status", "perdido");
+      if (!cancel && data) setReturnsLost(data as any);
+    })();
+    return () => { cancel = true; };
+  }, []);
+  const returnsLossInRange = useMemo(() => {
+    return returnsLost.reduce((sum, r) => {
+      const d = new Date(r.return_date);
+      if (d >= range.start && d < range.end) return sum + Number(r.value_at_risk || 0);
+      return sum;
+    }, 0);
+  }, [returnsLost, range.start, range.end]);
+
+  const totalExpenses = fin.cogs + adsTotalCost + fin.opEx + fin.motoboyCost + returnsLossInRange;
+  // Lucro = Faturamento - COGS - (Meta Ads + Imposto Meta Ads) - OpEx - Motoboy - Perdas devoluções
+  const adjustedProfit = fin.revenue - fin.cogs - adsTotalCost - fin.opEx - fin.motoboyCost - returnsLossInRange;
 
 
   const periodBtns: { id: Period; label: string }[] = [
@@ -329,6 +349,9 @@ function Dashboard() {
             />
             <Row label="(-) Despesas Operacionais" value={`- ${m(brl(fin.opEx))}`} />
             <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${m(brl(fin.motoboyCost))}`} />
+            {returnsLossInRange > 0 && (
+              <Row label="(-) Perdas em Devoluções" value={`- ${m(brl(returnsLossInRange))}`} />
+            )}
             <div className="border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold">(=) Lucro Líquido</span>
               <span className="text-primary font-bold text-lg">{m(brl(adjustedProfit))}</span>
