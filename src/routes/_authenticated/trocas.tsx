@@ -42,6 +42,7 @@ function TrocasPage() {
   const [rows, setRows] = useState<ReturnRow[]>([]);
   const [tab, setTab] = useState<"cliente" | "fornecedor">("cliente");
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<ReturnRow | null>(null);
 
   async function load() {
     if (!user) return;
