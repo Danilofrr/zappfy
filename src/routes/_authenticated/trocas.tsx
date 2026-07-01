@@ -186,9 +186,10 @@ function TrocasPage() {
         setOpen={(v) => { setOpen(v); if (!v) setEditing(null); }}
         products={state.products}
         editing={editing}
-        onSaved={(r, mode) => {
-          if (mode === "edit") setRows((p) => p.map((x) => x.id === r.id ? r : x));
-          else setRows((p) => [r, ...p]);
+        onSaved={async (r, mode) => {
+          const updated = await restockIfNeeded(r);
+          if (mode === "edit") setRows((p) => p.map((x) => x.id === updated.id ? updated : x));
+          else setRows((p) => [updated, ...p]);
         }}
         initialType={tab}
       />
