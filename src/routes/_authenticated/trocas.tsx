@@ -143,9 +143,14 @@ function TrocasPage() {
                       </Select>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => del(r.id)} className="text-muted-foreground hover:text-destructive p-1">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="inline-flex items-center gap-1">
+                        <button onClick={() => { setEditing(r); setOpen(true); }} className="text-muted-foreground hover:text-primary p-1" title="Editar">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => del(r.id)} className="text-muted-foreground hover:text-destructive p-1" title="Excluir">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
