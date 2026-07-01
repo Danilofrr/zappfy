@@ -39,7 +39,7 @@ const statusList = [
 ] as const;
 
 function TrocasPage() {
-  const { state, user } = useStore();
+  const { state, user, updateProduct } = useStore();
   const [rows, setRows] = useState<ReturnRow[]>([]);
   const [tab, setTab] = useState<"cliente" | "fornecedor">("cliente");
   const [open, setOpen] = useState(false);
@@ -65,10 +65,30 @@ function TrocasPage() {
 
   const filtered = rows.filter((r) => r.type === tab);
 
+  async function restockIfNeeded(row: ReturnRow) {
+    if (row.status !== "devolvido_estoque") return row;
+    if (row.restocked) return row;
+    if (!row.product_id) {
+      toast.warning("Selecione um produto vinculado para devolver ao estoque.");
+      return row;
+    }
+    const prod = state.products.find((p) => p.id === row.product_id);
+    if (prod) {
+      const qty = Number(row.quantity) || 0;
+      await updateProduct(prod.id, { stock: Number(prod.stock || 0) + qty });
+    }
+    const { data } = await (supabase.from("returns" as any) as any)
+      .update({ restocked: true }).eq("id", row.id).select().single();
+    toast.success("Produto devolvido ao estoque");
+    return (data as ReturnRow) ?? { ...row, restocked: true };
+  }
+
   async function updateStatus(id: string, status: ReturnRow["status"]) {
     const { data, error } = await (supabase.from("returns" as any) as any).update({ status }).eq("id", id).select().single();
     if (error) return toast.error(error.message);
-    setRows((p) => p.map((x) => x.id === id ? (data as ReturnRow) : x));
+    let updated = data as ReturnRow;
+    updated = await restockIfNeeded(updated);
+    setRows((p) => p.map((x) => x.id === id ? updated : x));
   }
   async function del(id: string) {
     if (!confirm("Excluir este registro?")) return;
