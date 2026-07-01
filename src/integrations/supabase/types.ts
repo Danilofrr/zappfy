@@ -970,6 +970,7 @@ export type Database = {
           product_name: string
           quantity: number
           reason: string | null
+          restocked: boolean
           return_date: string
           status: string
           type: string
@@ -988,6 +989,7 @@ export type Database = {
           product_name: string
           quantity?: number
           reason?: string | null
+          restocked?: boolean
           return_date?: string
           status?: string
           type?: string
@@ -1006,6 +1008,7 @@ export type Database = {
           product_name?: string
           quantity?: number
           reason?: string | null
+          restocked?: boolean
           return_date?: string
           status?: string
           type?: string

@@ -203,7 +203,7 @@ function Dashboard() {
     (async () => {
       const { data } = await (supabase.from("returns" as any) as any)
         .select("value_at_risk, return_date, status")
-        .eq("status", "perdido");
+        .in("status", ["perdido", "devolvido_estoque"]);
       if (!cancel && data) setReturnsLost(data as any);
     })();
     return () => { cancel = true; };

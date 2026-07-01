@@ -26,19 +26,20 @@ type ReturnRow = {
   id: string; type: "cliente" | "fornecedor"; party_name: string;
   product_id: string | null; product_name: string; new_product_name: string;
   quantity: number; reason: string;
-  status: "parado_loja" | "com_fornecedor" | "perdido" | "resolvido";
-  value_at_risk: number; return_date: string; notes: string;
+  status: "parado_loja" | "com_fornecedor" | "perdido" | "resolvido" | "devolvido_estoque";
+  value_at_risk: number; return_date: string; notes: string; restocked: boolean;
 };
 
 const statusList = [
   { value: "parado_loja", label: "Parado na loja", color: "bg-warning/15 text-warning" },
   { value: "com_fornecedor", label: "Com fornecedor", color: "bg-blue-500/15 text-blue-400" },
+  { value: "devolvido_estoque", label: "Devolvido ao estoque", color: "bg-emerald-500/15 text-emerald-400" },
   { value: "perdido", label: "Perdido", color: "bg-destructive/15 text-destructive" },
   { value: "resolvido", label: "Resolvido", color: "bg-primary/15 text-primary" },
 ] as const;
 
 function TrocasPage() {
-  const { state, user } = useStore();
+  const { state, user, updateProduct } = useStore();
   const [rows, setRows] = useState<ReturnRow[]>([]);
   const [tab, setTab] = useState<"cliente" | "fornecedor">("cliente");
   const [open, setOpen] = useState(false);
@@ -64,10 +65,30 @@ function TrocasPage() {
 
   const filtered = rows.filter((r) => r.type === tab);
 
+  async function restockIfNeeded(row: ReturnRow) {
+    if (row.status !== "devolvido_estoque") return row;
+    if (row.restocked) return row;
+    if (!row.product_id) {
+      toast.warning("Selecione um produto vinculado para devolver ao estoque.");
+      return row;
+    }
+    const prod = state.products.find((p) => p.id === row.product_id);
+    if (prod) {
+      const qty = Number(row.quantity) || 0;
+      await updateProduct(prod.id, { stock: Number(prod.stock || 0) + qty });
+    }
+    const { data } = await (supabase.from("returns" as any) as any)
+      .update({ restocked: true }).eq("id", row.id).select().single();
+    toast.success("Produto devolvido ao estoque");
+    return (data as ReturnRow) ?? { ...row, restocked: true };
+  }
+
   async function updateStatus(id: string, status: ReturnRow["status"]) {
     const { data, error } = await (supabase.from("returns" as any) as any).update({ status }).eq("id", id).select().single();
     if (error) return toast.error(error.message);
-    setRows((p) => p.map((x) => x.id === id ? (data as ReturnRow) : x));
+    let updated = data as ReturnRow;
+    updated = await restockIfNeeded(updated);
+    setRows((p) => p.map((x) => x.id === id ? updated : x));
   }
   async function del(id: string) {
     if (!confirm("Excluir este registro?")) return;
@@ -165,9 +186,10 @@ function TrocasPage() {
         setOpen={(v) => { setOpen(v); if (!v) setEditing(null); }}
         products={state.products}
         editing={editing}
-        onSaved={(r, mode) => {
-          if (mode === "edit") setRows((p) => p.map((x) => x.id === r.id ? r : x));
-          else setRows((p) => [r, ...p]);
+        onSaved={async (r, mode) => {
+          const updated = await restockIfNeeded(r);
+          if (mode === "edit") setRows((p) => p.map((x) => x.id === updated.id ? updated : x));
+          else setRows((p) => [updated, ...p]);
         }}
         initialType={tab}
       />
