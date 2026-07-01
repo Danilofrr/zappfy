@@ -160,7 +160,17 @@ function TrocasPage() {
         </div>
       </div>
 
-      <NewReturnDialog open={open} setOpen={setOpen} products={state.products} onSaved={(r) => setRows((p) => [r, ...p])} initialType={tab} />
+      <ReturnDialog
+        open={open}
+        setOpen={(v) => { setOpen(v); if (!v) setEditing(null); }}
+        products={state.products}
+        editing={editing}
+        onSaved={(r, mode) => {
+          if (mode === "edit") setRows((p) => p.map((x) => x.id === r.id ? r : x));
+          else setRows((p) => [r, ...p]);
+        }}
+        initialType={tab}
+      />
     </AppShell>
   );
 }
