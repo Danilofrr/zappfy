@@ -295,10 +295,14 @@ function ReturnDialog({
 
   async function save() {
     if (!user) return;
+    if (form.type === "cliente" && mode === "search" && !form.order_id) {
+      return toast.error("Selecione um pedido antes de salvar a troca/devolução.");
+    }
     if (!form.party_name.trim()) return toast.error("Informe o cliente/fornecedor");
     if (!form.product_name.trim()) return toast.error("Informe o produto devolvido");
     if (!form.reason.trim()) return toast.error("Informe o motivo");
     if (!form.status) return toast.error("Selecione o status");
+
     setSaving(true);
     try {
       const payload: any = {
