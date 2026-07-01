@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore } from "@/lib/store";
+import { useStore, type Order, type OrderItem, type Product } from "@/lib/store";
+import { useActiveStore } from "@/lib/active-store";
 import { supabase } from "@/integrations/supabase/client";
 import { brl, fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, AlertTriangle, Pencil } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Pencil, Search, User, Package, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -22,12 +23,19 @@ export const Route = createFileRoute("/_authenticated/trocas")({
   component: TrocasPage,
 });
 
+type ReturnStatus = "parado_loja" | "com_fornecedor" | "perdido" | "resolvido" | "devolvido_estoque";
+
 type ReturnRow = {
   id: string; type: "cliente" | "fornecedor"; party_name: string;
-  product_id: string | null; product_name: string; new_product_name: string;
+  customer_phone: string | null;
+  product_id: string | null; product_name: string;
+  new_product_id: string | null; new_product_name: string;
   quantity: number; reason: string;
-  status: "parado_loja" | "com_fornecedor" | "perdido" | "resolvido" | "devolvido_estoque";
-  value_at_risk: number; return_date: string; notes: string; restocked: boolean;
+  status: ReturnStatus;
+  value_at_risk: number; product_price: number;
+  return_date: string; order_date: string | null;
+  order_id: string | null;
+  notes: string; restocked: boolean;
 };
 
 const statusList = [
@@ -40,6 +48,7 @@ const statusList = [
 
 function TrocasPage() {
   const { state, user, updateProduct } = useStore();
+  const { activeStoreId } = useActiveStore();
   const [rows, setRows] = useState<ReturnRow[]>([]);
   const [tab, setTab] = useState<"cliente" | "fornecedor">("cliente");
   const [open, setOpen] = useState(false);
@@ -47,10 +56,14 @@ function TrocasPage() {
 
   async function load() {
     if (!user) return;
-    const { data } = await (supabase.from("returns" as any) as any).select("*").order("return_date", { ascending: false });
+    const storeId = activeStoreId ?? user.id;
+    const { data } = await (supabase.from("returns" as any) as any)
+      .select("*")
+      .or(`store_id.eq.${storeId},and(store_id.is.null,user_id.eq.${user.id})`)
+      .order("return_date", { ascending: false });
     if (data) setRows(data as ReturnRow[]);
   }
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [user, activeStoreId]);
 
   const byStatus = useMemo(() => ({
     parado: rows.filter((r) => r.status === "parado_loja"),
@@ -69,7 +82,7 @@ function TrocasPage() {
     if (row.status !== "devolvido_estoque") return row;
     if (row.restocked) return row;
     if (!row.product_id) {
-      toast.warning("Selecione um produto vinculado para devolver ao estoque.");
+      toast.warning("Não foi possível devolver ao estoque porque o produto não está vinculado a esta troca.");
       return row;
     }
     const prod = state.products.find((p) => p.id === row.product_id);
@@ -185,6 +198,7 @@ function TrocasPage() {
         open={open}
         setOpen={(v) => { setOpen(v); if (!v) setEditing(null); }}
         products={state.products}
+        orders={state.orders}
         editing={editing}
         onSaved={async (r, mode) => {
           const updated = await restockIfNeeded(r);
@@ -212,113 +226,397 @@ function KPI({ label, value, hint, tone, neon }: { label: React.ReactNode; value
   );
 }
 
+type FormState = {
+  type: "cliente" | "fornecedor";
+  party_name: string;
+  customer_phone: string;
+  product_id: string;
+  product_name: string;
+  new_product_id: string;
+  new_product_name: string;
+  quantity: number;
+  reason: string;
+  status: ReturnStatus;
+  value_at_risk: number;
+  product_price: number;
+  order_id: string | null;
+  order_date: string | null;
+  notes: string;
+};
+
+const emptyForm = (type: "cliente" | "fornecedor"): FormState => ({
+  type, party_name: "", customer_phone: "", product_id: "", product_name: "",
+  new_product_id: "", new_product_name: "",
+  quantity: 1, reason: "", status: "parado_loja", value_at_risk: 0, product_price: 0,
+  order_id: null, order_date: null, notes: "",
+});
+
 function ReturnDialog({
-  open, setOpen, products, onSaved, initialType, editing,
+  open, setOpen, products, orders, onSaved, initialType, editing,
 }: {
   open: boolean; setOpen: (v: boolean) => void;
-  products: any[]; onSaved: (r: ReturnRow, mode: "create" | "edit") => void;
+  products: Product[]; orders: Order[];
+  onSaved: (r: ReturnRow, mode: "create" | "edit") => void;
   initialType: "cliente" | "fornecedor";
   editing: ReturnRow | null;
 }) {
   const { user } = useStore();
-  const empty = {
-    type: initialType, party_name: "", product_id: "", product_name: "",
-    new_product_name: "", quantity: 1, reason: "", status: "parado_loja" as ReturnRow["status"], value_at_risk: 0, notes: "",
-  };
-  const [form, setForm] = useState(empty);
+  const { activeStoreId } = useActiveStore();
+  const [mode, setMode] = useState<"search" | "manual">("manual");
+  const [form, setForm] = useState<FormState>(emptyForm(initialType));
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
+    if (!open) return;
     if (editing) {
+      setMode(editing.order_id ? "search" : "manual");
       setForm({
         type: editing.type,
         party_name: editing.party_name ?? "",
+        customer_phone: editing.customer_phone ?? "",
         product_id: editing.product_id ?? "",
         product_name: editing.product_name ?? "",
+        new_product_id: editing.new_product_id ?? "",
         new_product_name: editing.new_product_name ?? "",
         quantity: Number(editing.quantity) || 1,
         reason: editing.reason ?? "",
         status: editing.status,
         value_at_risk: Number(editing.value_at_risk) || 0,
+        product_price: Number(editing.product_price) || 0,
+        order_id: editing.order_id ?? null,
+        order_date: editing.order_date ?? null,
         notes: editing.notes ?? "",
       });
     } else {
-      setForm({ ...empty, type: initialType });
+      setMode(initialType === "cliente" ? "search" : "manual");
+      setForm(emptyForm(initialType));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing, initialType, open]);
 
   async function save() {
     if (!user) return;
-    if (!form.product_name) return toast.error("Informe o produto devolvido");
-    const payload: any = { ...form, product_id: form.product_id || null };
-    if (editing) {
-      const { data, error } = await (supabase.from("returns" as any) as any).update(payload).eq("id", editing.id).select().single();
-      if (error) return toast.error(error.message);
-      onSaved(data as ReturnRow, "edit");
-      toast.success("Registro atualizado");
-    } else {
-      const { data, error } = await (supabase.from("returns" as any) as any).insert({ ...payload, user_id: user.id }).select().single();
-      if (error) return toast.error(error.message);
-      onSaved(data as ReturnRow, "create");
-      toast.success("Troca registrada");
+    if (!form.party_name.trim()) return toast.error("Informe o cliente/fornecedor");
+    if (!form.product_name.trim()) return toast.error("Informe o produto devolvido");
+    if (!form.reason.trim()) return toast.error("Informe o motivo");
+    if (!form.status) return toast.error("Selecione o status");
+    setSaving(true);
+    try {
+      const payload: any = {
+        type: form.type,
+        party_name: form.party_name.trim(),
+        customer_phone: form.customer_phone.trim() || null,
+        product_id: form.product_id || null,
+        product_name: form.product_name.trim(),
+        new_product_id: form.new_product_id || null,
+        new_product_name: form.new_product_name.trim() || null,
+        quantity: form.quantity,
+        reason: form.reason.trim(),
+        status: form.status,
+        value_at_risk: form.value_at_risk,
+        product_price: form.product_price,
+        order_id: form.order_id,
+        order_date: form.order_date,
+        notes: form.notes.trim() || null,
+        store_id: activeStoreId ?? user.id,
+      };
+      if (editing) {
+        const { data, error } = await (supabase.from("returns" as any) as any).update(payload).eq("id", editing.id).select().single();
+        if (error) throw error;
+        onSaved(data as ReturnRow, "edit");
+        toast.success("Registro atualizado");
+      } else {
+        const { data, error } = await (supabase.from("returns" as any) as any)
+          .insert({ ...payload, user_id: user.id }).select().single();
+        if (error) throw error;
+        onSaved(data as ReturnRow, "create");
+        toast.success("Troca registrada");
+      }
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao salvar");
+    } finally {
+      setSaving(false);
     }
-    setOpen(false);
   }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editing ? "Editar troca/devolução" : "Nova troca/devolução"}</DialogTitle>
           <DialogDescription>Registre um produto devolvido pelo cliente ou ao fornecedor.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Tipo">
-              <Select value={form.type} onValueChange={(v: any) => setForm({ ...form, type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cliente">Cliente devolveu</SelectItem>
-                  <SelectItem value="fornecedor">Devolução ao fornecedor</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label={form.type === "cliente" ? "Cliente" : "Fornecedor"}>
-              <Input value={form.party_name} onChange={(e) => setForm({ ...form, party_name: e.target.value })} />
-            </Field>
-          </div>
-          <Field label="Produto devolvido">
-            <Select
-              value={form.product_id}
-              onValueChange={(v) => {
-                const p = products.find((x) => x.id === v);
-                setForm({ ...form, product_id: v, product_name: p?.name ?? form.product_name, value_at_risk: p?.price ?? form.value_at_risk });
-              }}
-            >
-              <SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
-              <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+
+        <div className="grid grid-cols-2 gap-3 mb-1">
+          <Field label="Tipo">
+            <Select value={form.type} onValueChange={(v: any) => setForm({ ...form, type: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cliente">Cliente devolveu</SelectItem>
+                <SelectItem value="fornecedor">Devolução ao fornecedor</SelectItem>
+              </SelectContent>
             </Select>
           </Field>
-          <Field label="Ou digite o nome"><Input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} /></Field>
           {form.type === "cliente" && (
-            <Field label="Novo produto (em troca)"><Input value={form.new_product_name} onChange={(e) => setForm({ ...form, new_product_name: e.target.value })} placeholder="Opcional" /></Field>
+            <Field label="Método">
+              <div className="grid grid-cols-2 gap-2 rounded-lg border border-border bg-secondary/30 p-1">
+                <button type="button" onClick={() => setMode("search")}
+                  className={`text-xs py-1.5 rounded-md transition ${mode === "search" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}>
+                  <Search className="h-3 w-3 inline mr-1" />Buscar Pedido
+                </button>
+                <button type="button" onClick={() => setMode("manual")}
+                  className={`text-xs py-1.5 rounded-md transition ${mode === "manual" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}>
+                  <User className="h-3 w-3 inline mr-1" />Manual
+                </button>
+              </div>
+            </Field>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Quantidade"><Input type="number" min={1} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Math.max(1, Number(e.target.value)) })} /></Field>
-            <Field label="Valor em risco (R$)"><Input type="number" min={0} step="0.01" value={form.value_at_risk} onChange={(e) => setForm({ ...form, value_at_risk: Number(e.target.value) })} /></Field>
-          </div>
+        </div>
+
+        {form.type === "cliente" && mode === "search" ? (
+          <OrderSearchSection
+            orders={orders}
+            products={products}
+            form={form}
+            setForm={setForm}
+          />
+        ) : (
+          <ManualSection form={form} setForm={setForm} products={products} />
+        )}
+
+        <div className="grid gap-3 pt-2 border-t border-border mt-3">
           <Field label="Status">
             <Select value={form.status} onValueChange={(v: any) => setForm({ ...form, status: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
-          <Field label="Motivo"><Textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Ex: defeito, arrependimento, tamanho errado..." /></Field>
+          <Field label="Motivo">
+            <Textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Ex: defeito, arrependimento, tamanho errado..." />
+          </Field>
+          <Field label="Observações (opcional)">
+            <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+          </Field>
         </div>
+
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={save}>{editing ? "Salvar alterações" : "Salvar"}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
+          <Button onClick={save} disabled={saving}>
+            {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+            {editing ? "Salvar alterações" : "Salvar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function OrderSearchSection({
+  orders, products, form, setForm,
+}: {
+  orders: Order[]; products: Product[];
+  form: FormState; setForm: (f: FormState) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!query) return;
+    setLoading(true);
+    const t = setTimeout(() => setLoading(false), 200);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [] as Order[];
+    return orders.filter((o) => {
+      if (o.customer?.toLowerCase().includes(q)) return true;
+      if (o.phone?.toLowerCase().includes(q)) return true;
+      if (o.id.toLowerCase().includes(q)) return true;
+      if ((o.items || []).some((it) => it.name?.toLowerCase().includes(q))) return true;
+      return false;
+    }).slice(0, 8);
+  }, [query, orders]);
+
+  const selectedOrder = form.order_id ? orders.find((o) => o.id === form.order_id) : null;
+
+  function pickOrder(o: Order, item: OrderItem) {
+    const prod = products.find((p) => p.id === item.productId);
+    setForm({
+      ...form,
+      order_id: o.id,
+      order_date: o.date,
+      party_name: o.customer,
+      customer_phone: o.phone,
+      product_id: item.productId || "",
+      product_name: item.name,
+      quantity: item.qty,
+      product_price: item.price,
+      value_at_risk: item.price * item.qty,
+      notes: form.notes || (o.address ? `Endereço: ${o.address}${o.district ? `, ${o.district}` : ""}${o.city ? ` - ${o.city}` : ""}\nPagamento: ${o.payment}` : ""),
+    });
+    // ensure product info reflects catalog if available
+    if (prod && !form.product_name) {
+      setForm({ ...form, product_name: prod.name });
+    }
+  }
+
+  function clearOrder() {
+    setForm({ ...form, order_id: null, order_date: null });
+  }
+
+  return (
+    <div className="grid gap-3">
+      {!selectedOrder && (
+        <>
+          <Field label="Buscar pedido">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Nome, telefone, ID do pedido ou produto..."
+              />
+              {loading && <Loader2 className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />}
+            </div>
+          </Field>
+
+          {query && results.length === 0 && !loading && (
+            <div className="text-center py-6 text-sm text-muted-foreground rounded-lg border border-dashed border-border">
+              Nenhum pedido encontrado para esse cliente ou produto.
+            </div>
+          )}
+
+          {results.length > 0 && (
+            <div className="max-h-64 overflow-y-auto rounded-lg border border-border divide-y divide-border">
+              {results.map((o) => (
+                <div key={o.id} className="p-3 hover:bg-secondary/40">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-sm">{o.customer}</div>
+                      <div className="text-xs text-muted-foreground">{o.phone} · {fmtDate(o.date)} · {brl(o.total)}</div>
+                    </div>
+                    <div className="text-[10px] uppercase text-muted-foreground">#{o.id.slice(0, 6)}</div>
+                  </div>
+                  <div className="mt-2 grid gap-1">
+                    {(o.items || []).map((it, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => pickOrder(o, it)}
+                        className="text-left text-xs bg-secondary/50 hover:bg-primary/20 rounded-md px-2 py-1.5 flex items-center justify-between"
+                      >
+                        <span className="flex items-center gap-1.5"><Package className="h-3 w-3 text-primary" /> {it.qty}x {it.name}</span>
+                        <span className="text-muted-foreground">{brl(it.price)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {selectedOrder && (
+        <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-[10px] uppercase text-muted-foreground">Pedido vinculado</div>
+              <div className="font-semibold text-sm">{selectedOrder.customer}</div>
+              <div className="text-xs text-muted-foreground">{selectedOrder.phone} · {fmtDate(selectedOrder.date)}</div>
+            </div>
+            <Button type="button" variant="ghost" size="sm" onClick={clearOrder}>Trocar</Button>
+          </div>
+          <div className="mt-2 text-xs bg-secondary/40 rounded px-2 py-1.5">
+            {form.quantity}x {form.product_name} · {brl(form.product_price)}
+          </div>
+        </div>
+      )}
+
+      {selectedOrder && form.type === "cliente" && (
+        <Field label="Produto novo (em troca — opcional)">
+          <Select
+            value={form.new_product_id || "__none__"}
+            onValueChange={(v) => {
+              if (v === "__none__") { setForm({ ...form, new_product_id: "", new_product_name: "" }); return; }
+              const p = products.find((x) => x.id === v);
+              setForm({ ...form, new_product_id: v, new_product_name: p?.name ?? "" });
+            }}
+          >
+            <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Nenhum</SelectItem>
+              {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
+    </div>
+  );
+}
+
+function ManualSection({
+  form, setForm, products,
+}: {
+  form: FormState; setForm: (f: FormState) => void; products: Product[];
+}) {
+  return (
+    <div className="grid gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={form.type === "cliente" ? "Cliente" : "Fornecedor"}>
+          <Input value={form.party_name} onChange={(e) => setForm({ ...form, party_name: e.target.value })} />
+        </Field>
+        <Field label="Telefone (opcional)">
+          <Input value={form.customer_phone} onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} />
+        </Field>
+      </div>
+      <Field label="Produto devolvido">
+        <Select
+          value={form.product_id || "__none__"}
+          onValueChange={(v) => {
+            if (v === "__none__") { setForm({ ...form, product_id: "" }); return; }
+            const p = products.find((x) => x.id === v);
+            setForm({
+              ...form,
+              product_id: v,
+              product_name: p?.name ?? form.product_name,
+              product_price: p?.price ?? form.product_price,
+              value_at_risk: p ? p.price * form.quantity : form.value_at_risk,
+            });
+          }}
+        >
+          <SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">— Digitar manualmente —</SelectItem>
+            {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field label="Nome do produto">
+        <Input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} />
+      </Field>
+      {form.type === "cliente" && (
+        <Field label="Novo produto (em troca)">
+          <Input value={form.new_product_name} onChange={(e) => setForm({ ...form, new_product_name: e.target.value })} placeholder="Opcional" />
+        </Field>
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Quantidade">
+          <Input type="number" min={1} value={form.quantity}
+            onChange={(e) => {
+              const q = Math.max(1, Number(e.target.value));
+              setForm({ ...form, quantity: q, value_at_risk: form.product_price ? form.product_price * q : form.value_at_risk });
+            }} />
+        </Field>
+        <Field label="Valor em risco (R$)">
+          <Input type="number" min={0} step="0.01" value={form.value_at_risk}
+            onChange={(e) => setForm({ ...form, value_at_risk: Number(e.target.value) })} />
+        </Field>
+      </div>
+    </div>
   );
 }
 
