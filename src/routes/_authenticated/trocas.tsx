@@ -26,13 +26,14 @@ type ReturnRow = {
   id: string; type: "cliente" | "fornecedor"; party_name: string;
   product_id: string | null; product_name: string; new_product_name: string;
   quantity: number; reason: string;
-  status: "parado_loja" | "com_fornecedor" | "perdido" | "resolvido";
-  value_at_risk: number; return_date: string; notes: string;
+  status: "parado_loja" | "com_fornecedor" | "perdido" | "resolvido" | "devolvido_estoque";
+  value_at_risk: number; return_date: string; notes: string; restocked: boolean;
 };
 
 const statusList = [
   { value: "parado_loja", label: "Parado na loja", color: "bg-warning/15 text-warning" },
   { value: "com_fornecedor", label: "Com fornecedor", color: "bg-blue-500/15 text-blue-400" },
+  { value: "devolvido_estoque", label: "Devolvido ao estoque", color: "bg-emerald-500/15 text-emerald-400" },
   { value: "perdido", label: "Perdido", color: "bg-destructive/15 text-destructive" },
   { value: "resolvido", label: "Resolvido", color: "bg-primary/15 text-primary" },
 ] as const;
