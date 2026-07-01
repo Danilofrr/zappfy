@@ -1,0 +1,1 @@
+ALTER TABLE public.returns ADD COLUMN IF NOT EXISTS restocked boolean NOT NULL DEFAULT false;
