@@ -82,7 +82,7 @@ function TrocasPage() {
       title="Trocas & Devoluções"
       subtitle="Gestão de produtos devolvidos e trocas"
       actions={
-        <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" />Nova Troca</Button>
+        <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Nova Troca</Button>
       }
     >
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
