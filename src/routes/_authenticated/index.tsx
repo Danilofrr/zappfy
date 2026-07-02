@@ -216,9 +216,25 @@ function Dashboard() {
     }, 0);
   }, [returnsLost, range.start, range.end]);
 
-  const totalExpenses = fin.cogs + adsTotalCost + fin.opEx + fin.motoboyCost + returnsLossInRange;
-  // Lucro = Faturamento - COGS - (Meta Ads + Imposto Meta Ads) - OpEx - Motoboy - Perdas devoluções
-  const adjustedProfit = fin.revenue - fin.cogs - adsTotalCost - fin.opEx - fin.motoboyCost - returnsLossInRange;
+  // Descontos da taxa da maquininha (cartão) — extraídos das notas do pedido
+  const cardFeeCost = useMemo(() => {
+    const re = /Taxa\s+[\d.,]+%\s*\(R\$\s*([\d.,]+)\)/i;
+    return state.orders.reduce((sum, o) => {
+      if (o.status === "cancelado") return sum;
+      if (o.payment !== "cartao") return sum;
+      const d = new Date(o.date);
+      if (d < range.start || d >= range.end) return sum;
+      const mm = re.exec(o.notes || "");
+      if (!mm) return sum;
+      const raw = mm[1].replace(/\./g, "").replace(",", ".");
+      const v = Number(raw);
+      return sum + (isFinite(v) ? v : 0);
+    }, 0);
+  }, [state.orders, range.start, range.end]);
+
+  const totalExpenses = fin.cogs + adsTotalCost + fin.opEx + fin.motoboyCost + returnsLossInRange + cardFeeCost;
+  // Lucro = Faturamento - COGS - (Meta Ads + Imposto Meta Ads) - OpEx - Motoboy - Perdas devoluções - Taxa maquininha
+  const adjustedProfit = fin.revenue - fin.cogs - adsTotalCost - fin.opEx - fin.motoboyCost - returnsLossInRange - cardFeeCost;
 
 
   const periodBtns: { id: Period; label: string }[] = [
@@ -351,6 +367,9 @@ function Dashboard() {
             <Row label={`(-) Taxa Motoboy (${fin.ordersCount} ped.)`} value={`- ${m(brl(fin.motoboyCost))}`} />
             {returnsLossInRange > 0 && (
               <Row label="(-) Perdas em Devoluções" value={`- ${m(brl(returnsLossInRange))}`} />
+            )}
+            {cardFeeCost > 0 && (
+              <Row label="(-) Taxa Maquininha (Cartão)" value={`- ${m(brl(cardFeeCost))}`} />
             )}
             <div className="border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold">(=) Lucro Líquido</span>
