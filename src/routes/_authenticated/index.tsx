@@ -368,6 +368,9 @@ function Dashboard() {
             {returnsLossInRange > 0 && (
               <Row label="(-) Perdas em Devoluções" value={`- ${m(brl(returnsLossInRange))}`} />
             )}
+            {cardFeeCost > 0 && (
+              <Row label="(-) Taxa Maquininha (Cartão)" value={`- ${m(brl(cardFeeCost))}`} />
+            )}
             <div className="border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold">(=) Lucro Líquido</span>
               <span className="text-primary font-bold text-lg">{m(brl(adjustedProfit))}</span>
