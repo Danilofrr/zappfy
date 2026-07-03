@@ -415,6 +415,7 @@ function PedidosPage() {
   const [dateRange, setDateRange] = useState<DateRangeKey>("all");
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
 
   const dateBounds = useMemo(() => {
     const now = new Date();
