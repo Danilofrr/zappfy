@@ -1059,6 +1059,7 @@ export type Database = {
         Row: {
           address: string
           ads_tax_pct: number
+          card_fee_mode: string
           card_fee_pct: number
           card_machine_fees: Json
           checkout_bg_color: string
@@ -1130,6 +1131,7 @@ export type Database = {
         Insert: {
           address?: string
           ads_tax_pct?: number
+          card_fee_mode?: string
           card_fee_pct?: number
           card_machine_fees?: Json
           checkout_bg_color?: string
@@ -1201,6 +1203,7 @@ export type Database = {
         Update: {
           address?: string
           ads_tax_pct?: number
+          card_fee_mode?: string
           card_fee_pct?: number
           card_machine_fees?: Json
           checkout_bg_color?: string
