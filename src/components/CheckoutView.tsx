@@ -172,16 +172,19 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         `*Produto:* ${product.name} (x${qty})\n` +
         `*Valor unitário:* ${brl(product.price)}\n` +
         `*Entrega (${shipping.label}):* ${brl(shipping.price)}\n` +
-        `*Total:* ${brl(total)}\n\n` +
-        `*Nome:* ${form.customer}\n` +
+        (form.payment === "cartao" && cardFeeValue > 0 ? `*Taxa cartão (${cardFeePct.toFixed(2)}%):* ${brl(cardFeeValue)}\n` : "") +
+        `*Total:* ${brl(total)}\n` +
+        (form.payment === "cartao" ? `*Parcelamento:* ${cardBrand} — ${cardInstallments}x de ${brl(installmentValue)}\n` : "") +
+        `\n*Nome:* ${form.customer}\n` +
         `*WhatsApp:* ${form.phone}\n` +
         (form.cpf ? `*CPF:* ${form.cpf}\n` : "") +
         (form.email ? `*E-mail:* ${form.email}\n` : "") +
         (form.cep ? `*CEP:* ${form.cep}\n` : "") +
         `*Endereço:* ${form.address}${form.district ? `, ${form.district}` : ""}${form.city ? ` - ${form.city}` : ""}\n` +
         (form.reference ? `*Ponto de referência:* ${form.reference}\n` : "") +
-        `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? "Cartão" : "Dinheiro"}` +
+        `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? `Cartão ${cardBrand} ${cardInstallments}x` : "Dinheiro"}` +
         (form.notes ? `\n*Observações:* ${form.notes}` : "")
+
       : "";
   const waUrl = waNumber ? whatsappLink(waNumber, waMessage) : "";
 
