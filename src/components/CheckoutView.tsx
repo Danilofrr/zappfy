@@ -462,7 +462,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                             {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
                               const pct = Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[n] ?? 0);
                               const t = cardFeeAbsorbed ? baseTotal : baseTotal + baseTotal * (pct / 100);
-                              const suffix = pct > 0 ? (cardFeeAbsorbed ? " sem juros" : " com juros") : " sem juros";
+                              const suffix = cardFeeAbsorbed ? " sem juros" : "";
                               return (
                                 <SelectItem key={n} value={String(n)}>
                                   {n}x de {brl(t / n)}{suffix}
