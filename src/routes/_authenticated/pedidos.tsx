@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp, CalendarIcon, Phone, Home, Building2, ShoppingCart, Hash, DollarSign, Flag } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp, CalendarIcon, Phone, Home, Building2, ShoppingCart, Hash, DollarSign, Flag, Search, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -415,6 +415,7 @@ function PedidosPage() {
   const [dateRange, setDateRange] = useState<DateRangeKey>("all");
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
 
   const dateBounds = useMemo(() => {
     const now = new Date();
@@ -448,16 +449,34 @@ function PedidosPage() {
   }, [dateRange, customFrom, customTo]);
 
   const filtered = useMemo(
-    () => state.orders.filter((o) => {
-      if (filter !== "all" && o.status !== filter) return false;
-      if (dateBounds.from || dateBounds.to) {
-        const d = new Date(o.date);
-        if (dateBounds.from && d < dateBounds.from) return false;
-        if (dateBounds.to && d > dateBounds.to) return false;
-      }
-      return true;
-    }),
-    [state.orders, filter, dateBounds],
+    () => {
+      const q = search.trim().toLowerCase();
+      const qDigits = q.replace(/\D/g, "");
+      return state.orders.filter((o) => {
+        if (filter !== "all" && o.status !== filter) return false;
+        if (dateBounds.from || dateBounds.to) {
+          const d = new Date(o.date);
+          if (dateBounds.from && d < dateBounds.from) return false;
+          if (dateBounds.to && d > dateBounds.to) return false;
+        }
+        if (q) {
+          const cpf = extractFromNotes(o.notes, customerCpfNoteLabel);
+          const phoneDigits = (o.phone || "").replace(/\D/g, "");
+          const cpfDigits = cpf.replace(/\D/g, "");
+          const idDigits = o.id.replace(/\D/g, "");
+          const hay = `${o.customer || ""} ${o.phone || ""} ${o.id} ${cpf}`.toLowerCase();
+          const matchesText = hay.includes(q);
+          const matchesDigits = qDigits.length > 0 && (
+            phoneDigits.includes(qDigits) ||
+            cpfDigits.includes(qDigits) ||
+            idDigits.includes(qDigits)
+          );
+          if (!matchesText && !matchesDigits) return false;
+        }
+        return true;
+      });
+    },
+    [state.orders, filter, dateBounds, search],
   );
 
   const dateOptions: { key: DateRangeKey; label: string }[] = [
@@ -491,6 +510,29 @@ function PedidosPage() {
         </div>
       }
     >
+      {/* Search */}
+      <div className="mb-3">
+        <div className="relative max-w-md">
+          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome, CPF, telefone ou nº do pedido..."
+            className="pl-9 pr-9 h-9"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Date filter */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         {dateOptions.map((d) => (
