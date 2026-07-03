@@ -44,8 +44,10 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const cardFeePct = form.payment === "cartao"
     ? Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[cardInstallments] ?? 0)
     : 0;
+  const cardFeeAbsorbed = (settings.cardFeeMode ?? "passthrough") === "absorb";
   const cardFeeValue = form.payment === "cartao" ? baseTotal * (cardFeePct / 100) : 0;
-  const total = baseTotal + cardFeeValue;
+  const cardFeeCharged = cardFeeAbsorbed ? 0 : cardFeeValue;
+  const total = baseTotal + cardFeeCharged;
   const installmentValue = form.payment === "cartao" && cardInstallments > 0 ? total / cardInstallments : total;
 
 
