@@ -136,6 +136,9 @@ function toSettings(r: any): Settings {
     checkoutFooterShowEmail: r.checkout_footer_show_email ?? true,
     checkoutFooterShowWhatsapp: r.checkout_footer_show_whatsapp ?? true,
     slug: r.slug ?? "",
+    cardFeePct: Number(r.card_fee_pct ?? 0),
+    cardFeeMode: (r.card_fee_mode === "absorb" ? "absorb" : "passthrough"),
+    cardMachineFees: (r.card_machine_fees && typeof r.card_machine_fees === "object") ? r.card_machine_fees : {},
   };
 }
 
