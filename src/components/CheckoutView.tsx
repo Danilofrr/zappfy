@@ -34,10 +34,20 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const [addressReady, setAddressReady] = useState(false);
   const [shippingId, setShippingId] = useState<string>("");
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [cardBrand, setCardBrand] = useState<string>("VISA");
+  const [cardInstallments, setCardInstallments] = useState<number>(1);
 
   const product = products.find((p) => p.id === productId);
   const shipping: ShippingOption | undefined = settings.shippingOptions.find((s) => s.id === shippingId);
-  const total = (product?.price ?? 0) * qty + (shipping?.price ?? 0);
+  const baseTotal = (product?.price ?? 0) * qty + (shipping?.price ?? 0);
+  const CARD_BRANDS = ["VISA", "MASTERCARD", "ELO"] as const;
+  const cardFeePct = form.payment === "cartao"
+    ? Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[cardInstallments] ?? 0)
+    : 0;
+  const cardFeeValue = form.payment === "cartao" ? baseTotal * (cardFeePct / 100) : 0;
+  const total = baseTotal + cardFeeValue;
+  const installmentValue = form.payment === "cartao" && cardInstallments > 0 ? total / cardInstallments : total;
+
 
   async function lookupCep(raw: string) {
     const cep = raw.replace(/\D/g, "");
@@ -130,10 +140,13 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       notes: [
         customerCpf ? `CPF: ${customerCpf}` : "",
         customerEmail ? `E-mail: ${customerEmail}` : "",
+        form.payment === "cartao" ? `Cartão: ${cardBrand} ${cardInstallments}x de ${brl(installmentValue)}` : "",
+        form.payment === "cartao" && cardFeePct > 0 ? `Taxa ${cardFeePct.toFixed(2)}% (${brl(cardFeeValue)})` : "",
         form.notes || "",
       ].filter(Boolean).join("\n"),
       date: new Date().toISOString(),
     };
+
 
     // não logar PII do cliente (nome, telefone, endereço) no console
 
@@ -159,16 +172,19 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         `*Produto:* ${product.name} (x${qty})\n` +
         `*Valor unitário:* ${brl(product.price)}\n` +
         `*Entrega (${shipping.label}):* ${brl(shipping.price)}\n` +
-        `*Total:* ${brl(total)}\n\n` +
-        `*Nome:* ${form.customer}\n` +
+        (form.payment === "cartao" && cardFeeValue > 0 ? `*Taxa cartão (${cardFeePct.toFixed(2)}%):* ${brl(cardFeeValue)}\n` : "") +
+        `*Total:* ${brl(total)}\n` +
+        (form.payment === "cartao" ? `*Parcelamento:* ${cardBrand} — ${cardInstallments}x de ${brl(installmentValue)}\n` : "") +
+        `\n*Nome:* ${form.customer}\n` +
         `*WhatsApp:* ${form.phone}\n` +
         (form.cpf ? `*CPF:* ${form.cpf}\n` : "") +
         (form.email ? `*E-mail:* ${form.email}\n` : "") +
         (form.cep ? `*CEP:* ${form.cep}\n` : "") +
         `*Endereço:* ${form.address}${form.district ? `, ${form.district}` : ""}${form.city ? ` - ${form.city}` : ""}\n` +
         (form.reference ? `*Ponto de referência:* ${form.reference}\n` : "") +
-        `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? "Cartão" : "Dinheiro"}` +
+        `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? `Cartão ${cardBrand} ${cardInstallments}x` : "Dinheiro"}` +
         (form.notes ? `\n*Observações:* ${form.notes}` : "")
+
       : "";
   const waUrl = waNumber ? whatsappLink(waNumber, waMessage) : "";
 
@@ -424,7 +440,52 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                     ))}
                   </div>
                 </div>
+                {form.payment === "cartao" && (
+                  <div className="grid gap-3 rounded-lg p-3" style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}08` }}>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Bandeira">
+                        <Select value={cardBrand} onValueChange={(v) => setCardBrand(v)}>
+                          <SelectTrigger><SelectValue/></SelectTrigger>
+                          <SelectContent>
+                            {CARD_BRANDS.map((b) => (
+                              <SelectItem key={b} value={b}>{b}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      <Field label="Parcelas">
+                        <Select value={String(cardInstallments)} onValueChange={(v) => setCardInstallments(Number(v))}>
+                          <SelectTrigger><SelectValue/></SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
+                              const pct = Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[n] ?? 0);
+                              const t = baseTotal + baseTotal * (pct / 100);
+                              return (
+                                <SelectItem key={n} value={String(n)}>
+                                  {n}x de {brl(t / n)}{pct > 0 ? ` (taxa ${pct.toFixed(2)}%)` : " sem juros"}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    </div>
+                    <div className="text-xs space-y-1 opacity-90">
+                      <div className="flex justify-between"><span>Subtotal</span><span>{brl(baseTotal)}</span></div>
+                      {cardFeeValue > 0 && (
+                        <div className="flex justify-between"><span>Taxa maquininha ({cardFeePct.toFixed(2)}%)</span><span>{brl(cardFeeValue)}</span></div>
+                      )}
+                      <div className="flex justify-between font-semibold pt-1" style={{ borderTop: `1px dashed ${neonColor}55` }}>
+                        <span>Total no cartão</span><span>{brl(total)}</span>
+                      </div>
+                      <div className="flex justify-between font-semibold" style={{ color: neonColor }}>
+                        <span>{cardInstallments}x</span><span>{brl(installmentValue)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <Field label="Observações (opcional)"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} placeholder="Ex: tocar interfone, troco para R$ 200..."/></Field>
+
                 <div className="flex justify-end pt-2">
                   <Button
                     onClick={submit}
@@ -468,10 +529,19 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 label={shipping?.label || "Entrega"}
                 value={shipping ? brl(shipping.price) : (cepLoading ? "calculando..." : "selecione")}
               />
+              {form.payment === "cartao" && cardFeeValue > 0 && (
+                <Row label={`Taxa cartão (${cardFeePct.toFixed(2)}%)`} value={brl(cardFeeValue)} />
+              )}
               <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
                 <span className="font-semibold">Total</span>
                 <span className="font-bold text-lg">{brl(total)}</span>
               </div>
+              {form.payment === "cartao" && (
+                <div className="text-xs text-right opacity-80">
+                  ou <span className="font-semibold" style={{ color: neonColor }}>{cardInstallments}x de {brl(installmentValue)}</span> no {cardBrand}
+                </div>
+              )}
+
             </div>
           </aside>
         </div>
