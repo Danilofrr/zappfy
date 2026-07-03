@@ -1,0 +1,1 @@
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS card_fee_mode text NOT NULL DEFAULT 'passthrough';
