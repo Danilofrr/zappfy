@@ -31,6 +31,7 @@ function Page() {
       adsTaxPct: Number(f.adsTaxPct) || 0,
       otherFeesPct: Number(f.otherFeesPct) || 0,
       cardMachineFees: f.cardMachineFees ?? {},
+      cardFeeMode: f.cardFeeMode === "absorb" ? "absorb" : "passthrough",
     });
     toast.success("Taxas salvas");
   }
