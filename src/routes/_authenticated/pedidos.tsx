@@ -510,6 +510,29 @@ function PedidosPage() {
         </div>
       }
     >
+      {/* Search */}
+      <div className="mb-3">
+        <div className="relative max-w-md">
+          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome, CPF, telefone ou nº do pedido..."
+            className="pl-9 pr-9 h-9"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Date filter */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         {dateOptions.map((d) => (
