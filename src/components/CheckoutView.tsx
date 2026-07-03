@@ -440,7 +440,52 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                     ))}
                   </div>
                 </div>
+                {form.payment === "cartao" && (
+                  <div className="grid gap-3 rounded-lg p-3" style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}08` }}>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Bandeira">
+                        <Select value={cardBrand} onValueChange={(v) => setCardBrand(v)}>
+                          <SelectTrigger><SelectValue/></SelectTrigger>
+                          <SelectContent>
+                            {CARD_BRANDS.map((b) => (
+                              <SelectItem key={b} value={b}>{b}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      <Field label="Parcelas">
+                        <Select value={String(cardInstallments)} onValueChange={(v) => setCardInstallments(Number(v))}>
+                          <SelectTrigger><SelectValue/></SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
+                              const pct = Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[n] ?? 0);
+                              const t = baseTotal + baseTotal * (pct / 100);
+                              return (
+                                <SelectItem key={n} value={String(n)}>
+                                  {n}x de {brl(t / n)}{pct > 0 ? ` (taxa ${pct.toFixed(2)}%)` : " sem juros"}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    </div>
+                    <div className="text-xs space-y-1 opacity-90">
+                      <div className="flex justify-between"><span>Subtotal</span><span>{brl(baseTotal)}</span></div>
+                      {cardFeeValue > 0 && (
+                        <div className="flex justify-between"><span>Taxa maquininha ({cardFeePct.toFixed(2)}%)</span><span>{brl(cardFeeValue)}</span></div>
+                      )}
+                      <div className="flex justify-between font-semibold pt-1" style={{ borderTop: `1px dashed ${neonColor}55` }}>
+                        <span>Total no cartão</span><span>{brl(total)}</span>
+                      </div>
+                      <div className="flex justify-between font-semibold" style={{ color: neonColor }}>
+                        <span>{cardInstallments}x</span><span>{brl(installmentValue)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <Field label="Observações (opcional)"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} placeholder="Ex: tocar interfone, troco para R$ 200..."/></Field>
+
                 <div className="flex justify-end pt-2">
                   <Button
                     onClick={submit}
