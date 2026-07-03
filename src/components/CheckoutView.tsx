@@ -140,10 +140,13 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       notes: [
         customerCpf ? `CPF: ${customerCpf}` : "",
         customerEmail ? `E-mail: ${customerEmail}` : "",
+        form.payment === "cartao" ? `Cartão: ${cardBrand} ${cardInstallments}x de ${brl(installmentValue)}` : "",
+        form.payment === "cartao" && cardFeePct > 0 ? `Taxa ${cardFeePct.toFixed(2)}% (${brl(cardFeeValue)})` : "",
         form.notes || "",
       ].filter(Boolean).join("\n"),
       date: new Date().toISOString(),
     };
+
 
     // não logar PII do cliente (nome, telefone, endereço) no console
 
