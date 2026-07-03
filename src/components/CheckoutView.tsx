@@ -535,7 +535,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 label={shipping?.label || "Entrega"}
                 value={shipping ? brl(shipping.price) : (cepLoading ? "calculando..." : "selecione")}
               />
-              {form.payment === "cartao" && cardFeeValue > 0 && (
+              {form.payment === "cartao" && cardFeeValue > 0 && !cardFeeAbsorbed && (
                 <Row label={`Taxa cartão (${cardFeePct.toFixed(2)}%)`} value={brl(cardFeeValue)} />
               )}
               <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
