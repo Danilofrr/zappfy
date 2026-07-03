@@ -34,10 +34,20 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const [addressReady, setAddressReady] = useState(false);
   const [shippingId, setShippingId] = useState<string>("");
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [cardBrand, setCardBrand] = useState<string>("VISA");
+  const [cardInstallments, setCardInstallments] = useState<number>(1);
 
   const product = products.find((p) => p.id === productId);
   const shipping: ShippingOption | undefined = settings.shippingOptions.find((s) => s.id === shippingId);
-  const total = (product?.price ?? 0) * qty + (shipping?.price ?? 0);
+  const baseTotal = (product?.price ?? 0) * qty + (shipping?.price ?? 0);
+  const CARD_BRANDS = ["VISA", "MASTERCARD", "ELO"] as const;
+  const cardFeePct = form.payment === "cartao"
+    ? Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[cardInstallments] ?? 0)
+    : 0;
+  const cardFeeValue = form.payment === "cartao" ? baseTotal * (cardFeePct / 100) : 0;
+  const total = baseTotal + cardFeeValue;
+  const installmentValue = form.payment === "cartao" && cardInstallments > 0 ? total / cardInstallments : total;
+
 
   async function lookupCep(raw: string) {
     const cep = raw.replace(/\D/g, "");
