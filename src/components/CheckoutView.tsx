@@ -461,10 +461,11 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                           <SelectContent>
                             {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
                               const pct = Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[n] ?? 0);
-                              const t = baseTotal + baseTotal * (pct / 100);
+                              const t = cardFeeAbsorbed ? baseTotal : baseTotal + baseTotal * (pct / 100);
+                              const suffix = cardFeeAbsorbed ? "" : (pct > 0 ? ` (taxa ${pct.toFixed(2)}%)` : " sem juros");
                               return (
                                 <SelectItem key={n} value={String(n)}>
-                                  {n}x de {brl(t / n)}{pct > 0 ? ` (taxa ${pct.toFixed(2)}%)` : " sem juros"}
+                                  {n}x de {brl(t / n)}{suffix}
                                 </SelectItem>
                               );
                             })}
