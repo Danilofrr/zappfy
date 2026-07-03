@@ -70,6 +70,7 @@ const emptySettings: Settings = {
   adsTaxPct: 0,
   otherFeesPct: 0,
   cardMachineFees: {},
+  cardFeeMode: "passthrough",
   slug: "",
 };
 
