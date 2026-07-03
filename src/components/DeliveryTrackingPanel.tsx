@@ -271,7 +271,12 @@ export function DeliveryTrackingPanel({ orderId, customerPhone, orderAddress }: 
     if (!tracking || !courierTrackingUrl) return;
     const phone = tracking.courier_phone;
     if (!phone) { toast.error("Cadastre o telefone do motoboy"); return; }
-    const msg = buildCourierMessage(orderNumber, courierTrackingUrl);
+    const o = state.orders.find((x) => x.id === orderId);
+    const msg = buildCourierMessage(orderNumber, courierTrackingUrl, {
+      payment: o?.payment,
+      total: o?.total,
+      notes: o?.notes,
+    });
     window.open(whatsappLink(phone, msg), "_blank");
   }
 
