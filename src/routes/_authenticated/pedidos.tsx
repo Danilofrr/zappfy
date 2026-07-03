@@ -965,7 +965,7 @@ function colorForProduct(id: string) {
 
 type CartLine = { productId: string; qty: number };
 
-const MACHINE_BRANDS = ["VISA", "MASTERCARD", "ELO", "DÉBITO", "PIX", "DINHEIRO", "LINK"] as const;
+const MACHINE_BRANDS = ["VISA", "MASTERCARD", "ELO", "AMEX", "DÉBITO", "PIX", "DINHEIRO", "LINK"] as const;
 type MachineFees = Record<string, Record<number, number>>; // brand -> parcela -> %
 
 function loadMachineFees(): MachineFees {
