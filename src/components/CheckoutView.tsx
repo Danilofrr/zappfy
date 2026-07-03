@@ -174,7 +174,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         `*Produto:* ${product.name} (x${qty})\n` +
         `*Valor unitário:* ${brl(product.price)}\n` +
         `*Entrega (${shipping.label}):* ${brl(shipping.price)}\n` +
-        (form.payment === "cartao" && cardFeeValue > 0 ? `*Taxa cartão (${cardFeePct.toFixed(2)}%):* ${brl(cardFeeValue)}\n` : "") +
+        (form.payment === "cartao" && cardFeeValue > 0 && !cardFeeAbsorbed ? `*Taxa cartão (${cardFeePct.toFixed(2)}%):* ${brl(cardFeeValue)}\n` : "") +
         `*Total:* ${brl(total)}\n` +
         (form.payment === "cartao" ? `*Parcelamento:* ${cardBrand} — ${cardInstallments}x de ${brl(installmentValue)}\n` : "") +
         `\n*Nome:* ${form.customer}\n` +
