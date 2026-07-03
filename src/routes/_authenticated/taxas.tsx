@@ -114,7 +114,38 @@ function Page() {
 
       <div className="mt-6">
         <Card title="Taxas da maquininha (Crédito / Débito)" icon={Calculator} description="Configure a taxa (%) por bandeira e por parcela. Ao criar um pedido com cartão, você escolhe a bandeira e em quantas parcelas — a taxa é aplicada automaticamente.">
+          <div className="rounded-lg border border-border p-4 bg-muted/30">
+            <div className="text-sm font-medium mb-1">Quem paga a taxa da maquininha?</div>
+            <div className="text-[11px] text-muted-foreground mb-3">Define se a taxa configurada abaixo será somada ao valor no checkout (repassar ao cliente) ou descontada do seu lucro (loja absorve).</div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setF({ ...f, cardFeeMode: "passthrough" })}
+                className={`text-left rounded-lg border p-3 transition ${
+                  (f.cardFeeMode ?? "passthrough") === "passthrough"
+                    ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="text-sm font-semibold">Repassar ao cliente</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">A taxa é somada ao total no checkout.</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setF({ ...f, cardFeeMode: "absorb" })}
+                className={`text-left rounded-lg border p-3 transition ${
+                  f.cardFeeMode === "absorb"
+                    ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="text-sm font-semibold">Loja absorve</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">O cliente não paga a taxa — ela sai do seu lucro.</div>
+              </button>
+            </div>
+          </div>
           <div className="overflow-x-auto -mx-2">
+
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs uppercase tracking-wider text-muted-foreground">
