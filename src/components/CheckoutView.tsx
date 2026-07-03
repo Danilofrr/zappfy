@@ -529,10 +529,19 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 label={shipping?.label || "Entrega"}
                 value={shipping ? brl(shipping.price) : (cepLoading ? "calculando..." : "selecione")}
               />
+              {form.payment === "cartao" && cardFeeValue > 0 && (
+                <Row label={`Taxa cartão (${cardFeePct.toFixed(2)}%)`} value={brl(cardFeeValue)} />
+              )}
               <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
                 <span className="font-semibold">Total</span>
                 <span className="font-bold text-lg">{brl(total)}</span>
               </div>
+              {form.payment === "cartao" && (
+                <div className="text-xs text-right opacity-80">
+                  ou <span className="font-semibold" style={{ color: neonColor }}>{cardInstallments}x de {brl(installmentValue)}</span> no {cardBrand}
+                </div>
+              )}
+
             </div>
           </aside>
         </div>
