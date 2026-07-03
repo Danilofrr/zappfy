@@ -128,6 +128,7 @@ export type Settings = {
   adsTaxPct: number;
   otherFeesPct: number;
   cardMachineFees: Record<string, Record<number, number>>;
+  cardFeeMode: "absorb" | "passthrough";
   slug: string;
 };
 
@@ -201,6 +202,7 @@ const emptySettings: Settings = {
   adsTaxPct: 0,
   otherFeesPct: 0,
   cardMachineFees: {},
+  cardFeeMode: "passthrough",
   slug: "",
 };
 
@@ -333,6 +335,7 @@ const toSettings = (r: any): Settings => ({
   adsTaxPct: Number(r.ads_tax_pct ?? 0),
   otherFeesPct: Number(r.other_fees_pct ?? 0),
   cardMachineFees: (r.card_machine_fees && typeof r.card_machine_fees === "object") ? r.card_machine_fees as Record<string, Record<number, number>> : {},
+  cardFeeMode: (r.card_fee_mode === "absorb" ? "absorb" : "passthrough"),
   slug: r.slug ?? "",
 });
 
@@ -734,6 +737,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.adsTaxPct !== undefined) patch.ads_tax_pct = p.adsTaxPct;
       if (p.otherFeesPct !== undefined) patch.other_fees_pct = p.otherFeesPct;
       if (p.cardMachineFees !== undefined) patch.card_machine_fees = p.cardMachineFees as any;
+      if (p.cardFeeMode !== undefined) patch.card_fee_mode = p.cardFeeMode;
       if (p.slug !== undefined) patch.slug = p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || null : null;
       const { data, error } = await supabase.from("settings").update(patch).eq("store_id", activeStoreId ?? user.id).select().single();
       if (error) { toast.error(error.message); return; }

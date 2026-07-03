@@ -44,8 +44,10 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const cardFeePct = form.payment === "cartao"
     ? Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[cardInstallments] ?? 0)
     : 0;
+  const cardFeeAbsorbed = (settings.cardFeeMode ?? "passthrough") === "absorb";
   const cardFeeValue = form.payment === "cartao" ? baseTotal * (cardFeePct / 100) : 0;
-  const total = baseTotal + cardFeeValue;
+  const cardFeeCharged = cardFeeAbsorbed ? 0 : cardFeeValue;
+  const total = baseTotal + cardFeeCharged;
   const installmentValue = form.payment === "cartao" && cardInstallments > 0 ? total / cardInstallments : total;
 
 
@@ -141,7 +143,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         customerCpf ? `CPF: ${customerCpf}` : "",
         customerEmail ? `E-mail: ${customerEmail}` : "",
         form.payment === "cartao" ? `Cartão: ${cardBrand} ${cardInstallments}x de ${brl(installmentValue)}` : "",
-        form.payment === "cartao" && cardFeePct > 0 ? `Taxa ${cardFeePct.toFixed(2)}% (${brl(cardFeeValue)})` : "",
+        form.payment === "cartao" && cardFeePct > 0 ? `Taxa ${cardFeePct.toFixed(2)}% (${brl(cardFeeValue)})${cardFeeAbsorbed ? " — absorvida pela loja" : ""}` : "",
         form.notes || "",
       ].filter(Boolean).join("\n"),
       date: new Date().toISOString(),
@@ -172,7 +174,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         `*Produto:* ${product.name} (x${qty})\n` +
         `*Valor unitário:* ${brl(product.price)}\n` +
         `*Entrega (${shipping.label}):* ${brl(shipping.price)}\n` +
-        (form.payment === "cartao" && cardFeeValue > 0 ? `*Taxa cartão (${cardFeePct.toFixed(2)}%):* ${brl(cardFeeValue)}\n` : "") +
+        (form.payment === "cartao" && cardFeeValue > 0 && !cardFeeAbsorbed ? `*Taxa cartão (${cardFeePct.toFixed(2)}%):* ${brl(cardFeeValue)}\n` : "") +
         `*Total:* ${brl(total)}\n` +
         (form.payment === "cartao" ? `*Parcelamento:* ${cardBrand} — ${cardInstallments}x de ${brl(installmentValue)}\n` : "") +
         `\n*Nome:* ${form.customer}\n` +
@@ -459,10 +461,11 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                           <SelectContent>
                             {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
                               const pct = Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[n] ?? 0);
-                              const t = baseTotal + baseTotal * (pct / 100);
+                              const t = cardFeeAbsorbed ? baseTotal : baseTotal + baseTotal * (pct / 100);
+                              const suffix = cardFeeAbsorbed ? "" : (pct > 0 ? ` (taxa ${pct.toFixed(2)}%)` : " sem juros");
                               return (
                                 <SelectItem key={n} value={String(n)}>
-                                  {n}x de {brl(t / n)}{pct > 0 ? ` (taxa ${pct.toFixed(2)}%)` : " sem juros"}
+                                  {n}x de {brl(t / n)}{suffix}
                                 </SelectItem>
                               );
                             })}
@@ -472,8 +475,11 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                     </div>
                     <div className="text-xs space-y-1 opacity-90">
                       <div className="flex justify-between"><span>Subtotal</span><span>{brl(baseTotal)}</span></div>
-                      {cardFeeValue > 0 && (
+                      {cardFeeValue > 0 && !cardFeeAbsorbed && (
                         <div className="flex justify-between"><span>Taxa maquininha ({cardFeePct.toFixed(2)}%)</span><span>{brl(cardFeeValue)}</span></div>
+                      )}
+                      {cardFeeValue > 0 && cardFeeAbsorbed && (
+                        <div className="flex justify-between opacity-70"><span>Taxa maquininha ({cardFeePct.toFixed(2)}%)</span><span>Por conta da loja</span></div>
                       )}
                       <div className="flex justify-between font-semibold pt-1" style={{ borderTop: `1px dashed ${neonColor}55` }}>
                         <span>Total no cartão</span><span>{brl(total)}</span>
@@ -529,7 +535,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 label={shipping?.label || "Entrega"}
                 value={shipping ? brl(shipping.price) : (cepLoading ? "calculando..." : "selecione")}
               />
-              {form.payment === "cartao" && cardFeeValue > 0 && (
+              {form.payment === "cartao" && cardFeeValue > 0 && !cardFeeAbsorbed && (
                 <Row label={`Taxa cartão (${cardFeePct.toFixed(2)}%)`} value={brl(cardFeeValue)} />
               )}
               <div className="pt-3 flex justify-between" style={{ borderTop: `1px solid ${neonColor}33` }}>
