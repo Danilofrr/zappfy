@@ -449,16 +449,34 @@ function PedidosPage() {
   }, [dateRange, customFrom, customTo]);
 
   const filtered = useMemo(
-    () => state.orders.filter((o) => {
-      if (filter !== "all" && o.status !== filter) return false;
-      if (dateBounds.from || dateBounds.to) {
-        const d = new Date(o.date);
-        if (dateBounds.from && d < dateBounds.from) return false;
-        if (dateBounds.to && d > dateBounds.to) return false;
-      }
-      return true;
-    }),
-    [state.orders, filter, dateBounds],
+    () => {
+      const q = search.trim().toLowerCase();
+      const qDigits = q.replace(/\D/g, "");
+      return state.orders.filter((o) => {
+        if (filter !== "all" && o.status !== filter) return false;
+        if (dateBounds.from || dateBounds.to) {
+          const d = new Date(o.date);
+          if (dateBounds.from && d < dateBounds.from) return false;
+          if (dateBounds.to && d > dateBounds.to) return false;
+        }
+        if (q) {
+          const cpf = extractFromNotes(o.notes, customerCpfNoteLabel);
+          const phoneDigits = (o.phone || "").replace(/\D/g, "");
+          const cpfDigits = cpf.replace(/\D/g, "");
+          const idDigits = o.id.replace(/\D/g, "");
+          const hay = `${o.customer || ""} ${o.phone || ""} ${o.id} ${cpf}`.toLowerCase();
+          const matchesText = hay.includes(q);
+          const matchesDigits = qDigits.length > 0 && (
+            phoneDigits.includes(qDigits) ||
+            cpfDigits.includes(qDigits) ||
+            idDigits.includes(qDigits)
+          );
+          if (!matchesText && !matchesDigits) return false;
+        }
+        return true;
+      });
+    },
+    [state.orders, filter, dateBounds, search],
   );
 
   const dateOptions: { key: DateRangeKey; label: string }[] = [
