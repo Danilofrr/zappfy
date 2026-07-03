@@ -222,8 +222,41 @@ export function formatRelative(date: string | Date | null | undefined): string {
   return `há ${days}d`;
 }
 
-export function buildCourierMessage(orderNumber: string, courierLink: string): string {
-  return `Olá, você recebeu uma nova entrega 🛵\n\nPedido: #${orderNumber}\n\nClique no link abaixo, permita a localização e toque em *Iniciar Entrega*:\n\n${courierLink}`;
+export type CourierPaymentInfo = {
+  payment?: string | null; // "pix" | "cartao" | "dinheiro"
+  total?: number | null;
+  notes?: string | null;
+};
+
+function formatBRL(n: number): string {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n || 0);
+}
+
+function extractCardLineFromNotes(notes: string | null | undefined): string | null {
+  if (!notes) return null;
+  // Ex: "Cartão: VISA 3x de R$ 50,00"
+  const m = /Cart[ãa]o:\s*(.+)/i.exec(notes);
+  return m ? m[1].trim().split(/\r?\n/)[0] : null;
+}
+
+export function buildCourierMessage(
+  orderNumber: string,
+  courierLink: string,
+  info?: CourierPaymentInfo,
+): string {
+  let paymentBlock = "";
+  if (info?.payment) {
+    const p = String(info.payment).toLowerCase();
+    const label = p === "pix" ? "PIX" : p === "cartao" ? "Cartão" : p === "dinheiro" ? "Dinheiro" : info.payment;
+    const totalStr = info.total != null ? formatBRL(Number(info.total)) : "";
+    paymentBlock = `\n\n*Forma de pagamento:* ${label}`;
+    if (p === "cartao") {
+      const card = extractCardLineFromNotes(info.notes);
+      if (card) paymentBlock += `\n*Parcelamento:* ${card}`;
+    }
+    if (totalStr) paymentBlock += `\n*Total do pedido:* ${totalStr}`;
+  }
+  return `Olá, você recebeu uma nova entrega 🛵\n\nPedido: #${orderNumber}${paymentBlock}\n\nClique no link abaixo, permita a localização e toque em *Iniciar Entrega*:\n\n${courierLink}`;
 }
 
 export const DEFAULT_CUSTOMER_TRACKING_TEMPLATE = `Oba! 🎉 Seu pedido foi realizado com sucesso, {customer_name}!\n\nAcompanhe seu pedido em tempo real pelo link:\n\n{tracking_link}\n\nQualquer dúvida, é só chamar por aqui.\n\n— {store_name}`;
