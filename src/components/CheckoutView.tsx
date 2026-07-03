@@ -40,7 +40,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const product = products.find((p) => p.id === productId);
   const shipping: ShippingOption | undefined = settings.shippingOptions.find((s) => s.id === shippingId);
   const baseTotal = (product?.price ?? 0) * qty + (shipping?.price ?? 0);
-  const CARD_BRANDS = ["VISA", "MASTERCARD", "ELO"] as const;
+  const CARD_BRANDS = ["VISA", "MASTERCARD", "ELO", "AMEX"] as const;
   const cardFeePct = form.payment === "cartao"
     ? Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[cardInstallments] ?? 0)
     : 0;

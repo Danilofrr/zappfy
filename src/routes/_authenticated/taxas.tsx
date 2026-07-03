@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Bike, Receipt, CreditCard, Building2, Megaphone, Percent, Calculator } from "lucide-react";
 
-const MACHINE_BRANDS = ["VISA", "MASTERCARD", "ELO", "DÉBITO", "PIX", "DINHEIRO", "LINK"] as const;
+const MACHINE_BRANDS = ["VISA", "MASTERCARD", "ELO", "AMEX", "DÉBITO", "PIX", "DINHEIRO", "LINK"] as const;
 const noInstallment = (brand: string) => brand === "DÉBITO" || brand === "PIX" || brand === "DINHEIRO";
 
 export const Route = createFileRoute("/_authenticated/taxas")({
