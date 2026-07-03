@@ -475,8 +475,11 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                     </div>
                     <div className="text-xs space-y-1 opacity-90">
                       <div className="flex justify-between"><span>Subtotal</span><span>{brl(baseTotal)}</span></div>
-                      {cardFeeValue > 0 && (
+                      {cardFeeValue > 0 && !cardFeeAbsorbed && (
                         <div className="flex justify-between"><span>Taxa maquininha ({cardFeePct.toFixed(2)}%)</span><span>{brl(cardFeeValue)}</span></div>
+                      )}
+                      {cardFeeValue > 0 && cardFeeAbsorbed && (
+                        <div className="flex justify-between opacity-70"><span>Taxa maquininha ({cardFeePct.toFixed(2)}%)</span><span>Por conta da loja</span></div>
                       )}
                       <div className="flex justify-between font-semibold pt-1" style={{ borderTop: `1px dashed ${neonColor}55` }}>
                         <span>Total no cartão</span><span>{brl(total)}</span>
