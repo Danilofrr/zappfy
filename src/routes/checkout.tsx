@@ -46,6 +46,7 @@ function toSettings(r: any): Settings {
     motoboyFee: Number(r.motoboy_fee ?? 0),
     taxPct: Number(r.tax_pct ?? 0),
     cardFeePct: Number(r.card_fee_pct ?? 0),
+    cardFeeMode: (r.card_fee_mode === "absorb" ? "absorb" : "passthrough"),
     platformFeePct: Number(r.platform_fee_pct ?? 0),
     adsTaxPct: Number(r.ads_tax_pct ?? 0),
     otherFeesPct: Number(r.other_fees_pct ?? 0),
