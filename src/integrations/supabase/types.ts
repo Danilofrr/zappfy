@@ -1657,6 +1657,9 @@ export type Database = {
       settings_public: {
         Row: {
           address: string | null
+          card_fee_mode: string | null
+          card_fee_pct: number | null
+          card_machine_fees: Json | null
           checkout_bg_color: string | null
           checkout_button_color: string | null
           checkout_button_label: string | null
@@ -1703,6 +1706,9 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          card_fee_mode?: string | null
+          card_fee_pct?: number | null
+          card_machine_fees?: Json | null
           checkout_bg_color?: string | null
           checkout_button_color?: string | null
           checkout_button_label?: string | null
@@ -1749,6 +1755,9 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          card_fee_mode?: string | null
+          card_fee_pct?: number | null
+          card_machine_fees?: Json | null
           checkout_bg_color?: string | null
           checkout_button_color?: string | null
           checkout_button_label?: string | null

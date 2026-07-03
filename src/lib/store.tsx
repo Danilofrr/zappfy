@@ -128,6 +128,7 @@ export type Settings = {
   adsTaxPct: number;
   otherFeesPct: number;
   cardMachineFees: Record<string, Record<number, number>>;
+  cardFeeMode: "absorb" | "passthrough";
   slug: string;
 };
 
