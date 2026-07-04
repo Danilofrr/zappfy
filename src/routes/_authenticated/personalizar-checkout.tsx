@@ -8,9 +8,18 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image as ImageIcon, Upload, X, ExternalLink, Copy } from "lucide-react";
+import { Image as ImageIcon, Upload, X, ExternalLink, Copy, Plus, Trash2 } from "lucide-react";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
+import { SHIPPING_ICONS, getShippingIcon } from "@/lib/shipping-icons";
+import type { ShippingOption } from "@/lib/store";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/personalizar-checkout")({
   head: () => ({ meta: [{ title: "Personalizar Checkout — ZappFy" }] }),
