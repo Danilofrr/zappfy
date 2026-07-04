@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image as ImageIcon, Upload, X, ExternalLink, Copy, Plus, Trash2 } from "lucide-react";
+import { Image as ImageIcon, Upload, X, ExternalLink, Copy, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
 import { SHIPPING_ICONS, getShippingIcon } from "@/lib/shipping-icons";
@@ -172,7 +172,39 @@ function Page() {
               {(f.shippingOptions || []).map((opt, idx) => {
                 const Icon = getShippingIcon(opt.icon);
                 return (
-                  <div key={opt.id} className="rounded-lg border border-border p-3 grid gap-2 sm:grid-cols-[auto_1fr_140px_150px_auto] sm:items-end">
+                  <div key={opt.id} className="rounded-lg border border-border p-3 grid gap-2 sm:grid-cols-[auto_auto_1fr_140px_150px_auto] sm:items-end">
+                    <div className="flex sm:flex-col gap-1 justify-center sm:justify-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={idx === 0}
+                        onClick={() => {
+                          const next = [...f.shippingOptions];
+                          [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                          setF({ ...f, shippingOptions: next });
+                        }}
+                        title="Mover para cima"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={idx === f.shippingOptions.length - 1}
+                        onClick={() => {
+                          const next = [...f.shippingOptions];
+                          [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+                          setF({ ...f, shippingOptions: next });
+                        }}
+                        title="Mover para baixo"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <div className="h-10 w-10 grid place-items-center rounded-md border border-border bg-background/40 shrink-0">
                       <Icon className="h-5 w-5" />
                     </div>
