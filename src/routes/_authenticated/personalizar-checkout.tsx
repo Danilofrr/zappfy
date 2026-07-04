@@ -8,9 +8,18 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image as ImageIcon, Upload, X, ExternalLink, Copy } from "lucide-react";
+import { Image as ImageIcon, Upload, X, ExternalLink, Copy, Plus, Trash2 } from "lucide-react";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
+import { SHIPPING_ICONS, getShippingIcon } from "@/lib/shipping-icons";
+import type { ShippingOption } from "@/lib/store";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/personalizar-checkout")({
   head: () => ({ meta: [{ title: "Personalizar Checkout — ZappFy" }] }),
@@ -154,7 +163,105 @@ function Page() {
             </div>
           </Card>
 
+          {/* FORMAS DE ENTREGA */}
+          <Card title="Formas de entrega">
+            <p className="text-[11px] text-muted-foreground -mt-2">
+              Configure as opções de entrega e o valor que aparecerá no checkout (ex.: Motoboy, Retirada, Correios).
+            </p>
+            <div className="grid gap-2">
+              {(f.shippingOptions || []).map((opt, idx) => {
+                const Icon = getShippingIcon(opt.icon);
+                return (
+                  <div key={opt.id} className="rounded-lg border border-border p-3 grid gap-2 sm:grid-cols-[auto_1fr_140px_150px_auto] sm:items-end">
+                    <div className="h-10 w-10 grid place-items-center rounded-md border border-border bg-background/40 shrink-0">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <Field label="Nome">
+                      <Input
+                        value={opt.label}
+                        onChange={(e) => {
+                          const next = [...f.shippingOptions];
+                          next[idx] = { ...opt, label: e.target.value };
+                          setF({ ...f, shippingOptions: next });
+                        }}
+                        placeholder="Motoboy"
+                      />
+                    </Field>
+                    <Field label="Valor (R$)">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={opt.price}
+                        onChange={(e) => {
+                          const next = [...f.shippingOptions];
+                          next[idx] = { ...opt, price: Number(e.target.value) || 0 };
+                          setF({ ...f, shippingOptions: next });
+                        }}
+                      />
+                    </Field>
+                    <Field label="Ícone">
+                      <Select
+                        value={opt.icon || "truck"}
+                        onValueChange={(v) => {
+                          const next = [...f.shippingOptions];
+                          next[idx] = { ...opt, icon: v };
+                          setF({ ...f, shippingOptions: next });
+                        }}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {SHIPPING_ICONS.map((i) => (
+                            <SelectItem key={i.key} value={i.key}>
+                              <span className="inline-flex items-center gap-2">
+                                <i.Icon className="h-4 w-4" /> {i.label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        const next = f.shippingOptions.filter((_, i) => i !== idx);
+                        setF({ ...f, shippingOptions: next });
+                      }}
+                      title="Remover"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                );
+              })}
+              {(f.shippingOptions || []).length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhuma forma de entrega cadastrada.</p>
+              )}
+            </div>
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const newOpt: ShippingOption = {
+                    id: `ship-${Date.now().toString(36)}`,
+                    label: "Nova entrega",
+                    price: 0,
+                    icon: "truck",
+                  };
+                  setF({ ...f, shippingOptions: [...(f.shippingOptions || []), newOpt] });
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Adicionar forma de entrega
+              </Button>
+            </div>
+          </Card>
+
           {/* RODAPÉ */}
+
           <Card title="Rodapé do checkout">
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div>
