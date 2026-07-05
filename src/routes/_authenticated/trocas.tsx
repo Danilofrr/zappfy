@@ -19,7 +19,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/trocas")({
-  head: () => ({ meta: [{ title: "Devoluções — ZappFy" }] }),
+  head: () => ({ meta: [{ title: "Trocas e Devoluções — ZappFy" }] }),
   component: TrocasPage,
 });
 
@@ -113,7 +113,7 @@ function TrocasPage() {
 
   return (
     <AppShell
-      title="Devoluções"
+      title="Trocas e Devoluções"
       subtitle="Gestão de produtos devolvidos e trocas"
       actions={
         <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Nova Troca</Button>
