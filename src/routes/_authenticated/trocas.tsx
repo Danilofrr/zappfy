@@ -47,7 +47,7 @@ const statusList = [
 ] as const;
 
 function TrocasPage() {
-  const { state, user, updateProduct } = useStore();
+  const { state, user, updateProduct, updateOrderStatus } = useStore();
   const { activeStoreId } = useActiveStore();
   const [rows, setRows] = useState<ReturnRow[]>([]);
   const [tab, setTab] = useState<"cliente" | "fornecedor">("cliente");
@@ -96,11 +96,25 @@ function TrocasPage() {
     return (data as ReturnRow) ?? { ...row, restocked: true };
   }
 
+  async function cancelLinkedOrderIfNeeded(row: ReturnRow) {
+    if (row.status !== "devolvido_estoque") return;
+    if (!row.order_id) return;
+    const order = state.orders.find((o) => o.id === row.order_id);
+    if (!order || order.status === "cancelado") return;
+    try {
+      await updateOrderStatus(row.order_id, "cancelado" as any);
+      toast.success("Pedido marcado como cancelado");
+    } catch (e: any) {
+      toast.error(e?.message || "Não foi possível cancelar o pedido vinculado");
+    }
+  }
+
   async function updateStatus(id: string, status: ReturnRow["status"]) {
     const { data, error } = await (supabase.from("returns" as any) as any).update({ status }).eq("id", id).select().single();
     if (error) return toast.error(error.message);
     let updated = data as ReturnRow;
     updated = await restockIfNeeded(updated);
+    await cancelLinkedOrderIfNeeded(updated);
     setRows((p) => p.map((x) => x.id === id ? updated : x));
   }
   async function del(id: string) {
@@ -202,6 +216,7 @@ function TrocasPage() {
         editing={editing}
         onSaved={async (r, mode) => {
           const updated = await restockIfNeeded(r);
+          await cancelLinkedOrderIfNeeded(updated);
           if (mode === "edit") setRows((p) => p.map((x) => x.id === updated.id ? updated : x));
           else setRows((p) => [updated, ...p]);
         }}
@@ -241,14 +256,24 @@ type FormState = {
   product_price: number;
   order_id: string | null;
   order_date: string | null;
+  return_date: string;
   notes: string;
+};
+
+const toDateInput = (iso?: string | null) => {
+  const d = iso ? new Date(iso) : new Date();
+  if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 };
 
 const emptyForm = (type: "cliente" | "fornecedor"): FormState => ({
   type, party_name: "", customer_phone: "", product_id: "", product_name: "",
   new_product_id: "", new_product_name: "",
   quantity: 1, reason: "", status: "parado_loja", value_at_risk: 0, product_price: 0,
-  order_id: null, order_date: null, notes: "",
+  order_id: null, order_date: null, return_date: toDateInput(), notes: "",
 });
 
 function ReturnDialog({
@@ -285,6 +310,7 @@ function ReturnDialog({
         product_price: Number(editing.product_price) || 0,
         order_id: editing.order_id ?? null,
         order_date: editing.order_date ?? null,
+        return_date: toDateInput(editing.return_date),
         notes: editing.notes ?? "",
       });
     } else {
@@ -320,6 +346,7 @@ function ReturnDialog({
         product_price: form.product_price,
         order_id: form.order_id,
         order_date: form.order_date,
+        return_date: form.return_date ? new Date(`${form.return_date}T12:00:00`).toISOString() : new Date().toISOString(),
         notes: form.notes.trim() || null,
         store_id: activeStoreId ?? user.id,
       };
@@ -389,12 +416,21 @@ function ReturnDialog({
         )}
 
         <div className="grid gap-3 pt-2 border-t border-border mt-3">
-          <Field label="Status">
-            <Select value={form.status} onValueChange={(v: any) => setForm({ ...form, status: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-            </Select>
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Data da troca">
+              <Input
+                type="date"
+                value={form.return_date}
+                onChange={(e) => setForm({ ...form, return_date: e.target.value })}
+              />
+            </Field>
+            <Field label="Status">
+              <Select value={form.status} onValueChange={(v: any) => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+          </div>
           <Field label="Motivo">
             <Textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Ex: defeito, arrependimento, tamanho errado..." />
           </Field>
