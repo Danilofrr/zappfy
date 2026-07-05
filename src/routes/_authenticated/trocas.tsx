@@ -47,7 +47,7 @@ const statusList = [
 ] as const;
 
 function TrocasPage() {
-  const { state, user, updateProduct } = useStore();
+  const { state, user, updateProduct, updateOrderStatus } = useStore();
   const { activeStoreId } = useActiveStore();
   const [rows, setRows] = useState<ReturnRow[]>([]);
   const [tab, setTab] = useState<"cliente" | "fornecedor">("cliente");
@@ -96,11 +96,25 @@ function TrocasPage() {
     return (data as ReturnRow) ?? { ...row, restocked: true };
   }
 
+  async function cancelLinkedOrderIfNeeded(row: ReturnRow) {
+    if (row.status !== "devolvido_estoque") return;
+    if (!row.order_id) return;
+    const order = state.orders.find((o) => o.id === row.order_id);
+    if (!order || order.status === "cancelado") return;
+    try {
+      await updateOrderStatus(row.order_id, "cancelado" as any);
+      toast.success("Pedido marcado como cancelado");
+    } catch (e: any) {
+      toast.error(e?.message || "Não foi possível cancelar o pedido vinculado");
+    }
+  }
+
   async function updateStatus(id: string, status: ReturnRow["status"]) {
     const { data, error } = await (supabase.from("returns" as any) as any).update({ status }).eq("id", id).select().single();
     if (error) return toast.error(error.message);
     let updated = data as ReturnRow;
     updated = await restockIfNeeded(updated);
+    await cancelLinkedOrderIfNeeded(updated);
     setRows((p) => p.map((x) => x.id === id ? updated : x));
   }
   async function del(id: string) {
@@ -202,6 +216,7 @@ function TrocasPage() {
         editing={editing}
         onSaved={async (r, mode) => {
           const updated = await restockIfNeeded(r);
+          await cancelLinkedOrderIfNeeded(updated);
           if (mode === "edit") setRows((p) => p.map((x) => x.id === updated.id ? updated : x));
           else setRows((p) => [updated, ...p]);
         }}
