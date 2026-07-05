@@ -31,7 +31,7 @@ const submitSchema = z.object({
     items: z.array(itemSchema).min(1, "Produto inválido"),
     shipping: num.optional(),
     total: num.optional(),
-    payment: z.enum(["pix", "cartao", "dinheiro"], {
+    payment: z.enum(["pix", "cartao", "debito", "dinheiro"], {
       errorMap: () => ({ message: "Forma de pagamento não selecionada" }),
     }),
     notes: z.string().max(2000).optional().default(""),

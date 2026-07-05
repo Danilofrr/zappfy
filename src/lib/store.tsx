@@ -24,7 +24,7 @@ export type OrderStatus =
   | "entregue"
   | "cancelado";
 
-export type PaymentMethod = "pix" | "cartao" | "dinheiro";
+export type PaymentMethod = "pix" | "cartao" | "debito" | "dinheiro";
 
 export type OrderItem = { productId: string; name: string; qty: number; price: number; cost: number; cpf?: string; email?: string };
 

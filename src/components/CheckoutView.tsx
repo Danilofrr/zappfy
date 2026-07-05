@@ -184,7 +184,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         (form.cep ? `*CEP:* ${form.cep}\n` : "") +
         `*Endereço:* ${form.address}${form.district ? `, ${form.district}` : ""}${form.city ? ` - ${form.city}` : ""}\n` +
         (form.reference ? `*Ponto de referência:* ${form.reference}\n` : "") +
-        `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? `Cartão ${cardBrand} ${cardInstallments}x` : "Dinheiro"}` +
+        `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? `Cartão ${cardBrand} ${cardInstallments}x` : form.payment === "debito" ? "Cartão de Débito" : "Dinheiro"}` +
         (form.notes ? `\n*Observações:* ${form.notes}` : "")
 
       : "";
@@ -462,8 +462,8 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
               <div className="grid gap-4">
                 <div>
                   <Label className="text-xs mb-2 block">Forma de pagamento</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["pix", "cartao", "dinheiro"] as PaymentMethod[]).map((p) => (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {(["pix", "cartao", "debito", "dinheiro"] as PaymentMethod[]).map((p) => (
                       <button
                         key={p}
                         type="button"
@@ -471,7 +471,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                         className={`rounded-lg border px-3 py-2.5 text-sm font-medium capitalize transition-colors ${
                           form.payment === p ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"
                         }`}
-                      >{p === "cartao" ? "Cartão" : p === "pix" ? "PIX" : "Dinheiro"}</button>
+                      >{p === "cartao" ? "Cartão" : p === "pix" ? "PIX" : p === "debito" ? "Débito" : "Dinheiro"}</button>
                     ))}
                   </div>
                 </div>
