@@ -259,6 +259,13 @@ function NewSupplierDialog({ open, setOpen, onSaved }: { open: boolean; setOpen:
   );
 }
 
+type OrderItem = {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_cost: number;
+};
+
 function NewOrderDialog({
   open, setOpen, suppliers, products, onSaved,
 }: {
@@ -267,67 +274,129 @@ function NewOrderDialog({
   onSaved: (o: PurchaseOrder) => void;
 }) {
   const { user } = useStore();
-  const [form, setForm] = useState({
-    supplier_id: "", product_id: "", product_name: "",
-    quantity: 1, unit_cost: 0, notes: "", status: "pendente" as const,
-  });
-  const total = form.quantity * form.unit_cost;
+  const [supplierId, setSupplierId] = useState("");
+  const [notes, setNotes] = useState("");
+  const [status, setStatus] = useState<"pendente" | "recebido" | "cancelado">("pendente");
+  const emptyItem = (): OrderItem => ({ product_id: "", product_name: "", quantity: 1, unit_cost: 0 });
+  const [items, setItems] = useState<OrderItem[]>([emptyItem()]);
+
+  const grandTotal = items.reduce((s, it) => s + it.quantity * it.unit_cost, 0);
+
+  function updateItem(idx: number, patch: Partial<OrderItem>) {
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  }
+  function addItem() { setItems((p) => [...p, emptyItem()]); }
+  function removeItem(idx: number) {
+    setItems((p) => (p.length === 1 ? p : p.filter((_, i) => i !== idx)));
+  }
+
+  function reset() {
+    setSupplierId(""); setNotes(""); setStatus("pendente"); setItems([emptyItem()]);
+  }
+
   async function save() {
     if (!user) return;
-    if (!form.product_name) return toast.error("Informe o produto");
-    const sup = suppliers.find((s) => s.id === form.supplier_id);
-    const payload: any = {
-      user_id: user.id,
-      supplier_id: form.supplier_id || null,
-      supplier_name: sup?.name || "",
-      product_id: form.product_id || null,
-      product_name: form.product_name,
-      quantity: form.quantity,
-      unit_cost: form.unit_cost,
-      total,
-      status: form.status,
-    };
-    if (form.notes) payload.notes = form.notes;
-    const { data, error } = await (supabase.from("purchase_orders" as any) as any).insert(payload).select().single();
+    const valid = items.filter((it) => it.product_name.trim());
+    if (valid.length === 0) return toast.error("Adicione ao menos um produto");
+    const sup = suppliers.find((s) => s.id === supplierId);
+    const rows = valid.map((it) => {
+      const payload: any = {
+        user_id: user.id,
+        supplier_id: supplierId || null,
+        supplier_name: sup?.name || "",
+        product_id: it.product_id || null,
+        product_name: it.product_name,
+        quantity: it.quantity,
+        unit_cost: it.unit_cost,
+        total: it.quantity * it.unit_cost,
+        status,
+      };
+      if (notes) payload.notes = notes;
+      return payload;
+    });
+    const { data, error } = await (supabase.from("purchase_orders" as any) as any).insert(rows).select();
     if (error) return toast.error(error.message);
-    onSaved(data as PurchaseOrder);
-    toast.success("Pedido criado");
-    setForm({ supplier_id: "", product_id: "", product_name: "", quantity: 1, unit_cost: 0, notes: "", status: "pendente" });
+    (data as PurchaseOrder[]).forEach((o) => onSaved(o));
+    toast.success(rows.length > 1 ? `${rows.length} produtos adicionados` : "Pedido criado");
+    reset();
     setOpen(false);
   }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-lg">
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo pedido de reposição</DialogTitle>
-          <DialogDescription>Registre uma compra junto ao fornecedor.</DialogDescription>
+          <DialogDescription>Adicione um ou vários produtos do mesmo fornecedor.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
           <Field label="Fornecedor">
-            <Select value={form.supplier_id} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
+            <Select value={supplierId} onValueChange={setSupplierId}>
               <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
               <SelectContent>{suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
-          <Field label="Produto">
-            <Select
-              value={form.product_id}
-              onValueChange={(v) => {
-                const p = products.find((x) => x.id === v);
-                setForm({ ...form, product_id: v, product_name: p?.name ?? form.product_name, unit_cost: p?.cost ?? form.unit_cost });
-              }}
-            >
-              <SelectTrigger><SelectValue placeholder="Selecione um produto cadastrado" /></SelectTrigger>
-              <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </Field>
-          <Field label="Ou digite o nome do produto"><Input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} /></Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Quantidade"><Input type="number" min={1} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Math.max(1, Number(e.target.value)) })} /></Field>
-            <Field label="Custo unitário"><Input type="number" min={0} step="0.01" value={form.unit_cost} onChange={(e) => setForm({ ...form, unit_cost: Number(e.target.value) })} /></Field>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Produtos</Label>
+              <Button type="button" size="sm" variant="outline" onClick={addItem}>
+                <Plus className="h-3.5 w-3.5 mr-1" />Adicionar produto
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {items.map((it, idx) => (
+                <div key={idx} className="rounded-lg border border-border p-3 space-y-2 bg-secondary/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">Produto #{idx + 1}</span>
+                    {items.length > 1 && (
+                      <button type="button" onClick={() => removeItem(idx)} className="text-muted-foreground hover:text-destructive p-1">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <Field label="Selecionar produto cadastrado">
+                    <Select
+                      value={it.product_id}
+                      onValueChange={(v) => {
+                        const p = products.find((x) => x.id === v);
+                        updateItem(idx, {
+                          product_id: v,
+                          product_name: p?.name ?? it.product_name,
+                          unit_cost: p?.cost ?? it.unit_cost,
+                        });
+                      }}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
+                      <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Ou digite o nome do produto">
+                    <Input value={it.product_name} onChange={(e) => updateItem(idx, { product_name: e.target.value })} />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Quantidade">
+                      <Input type="number" min={1} value={it.quantity}
+                        onChange={(e) => updateItem(idx, { quantity: Math.max(1, Number(e.target.value)) })} />
+                    </Field>
+                    <Field label="Custo unitário">
+                      <Input type="number" min={0} step="0.01" value={it.unit_cost}
+                        onChange={(e) => updateItem(idx, { unit_cost: Number(e.target.value) })} />
+                    </Field>
+                  </div>
+                  <div className="text-right text-xs text-muted-foreground">
+                    Subtotal: <span className="font-semibold text-foreground">{brl(it.quantity * it.unit_cost)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <Field label="Observações"><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
-          <div className="text-right text-sm">Total: <span className="font-bold text-primary">{brl(total)}</span></div>
+
+          <Field label="Observações"><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+          <div className="flex items-center justify-between border-t border-border pt-3">
+            <span className="text-sm text-muted-foreground">{items.filter(i => i.product_name.trim()).length} produto(s)</span>
+            <div className="text-right text-sm">Total geral: <span className="font-bold text-primary text-base">{brl(grandTotal)}</span></div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
