@@ -262,7 +262,21 @@ function PedidosPage() {
     </div>
     <div class="box">
       <h3>Entrega</h3>
-      <div>${htmlEscape(enderecoLinha) || '<span class="muted">—</span>'}</div>
+      ${(() => {
+        const cepEntrega = extractFromNotes(o.notes, /^\s*\*?\s*CEP\s*:?\s*\*?\s*/i) || "";
+        const refEntrega = extractFromNotes(o.notes, /^\s*\*?\s*Ponto de refer[êe]ncia\s*:?\s*\*?\s*/i) || "";
+        const cityRaw = String(o.city || "").trim();
+        const ufMatch = cityRaw.match(/^(.+?)\s*[\/\-]\s*([A-Za-z]{2})\s*$/);
+        const cidadeStr = ufMatch ? ufMatch[1].trim() : cityRaw;
+        const ufStr = ufMatch ? ufMatch[2].toUpperCase() : "";
+        const linhas: string[] = [];
+        if (o.address) linhas.push(`<div><strong>Endereço:</strong> ${htmlEscape(o.address)}</div>`);
+        if (o.district) linhas.push(`<div><strong>Bairro:</strong> ${htmlEscape(o.district)}</div>`);
+        if (cidadeStr) linhas.push(`<div><strong>Cidade:</strong> ${htmlEscape(cidadeStr)}${ufStr ? ` - <strong>UF:</strong> ${htmlEscape(ufStr)}` : ""}</div>`);
+        if (cepEntrega) linhas.push(`<div><strong>CEP:</strong> ${htmlEscape(cepEntrega)}</div>`);
+        if (refEntrega) linhas.push(`<div><strong>Ponto de referência:</strong> ${htmlEscape(refEntrega)}</div>`);
+        return linhas.length ? linhas.join("") : '<span class="muted">—</span>';
+      })()}
     </div>
   </div>
   <table>
