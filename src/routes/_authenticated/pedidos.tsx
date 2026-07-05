@@ -180,6 +180,12 @@ function PedidosPage() {
     const cardParcelaValor = parcelaMatch ? parseBRL(parcelaMatch[3]) : 0;
     const cardTaxaPct = taxaMatch ? parseBRL(taxaMatch[1]) : 0;
     const cardTaxaValor = taxaMatch ? parseBRL(taxaMatch[2]) : 0;
+    // Frete: prioriza valor presente nas observações ("Entrega: R$ x,xx"),
+    // com fallback para o resíduo do total (total - subtotal - taxa cartão).
+    const freteMatch = notesRaw.match(/Entrega\s*:?\s*R?\$?\s*([\d.,]+)/i);
+    const shippingFromNotes = freteMatch ? parseBRL(freteMatch[1]) : 0;
+    const shippingResidual = Math.max(0, Number(o.total || 0) - subtotal - cardTaxaValor);
+    const shippingValue = shippingFromNotes > 0 ? shippingFromNotes : Math.round(shippingResidual * 100) / 100;
     const htmlEscape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
     const rows = o.items.map((i) => `
       <tr>
@@ -252,10 +258,11 @@ function PedidosPage() {
     <thead><tr><th>Produto</th><th class="c">Qtd</th><th class="r">Preço</th><th class="r">Subtotal</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot>
-      <tr><td colspan="3" class="r">Subtotal</td><td class="r">${brl(subtotal)}</td></tr>
+      <tr><td colspan="3" class="r">Subtotal produtos</td><td class="r">${brl(subtotal)}</td></tr>
+      <tr><td colspan="3" class="r">Taxa de entrega</td><td class="r">${shippingValue > 0 ? brl(shippingValue) : "Grátis"}</td></tr>
       <tr><td colspan="3" class="r">Pagamento</td><td class="r">${htmlEscape(paymentLabels[o.payment] || o.payment)}</td></tr>
       ${cardTaxaValor > 0 ? `<tr><td colspan="3" class="r">Taxa cartão (${cardTaxaPct.toFixed(2)}%)</td><td class="r">${brl(cardTaxaValor)}</td></tr>` : ""}
-      <tr class="total"><td colspan="3" class="r">TOTAL</td><td class="r">${brl(o.total)}</td></tr>
+      <tr class="total"><td colspan="3" class="r">TOTAL${cardTaxaValor > 0 ? " com acréscimo" : ""}</td><td class="r">${brl(o.total)}</td></tr>
       ${cardParcelas > 1 ? `<tr><td colspan="3" class="r">Parcelamento${cardBrand ? ` (${htmlEscape(cardBrand)})` : ""}</td><td class="r"><strong>${cardParcelas}x de ${brl(cardParcelaValor)}</strong></td></tr>` : ""}
     </tfoot>
   </table>
