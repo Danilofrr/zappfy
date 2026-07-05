@@ -184,7 +184,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         (form.cep ? `*CEP:* ${form.cep}\n` : "") +
         `*Endereço:* ${form.address}${form.district ? `, ${form.district}` : ""}${form.city ? ` - ${form.city}` : ""}\n` +
         (form.reference ? `*Ponto de referência:* ${form.reference}\n` : "") +
-        `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? `Cartão ${cardBrand} ${cardInstallments}x` : "Dinheiro"}` +
+        `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? `Cartão ${cardBrand} ${cardInstallments}x` : form.payment === "debito" ? "Cartão de Débito" : "Dinheiro"}` +
         (form.notes ? `\n*Observações:* ${form.notes}` : "")
 
       : "";
