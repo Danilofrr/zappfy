@@ -260,10 +260,10 @@ function PedidosPage() {
     <tbody>${rows}</tbody>
     <tfoot>
       <tr><td colspan="3" class="r">Subtotal produtos</td><td class="r">${brl(subtotal)}</td></tr>
-      <tr><td colspan="3" class="r">Taxa de entrega</td><td class="r">${shippingValue > 0 ? brl(shippingValue) : "Grátis"}</td></tr>
+      <tr><td colspan="3" class="r">${shippingLabel ? `Taxa de entrega (${htmlEscape(shippingLabel)})` : "Taxa de entrega"}</td><td class="r">${shippingValue > 0 ? brl(shippingValue) : "Grátis"}</td></tr>
       <tr><td colspan="3" class="r">Pagamento</td><td class="r">${htmlEscape(paymentLabels[o.payment] || o.payment)}</td></tr>
       ${cardTaxaValor > 0 ? `<tr><td colspan="3" class="r">Taxa cartão (${cardTaxaPct.toFixed(2)}%)</td><td class="r">${brl(cardTaxaValor)}</td></tr>` : ""}
-      <tr class="total"><td colspan="3" class="r">TOTAL${cardTaxaValor > 0 ? " com acréscimo" : ""}</td><td class="r">${brl(o.total)}</td></tr>
+      <tr class="total"><td colspan="3" class="r">TOTAL${cardTaxaValor > 0 || cardParcelas > 1 ? " com juros" : ""}</td><td class="r">${brl(cardParcelas > 1 ? Math.round(cardParcelas * cardParcelaValor * 100) / 100 : o.total)}</td></tr>
       ${cardParcelas > 1 ? `<tr><td colspan="3" class="r">Parcelamento${cardBrand ? ` (${htmlEscape(cardBrand)})` : ""}</td><td class="r"><strong>${cardParcelas}x de ${brl(cardParcelaValor)}</strong></td></tr>` : ""}
     </tfoot>
   </table>
