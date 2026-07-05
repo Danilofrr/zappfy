@@ -247,7 +247,7 @@ export function buildCourierMessage(
   let paymentBlock = "";
   if (info?.payment) {
     const p = String(info.payment).toLowerCase();
-    const label = p === "pix" ? "PIX" : p === "cartao" ? "Cartão" : p === "dinheiro" ? "Dinheiro" : info.payment;
+    const label = p === "pix" ? "PIX" : p === "cartao" ? "Cartão" : p === "debito" ? "Cartão de Débito" : p === "dinheiro" ? "Dinheiro" : info.payment;
     const totalStr = info.total != null ? formatBRL(Number(info.total)) : "";
     paymentBlock = `\n\n*Forma de pagamento:* ${label}`;
     if (p === "cartao") {
