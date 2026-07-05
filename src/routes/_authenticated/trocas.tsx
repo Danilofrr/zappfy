@@ -416,12 +416,21 @@ function ReturnDialog({
         )}
 
         <div className="grid gap-3 pt-2 border-t border-border mt-3">
-          <Field label="Status">
-            <Select value={form.status} onValueChange={(v: any) => setForm({ ...form, status: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-            </Select>
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Data da troca">
+              <Input
+                type="date"
+                value={form.return_date}
+                onChange={(e) => setForm({ ...form, return_date: e.target.value })}
+              />
+            </Field>
+            <Field label="Status">
+              <Select value={form.status} onValueChange={(v: any) => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+          </div>
           <Field label="Motivo">
             <Textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Ex: defeito, arrependimento, tamanho errado..." />
           </Field>
