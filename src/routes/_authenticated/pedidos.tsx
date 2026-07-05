@@ -168,8 +168,18 @@ function PedidosPage() {
     const enderecoLinha = [o.address, o.district, o.city].filter(Boolean).join(", ");
     const paymentLabels: Record<string, string> = {
       pix: "PIX", dinheiro: "Dinheiro", cartao_credito: "Cartão de Crédito",
-      cartao_debito: "Cartão de Débito", boleto: "Boleto", transferencia: "Transferência",
+      cartao_debito: "Cartão de Débito", cartao: "Cartão", boleto: "Boleto", transferencia: "Transferência",
     };
+    // Extrai parcelamento e taxa do cartão das observações (quando existirem)
+    const notesRaw = o.notes || "";
+    const parcelaMatch = notesRaw.match(/(?:Cart[ãa]o|Parcelamento)\s*:?\s*\*?\s*([^\n\-—]+?)\s*[—-]?\s*(\d+)\s*x\s*de\s*R\$?\s*([\d.,]+)/i);
+    const taxaMatch = notesRaw.match(/Taxa(?:\s*cart[ãa]o)?\s*\(?\s*([\d.,]+)\s*%\)?[:\s]*\(?R\$?\s*([\d.,]+)/i);
+    const parseBRL = (s: string) => Number(String(s).replace(/\./g, "").replace(",", "."));
+    const cardBrand = parcelaMatch ? parcelaMatch[1].replace(/\*/g, "").trim() : "";
+    const cardParcelas = parcelaMatch ? Number(parcelaMatch[2]) : 0;
+    const cardParcelaValor = parcelaMatch ? parseBRL(parcelaMatch[3]) : 0;
+    const cardTaxaPct = taxaMatch ? parseBRL(taxaMatch[1]) : 0;
+    const cardTaxaValor = taxaMatch ? parseBRL(taxaMatch[2]) : 0;
     const htmlEscape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
     const rows = o.items.map((i) => `
       <tr>
@@ -244,7 +254,9 @@ function PedidosPage() {
     <tfoot>
       <tr><td colspan="3" class="r">Subtotal</td><td class="r">${brl(subtotal)}</td></tr>
       <tr><td colspan="3" class="r">Pagamento</td><td class="r">${htmlEscape(paymentLabels[o.payment] || o.payment)}</td></tr>
+      ${cardTaxaValor > 0 ? `<tr><td colspan="3" class="r">Taxa cartão (${cardTaxaPct.toFixed(2)}%)</td><td class="r">${brl(cardTaxaValor)}</td></tr>` : ""}
       <tr class="total"><td colspan="3" class="r">TOTAL</td><td class="r">${brl(o.total)}</td></tr>
+      ${cardParcelas > 1 ? `<tr><td colspan="3" class="r">Parcelamento${cardBrand ? ` (${htmlEscape(cardBrand)})` : ""}</td><td class="r"><strong>${cardParcelas}x de ${brl(cardParcelaValor)}</strong></td></tr>` : ""}
     </tfoot>
   </table>
   ${notesLimpas ? `<div class="notes"><strong>Observações:</strong>\n${htmlEscape(notesLimpas)}</div>` : ""}
