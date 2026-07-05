@@ -204,6 +204,39 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 ? "Para concluir, envie os dados do pedido para o nosso WhatsApp."
                 : "Em breve entraremos em contato pelo WhatsApp."}
             </p>
+
+            {product && shipping && (
+              <div
+                className="mt-5 rounded-lg p-4 text-left text-sm space-y-1.5"
+                style={{ backgroundColor: `${neonColor}12`, border: `1px solid ${neonColor}33` }}
+              >
+                <div className="flex justify-between opacity-80">
+                  <span>{product.name} (x{qty})</span>
+                  <span>{brl(product.price * qty)}</span>
+                </div>
+                <div className="flex justify-between opacity-80">
+                  <span>Entrega ({shipping.label})</span>
+                  <span>{brl(shipping.price)}</span>
+                </div>
+                {form.payment === "cartao" && cardFeeValue > 0 && !cardFeeAbsorbed && (
+                  <div className="flex justify-between opacity-80">
+                    <span>Taxa do cartão ({cardFeePct.toFixed(2)}%)</span>
+                    <span>{brl(cardFeeValue)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold pt-1.5 border-t" style={{ borderColor: `${neonColor}33` }}>
+                  <span>Total</span>
+                  <span style={{ color: neonColor }}>{brl(total)}</span>
+                </div>
+                {form.payment === "cartao" && (
+                  <div className="flex justify-between text-xs opacity-80 pt-1">
+                    <span>Parcelamento ({cardBrand})</span>
+                    <span>{cardInstallments}x de {brl(installmentValue)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {waUrl && (
               <a
                 href={waUrl}
