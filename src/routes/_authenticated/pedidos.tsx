@@ -180,6 +180,12 @@ function PedidosPage() {
     const cardParcelaValor = parcelaMatch ? parseBRL(parcelaMatch[3]) : 0;
     const cardTaxaPct = taxaMatch ? parseBRL(taxaMatch[1]) : 0;
     const cardTaxaValor = taxaMatch ? parseBRL(taxaMatch[2]) : 0;
+    // Frete: prioriza valor presente nas observações ("Entrega: R$ x,xx"),
+    // com fallback para o resíduo do total (total - subtotal - taxa cartão).
+    const freteMatch = notesRaw.match(/Entrega\s*:?\s*R?\$?\s*([\d.,]+)/i);
+    const shippingFromNotes = freteMatch ? parseBRL(freteMatch[1]) : 0;
+    const shippingResidual = Math.max(0, Number(o.total || 0) - subtotal - cardTaxaValor);
+    const shippingValue = shippingFromNotes > 0 ? shippingFromNotes : Math.round(shippingResidual * 100) / 100;
     const htmlEscape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
     const rows = o.items.map((i) => `
       <tr>
