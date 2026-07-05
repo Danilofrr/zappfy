@@ -346,6 +346,7 @@ function ReturnDialog({
         product_price: form.product_price,
         order_id: form.order_id,
         order_date: form.order_date,
+        return_date: form.return_date ? new Date(`${form.return_date}T12:00:00`).toISOString() : new Date().toISOString(),
         notes: form.notes.trim() || null,
         store_id: activeStoreId ?? user.id,
       };
