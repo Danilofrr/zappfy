@@ -256,14 +256,24 @@ type FormState = {
   product_price: number;
   order_id: string | null;
   order_date: string | null;
+  return_date: string;
   notes: string;
+};
+
+const toDateInput = (iso?: string | null) => {
+  const d = iso ? new Date(iso) : new Date();
+  if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 };
 
 const emptyForm = (type: "cliente" | "fornecedor"): FormState => ({
   type, party_name: "", customer_phone: "", product_id: "", product_name: "",
   new_product_id: "", new_product_name: "",
   quantity: 1, reason: "", status: "parado_loja", value_at_risk: 0, product_price: 0,
-  order_id: null, order_date: null, notes: "",
+  order_id: null, order_date: null, return_date: toDateInput(), notes: "",
 });
 
 function ReturnDialog({
@@ -300,6 +310,7 @@ function ReturnDialog({
         product_price: Number(editing.product_price) || 0,
         order_id: editing.order_id ?? null,
         order_date: editing.order_date ?? null,
+        return_date: toDateInput(editing.return_date),
         notes: editing.notes ?? "",
       });
     } else {
