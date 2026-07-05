@@ -1091,7 +1091,8 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
 
   const paymentOptions = [
     { value: "pix", label: "PIX" },
-    { value: "cartao", label: "Cartão (Crédito/Débito)" },
+    { value: "cartao", label: "Cartão (Crédito)" },
+    { value: "debito", label: "Cartão de Débito" },
     { value: "dinheiro", label: "Dinheiro" },
   ] as const;
 
