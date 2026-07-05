@@ -896,6 +896,7 @@ function EditOrderDialog({
                 <SelectContent>
                   <SelectItem value="pix">PIX</SelectItem>
                   <SelectItem value="cartao">Cartão</SelectItem>
+                  <SelectItem value="debito">Cartão de Débito</SelectItem>
                   <SelectItem value="dinheiro">Dinheiro</SelectItem>
                 </SelectContent>
               </Select>
