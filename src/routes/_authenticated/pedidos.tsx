@@ -174,19 +174,29 @@ function PedidosPage() {
     const notesRaw = o.notes || "";
     const parcelaMatch = notesRaw.match(/(?:Cart[ãa]o|Parcelamento)\s*:?\s*\*?\s*([^\n\-—]+?)\s*[—-]?\s*(\d+)\s*x\s*de\s*R\$?\s*([\d.,]+)/i);
     const taxaMatch = notesRaw.match(/Taxa(?:\s*cart[ãa]o)?\s*\(?\s*([\d.,]+)\s*%\)?[:\s]*\(?R\$?\s*([\d.,]+)/i);
+    // Valor monetário BR: "1.234,56" -> 1234.56. Exige vírgula decimal.
     const parseBRL = (s: string) => Number(String(s).replace(/\./g, "").replace(",", "."));
+    // Percentual: aceita "8.94" (ponto decimal) ou "8,94" (vírgula decimal).
+    const parsePct = (s: string) => {
+      const str = String(s).trim();
+      if (str.includes(",")) return Number(str.replace(/\./g, "").replace(",", "."));
+      return Number(str);
+    };
     const cardBrand = parcelaMatch ? parcelaMatch[1].replace(/\*/g, "").trim() : "";
     const cardParcelas = parcelaMatch ? Number(parcelaMatch[2]) : 0;
     const cardParcelaValor = parcelaMatch ? parseBRL(parcelaMatch[3]) : 0;
-    const cardTaxaPct = taxaMatch ? parseBRL(taxaMatch[1]) : 0;
+    const cardTaxaPct = taxaMatch ? parsePct(taxaMatch[1]) : 0;
     const cardTaxaValor = taxaMatch ? parseBRL(taxaMatch[2]) : 0;
-    // Frete: prioriza valor presente nas observações ("Entrega: R$ x,xx"),
-    // com fallback para o resíduo do total (total - subtotal - taxa cartão).
+    // Frete: prioriza o valor salvo no item do pedido, depois observações
+    // ("Entrega: R$ x,xx"), com fallback para o resíduo do total.
+    const shippingFromItem = Number((o.items[0] as any)?.shipping ?? 0) || 0;
     const freteMatch = notesRaw.match(/Entrega(?:\s*\(([^)]+)\))?\s*:?\*?\s*R?\$?\s*([\d.,]+)/i);
-    const shippingLabel = freteMatch && freteMatch[1] ? freteMatch[1].trim() : "";
+    const shippingLabel = freteMatch && freteMatch[1] ? freteMatch[1].trim() : (state.settings.deliveryLabel || "");
     const shippingFromNotes = freteMatch ? parseBRL(freteMatch[2]) : 0;
     const shippingResidual = Math.max(0, Number(o.total || 0) - subtotal - cardTaxaValor);
-    const shippingValue = shippingFromNotes > 0 ? shippingFromNotes : Math.round(shippingResidual * 100) / 100;
+    const shippingValue = shippingFromItem > 0
+      ? shippingFromItem
+      : (shippingFromNotes > 0 ? shippingFromNotes : Math.round(shippingResidual * 100) / 100);
     const htmlEscape = (v: string) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]!));
     const rows = o.items.map((i) => `
       <tr>
