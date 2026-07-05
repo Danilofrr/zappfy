@@ -168,7 +168,7 @@ function PedidosPage() {
     const enderecoLinha = [o.address, o.district, o.city].filter(Boolean).join(", ");
     const paymentLabels: Record<string, string> = {
       pix: "PIX", dinheiro: "Dinheiro", cartao_credito: "Cartão de Crédito",
-      cartao_debito: "Cartão de Débito", cartao: "Cartão", boleto: "Boleto", transferencia: "Transferência",
+      cartao_debito: "Cartão de Débito", debito: "Cartão de Débito", cartao: "Cartão", boleto: "Boleto", transferencia: "Transferência",
     };
     // Extrai parcelamento e taxa do cartão das observações (quando existirem)
     const notesRaw = o.notes || "";
