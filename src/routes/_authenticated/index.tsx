@@ -216,9 +216,10 @@ function Dashboard() {
     }, 0);
   }, [returnsLost, range.start, range.end]);
 
-  // Descontos da taxa da maquininha (cartão) — extraídos das notas do pedido
+  // Descontos da taxa da maquininha (cartão) — apenas quando a loja ABSORVE a taxa.
+  // Se a taxa é repassada ao cliente, ela não é custo da loja e não deve abater o lucro.
   const cardFeeCost = useMemo(() => {
-    const re = /Taxa\s+[\d.,]+%\s*\(R\$\s*([\d.,]+)\)/i;
+    const re = /Taxa\s+[\d.,]+%\s*\(R\$\s*([\d.,]+)\)\s*[—-]\s*absorvida/i;
     return state.orders.reduce((sum, o) => {
       if (o.status === "cancelado") return sum;
       if (o.payment !== "cartao") return sum;
