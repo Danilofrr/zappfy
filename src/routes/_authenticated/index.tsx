@@ -235,6 +235,57 @@ function Dashboard() {
     }, 0);
   }, [state.orders, range.start, range.end]);
 
+  // Pedidos válidos no período (para insights extras)
+  const ordersInRange = useMemo(() => {
+    return state.orders.filter((o) => {
+      if (o.status === "cancelado") return false;
+      const d = new Date(o.date);
+      return d >= range.start && d < range.end;
+    });
+  }, [state.orders, range.start, range.end]);
+
+  // Melhores horas do dia (top 3)
+  const bestHours = useMemo(() => {
+    const buckets = new Array(24).fill(0).map(() => ({ count: 0, revenue: 0 }));
+    for (const o of ordersInRange) {
+      const h = new Date(o.date).getHours();
+      buckets[h].count += 1;
+      buckets[h].revenue += o.total;
+    }
+    const ranked = buckets
+      .map((b, h) => ({ hour: h, ...b }))
+      .filter((b) => b.count > 0)
+      .sort((a, b) => b.count - a.count || b.revenue - a.revenue)
+      .slice(0, 3);
+    const maxCount = ranked[0]?.count ?? 0;
+    return { ranked, maxCount };
+  }, [ordersInRange]);
+
+  // Ticket médio do período
+  const ticketMedio = useMemo(() => {
+    if (ordersInRange.length === 0) return 0;
+    const total = ordersInRange.reduce((a, o) => a + o.total, 0);
+    return total / ordersInRange.length;
+  }, [ordersInRange]);
+
+  // Forma de pagamento mais usada
+  const paymentStats = useMemo(() => {
+    const map = new Map<string, { count: number; revenue: number }>();
+    for (const o of ordersInRange) {
+      const key = (o.payment || "outros") as string;
+      const cur = map.get(key) ?? { count: 0, revenue: 0 };
+      cur.count += 1;
+      cur.revenue += o.total;
+      map.set(key, cur);
+    }
+    const ranked = Array.from(map.entries())
+      .map(([key, v]) => ({ key, ...v }))
+      .sort((a, b) => b.count - a.count);
+    const total = ordersInRange.length;
+    return { ranked, total };
+  }, [ordersInRange]);
+
+
   const totalExpenses = fin.cogs + adsTotalCost + fin.opEx + fin.motoboyCost + returnsLossInRange + cardFeeCost;
   // Lucro = Faturamento - COGS - (Meta Ads + Imposto Meta Ads) - OpEx - Motoboy - Perdas devoluções - Taxa maquininha
   const adjustedProfit = fin.revenue - fin.cogs - adsTotalCost - fin.opEx - fin.motoboyCost - returnsLossInRange - cardFeeCost;
