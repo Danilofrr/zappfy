@@ -655,10 +655,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
     },
     async updateOrderStatus(id, status) {
+      const prev = state.orders.find((o) => o.id === id);
       const { data, error } = await supabase.from("orders").update({ status }).eq("id", id).select().single();
       if (error) { toast.error(error.message); return; }
-      setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
+      // Ajusta o estoque quando o pedido é cancelado ou reativado
+      const updatedProducts: Product[] = [];
+      if (prev && prev.status !== "cancelado" && status === "cancelado") {
+        // devolve o estoque
+        for (const it of prev.items) {
+          const prod = state.products.find((p) => p.id === it.productId);
+          if (!prod) continue;
+          const newStock = prod.stock + it.qty;
+          const { data: pd } = await supabase.from("products").update({ stock: newStock }).eq("id", it.productId).select().single();
+          if (pd) updatedProducts.push(toProduct(pd));
+        }
+      } else if (prev && prev.status === "cancelado" && status !== "cancelado") {
+        // reabate do estoque
+        for (const it of prev.items) {
+          const prod = state.products.find((p) => p.id === it.productId);
+          if (!prod) continue;
+          const newStock = Math.max(0, prod.stock - it.qty);
+          const { data: pd } = await supabase.from("products").update({ stock: newStock }).eq("id", it.productId).select().single();
+          if (pd) updatedProducts.push(toProduct(pd));
+        }
+      }
+      setState((s) => ({
+        ...s,
+        orders: s.orders.map((x) => x.id === id ? toOrder(data) : x),
+        products: updatedProducts.length
+          ? s.products.map((p) => updatedProducts.find((u) => u.id === p.id) ?? p)
+          : s.products,
+      }));
     },
+
     async deleteOrder(id) {
       const order = state.orders.find((o) => o.id === id);
       const { error } = await supabase.from("orders").delete().eq("id", id);
