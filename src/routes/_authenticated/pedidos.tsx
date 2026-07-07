@@ -965,7 +965,7 @@ function EditOrderDialog({
             const patch: any = { ...form, items, total };
             if (orderDate) {
               // Preserva a hora original do pedido (ou usa agora, se for novo)
-              const src = form.date ? new Date(form.date) : new Date();
+              const src = order?.date ? new Date(order.date) : new Date();
               const dt = new Date(
                 orderDate.getFullYear(),
                 orderDate.getMonth(),
