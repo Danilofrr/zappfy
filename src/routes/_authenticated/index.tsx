@@ -718,3 +718,22 @@ function Mini({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function paymentLabel(key: string): string {
+  const k = (key || "").toLowerCase();
+  const map: Record<string, string> = {
+    cartao: "Cartão",
+    "cartão": "Cartão",
+    credito: "Cartão de crédito",
+    "crédito": "Cartão de crédito",
+    debito: "Cartão de débito",
+    "débito": "Cartão de débito",
+    pix: "PIX",
+    dinheiro: "Dinheiro",
+    boleto: "Boleto",
+    transferencia: "Transferência",
+    "transferência": "Transferência",
+    outros: "Outros",
+  };
+  return map[k] ?? (key ? key.charAt(0).toUpperCase() + key.slice(1) : "Outros");
+}
