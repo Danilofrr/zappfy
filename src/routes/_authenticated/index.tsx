@@ -578,16 +578,15 @@ function Dashboard() {
         )}
       </div>
 
-      {/* Insights operacionais: horas, ticket e pagamento */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        {/* Melhores horas */}
-        <div className="rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
-          <div className="flex items-center gap-3 mb-4">
+      {/* Vendas por horário — gráfico com todas as 24h, destacando as melhores */}
+      <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
               <Clock className="h-4 w-4 text-primary" />
             </span>
             <div>
-              <div className="text-sm font-semibold">Melhores horas de venda</div>
+              <div className="text-sm font-semibold">Vendas por Horário</div>
               <div className="text-xs text-muted-foreground">
                 Todas as 24h — {range.label}
                 {bestHours.best && (
@@ -596,38 +595,86 @@ function Dashboard() {
               </div>
             </div>
           </div>
-          {bestHours.totalSales === 0 ? (
-            <div className="text-sm text-muted-foreground py-6 text-center">Sem vendas no período.</div>
-          ) : (
-            <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
-              {bestHours.all.map((b) => {
-                const pctBar = bestHours.maxCount > 0 ? (b.count / bestHours.maxCount) * 100 : 0;
-                const isTop = bestHours.topHours.has(b.hour);
-                const label = `${String(b.hour).padStart(2, "0")}:00 – ${String((b.hour + 1) % 24).padStart(2, "0")}:00`;
-                return (
-                  <div key={b.hour} className={`rounded-lg px-2 py-1.5 ${isTop ? "bg-primary/5 ring-1 ring-primary/20" : ""}`}>
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className={`font-medium flex items-center gap-2 ${b.count === 0 ? "text-muted-foreground" : ""}`}>
-                        {isTop && <span className="rounded-full bg-primary/15 text-primary text-[9px] font-bold px-1.5 py-0.5">TOP</span>}
-                        {label}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {b.count} {b.count === 1 ? "venda" : "vendas"}
-                        {b.revenue > 0 && <> · {m(brl(b.revenue))}</>}
-                      </span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                      <div
-                        className={`h-full transition-all ${isTop ? "bg-primary" : "bg-primary/40"}`}
-                        style={{ width: `${pctBar}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm bg-primary" /> Melhores horários
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm bg-primary/30" /> Demais horários
+            </span>
+          </div>
         </div>
+        {bestHours.totalSales === 0 ? (
+          <div className="text-sm text-muted-foreground py-10 text-center">Sem vendas no período.</div>
+        ) : (
+          <div className="h-64 lg:h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={bestHours.all.map((b) => ({
+                  hora: `${String(b.hour).padStart(2, "0")}h`,
+                  hour: b.hour,
+                  vendas: b.count,
+                  receita: b.revenue,
+                }))}
+                margin={{ left: 4, right: 8, top: 8, bottom: 4 }}
+              >
+                <CartesianGrid stroke="oklch(0.26 0 0)" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="hora"
+                  stroke="oklch(0.65 0.01 247)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                />
+                <YAxis
+                  stroke="oklch(0.65 0.01 247)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  cursor={{ fill: "oklch(0.985 0.003 247 / 0.05)" }}
+                  contentStyle={{
+                    backgroundColor: "oklch(0.18 0 0)",
+                    border: "1px solid oklch(0.26 0 0)",
+                    borderRadius: 12,
+                  }}
+                  labelStyle={{ color: "oklch(0.985 0.003 247)" }}
+                  formatter={(value: any, name: string) => {
+                    if (name === "vendas") return [`${value} ${value === 1 ? "venda" : "vendas"}`, "Vendas"];
+                    return [value, name];
+                  }}
+                  labelFormatter={(label, payload) => {
+                    const p: any = payload?.[0]?.payload;
+                    if (!p) return label;
+                    const next = (p.hour + 1) % 24;
+                    const rev = p.receita > 0 ? ` · ${brl(p.receita)}` : "";
+                    return `${String(p.hour).padStart(2, "0")}:00 – ${String(next).padStart(2, "0")}:00${rev}`;
+                  }}
+                />
+                <Bar dataKey="vendas" radius={[6, 6, 0, 0]}>
+                  {bestHours.all.map((b) => (
+                    <Cell
+                      key={b.hour}
+                      fill={
+                        bestHours.topHours.has(b.hour)
+                          ? "oklch(0.72 0.19 148)"
+                          : "oklch(0.72 0.19 148 / 0.3)"
+                      }
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Ticket médio + Forma de pagamento */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Ticket médio */}
 
 
         {/* Ticket médio */}
