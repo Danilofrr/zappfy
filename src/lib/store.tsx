@@ -530,6 +530,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setState((s) =>
             s.orders.some((o) => o.id === next.id) ? s : { ...s, orders: [next, ...s.orders] },
           );
+          // Pedido veio do checkout público: o RPC já abateu o estoque no banco.
+          // Refaz a leitura dos produtos afetados para refletir o novo estoque na UI.
+          (async () => {
+            const ids = Array.from(new Set(next.items.map((i) => i.productId).filter(Boolean)));
+            if (!ids.length) return;
+            const { data } = await supabase.from("products").select("*").in("id", ids);
+            if (!data) return;
+            const updated = data.map(toProduct);
+            setState((s) => ({
+              ...s,
+              products: s.products.map((p) => updated.find((u) => u.id === p.id) ?? p),
+            }));
+          })();
         },
       )
       .on(
@@ -549,9 +562,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setState((s) => ({ ...s, orders: s.orders.filter((o) => o.id !== id) }));
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "products", filter: `store_id=eq.${sid}` },
+        (payload) => {
+          const next = toProduct(payload.new);
+          setState((s) => ({
+            ...s,
+            products: s.products.map((p) => (p.id === next.id ? next : p)),
+          }));
+        },
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, activeStoreId]);
+
 
   const value: Ctx = useMemo(() => ({
     state, loading, user,
@@ -630,10 +655,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
     },
     async updateOrderStatus(id, status) {
+      const prev = state.orders.find((o) => o.id === id);
       const { data, error } = await supabase.from("orders").update({ status }).eq("id", id).select().single();
       if (error) { toast.error(error.message); return; }
-      setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
+      // Ajusta o estoque quando o pedido é cancelado ou reativado
+      const updatedProducts: Product[] = [];
+      if (prev && prev.status !== "cancelado" && status === "cancelado") {
+        // devolve o estoque
+        for (const it of prev.items) {
+          const prod = state.products.find((p) => p.id === it.productId);
+          if (!prod) continue;
+          const newStock = prod.stock + it.qty;
+          const { data: pd } = await supabase.from("products").update({ stock: newStock }).eq("id", it.productId).select().single();
+          if (pd) updatedProducts.push(toProduct(pd));
+        }
+      } else if (prev && prev.status === "cancelado" && status !== "cancelado") {
+        // reabate do estoque
+        for (const it of prev.items) {
+          const prod = state.products.find((p) => p.id === it.productId);
+          if (!prod) continue;
+          const newStock = Math.max(0, prod.stock - it.qty);
+          const { data: pd } = await supabase.from("products").update({ stock: newStock }).eq("id", it.productId).select().single();
+          if (pd) updatedProducts.push(toProduct(pd));
+        }
+      }
+      setState((s) => ({
+        ...s,
+        orders: s.orders.map((x) => x.id === id ? toOrder(data) : x),
+        products: updatedProducts.length
+          ? s.products.map((p) => updatedProducts.find((u) => u.id === p.id) ?? p)
+          : s.products,
+      }));
     },
+
     async deleteOrder(id) {
       const order = state.orders.find((o) => o.id === id);
       const { error } = await supabase.from("orders").delete().eq("id", id);
