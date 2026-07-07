@@ -244,7 +244,7 @@ function Dashboard() {
     });
   }, [state.orders, range.start, range.end]);
 
-  // Melhores horas do dia (top 3)
+  // Vendas por hora do dia (todas as 24h, com destaque para as melhores)
   const bestHours = useMemo(() => {
     const buckets = new Array(24).fill(0).map(() => ({ count: 0, revenue: 0 }));
     for (const o of ordersInRange) {
@@ -252,14 +252,18 @@ function Dashboard() {
       buckets[h].count += 1;
       buckets[h].revenue += o.total;
     }
-    const ranked = buckets
-      .map((b, h) => ({ hour: h, ...b }))
+    const all = buckets.map((b, h) => ({ hour: h, ...b }));
+    const maxCount = all.reduce((a, b) => Math.max(a, b.count), 0);
+    // Ranking apenas com horas que tiveram venda, para marcar as melhores
+    const sortedWithSales = all
       .filter((b) => b.count > 0)
-      .sort((a, b) => b.count - a.count || b.revenue - a.revenue)
-      .slice(0, 3);
-    const maxCount = ranked[0]?.count ?? 0;
-    return { ranked, maxCount };
+      .sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+    const topHours = new Set(sortedWithSales.slice(0, 3).map((b) => b.hour));
+    const totalSales = all.reduce((a, b) => a + b.count, 0);
+    return { all, maxCount, topHours, totalSales, best: sortedWithSales[0] ?? null };
   }, [ordersInRange]);
+
+
 
   // Ticket médio do período
   const ticketMedio = useMemo(() => {
@@ -581,29 +585,39 @@ function Dashboard() {
             </span>
             <div>
               <div className="text-sm font-semibold">Melhores horas de venda</div>
-              <div className="text-xs text-muted-foreground">Top 3 horários — {range.label}</div>
+              <div className="text-xs text-muted-foreground">
+                Todas as 24h — {range.label}
+                {bestHours.best && (
+                  <> · pico às {String(bestHours.best.hour).padStart(2, "0")}h</>
+                )}
+              </div>
             </div>
           </div>
-          {bestHours.ranked.length === 0 ? (
+          {bestHours.totalSales === 0 ? (
             <div className="text-sm text-muted-foreground py-6 text-center">Sem vendas no período.</div>
           ) : (
-            <div className="space-y-3">
-              {bestHours.ranked.map((b, i) => {
+            <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+              {bestHours.all.map((b) => {
                 const pctBar = bestHours.maxCount > 0 ? (b.count / bestHours.maxCount) * 100 : 0;
+                const isTop = bestHours.topHours.has(b.hour);
                 const label = `${String(b.hour).padStart(2, "0")}:00 – ${String((b.hour + 1) % 24).padStart(2, "0")}:00`;
                 return (
-                  <div key={b.hour}>
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="font-medium flex items-center gap-2">
-                        <span className={`h-5 w-5 grid place-items-center rounded-full text-[10px] font-bold ${i === 0 ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}>{i + 1}</span>
+                  <div key={b.hour} className={`rounded-lg px-2 py-1.5 ${isTop ? "bg-primary/5 ring-1 ring-primary/20" : ""}`}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className={`font-medium flex items-center gap-2 ${b.count === 0 ? "text-muted-foreground" : ""}`}>
+                        {isTop && <span className="rounded-full bg-primary/15 text-primary text-[9px] font-bold px-1.5 py-0.5">TOP</span>}
                         {label}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {b.count} {b.count === 1 ? "venda" : "vendas"} · {m(brl(b.revenue))}
+                      <span className="text-[11px] text-muted-foreground">
+                        {b.count} {b.count === 1 ? "venda" : "vendas"}
+                        {b.revenue > 0 && <> · {m(brl(b.revenue))}</>}
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                      <div className="h-full bg-primary transition-all" style={{ width: `${pctBar}%` }} />
+                      <div
+                        className={`h-full transition-all ${isTop ? "bg-primary" : "bg-primary/40"}`}
+                        style={{ width: `${pctBar}%` }}
+                      />
                     </div>
                   </div>
                 );
@@ -611,6 +625,7 @@ function Dashboard() {
             </div>
           )}
         </div>
+
 
         {/* Ticket médio */}
         <div className="rounded-2xl border border-border bg-gradient-card p-5 lg:p-6 shadow-elegant">
