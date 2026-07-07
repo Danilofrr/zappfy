@@ -23,6 +23,8 @@ import {
   BarChart3,
   Trophy,
   RefreshCw,
+  Clock,
+  CreditCard,
 } from "lucide-react";
 
 import { useServerFn } from "@tanstack/react-start";
