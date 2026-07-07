@@ -530,6 +530,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setState((s) =>
             s.orders.some((o) => o.id === next.id) ? s : { ...s, orders: [next, ...s.orders] },
           );
+          // Pedido veio do checkout público: o RPC já abateu o estoque no banco.
+          // Refaz a leitura dos produtos afetados para refletir o novo estoque na UI.
+          (async () => {
+            const ids = Array.from(new Set(next.items.map((i) => i.productId).filter(Boolean)));
+            if (!ids.length) return;
+            const { data } = await supabase.from("products").select("*").in("id", ids);
+            if (!data) return;
+            const updated = data.map(toProduct);
+            setState((s) => ({
+              ...s,
+              products: s.products.map((p) => updated.find((u) => u.id === p.id) ?? p),
+            }));
+          })();
         },
       )
       .on(
@@ -549,9 +562,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setState((s) => ({ ...s, orders: s.orders.filter((o) => o.id !== id) }));
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "products", filter: `store_id=eq.${sid}` },
+        (payload) => {
+          const next = toProduct(payload.new);
+          setState((s) => ({
+            ...s,
+            products: s.products.map((p) => (p.id === next.id ? next : p)),
+          }));
+        },
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, activeStoreId]);
+
 
   const value: Ctx = useMemo(() => ({
     state, loading, user,
