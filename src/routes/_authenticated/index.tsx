@@ -585,29 +585,39 @@ function Dashboard() {
             </span>
             <div>
               <div className="text-sm font-semibold">Melhores horas de venda</div>
-              <div className="text-xs text-muted-foreground">Top 3 horários — {range.label}</div>
+              <div className="text-xs text-muted-foreground">
+                Todas as 24h — {range.label}
+                {bestHours.best && (
+                  <> · pico às {String(bestHours.best.hour).padStart(2, "0")}h</>
+                )}
+              </div>
             </div>
           </div>
-          {bestHours.ranked.length === 0 ? (
+          {bestHours.totalSales === 0 ? (
             <div className="text-sm text-muted-foreground py-6 text-center">Sem vendas no período.</div>
           ) : (
-            <div className="space-y-3">
-              {bestHours.ranked.map((b, i) => {
+            <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+              {bestHours.all.map((b) => {
                 const pctBar = bestHours.maxCount > 0 ? (b.count / bestHours.maxCount) * 100 : 0;
+                const isTop = bestHours.topHours.has(b.hour);
                 const label = `${String(b.hour).padStart(2, "0")}:00 – ${String((b.hour + 1) % 24).padStart(2, "0")}:00`;
                 return (
-                  <div key={b.hour}>
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="font-medium flex items-center gap-2">
-                        <span className={`h-5 w-5 grid place-items-center rounded-full text-[10px] font-bold ${i === 0 ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}>{i + 1}</span>
+                  <div key={b.hour} className={`rounded-lg px-2 py-1.5 ${isTop ? "bg-primary/5 ring-1 ring-primary/20" : ""}`}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className={`font-medium flex items-center gap-2 ${b.count === 0 ? "text-muted-foreground" : ""}`}>
+                        {isTop && <span className="rounded-full bg-primary/15 text-primary text-[9px] font-bold px-1.5 py-0.5">TOP</span>}
                         {label}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {b.count} {b.count === 1 ? "venda" : "vendas"} · {m(brl(b.revenue))}
+                      <span className="text-[11px] text-muted-foreground">
+                        {b.count} {b.count === 1 ? "venda" : "vendas"}
+                        {b.revenue > 0 && <> · {m(brl(b.revenue))}</>}
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                      <div className="h-full bg-primary transition-all" style={{ width: `${pctBar}%` }} />
+                      <div
+                        className={`h-full transition-all ${isTop ? "bg-primary" : "bg-primary/40"}`}
+                        style={{ width: `${pctBar}%` }}
+                      />
                     </div>
                   </div>
                 );
@@ -615,6 +625,7 @@ function Dashboard() {
             </div>
           )}
         </div>
+
 
         {/* Ticket médio */}
         <div className="rounded-2xl border border-border bg-gradient-card p-5 lg:p-6 shadow-elegant">
