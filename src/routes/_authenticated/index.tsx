@@ -244,7 +244,7 @@ function Dashboard() {
     });
   }, [state.orders, range.start, range.end]);
 
-  // Melhores horas do dia (top 3)
+  // Vendas por hora do dia (todas as 24h, com destaque para as melhores)
   const bestHours = useMemo(() => {
     const buckets = new Array(24).fill(0).map(() => ({ count: 0, revenue: 0 }));
     for (const o of ordersInRange) {
@@ -252,14 +252,18 @@ function Dashboard() {
       buckets[h].count += 1;
       buckets[h].revenue += o.total;
     }
-    const ranked = buckets
-      .map((b, h) => ({ hour: h, ...b }))
+    const all = buckets.map((b, h) => ({ hour: h, ...b }));
+    const maxCount = all.reduce((a, b) => Math.max(a, b.count), 0);
+    // Ranking apenas com horas que tiveram venda, para marcar as melhores
+    const sortedWithSales = all
       .filter((b) => b.count > 0)
-      .sort((a, b) => b.count - a.count || b.revenue - a.revenue)
-      .slice(0, 3);
-    const maxCount = ranked[0]?.count ?? 0;
-    return { ranked, maxCount };
+      .sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+    const topHours = new Set(sortedWithSales.slice(0, 3).map((b) => b.hour));
+    const totalSales = all.reduce((a, b) => a + b.count, 0);
+    return { all, maxCount, topHours, totalSales, best: sortedWithSales[0] ?? null };
   }, [ordersInRange]);
+
+
 
   // Ticket médio do período
   const ticketMedio = useMemo(() => {
