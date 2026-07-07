@@ -23,6 +23,8 @@ import {
   BarChart3,
   Trophy,
   RefreshCw,
+  Clock,
+  CreditCard,
 } from "lucide-react";
 
 import { useServerFn } from "@tanstack/react-start";
@@ -232,6 +234,57 @@ function Dashboard() {
       return sum + (isFinite(v) ? v : 0);
     }, 0);
   }, [state.orders, range.start, range.end]);
+
+  // Pedidos válidos no período (para insights extras)
+  const ordersInRange = useMemo(() => {
+    return state.orders.filter((o) => {
+      if (o.status === "cancelado") return false;
+      const d = new Date(o.date);
+      return d >= range.start && d < range.end;
+    });
+  }, [state.orders, range.start, range.end]);
+
+  // Melhores horas do dia (top 3)
+  const bestHours = useMemo(() => {
+    const buckets = new Array(24).fill(0).map(() => ({ count: 0, revenue: 0 }));
+    for (const o of ordersInRange) {
+      const h = new Date(o.date).getHours();
+      buckets[h].count += 1;
+      buckets[h].revenue += o.total;
+    }
+    const ranked = buckets
+      .map((b, h) => ({ hour: h, ...b }))
+      .filter((b) => b.count > 0)
+      .sort((a, b) => b.count - a.count || b.revenue - a.revenue)
+      .slice(0, 3);
+    const maxCount = ranked[0]?.count ?? 0;
+    return { ranked, maxCount };
+  }, [ordersInRange]);
+
+  // Ticket médio do período
+  const ticketMedio = useMemo(() => {
+    if (ordersInRange.length === 0) return 0;
+    const total = ordersInRange.reduce((a, o) => a + o.total, 0);
+    return total / ordersInRange.length;
+  }, [ordersInRange]);
+
+  // Forma de pagamento mais usada
+  const paymentStats = useMemo(() => {
+    const map = new Map<string, { count: number; revenue: number }>();
+    for (const o of ordersInRange) {
+      const key = (o.payment || "outros") as string;
+      const cur = map.get(key) ?? { count: 0, revenue: 0 };
+      cur.count += 1;
+      cur.revenue += o.total;
+      map.set(key, cur);
+    }
+    const ranked = Array.from(map.entries())
+      .map(([key, v]) => ({ key, ...v }))
+      .sort((a, b) => b.count - a.count);
+    const total = ordersInRange.length;
+    return { ranked, total };
+  }, [ordersInRange]);
+
 
   const totalExpenses = fin.cogs + adsTotalCost + fin.opEx + fin.motoboyCost + returnsLossInRange + cardFeeCost;
   // Lucro = Faturamento - COGS - (Meta Ads + Imposto Meta Ads) - OpEx - Motoboy - Perdas devoluções - Taxa maquininha
@@ -518,6 +571,107 @@ function Dashboard() {
         )}
       </div>
 
+      {/* Insights operacionais: horas, ticket e pagamento */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        {/* Melhores horas */}
+        <div className="rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <Clock className="h-4 w-4 text-primary" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold">Melhores horas de venda</div>
+              <div className="text-xs text-muted-foreground">Top 3 horários — {range.label}</div>
+            </div>
+          </div>
+          {bestHours.ranked.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">Sem vendas no período.</div>
+          ) : (
+            <div className="space-y-3">
+              {bestHours.ranked.map((b, i) => {
+                const pctBar = bestHours.maxCount > 0 ? (b.count / bestHours.maxCount) * 100 : 0;
+                const label = `${String(b.hour).padStart(2, "0")}:00 – ${String((b.hour + 1) % 24).padStart(2, "0")}:00`;
+                return (
+                  <div key={b.hour}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="font-medium flex items-center gap-2">
+                        <span className={`h-5 w-5 grid place-items-center rounded-full text-[10px] font-bold ${i === 0 ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}>{i + 1}</span>
+                        {label}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {b.count} {b.count === 1 ? "venda" : "vendas"} · {m(brl(b.revenue))}
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                      <div className="h-full bg-primary transition-all" style={{ width: `${pctBar}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Ticket médio */}
+        <div className="rounded-2xl border border-border bg-gradient-card p-5 lg:p-6 shadow-elegant">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <Receipt className="h-4 w-4 text-primary" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold">Ticket médio</div>
+              <div className="text-xs text-muted-foreground">Valor médio por pedido — {range.label}</div>
+            </div>
+          </div>
+          <div className="text-3xl lg:text-4xl font-bold text-primary tracking-tight">
+            {m(brl(ticketMedio))}
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Mini label="Pedidos" value={String(ordersInRange.length)} />
+            <Mini label="Faturamento" value={m(brl(ordersInRange.reduce((a, o) => a + o.total, 0)))} />
+          </div>
+        </div>
+
+        {/* Forma de pagamento mais usada */}
+        <div className="rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <CreditCard className="h-4 w-4 text-primary" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold">Forma de pagamento mais usada</div>
+              <div className="text-xs text-muted-foreground">Distribuição — {range.label}</div>
+            </div>
+          </div>
+          {paymentStats.ranked.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">Sem vendas no período.</div>
+          ) : (
+            <div className="space-y-3">
+              {paymentStats.ranked.slice(0, 4).map((p, i) => {
+                const share = paymentStats.total > 0 ? (p.count / paymentStats.total) * 100 : 0;
+                const label = paymentLabel(p.key);
+                return (
+                  <div key={p.key}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="font-medium capitalize flex items-center gap-2">
+                        {i === 0 && <span className="rounded-full bg-primary/15 text-primary text-[10px] font-bold px-1.5 py-0.5">TOP</span>}
+                        {label}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {p.count} · {pct(share)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                      <div className="h-full bg-primary transition-all" style={{ width: `${share}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Recent orders */}
 
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
@@ -563,4 +717,23 @@ function Mini({ label, value }: { label: string; value: string }) {
       <div className="mt-0.5 font-semibold">{value}</div>
     </div>
   );
+}
+
+function paymentLabel(key: string): string {
+  const k = (key || "").toLowerCase();
+  const map: Record<string, string> = {
+    cartao: "Cartão",
+    "cartão": "Cartão",
+    credito: "Cartão de crédito",
+    "crédito": "Cartão de crédito",
+    debito: "Cartão de débito",
+    "débito": "Cartão de débito",
+    pix: "PIX",
+    dinheiro: "Dinheiro",
+    boleto: "Boleto",
+    transferencia: "Transferência",
+    "transferência": "Transferência",
+    outros: "Outros",
+  };
+  return map[k] ?? (key ? key.charAt(0).toUpperCase() + key.slice(1) : "Outros");
 }
