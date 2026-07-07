@@ -964,10 +964,18 @@ function EditOrderDialog({
           <Button onClick={() => {
             const patch: any = { ...form, items, total };
             if (orderDate) {
-              const y = orderDate.getFullYear();
-              const m = String(orderDate.getMonth() + 1).padStart(2, "0");
-              const d = String(orderDate.getDate()).padStart(2, "0");
-              patch.date = dateInputToLocalISO(`${y}-${m}-${d}`);
+              // Preserva a hora original do pedido (ou usa agora, se for novo)
+              const src = order?.date ? new Date(order.date) : new Date();
+              const dt = new Date(
+                orderDate.getFullYear(),
+                orderDate.getMonth(),
+                orderDate.getDate(),
+                src.getHours(),
+                src.getMinutes(),
+                src.getSeconds(),
+                src.getMilliseconds(),
+              );
+              patch.date = dt.toISOString();
             }
             onSave(patch);
           }}>Salvar alterações</Button>
