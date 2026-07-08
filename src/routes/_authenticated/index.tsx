@@ -748,6 +748,43 @@ function Dashboard() {
             </ResponsiveContainer>
           </div>
         )}
+
+        {/* Melhores dias do período */}
+        {bestDays.length > 0 && (
+          <div className="mt-5 border-t border-border pt-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Dias que mais venderam
+              </div>
+              <div className="text-[11px] text-muted-foreground">{hourRange.label}</div>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+              {bestDays.map((d, i) => (
+                <div
+                  key={d.key}
+                  className={`rounded-xl border p-3 ${
+                    i === 0 ? "border-primary/40 bg-primary/5" : "border-border bg-secondary/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-medium capitalize">
+                      {d.date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })}
+                    </div>
+                    {i === 0 && (
+                      <span className="rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-2 py-0.5">
+                        Top
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-base font-bold">
+                    {d.count} {d.count === 1 ? "venda" : "vendas"}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">{m(brl(d.revenue))}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Ticket médio + Forma de pagamento */}
