@@ -247,24 +247,60 @@ function Dashboard() {
     });
   }, [state.orders, range.start, range.end]);
 
+  // Filtro independente do card "Vendas por Horário"
+  const [hourPeriod, setHourPeriod] = useState<Period>("month");
+  const [hourCustomStart, setHourCustomStart] = useState("");
+  const [hourCustomEnd, setHourCustomEnd] = useState("");
+  const hourRange = useMemo(
+    () => rangeFor(hourPeriod, hourCustomStart, hourCustomEnd),
+    [hourPeriod, hourCustomStart, hourCustomEnd],
+  );
+  const hourOrders = useMemo(() => {
+    return state.orders.filter((o) => {
+      if (o.status === "cancelado") return false;
+      const d = new Date(o.date);
+      return d >= hourRange.start && d < hourRange.end;
+    });
+  }, [state.orders, hourRange.start, hourRange.end]);
+
   // Vendas por hora do dia (todas as 24h, com destaque para as melhores)
   const bestHours = useMemo(() => {
     const buckets = new Array(24).fill(0).map(() => ({ count: 0, revenue: 0 }));
-    for (const o of ordersInRange) {
+    for (const o of hourOrders) {
       const h = new Date(o.date).getHours();
       buckets[h].count += 1;
       buckets[h].revenue += o.total;
     }
     const all = buckets.map((b, h) => ({ hour: h, ...b }));
     const maxCount = all.reduce((a, b) => Math.max(a, b.count), 0);
-    // Ranking apenas com horas que tiveram venda, para marcar as melhores
     const sortedWithSales = all
       .filter((b) => b.count > 0)
       .sort((a, b) => b.count - a.count || b.revenue - a.revenue);
     const topHours = new Set(sortedWithSales.slice(0, 3).map((b) => b.hour));
     const totalSales = all.reduce((a, b) => a + b.count, 0);
     return { all, maxCount, topHours, totalSales, best: sortedWithSales[0] ?? null };
-  }, [ordersInRange]);
+  }, [hourOrders]);
+
+  // Melhores dias no período do card
+  const bestDays = useMemo(() => {
+    const map = new Map<string, { key: string; date: Date; count: number; revenue: number }>();
+    for (const o of hourOrders) {
+      const d = new Date(o.date);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const cur = map.get(key) ?? {
+        key,
+        date: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+        count: 0,
+        revenue: 0,
+      };
+      cur.count += 1;
+      cur.revenue += o.total;
+      map.set(key, cur);
+    }
+    return Array.from(map.values())
+      .sort((a, b) => b.count - a.count || b.revenue - a.revenue)
+      .slice(0, 5);
+  }, [hourOrders]);
 
 
 
