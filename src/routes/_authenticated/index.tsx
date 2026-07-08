@@ -247,24 +247,60 @@ function Dashboard() {
     });
   }, [state.orders, range.start, range.end]);
 
+  // Filtro independente do card "Vendas por Horário"
+  const [hourPeriod, setHourPeriod] = useState<Period>("month");
+  const [hourCustomStart, setHourCustomStart] = useState("");
+  const [hourCustomEnd, setHourCustomEnd] = useState("");
+  const hourRange = useMemo(
+    () => rangeFor(hourPeriod, hourCustomStart, hourCustomEnd),
+    [hourPeriod, hourCustomStart, hourCustomEnd],
+  );
+  const hourOrders = useMemo(() => {
+    return state.orders.filter((o) => {
+      if (o.status === "cancelado") return false;
+      const d = new Date(o.date);
+      return d >= hourRange.start && d < hourRange.end;
+    });
+  }, [state.orders, hourRange.start, hourRange.end]);
+
   // Vendas por hora do dia (todas as 24h, com destaque para as melhores)
   const bestHours = useMemo(() => {
     const buckets = new Array(24).fill(0).map(() => ({ count: 0, revenue: 0 }));
-    for (const o of ordersInRange) {
+    for (const o of hourOrders) {
       const h = new Date(o.date).getHours();
       buckets[h].count += 1;
       buckets[h].revenue += o.total;
     }
     const all = buckets.map((b, h) => ({ hour: h, ...b }));
     const maxCount = all.reduce((a, b) => Math.max(a, b.count), 0);
-    // Ranking apenas com horas que tiveram venda, para marcar as melhores
     const sortedWithSales = all
       .filter((b) => b.count > 0)
       .sort((a, b) => b.count - a.count || b.revenue - a.revenue);
     const topHours = new Set(sortedWithSales.slice(0, 3).map((b) => b.hour));
     const totalSales = all.reduce((a, b) => a + b.count, 0);
     return { all, maxCount, topHours, totalSales, best: sortedWithSales[0] ?? null };
-  }, [ordersInRange]);
+  }, [hourOrders]);
+
+  // Melhores dias no período do card
+  const bestDays = useMemo(() => {
+    const map = new Map<string, { key: string; date: Date; count: number; revenue: number }>();
+    for (const o of hourOrders) {
+      const d = new Date(o.date);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const cur = map.get(key) ?? {
+        key,
+        date: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+        count: 0,
+        revenue: 0,
+      };
+      cur.count += 1;
+      cur.revenue += o.total;
+      map.set(key, cur);
+    }
+    return Array.from(map.values())
+      .sort((a, b) => b.count - a.count || b.revenue - a.revenue)
+      .slice(0, 5);
+  }, [hourOrders]);
 
 
 
@@ -588,7 +624,7 @@ function Dashboard() {
             <div>
               <div className="text-sm font-semibold">Vendas por Horário</div>
               <div className="text-xs text-muted-foreground">
-                Todas as 24h — {range.label}
+                Todas as 24h — {hourRange.label}
                 {bestHours.best && (
                   <> · pico às {String(bestHours.best.hour).padStart(2, "0")}h</>
                 )}
@@ -603,6 +639,48 @@ function Dashboard() {
               <span className="h-2.5 w-2.5 rounded-sm bg-primary/30" /> Demais horários
             </span>
           </div>
+        </div>
+
+        {/* Filtro do card */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {([
+            { k: "today", l: "Hoje" },
+            { k: "yesterday", l: "Ontem" },
+            { k: "7d", l: "7 dias" },
+            { k: "30d", l: "30 dias" },
+            { k: "month", l: "Este mês" },
+            { k: "custom", l: "Personalizado" },
+          ] as { k: Period; l: string }[]).map((opt) => (
+            <button
+              key={opt.k}
+              type="button"
+              onClick={() => setHourPeriod(opt.k)}
+              className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                hourPeriod === opt.k
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-secondary/40 text-muted-foreground border-border hover:text-foreground"
+              }`}
+            >
+              {opt.l}
+            </button>
+          ))}
+          {hourPeriod === "custom" && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={hourCustomStart}
+                onChange={(e) => setHourCustomStart(e.target.value)}
+                className="h-8 w-[150px] text-xs"
+              />
+              <span className="text-xs text-muted-foreground">até</span>
+              <Input
+                type="date"
+                value={hourCustomEnd}
+                onChange={(e) => setHourCustomEnd(e.target.value)}
+                className="h-8 w-[150px] text-xs"
+              />
+            </div>
+          )}
         </div>
         {bestHours.totalSales === 0 ? (
           <div className="text-sm text-muted-foreground py-10 text-center">Sem vendas no período.</div>
@@ -668,6 +746,43 @@ function Dashboard() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Melhores dias do período */}
+        {bestDays.length > 0 && (
+          <div className="mt-5 border-t border-border pt-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Dias que mais venderam
+              </div>
+              <div className="text-[11px] text-muted-foreground">{hourRange.label}</div>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+              {bestDays.map((d, i) => (
+                <div
+                  key={d.key}
+                  className={`rounded-xl border p-3 ${
+                    i === 0 ? "border-primary/40 bg-primary/5" : "border-border bg-secondary/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-medium capitalize">
+                      {d.date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })}
+                    </div>
+                    {i === 0 && (
+                      <span className="rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-2 py-0.5">
+                        Top
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-base font-bold">
+                    {d.count} {d.count === 1 ? "venda" : "vendas"}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">{m(brl(d.revenue))}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
