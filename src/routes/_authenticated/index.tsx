@@ -624,7 +624,7 @@ function Dashboard() {
             <div>
               <div className="text-sm font-semibold">Vendas por Horário</div>
               <div className="text-xs text-muted-foreground">
-                Todas as 24h — {range.label}
+                Todas as 24h — {hourRange.label}
                 {bestHours.best && (
                   <> · pico às {String(bestHours.best.hour).padStart(2, "0")}h</>
                 )}
@@ -639,6 +639,48 @@ function Dashboard() {
               <span className="h-2.5 w-2.5 rounded-sm bg-primary/30" /> Demais horários
             </span>
           </div>
+        </div>
+
+        {/* Filtro do card */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {([
+            { k: "today", l: "Hoje" },
+            { k: "yesterday", l: "Ontem" },
+            { k: "7d", l: "7 dias" },
+            { k: "30d", l: "30 dias" },
+            { k: "month", l: "Este mês" },
+            { k: "custom", l: "Personalizado" },
+          ] as { k: Period; l: string }[]).map((opt) => (
+            <button
+              key={opt.k}
+              type="button"
+              onClick={() => setHourPeriod(opt.k)}
+              className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                hourPeriod === opt.k
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-secondary/40 text-muted-foreground border-border hover:text-foreground"
+              }`}
+            >
+              {opt.l}
+            </button>
+          ))}
+          {hourPeriod === "custom" && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={hourCustomStart}
+                onChange={(e) => setHourCustomStart(e.target.value)}
+                className="h-8 w-[150px] text-xs"
+              />
+              <span className="text-xs text-muted-foreground">até</span>
+              <Input
+                type="date"
+                value={hourCustomEnd}
+                onChange={(e) => setHourCustomEnd(e.target.value)}
+                className="h-8 w-[150px] text-xs"
+              />
+            </div>
+          )}
         </div>
         {bestHours.totalSales === 0 ? (
           <div className="text-sm text-muted-foreground py-10 text-center">Sem vendas no período.</div>
