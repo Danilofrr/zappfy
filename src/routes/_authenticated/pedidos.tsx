@@ -1268,7 +1268,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             <SectionLabel icon={Receipt}>Taxa adicional (opcional)</SectionLabel>
             <div className="grid grid-cols-[1fr_140px] gap-2">
               <Input placeholder="Descrição (ex: Taxa de serviço)" value={feeLabel} onChange={(e) => setFeeLabel(e.target.value)} />
-              <Input type="number" min={0} step="0.01" value={feeValue} onChange={(e) => setFeeValue(Number(e.target.value))} placeholder="R$ 0,00" />
+              <Input type="number" min={0} step="0.01" value={Number.isFinite(feeValue) ? feeValue : 0} onChange={(e) => { const n = parseFloat(e.target.value); setFeeValue(Number.isFinite(n) ? n : 0); }} placeholder="R$ 0,00" />
             </div>
           </div>
 
