@@ -1252,8 +1252,12 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
               </Select>
               <Input
                 type="number" min={0} step="0.01"
-                value={shippingValue}
-                onChange={(e) => { setShippingValue(Number(e.target.value)); if (shippingOptionId === "none") setShippingOptionId("custom"); }}
+                value={Number.isFinite(shippingValue) ? shippingValue : 0}
+                onChange={(e) => {
+                  const n = parseFloat(e.target.value);
+                  setShippingValue(Number.isFinite(n) ? n : 0);
+                  if (shippingOptionId === "none") setShippingOptionId("custom");
+                }}
                 placeholder="R$ 0,00"
               />
             </div>
