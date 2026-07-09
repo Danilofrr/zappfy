@@ -1081,15 +1081,17 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
 
   const selectedIds = new Set(lines.map((l) => l.productId));
   const available = state.products.filter((p) => !selectedIds.has(p.id));
+  const safeNum = (n: number) => (Number.isFinite(n) ? n : 0);
   const subtotal = lines.reduce((sum, l) => {
     const prod = state.products.find((p) => p.id === l.productId);
     return sum + (prod?.price ?? 0) * l.qty;
   }, 0);
+  const dv = Math.max(0, safeNum(discountValue));
   const discountAmount =
     discountType === "percent"
-      ? Math.min(subtotal, (subtotal * Math.max(0, discountValue)) / 100)
-      : Math.min(subtotal, Math.max(0, discountValue));
-  const total = Math.max(0, subtotal + Number(shippingValue || 0) + Number(feeValue || 0) - discountAmount);
+      ? Math.min(subtotal, (subtotal * dv) / 100)
+      : Math.min(subtotal, dv);
+  const total = Math.max(0, subtotal + safeNum(shippingValue) + safeNum(feeValue) - discountAmount);
 
   function applyCoupon() {
     const code = couponCode.trim().toUpperCase();
@@ -1250,8 +1252,12 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
               </Select>
               <Input
                 type="number" min={0} step="0.01"
-                value={shippingValue}
-                onChange={(e) => { setShippingValue(Number(e.target.value)); if (shippingOptionId === "none") setShippingOptionId("custom"); }}
+                value={Number.isFinite(shippingValue) ? shippingValue : 0}
+                onChange={(e) => {
+                  const n = parseFloat(e.target.value);
+                  setShippingValue(Number.isFinite(n) ? n : 0);
+                  if (shippingOptionId === "none") setShippingOptionId("custom");
+                }}
                 placeholder="R$ 0,00"
               />
             </div>
@@ -1262,7 +1268,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             <SectionLabel icon={Receipt}>Taxa adicional (opcional)</SectionLabel>
             <div className="grid grid-cols-[1fr_140px] gap-2">
               <Input placeholder="Descrição (ex: Taxa de serviço)" value={feeLabel} onChange={(e) => setFeeLabel(e.target.value)} />
-              <Input type="number" min={0} step="0.01" value={feeValue} onChange={(e) => setFeeValue(Number(e.target.value))} placeholder="R$ 0,00" />
+              <Input type="number" min={0} step="0.01" value={Number.isFinite(feeValue) ? feeValue : 0} onChange={(e) => { const n = parseFloat(e.target.value); setFeeValue(Number.isFinite(n) ? n : 0); }} placeholder="R$ 0,00" />
             </div>
           </div>
 
@@ -1282,8 +1288,11 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
               <Field label={discountType === "percent" ? "DESCONTO (%)" : "DESCONTO (R$)"}>
                 <Input
                   type="number" min={0} step="0.01"
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(Number(e.target.value))}
+                  value={Number.isFinite(discountValue) ? discountValue : 0}
+                  onChange={(e) => {
+                    const n = parseFloat(e.target.value);
+                    setDiscountValue(Number.isFinite(n) ? n : 0);
+                  }}
                   placeholder={discountType === "percent" ? "Ex: 10" : "Ex: 5,00"}
                 />
               </Field>
