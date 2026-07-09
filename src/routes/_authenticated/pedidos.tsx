@@ -1081,15 +1081,17 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
 
   const selectedIds = new Set(lines.map((l) => l.productId));
   const available = state.products.filter((p) => !selectedIds.has(p.id));
+  const safeNum = (n: number) => (Number.isFinite(n) ? n : 0);
   const subtotal = lines.reduce((sum, l) => {
     const prod = state.products.find((p) => p.id === l.productId);
     return sum + (prod?.price ?? 0) * l.qty;
   }, 0);
+  const dv = Math.max(0, safeNum(discountValue));
   const discountAmount =
     discountType === "percent"
-      ? Math.min(subtotal, (subtotal * Math.max(0, discountValue)) / 100)
-      : Math.min(subtotal, Math.max(0, discountValue));
-  const total = Math.max(0, subtotal + Number(shippingValue || 0) + Number(feeValue || 0) - discountAmount);
+      ? Math.min(subtotal, (subtotal * dv) / 100)
+      : Math.min(subtotal, dv);
+  const total = Math.max(0, subtotal + safeNum(shippingValue) + safeNum(feeValue) - discountAmount);
 
   function applyCoupon() {
     const code = couponCode.trim().toUpperCase();
