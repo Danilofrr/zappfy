@@ -141,7 +141,7 @@ function Page() {
           </Field>
         </Card>
 
-        <Card title="Remetente da etiqueta">
+        <Card title="Remetente da etiqueta" icon={Package}>
           <p className="text-[11px] text-muted-foreground -mt-2">Esses dados aparecem na etiqueta de envio impressa em cada pedido.</p>
           <Field label="Nome / razão social do remetente">
             <Input value={sender.name} onChange={(e) => setSender({ ...sender, name: e.target.value })} placeholder={f.storeName || "Sua loja"} />
