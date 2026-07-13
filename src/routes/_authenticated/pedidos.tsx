@@ -1525,10 +1525,21 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             onClick={() => {
               if (!form.customer) { toast.error("Preencha o nome do cliente"); return; }
               if (lines.length === 0) { toast.error("Adicione ao menos um produto"); return; }
-              const items = lines.map((l) => {
+              const rawItems = lines.map((l) => {
                 const prod = state.products.find((p) => p.id === l.productId)!;
                 return { productId: prod.id, name: prod.name, qty: l.qty, price: prod.price, cost: prod.cost };
               });
+              const feeMeta = form.payment === "cartao"
+                ? buildOrderFeeMeta({
+                    payment: form.payment,
+                    baseTotal,
+                    cardFeePercentage: currentCardFeePct,
+                    cardFeeMode: isPassthrough ? "passthrough" : "absorb",
+                    cardBrand,
+                    cardInstallments,
+                  })
+                : null;
+              const items = attachFeeMetaToItems(rawItems as any[], feeMeta);
               const extraNotesLines: string[] = [];
               if (shippingValue > 0) extraNotesLines.push(`Entrega: ${brl(shippingValue)}`);
               if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
