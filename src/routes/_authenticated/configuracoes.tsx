@@ -446,10 +446,17 @@ function ProfileCard() {
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({ title, icon: Icon, children }: { title: string; icon?: any; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 lg:p-6 card-neon">
-      <div className="text-sm font-semibold mb-4">{title}</div>
+      <div className="flex items-center gap-3 mb-4">
+        {Icon && (
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20 shrink-0">
+            <Icon className="h-4 w-4 text-primary" />
+          </div>
+        )}
+        <div className="text-sm font-semibold">{title}</div>
+      </div>
       <div className="grid gap-3">{children}</div>
     </div>
   );
