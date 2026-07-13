@@ -973,7 +973,31 @@ function EditOrderDialog({
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={() => {
-            const patch: any = { ...form, items, total };
+            // Recalcula metadados da taxa do cartão se aplicável.
+            const prevMeta = getOrderFeeMeta({ items: order?.items ?? [] });
+            let nextItems = items as any[];
+            if (!isCardPaymentMethod(form.payment)) {
+              // Trocou para PIX/dinheiro/etc → remove metadados da taxa.
+              nextItems = attachFeeMetaToItems(nextItems, null);
+            } else if (prevMeta) {
+              // Mantém modo/percentual/marca/parcelas, mas recalcula com o
+              // novo total (baseTotal = total salvo quando absorb; total - fee
+              // atual quando passthrough).
+              const rawTotal = Number(total) || 0;
+              const baseTotal = prevMeta.cardFeeMode === "passthrough"
+                ? Math.max(0, rawTotal - prevMeta.cardFeeAmount)
+                : rawTotal;
+              const rebuilt = buildOrderFeeMeta({
+                payment: form.payment,
+                baseTotal,
+                cardFeePercentage: prevMeta.cardFeePercentage,
+                cardFeeMode: prevMeta.cardFeeMode === "passthrough" ? "passthrough" : "absorb",
+                cardBrand: prevMeta.cardBrand,
+                cardInstallments: prevMeta.cardInstallments,
+              });
+              nextItems = attachFeeMetaToItems(nextItems, rebuilt);
+            }
+            const patch: any = { ...form, items: nextItems, total };
             if (orderDate) {
               // Preserva a hora original do pedido (ou usa agora, se for novo)
               const src = order?.date ? new Date(order.date) : new Date();
