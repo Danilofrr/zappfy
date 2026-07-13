@@ -34,6 +34,7 @@ import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
 import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
+import { QuantitySelector } from "@/components/QuantitySelector";
 import { whatsappLink } from "@/lib/tracking";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
