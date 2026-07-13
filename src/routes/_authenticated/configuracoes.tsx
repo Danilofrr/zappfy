@@ -195,10 +195,15 @@ function Page() {
       </div>
 
       <div className="mt-6">
+        <ChangePasswordCard />
+      </div>
+
+      <div className="mt-6">
         <Card title="Notificações no celular">
           <NotificationsCard />
         </Card>
       </div>
+
 
       <div className="mt-6">
         <Card title="Mensagens automáticas do WhatsApp">
