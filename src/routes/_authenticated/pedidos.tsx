@@ -1497,7 +1497,16 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             {shippingValue > 0 && <div className="flex justify-between text-muted-foreground"><span>Entrega</span><span>{brl(shippingValue)}</span></div>}
             {feeValue > 0 && <div className="flex justify-between text-muted-foreground"><span>{feeLabel || "Taxa"}</span><span>{brl(feeValue)}</span></div>}
             {discountAmount > 0 && <div className="flex justify-between text-emerald-500"><span>Desconto{couponApplied ? ` (${couponApplied})` : ""}</span><span>−{brl(discountAmount)}</span></div>}
-            <div className="flex justify-between font-bold text-base pt-1 border-t border-border mt-1"><span>Total</span><span className="text-primary">{brl(total)}</span></div>
+            {form.payment === "cartao" && cardFeeAmount > 0 && isPassthrough && (
+              <div className="flex justify-between text-muted-foreground"><span>Acréscimo do cartão ({currentCardFeePct.toFixed(2)}%)</span><span>+{brl(cardFeeAmount)}</span></div>
+            )}
+            <div className="flex justify-between font-bold text-base pt-1 border-t border-border mt-1"><span>Total cobrado do cliente</span><span className="text-primary">{brl(total)}</span></div>
+            {form.payment === "cartao" && cardFeeAmount > 0 && !isPassthrough && (
+              <>
+                <div className="flex justify-between text-rose-400"><span>Taxa do cartão absorvida ({currentCardFeePct.toFixed(2)}%)</span><span>−{brl(cardFeeAmount)}</span></div>
+                <div className="flex justify-between font-semibold text-emerald-400"><span>Valor líquido recebido</span><span>{brl(netReceived)}</span></div>
+              </>
+            )}
           </div>
         </div>
         <DialogFooter>
