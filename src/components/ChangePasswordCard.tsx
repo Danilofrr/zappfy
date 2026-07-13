@@ -87,12 +87,16 @@ export function ChangePasswordCard() {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 lg:p-6 card-neon">
-      <div className="text-sm font-semibold mb-1 flex items-center gap-2">
-        <ShieldCheck className="h-4 w-4 text-primary" /> Segurança
+      <div className="flex items-center gap-3 mb-4">
+        <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20 shrink-0">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+        </div>
+        <div>
+          <div className="text-sm font-semibold">Segurança</div>
+          <p className="text-xs text-muted-foreground">Altere a senha utilizada para acessar sua conta.</p>
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground mb-4">
-        Altere a senha utilizada para acessar sua conta.
-      </p>
+
 
       <form onSubmit={handleSubmit} className="grid gap-3">
         {!needsCode && (
