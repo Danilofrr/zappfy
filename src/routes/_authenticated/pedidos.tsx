@@ -1031,6 +1031,23 @@ function saveMachineFees(f: MachineFees) {
 }
 function noInstallmentBrand(b: string) { return b === "DÉBITO" || b === "PIX" || b === "DINHEIRO"; }
 
+function parseDecimalInput(value: string) {
+  const clean = String(value ?? "").replace(/[^\d,.]/g, "").trim();
+  if (!clean) return 0;
+  const lastComma = clean.lastIndexOf(",");
+  const lastDot = clean.lastIndexOf(".");
+  const decimalIndex = Math.max(lastComma, lastDot);
+  const normalized = decimalIndex >= 0
+    ? `${clean.slice(0, decimalIndex).replace(/\D/g, "")}.${clean.slice(decimalIndex + 1).replace(/\D/g, "")}`
+    : clean.replace(/\D/g, "");
+  const n = Number(normalized);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+
+function roundMoney(value: number) {
+  return Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+}
+
 function SectionLabel({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
@@ -1040,7 +1057,7 @@ function SectionLabel({ icon: Icon, children }: { icon: any; children: React.Rea
   );
 }
 
-function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (v: boolean) => void; onCreate: (o: Omit<Order, "id">) => void }) {
+function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (v: boolean) => void; onCreate: (o: Omit<Order, "id">) => void | Promise<void> }) {
   const { state, updateSettings } = useStore();
   const [form, setForm] = useState({
     customer: "", phone: "", address: "", district: "", city: "",
@@ -1060,14 +1077,10 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   const [feeValue, setFeeValue] = useState<number>(0);
   const [discountType, setDiscountType] = useState<"valor" | "percent">("percent");
   const [discountInput, setDiscountInput] = useState<string>("");
-  const discountValue = (() => {
-    const raw = (discountInput || "").replace(",", ".").trim();
-    if (!raw) return 0;
-    const n = parseFloat(raw);
-    return Number.isFinite(n) ? Math.max(0, n) : 0;
-  })();
+  const discountValue = parseDecimalInput(discountInput);
   const [couponCode, setCouponCode] = useState<string>("");
   const [couponApplied, setCouponApplied] = useState<string>("");
+  const [saving, setSaving] = useState(false);
 
   // Segundo pagamento
   const [secondPayment, setSecondPayment] = useState<string>("none");
@@ -1088,16 +1101,17 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   const selectedIds = new Set(lines.map((l) => l.productId));
   const available = state.products.filter((p) => !selectedIds.has(p.id));
   const safeNum = (n: number) => (Number.isFinite(n) ? n : 0);
-  const subtotal = lines.reduce((sum, l) => {
+  const subtotal = roundMoney(lines.reduce((sum, l) => {
     const prod = state.products.find((p) => p.id === l.productId);
     return sum + (prod?.price ?? 0) * l.qty;
-  }, 0);
+  }, 0));
   const dv = Math.max(0, safeNum(discountValue));
+  const orderBase = roundMoney(subtotal + safeNum(shippingValue) + safeNum(feeValue));
   const discountAmount =
     discountType === "percent"
-      ? Math.min(subtotal, (subtotal * dv) / 100)
-      : Math.min(subtotal, dv);
-  const total = Math.max(0, subtotal + safeNum(shippingValue) + safeNum(feeValue) - discountAmount);
+      ? roundMoney(Math.min(orderBase, (orderBase * Math.min(dv, 100)) / 100))
+      : roundMoney(Math.min(orderBase, dv));
+  const total = roundMoney(Math.max(0, orderBase - discountAmount));
 
   function applyCoupon() {
     const code = couponCode.trim().toUpperCase();
@@ -1446,6 +1460,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+            disabled={saving}
             onClick={() => {
               if (!form.customer) { toast.error("Preencha o nome do cliente"); return; }
               if (lines.length === 0) { toast.error("Adicione ao menos um produto"); return; }
@@ -1466,7 +1481,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 extraNotesLines.push(`Segundo pagamento: ${label} — ${brl(secondPaymentValue)}`);
               }
               const finalNotes = [form.notes, extraNotesLines.join("\n")].filter(Boolean).join("\n\n");
-              onCreate({
+              const orderToCreate = {
                 customer: form.customer, phone: form.phone, address: form.address,
                 district: form.district, city: form.city,
                 items,
@@ -1477,10 +1492,14 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                   const dt = new Date(y, (m || 1) - 1, d || 1, now.getHours(), now.getMinutes(), now.getSeconds());
                   return dt.toISOString();
                 })(),
-              });
-              reset();
+              };
+              setSaving(true);
+              Promise.resolve(onCreate(orderToCreate))
+                .then(() => reset())
+                .catch(() => {})
+                .finally(() => setSaving(false));
             }}>
-            <Save className="mr-2 h-4 w-4" /> Salvar Venda
+            <Save className="mr-2 h-4 w-4" /> {saving ? "Salvando..." : "Salvar Venda"}
           </Button>
         </DialogFooter>
 
