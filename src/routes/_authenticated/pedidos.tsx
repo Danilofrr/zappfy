@@ -1059,7 +1059,13 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   const [feeLabel, setFeeLabel] = useState<string>("");
   const [feeValue, setFeeValue] = useState<number>(0);
   const [discountType, setDiscountType] = useState<"valor" | "percent">("percent");
-  const [discountValue, setDiscountValue] = useState<number>(0);
+  const [discountInput, setDiscountInput] = useState<string>("");
+  const discountValue = (() => {
+    const raw = (discountInput || "").replace(",", ".").trim();
+    if (!raw) return 0;
+    const n = parseFloat(raw);
+    return Number.isFinite(n) ? Math.max(0, n) : 0;
+  })();
   const [couponCode, setCouponCode] = useState<string>("");
   const [couponApplied, setCouponApplied] = useState<string>("");
 
