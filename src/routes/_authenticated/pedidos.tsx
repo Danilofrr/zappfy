@@ -1287,11 +1287,14 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
               </Field>
               <Field label={discountType === "percent" ? "DESCONTO (%)" : "DESCONTO (R$)"}>
                 <Input
-                  type="number" min={0} step="0.01"
-                  value={Number.isFinite(discountValue) ? discountValue : 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={discountValue ? String(discountValue).replace(".", ",") : ""}
                   onChange={(e) => {
-                    const n = parseFloat(e.target.value);
-                    setDiscountValue(Number.isFinite(n) ? n : 0);
+                    const raw = e.target.value.replace(/[^\d,.-]/g, "").replace(",", ".");
+                    if (raw === "" || raw === "-" || raw === ".") { setDiscountValue(0); return; }
+                    const n = parseFloat(raw);
+                    setDiscountValue(Number.isFinite(n) ? Math.max(0, n) : 0);
                   }}
                   placeholder={discountType === "percent" ? "Ex: 10" : "Ex: 5,00"}
                 />
