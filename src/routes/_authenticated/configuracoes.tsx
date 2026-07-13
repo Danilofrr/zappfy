@@ -184,7 +184,7 @@ function Page() {
         </Card>
 
 
-        <Card title="Página de Rastreamento de Entregas">
+        <Card title="Página de Rastreamento de Entregas" icon={MapPin}>
           <p className="text-xs text-muted-foreground -mt-1 mb-3">
             Personalize cores, logo e textos da página pública que o cliente vê acompanhando o motoboy em tempo real.
           </p>
