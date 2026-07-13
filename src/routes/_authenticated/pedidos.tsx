@@ -34,6 +34,7 @@ import { useEffect, useMemo, useState, Fragment } from "react";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
 import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
+import { QuantitySelector } from "@/components/QuantitySelector";
 import { whatsappLink } from "@/lib/tracking";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
@@ -852,8 +853,10 @@ function EditOrderDialog({
                 </div>
                 <div className="col-span-2">
                   <Field label={idx === 0 ? "Qtd" : ""} icon={idx === 0 ? Hash : undefined}>
-                    <Input type="number" min={1} value={it.qty}
-                      onChange={(e) => updateItem(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
+                    <QuantitySelector
+                      value={Number(it.qty) || 1}
+                      onChange={(qty) => updateItem(idx, { qty })}
+                    />
                   </Field>
                 </div>
                 <div className="col-span-4">
@@ -1207,12 +1210,9 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                       <div className="font-medium text-sm truncate text-foreground">{prod.name}</div>
                       <div className="text-xs text-muted-foreground">{brl(prod.price)} · subtotal {brl(sub)}</div>
                     </div>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={l.qty}
-                      onChange={(e) => updateQty(l.productId, Number(e.target.value))}
-                      className="h-8 w-16 text-center"
+                    <QuantitySelector
+                      value={Number(l.qty) || 1}
+                      onChange={(qty) => updateQty(l.productId, qty)}
                     />
                     <button
                       type="button"
