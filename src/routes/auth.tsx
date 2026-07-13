@@ -54,20 +54,29 @@ function AuthPage() {
   }, [navigate]);
 
   async function handleForgotPassword() {
-    if (!email) {
-      toast.error("Digite seu e-mail para recuperar a senha");
+    const trimmed = email.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("Digite um e-mail válido para recuperar a senha");
       return;
     }
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
         redirectTo: buildPublicUrl("/reset-password", publicBaseUrl),
       });
       if (error) throw error;
       toast.success("Enviamos um link de recuperação para o seu e-mail.");
     } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao enviar recuperação");
+      const msg = err?.message ?? "";
+      if (/rate|too many|seconds/i.test(msg)) {
+        toast.error("Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.");
+      } else if (/not.?found|invalid.*email/i.test(msg)) {
+        toast.error("E-mail não encontrado.");
+      } else {
+        toast.error(msg || "Não foi possível enviar o link de recuperação.");
+      }
     }
   }
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
