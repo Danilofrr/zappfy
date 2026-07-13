@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { RotateCcw, Image as ImageIcon, Upload, X, Plus, Trash2 } from "lucide-react";
+import { RotateCcw, Image as ImageIcon, Upload, X, Plus, Trash2, Store, Package, Target, MapPin, Bell, MessageCircle, User } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { ShippingOption } from "@/lib/store";
@@ -108,7 +108,7 @@ function Page() {
       </div>
       <div className="grid lg:grid-cols-2 gap-6 mt-6">
 
-        <Card title="Dados da loja">
+        <Card title="Dados da loja" icon={Store}>
           <Field label="Nome da Loja"><Input value={f.storeName} onChange={(e) => setF({ ...f, storeName: e.target.value })} /></Field>
           <Field label="WhatsApp (com DDI, só números)"><Input value={f.whatsapp} onChange={(e) => setF({ ...f, whatsapp: e.target.value })} placeholder="5581999990000" /></Field>
           <Field label="Chave PIX"><Input value={f.pixKey} onChange={(e) => setF({ ...f, pixKey: e.target.value })} /></Field>
@@ -141,7 +141,7 @@ function Page() {
           </Field>
         </Card>
 
-        <Card title="Remetente da etiqueta">
+        <Card title="Remetente da etiqueta" icon={Package}>
           <p className="text-[11px] text-muted-foreground -mt-2">Esses dados aparecem na etiqueta de envio impressa em cada pedido.</p>
           <Field label="Nome / razão social do remetente">
             <Input value={sender.name} onChange={(e) => setSender({ ...sender, name: e.target.value })} placeholder={f.storeName || "Sua loja"} />
@@ -168,7 +168,7 @@ function Page() {
         </Card>
 
 
-        <Card title="Metas e operação">
+        <Card title="Metas e operação" icon={Target}>
           <Field label="Nome da entrega (ex: Motoboy, Correios)">
             <Input value={f.deliveryLabel} onChange={(e) => setF({ ...f, deliveryLabel: e.target.value })} placeholder="Entrega" />
           </Field>
@@ -184,7 +184,7 @@ function Page() {
         </Card>
 
 
-        <Card title="Página de Rastreamento de Entregas">
+        <Card title="Página de Rastreamento de Entregas" icon={MapPin}>
           <p className="text-xs text-muted-foreground -mt-1 mb-3">
             Personalize cores, logo e textos da página pública que o cliente vê acompanhando o motoboy em tempo real.
           </p>
@@ -200,14 +200,14 @@ function Page() {
 
       <div className="mt-6">
 
-        <Card title="Notificações no celular">
+        <Card title="Notificações no celular" icon={Bell}>
           <NotificationsCard />
         </Card>
       </div>
 
 
       <div className="mt-6">
-        <Card title="Mensagens automáticas do WhatsApp">
+        <Card title="Mensagens automáticas do WhatsApp" icon={MessageCircle}>
           <p className="text-xs text-muted-foreground -mt-1 mb-3">
             Personalize o texto. Use variáveis entre chaves que serão substituídas no momento do envio.
           </p>
@@ -427,7 +427,7 @@ function ProfileCard() {
   }
 
   return (
-    <Card title="Meu perfil">
+    <Card title="Meu perfil" icon={User}>
       <div className="flex flex-col gap-4">
         <AvatarUploader value={avatar} onChange={setAvatar} name={fullName} email={email} size={88} />
         <div className="grid md:grid-cols-2 gap-3">
@@ -446,10 +446,17 @@ function ProfileCard() {
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({ title, icon: Icon, children }: { title: string; icon?: any; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 lg:p-6 card-neon">
-      <div className="text-sm font-semibold mb-4">{title}</div>
+      <div className="flex items-center gap-3 mb-4">
+        {Icon && (
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20 shrink-0">
+            <Icon className="h-4 w-4 text-primary" />
+          </div>
+        )}
+        <div className="text-sm font-semibold">{title}</div>
+      </div>
       <div className="grid gap-3">{children}</div>
     </div>
   );
