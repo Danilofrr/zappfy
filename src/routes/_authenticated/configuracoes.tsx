@@ -427,7 +427,7 @@ function ProfileCard() {
   }
 
   return (
-    <Card title="Meu perfil">
+    <Card title="Meu perfil" icon={User}>
       <div className="flex flex-col gap-4">
         <AvatarUploader value={avatar} onChange={setAvatar} name={fullName} email={email} size={88} />
         <div className="grid md:grid-cols-2 gap-3">
