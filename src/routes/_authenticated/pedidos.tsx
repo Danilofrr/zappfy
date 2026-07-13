@@ -1410,7 +1410,33 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 </div>
                 <div className="text-[11px] text-muted-foreground flex items-center justify-between">
                   <span>Taxa configurada: <strong className="text-foreground">{currentCardFeePct.toFixed(2)}%</strong></span>
-                  <span>Custo estimado: <strong className="text-foreground">{brl(total * currentCardFeePct / 100)}</strong></span>
+                  <span>Valor da taxa: <strong className="text-foreground">{brl(cardFeeAmount)}</strong></span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setCardFeeModeLocal("absorb")}
+                    className={`text-left rounded-lg border p-2 text-xs transition ${
+                      cardFeeModeLocal === "absorb"
+                        ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="font-semibold text-sm">A loja absorve</div>
+                    <div className="text-[10px] text-muted-foreground">Taxa sai do lucro. Cliente paga só o valor base.</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCardFeeModeLocal("passthrough")}
+                    className={`text-left rounded-lg border p-2 text-xs transition ${
+                      cardFeeModeLocal === "passthrough"
+                        ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="font-semibold text-sm">Repassar ao cliente</div>
+                    <div className="text-[10px] text-muted-foreground">Taxa somada ao total. Loja recebe o valor base.</div>
+                  </button>
                 </div>
               </div>
             )}
