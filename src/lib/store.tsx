@@ -270,7 +270,7 @@ const toOrder = (r: any): Order => ({
 });
 const fromOrder = (o: Omit<Order, "id">) => ({
   customer: o.customer, phone: o.phone, address: o.address, district: o.district, city: o.city,
-  items: o.items as any, total: o.total, payment: o.payment, status: o.status,
+  items: o.items as any, total: Math.round((Number(o.total) || 0) * 100) / 100, payment: o.payment, status: o.status,
   notes: o.notes ?? null, date: o.date,
 });
 const toExpense = (r: any): Expense => ({
@@ -610,7 +610,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!user) return;
       const sid = activeStoreId ?? user.id;
       const { data, error } = await supabase.from("orders").insert({ user_id: user.id, store_id: sid, ...fromOrder(o) }).select().single();
-      if (error) { toast.error(error.message); return; }
+      if (error) {
+        toast.error(error.message || "Erro ao criar pedido");
+        throw error;
+      }
       // Baixa de estoque para cada item do pedido (ignora cancelado)
       if (o.status !== "cancelado") {
         const updatedProducts: Product[] = [];
