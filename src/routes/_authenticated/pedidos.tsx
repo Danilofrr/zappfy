@@ -647,9 +647,9 @@ function PedidosPage() {
                   <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">{fmtDate(o.date)}</td>
                   <td className="px-4 py-3 text-right font-semibold">{brl(o.total)}</td>
                   {(() => {
-                    const cost = o.items.reduce((s, it) => s + (it.cost ?? 0) * it.qty, 0);
-                    const profit = o.total - cost;
-                    const margin = o.total > 0 ? (profit / o.total) * 100 : 0;
+                    const profit = getOrderProfit(o);
+                    const revenueBase = getOrderNetReceived(o);
+                    const margin = revenueBase > 0 ? (profit / revenueBase) * 100 : 0;
                     const cls = profit >= 0 ? "text-emerald-500" : "text-destructive";
                     return (
                       <td className="px-4 py-3 text-right">
