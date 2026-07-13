@@ -853,8 +853,10 @@ function EditOrderDialog({
                 </div>
                 <div className="col-span-2">
                   <Field label={idx === 0 ? "Qtd" : ""} icon={idx === 0 ? Hash : undefined}>
-                    <Input type="number" min={1} value={it.qty}
-                      onChange={(e) => updateItem(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
+                    <QuantitySelector
+                      value={Number(it.qty) || 1}
+                      onChange={(qty) => updateItem(idx, { qty })}
+                    />
                   </Field>
                 </div>
                 <div className="col-span-4">
