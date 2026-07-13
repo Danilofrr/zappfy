@@ -168,7 +168,7 @@ function Page() {
         </Card>
 
 
-        <Card title="Metas e operação">
+        <Card title="Metas e operação" icon={Target}>
           <Field label="Nome da entrega (ex: Motoboy, Correios)">
             <Input value={f.deliveryLabel} onChange={(e) => setF({ ...f, deliveryLabel: e.target.value })} placeholder="Entrega" />
           </Field>
