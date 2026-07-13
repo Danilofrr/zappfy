@@ -1295,12 +1295,10 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 <Input
                   type="text"
                   inputMode="decimal"
-                  value={discountValue ? String(discountValue).replace(".", ",") : ""}
+                  value={discountInput}
                   onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d,.-]/g, "").replace(",", ".");
-                    if (raw === "" || raw === "-" || raw === ".") { setDiscountValue(0); return; }
-                    const n = parseFloat(raw);
-                    setDiscountValue(Number.isFinite(n) ? Math.max(0, n) : 0);
+                    const raw = e.target.value.replace(/[^\d,.]/g, "");
+                    setDiscountInput(raw);
                   }}
                   placeholder={discountType === "percent" ? "Ex: 10" : "Ex: 5,00"}
                 />
