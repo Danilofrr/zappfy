@@ -298,7 +298,7 @@ function ClientsPage() {
                   await setPwdFn({ data: { userId: pwdClient.id, password: newPwd } });
                   toast.success("Senha definida — copie e envie ao cliente");
                 } catch (e: any) {
-                  toast.error(e.message ?? "Erro ao definir senha");
+                  toast.error(friendlyError(e, "Erro ao definir senha"));
                 } finally {
                   setSavingPwd(false);
                 }
