@@ -1526,8 +1526,9 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
               if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
               if (discountAmount > 0) extraNotesLines.push(`Desconto${couponApplied ? ` (cupom ${couponApplied})` : ""}: -${brl(discountAmount)}`);
               if (form.payment === "cartao") {
-                const feeCost = total * currentCardFeePct / 100;
-                extraNotesLines.push(`Cartão: ${cardBrand} ${cardInstallments}x — Taxa ${currentCardFeePct.toFixed(2)}% (${brl(feeCost)})`);
+                const modeLabel = isPassthrough ? "repassada ao cliente" : "absorvida pela loja";
+                extraNotesLines.push(`Cartão: ${cardBrand} ${cardInstallments}x — Taxa ${currentCardFeePct.toFixed(2)}% ${modeLabel} (${brl(cardFeeAmount)})`);
+                if (!isPassthrough) extraNotesLines.push(`Valor líquido recebido: ${brl(netReceived)}`);
               }
               if (secondPayment !== "none" && secondPaymentValue > 0) {
                 const label = paymentOptions.find((p) => p.value === secondPayment)?.label || secondPayment;
