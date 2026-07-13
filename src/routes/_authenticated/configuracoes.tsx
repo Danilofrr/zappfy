@@ -200,7 +200,7 @@ function Page() {
 
       <div className="mt-6">
 
-        <Card title="Notificações no celular">
+        <Card title="Notificações no celular" icon={Bell}>
           <NotificationsCard />
         </Card>
       </div>
