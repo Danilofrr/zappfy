@@ -108,7 +108,7 @@ function Page() {
       </div>
       <div className="grid lg:grid-cols-2 gap-6 mt-6">
 
-        <Card title="Dados da loja">
+        <Card title="Dados da loja" icon={Store}>
           <Field label="Nome da Loja"><Input value={f.storeName} onChange={(e) => setF({ ...f, storeName: e.target.value })} /></Field>
           <Field label="WhatsApp (com DDI, só números)"><Input value={f.whatsapp} onChange={(e) => setF({ ...f, whatsapp: e.target.value })} placeholder="5581999990000" /></Field>
           <Field label="Chave PIX"><Input value={f.pixKey} onChange={(e) => setF({ ...f, pixKey: e.target.value })} /></Field>
