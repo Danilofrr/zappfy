@@ -38,6 +38,14 @@ import { QuantitySelector } from "@/components/QuantitySelector";
 import { whatsappLink } from "@/lib/tracking";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
+import {
+  attachFeeMetaToItems,
+  buildOrderFeeMeta,
+  getOrderFeeMeta,
+  getOrderNetReceived,
+  getOrderProfit,
+  isCardPayment as isCardPaymentMethod,
+} from "@/lib/order-financials";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
