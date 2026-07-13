@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { RotateCcw, Image as ImageIcon, Upload, X, Plus, Trash2 } from "lucide-react";
+import { RotateCcw, Image as ImageIcon, Upload, X, Plus, Trash2, Store, Package, Target, MapPin, Bell, MessageCircle, User } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { ShippingOption } from "@/lib/store";
