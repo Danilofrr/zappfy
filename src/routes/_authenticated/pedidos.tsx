@@ -1059,7 +1059,13 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   const [feeLabel, setFeeLabel] = useState<string>("");
   const [feeValue, setFeeValue] = useState<number>(0);
   const [discountType, setDiscountType] = useState<"valor" | "percent">("percent");
-  const [discountValue, setDiscountValue] = useState<number>(0);
+  const [discountInput, setDiscountInput] = useState<string>("");
+  const discountValue = (() => {
+    const raw = (discountInput || "").replace(",", ".").trim();
+    if (!raw) return 0;
+    const n = parseFloat(raw);
+    return Number.isFinite(n) ? Math.max(0, n) : 0;
+  })();
   const [couponCode, setCouponCode] = useState<string>("");
   const [couponApplied, setCouponApplied] = useState<string>("");
 
@@ -1126,7 +1132,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
     setPicker("");
     setShippingOptionId("none"); setShippingValue(0);
     setFeeLabel(""); setFeeValue(0);
-    setDiscountType("percent"); setDiscountValue(0); setCouponCode(""); setCouponApplied("");
+    setDiscountType("percent"); setDiscountInput(""); setCouponCode(""); setCouponApplied("");
     setSecondPayment("none"); setSecondPaymentValue(0);
     const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     setOrderDate(d.toISOString().slice(0, 10));
@@ -1289,12 +1295,10 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 <Input
                   type="text"
                   inputMode="decimal"
-                  value={discountValue ? String(discountValue).replace(".", ",") : ""}
+                  value={discountInput}
                   onChange={(e) => {
-                    const raw = e.target.value.replace(/[^\d,.-]/g, "").replace(",", ".");
-                    if (raw === "" || raw === "-" || raw === ".") { setDiscountValue(0); return; }
-                    const n = parseFloat(raw);
-                    setDiscountValue(Number.isFinite(n) ? Math.max(0, n) : 0);
+                    const raw = e.target.value.replace(/[^\d,.]/g, "");
+                    setDiscountInput(raw);
                   }}
                   placeholder={discountType === "percent" ? "Ex: 10" : "Ex: 5,00"}
                 />
