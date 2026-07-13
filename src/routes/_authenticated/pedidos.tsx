@@ -1210,12 +1210,9 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                       <div className="font-medium text-sm truncate text-foreground">{prod.name}</div>
                       <div className="text-xs text-muted-foreground">{brl(prod.price)} · subtotal {brl(sub)}</div>
                     </div>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={l.qty}
-                      onChange={(e) => updateQty(l.productId, Number(e.target.value))}
-                      className="h-8 w-16 text-center"
+                    <QuantitySelector
+                      value={Number(l.qty) || 1}
+                      onChange={(qty) => updateQty(l.productId, qty)}
                     />
                     <button
                       type="button"
