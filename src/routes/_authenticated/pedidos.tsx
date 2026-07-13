@@ -1095,10 +1095,18 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   // Bandeira / parcelas (somente quando pagamento = cartão)
   const [cardBrand, setCardBrand] = useState<string>("VISA");
   const [cardInstallments, setCardInstallments] = useState<number>(1);
+  const [cardFeeModeLocal, setCardFeeModeLocal] = useState<"absorb" | "passthrough">(
+    state.settings.cardFeeMode === "absorb" ? "absorb" : "passthrough"
+  );
+  useEffect(() => {
+    setCardFeeModeLocal(state.settings.cardFeeMode === "absorb" ? "absorb" : "passthrough");
+  }, [state.settings.cardFeeMode]);
   const machineFees: MachineFees = (state.settings.cardMachineFees && Object.keys(state.settings.cardMachineFees).length > 0)
     ? state.settings.cardMachineFees
     : loadMachineFees();
-  const currentCardFeePct = machineFees[cardBrand]?.[cardInstallments] ?? 0;
+  const currentCardFeePct = form.payment === "cartao"
+    ? (machineFees[cardBrand]?.[cardInstallments] ?? 0)
+    : 0;
 
 
   const selectedIds = new Set(lines.map((l) => l.productId));
@@ -1114,7 +1122,17 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
     discountType === "percent"
       ? roundMoney(Math.min(orderBase, (orderBase * Math.min(dv, 100)) / 100))
       : roundMoney(Math.min(orderBase, dv));
-  const total = roundMoney(Math.max(0, orderBase - discountAmount));
+  const baseTotal = roundMoney(Math.max(0, orderBase - discountAmount));
+  const cardFeeAmount = form.payment === "cartao" && currentCardFeePct > 0
+    ? roundMoney(baseTotal * (currentCardFeePct / 100))
+    : 0;
+  const isPassthrough = cardFeeModeLocal === "passthrough";
+  const total = form.payment === "cartao" && isPassthrough
+    ? roundMoney(baseTotal + cardFeeAmount)
+    : baseTotal;
+  const netReceived = form.payment === "cartao" && !isPassthrough
+    ? roundMoney(Math.max(0, baseTotal - cardFeeAmount))
+    : baseTotal;
 
   function applyCoupon() {
     const code = couponCode.trim().toUpperCase();
@@ -1392,7 +1410,33 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
                 </div>
                 <div className="text-[11px] text-muted-foreground flex items-center justify-between">
                   <span>Taxa configurada: <strong className="text-foreground">{currentCardFeePct.toFixed(2)}%</strong></span>
-                  <span>Custo estimado: <strong className="text-foreground">{brl(total * currentCardFeePct / 100)}</strong></span>
+                  <span>Valor da taxa: <strong className="text-foreground">{brl(cardFeeAmount)}</strong></span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setCardFeeModeLocal("absorb")}
+                    className={`text-left rounded-lg border p-2 text-xs transition ${
+                      cardFeeModeLocal === "absorb"
+                        ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="font-semibold text-sm">A loja absorve</div>
+                    <div className="text-[10px] text-muted-foreground">Taxa sai do lucro. Cliente paga só o valor base.</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCardFeeModeLocal("passthrough")}
+                    className={`text-left rounded-lg border p-2 text-xs transition ${
+                      cardFeeModeLocal === "passthrough"
+                        ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="font-semibold text-sm">Repassar ao cliente</div>
+                    <div className="text-[10px] text-muted-foreground">Taxa somada ao total. Loja recebe o valor base.</div>
+                  </button>
                 </div>
               </div>
             )}
@@ -1453,7 +1497,16 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             {shippingValue > 0 && <div className="flex justify-between text-muted-foreground"><span>Entrega</span><span>{brl(shippingValue)}</span></div>}
             {feeValue > 0 && <div className="flex justify-between text-muted-foreground"><span>{feeLabel || "Taxa"}</span><span>{brl(feeValue)}</span></div>}
             {discountAmount > 0 && <div className="flex justify-between text-emerald-500"><span>Desconto{couponApplied ? ` (${couponApplied})` : ""}</span><span>−{brl(discountAmount)}</span></div>}
-            <div className="flex justify-between font-bold text-base pt-1 border-t border-border mt-1"><span>Total</span><span className="text-primary">{brl(total)}</span></div>
+            {form.payment === "cartao" && cardFeeAmount > 0 && isPassthrough && (
+              <div className="flex justify-between text-muted-foreground"><span>Acréscimo do cartão ({currentCardFeePct.toFixed(2)}%)</span><span>+{brl(cardFeeAmount)}</span></div>
+            )}
+            <div className="flex justify-between font-bold text-base pt-1 border-t border-border mt-1"><span>Total cobrado do cliente</span><span className="text-primary">{brl(total)}</span></div>
+            {form.payment === "cartao" && cardFeeAmount > 0 && !isPassthrough && (
+              <>
+                <div className="flex justify-between text-rose-400"><span>Taxa do cartão absorvida ({currentCardFeePct.toFixed(2)}%)</span><span>−{brl(cardFeeAmount)}</span></div>
+                <div className="flex justify-between font-semibold text-emerald-400"><span>Valor líquido recebido</span><span>{brl(netReceived)}</span></div>
+              </>
+            )}
           </div>
         </div>
         <DialogFooter>
@@ -1473,8 +1526,9 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
               if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
               if (discountAmount > 0) extraNotesLines.push(`Desconto${couponApplied ? ` (cupom ${couponApplied})` : ""}: -${brl(discountAmount)}`);
               if (form.payment === "cartao") {
-                const feeCost = total * currentCardFeePct / 100;
-                extraNotesLines.push(`Cartão: ${cardBrand} ${cardInstallments}x — Taxa ${currentCardFeePct.toFixed(2)}% (${brl(feeCost)})`);
+                const modeLabel = isPassthrough ? "repassada ao cliente" : "absorvida pela loja";
+                extraNotesLines.push(`Cartão: ${cardBrand} ${cardInstallments}x — Taxa ${currentCardFeePct.toFixed(2)}% ${modeLabel} (${brl(cardFeeAmount)})`);
+                if (!isPassthrough) extraNotesLines.push(`Valor líquido recebido: ${brl(netReceived)}`);
               }
               if (secondPayment !== "none" && secondPaymentValue > 0) {
                 const label = paymentOptions.find((p) => p.value === secondPayment)?.label || secondPayment;
