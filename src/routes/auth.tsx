@@ -38,6 +38,26 @@ function AuthPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   useEffect(() => {
+    // Se o link de recuperação de senha caiu no /auth (fallback da Site URL),
+    // encaminha para /reset-password preservando query/hash (code, token_hash, tokens).
+    try {
+      const url = new URL(window.location.href);
+      const search = url.searchParams;
+      const hash = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : url.hash);
+      const type = search.get("type") || hash.get("type");
+      const hasRecoveryParams =
+        type === "recovery" ||
+        search.get("code") ||
+        search.get("token_hash") ||
+        hash.get("access_token") ||
+        hash.get("error_code") ||
+        hash.get("error_description");
+      if (hasRecoveryParams) {
+        window.location.replace(`/reset-password${url.search}${url.hash}`);
+        return;
+      }
+    } catch {}
+
     const entregasSlug = getEntregasStandaloneRedirectSlug();
     if (entregasSlug) {
       navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug: entregasSlug }, replace: true });

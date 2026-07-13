@@ -162,6 +162,27 @@ function RootComponent() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // Encaminha para /reset-password se o link de recuperação de senha do
+    // Supabase caiu em outra rota (fallback da Site URL).
+    try {
+      if (window.location.pathname !== "/reset-password") {
+        const url = new URL(window.location.href);
+        const search = url.searchParams;
+        const hash = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : url.hash);
+        const type = search.get("type") || hash.get("type");
+        const hasRecovery =
+          type === "recovery" ||
+          (search.get("code") && (window.location.pathname === "/" || window.location.pathname === "/auth")) ||
+          search.get("token_hash") ||
+          (hash.get("access_token") && (type === "recovery" || hash.get("type") === "recovery"));
+        if (hasRecovery) {
+          window.location.replace(`/reset-password${url.search}${url.hash}`);
+          return;
+        }
+      }
+    } catch {}
+
     if (!("serviceWorker" in navigator)) return;
     const h = window.location.hostname;
     const isPreview =
