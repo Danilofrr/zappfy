@@ -1095,10 +1095,18 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   // Bandeira / parcelas (somente quando pagamento = cartão)
   const [cardBrand, setCardBrand] = useState<string>("VISA");
   const [cardInstallments, setCardInstallments] = useState<number>(1);
+  const [cardFeeModeLocal, setCardFeeModeLocal] = useState<"absorb" | "passthrough">(
+    state.settings.cardFeeMode === "absorb" ? "absorb" : "passthrough"
+  );
+  useEffect(() => {
+    setCardFeeModeLocal(state.settings.cardFeeMode === "absorb" ? "absorb" : "passthrough");
+  }, [state.settings.cardFeeMode]);
   const machineFees: MachineFees = (state.settings.cardMachineFees && Object.keys(state.settings.cardMachineFees).length > 0)
     ? state.settings.cardMachineFees
     : loadMachineFees();
-  const currentCardFeePct = machineFees[cardBrand]?.[cardInstallments] ?? 0;
+  const currentCardFeePct = form.payment === "cartao"
+    ? (machineFees[cardBrand]?.[cardInstallments] ?? 0)
+    : 0;
 
 
   const selectedIds = new Set(lines.map((l) => l.productId));
@@ -1114,7 +1122,17 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
     discountType === "percent"
       ? roundMoney(Math.min(orderBase, (orderBase * Math.min(dv, 100)) / 100))
       : roundMoney(Math.min(orderBase, dv));
-  const total = roundMoney(Math.max(0, orderBase - discountAmount));
+  const baseTotal = roundMoney(Math.max(0, orderBase - discountAmount));
+  const cardFeeAmount = form.payment === "cartao" && currentCardFeePct > 0
+    ? roundMoney(baseTotal * (currentCardFeePct / 100))
+    : 0;
+  const isPassthrough = cardFeeModeLocal === "passthrough";
+  const total = form.payment === "cartao" && isPassthrough
+    ? roundMoney(baseTotal + cardFeeAmount)
+    : baseTotal;
+  const netReceived = form.payment === "cartao" && !isPassthrough
+    ? roundMoney(Math.max(0, baseTotal - cardFeeAmount))
+    : baseTotal;
 
   function applyCoupon() {
     const code = couponCode.trim().toUpperCase();
