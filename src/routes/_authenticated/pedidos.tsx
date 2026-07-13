@@ -551,7 +551,7 @@ function PedidosPage() {
           >
             <Copy className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Copiar link</span>
           </Button>
-          <NewOrderDialog open={open} setOpen={setOpen} onCreate={(o) => { addOrder(o); toast.success("Pedido criado!"); setOpen(false); }} />
+          <NewOrderDialog open={open} setOpen={setOpen} onCreate={async (o) => { await addOrder(o); toast.success("Pedido criado!"); setOpen(false); }} />
         </div>
       }
     >
