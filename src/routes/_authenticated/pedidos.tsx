@@ -38,6 +38,14 @@ import { QuantitySelector } from "@/components/QuantitySelector";
 import { whatsappLink } from "@/lib/tracking";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
+import {
+  attachFeeMetaToItems,
+  buildOrderFeeMeta,
+  getOrderFeeMeta,
+  getOrderNetReceived,
+  getOrderProfit,
+  isCardPayment as isCardPaymentMethod,
+} from "@/lib/order-financials";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
@@ -639,9 +647,9 @@ function PedidosPage() {
                   <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">{fmtDate(o.date)}</td>
                   <td className="px-4 py-3 text-right font-semibold">{brl(o.total)}</td>
                   {(() => {
-                    const cost = o.items.reduce((s, it) => s + (it.cost ?? 0) * it.qty, 0);
-                    const profit = o.total - cost;
-                    const margin = o.total > 0 ? (profit / o.total) * 100 : 0;
+                    const profit = getOrderProfit(o);
+                    const revenueBase = getOrderNetReceived(o);
+                    const margin = revenueBase > 0 ? (profit / revenueBase) * 100 : 0;
                     const cls = profit >= 0 ? "text-emerald-500" : "text-destructive";
                     return (
                       <td className="px-4 py-3 text-right">
@@ -965,7 +973,31 @@ function EditOrderDialog({
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={() => {
-            const patch: any = { ...form, items, total };
+            // Recalcula metadados da taxa do cartão se aplicável.
+            const prevMeta = getOrderFeeMeta({ items: order?.items ?? [] });
+            let nextItems = items as any[];
+            if (!isCardPaymentMethod(form.payment)) {
+              // Trocou para PIX/dinheiro/etc → remove metadados da taxa.
+              nextItems = attachFeeMetaToItems(nextItems, null);
+            } else if (prevMeta) {
+              // Mantém modo/percentual/marca/parcelas, mas recalcula com o
+              // novo total (baseTotal = total salvo quando absorb; total - fee
+              // atual quando passthrough).
+              const rawTotal = Number(total) || 0;
+              const baseTotal = prevMeta.cardFeeMode === "passthrough"
+                ? Math.max(0, rawTotal - prevMeta.cardFeeAmount)
+                : rawTotal;
+              const rebuilt = buildOrderFeeMeta({
+                payment: form.payment,
+                baseTotal,
+                cardFeePercentage: prevMeta.cardFeePercentage,
+                cardFeeMode: prevMeta.cardFeeMode === "passthrough" ? "passthrough" : "absorb",
+                cardBrand: prevMeta.cardBrand,
+                cardInstallments: prevMeta.cardInstallments,
+              });
+              nextItems = attachFeeMetaToItems(nextItems, rebuilt);
+            }
+            const patch: any = { ...form, items: nextItems, total };
             if (orderDate) {
               // Preserva a hora original do pedido (ou usa agora, se for novo)
               const src = order?.date ? new Date(order.date) : new Date();
@@ -1517,10 +1549,21 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             onClick={() => {
               if (!form.customer) { toast.error("Preencha o nome do cliente"); return; }
               if (lines.length === 0) { toast.error("Adicione ao menos um produto"); return; }
-              const items = lines.map((l) => {
+              const rawItems = lines.map((l) => {
                 const prod = state.products.find((p) => p.id === l.productId)!;
                 return { productId: prod.id, name: prod.name, qty: l.qty, price: prod.price, cost: prod.cost };
               });
+              const feeMeta = form.payment === "cartao"
+                ? buildOrderFeeMeta({
+                    payment: form.payment,
+                    baseTotal,
+                    cardFeePercentage: currentCardFeePct,
+                    cardFeeMode: isPassthrough ? "passthrough" : "absorb",
+                    cardBrand,
+                    cardInstallments,
+                  })
+                : null;
+              const items = attachFeeMetaToItems(rawItems as any[], feeMeta);
               const extraNotesLines: string[] = [];
               if (shippingValue > 0) extraNotesLines.push(`Entrega: ${brl(shippingValue)}`);
               if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
