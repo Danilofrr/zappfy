@@ -331,7 +331,7 @@ function ClientsPage() {
                   setResetLink(r.link);
                   toast.success("Link de redefinição gerado");
                 } catch (e: any) {
-                  toast.error(e.message ?? "Erro ao gerar link");
+                  toast.error(friendlyError(e, "Erro ao gerar link"));
                 }
               }}
             >
