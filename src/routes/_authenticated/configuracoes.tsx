@@ -207,7 +207,7 @@ function Page() {
 
 
       <div className="mt-6">
-        <Card title="Mensagens automáticas do WhatsApp">
+        <Card title="Mensagens automáticas do WhatsApp" icon={MessageCircle}>
           <p className="text-xs text-muted-foreground -mt-1 mb-3">
             Personalize o texto. Use variáveis entre chaves que serão substituídas no momento do envio.
           </p>
