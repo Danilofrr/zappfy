@@ -39,6 +39,18 @@ const statusColors: Record<string, string> = {
   bloqueado: "bg-red-500/15 text-red-500 border-red-500/30",
 };
 
+function friendlyError(e: any, fallback: string): string {
+  const raw = e?.message ?? String(e ?? "");
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed[0]?.message) return parsed.map((i: any) => i.message).join(" · ");
+    if (parsed?.message) return parsed.message;
+  } catch {}
+  if (/rate/i.test(raw)) return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+  if (/weak.?password|password.*weak|should contain/i.test(raw)) return "Senha fraca. Use letras e números, mínimo 6 caracteres.";
+  return raw || fallback;
+}
+
 function ClientsPage() {
   const qc = useQueryClient();
   const publicBaseUrl = usePublicBaseUrl();
@@ -298,7 +310,7 @@ function ClientsPage() {
                   await setPwdFn({ data: { userId: pwdClient.id, password: newPwd } });
                   toast.success("Senha definida — copie e envie ao cliente");
                 } catch (e: any) {
-                  toast.error(e.message ?? "Erro ao definir senha");
+                  toast.error(friendlyError(e, "Erro ao definir senha"));
                 } finally {
                   setSavingPwd(false);
                 }
@@ -319,7 +331,7 @@ function ClientsPage() {
                   setResetLink(r.link);
                   toast.success("Link de redefinição gerado");
                 } catch (e: any) {
-                  toast.error(e.message ?? "Erro ao gerar link");
+                  toast.error(friendlyError(e, "Erro ao gerar link"));
                 }
               }}
             >

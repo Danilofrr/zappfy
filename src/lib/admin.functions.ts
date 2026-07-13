@@ -313,7 +313,15 @@ function assertSafeRedirect(url: string | undefined): string | undefined {
 export const setClientPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { userId: string; password: string }) =>
-    z.object({ userId: z.string().uuid(), password: z.string().min(8).max(72) }).parse(d),
+    z
+      .object({
+        userId: z.string().uuid(),
+        password: z
+          .string()
+          .min(6, { message: "A senha deve ter pelo menos 6 caracteres" })
+          .max(72, { message: "A senha deve ter no máximo 72 caracteres" }),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
