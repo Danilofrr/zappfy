@@ -339,29 +339,76 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           <div className="space-y-3">
             <div className="p-5" style={cardStyle}>
-              <div className="text-xs uppercase tracking-wider opacity-60 mb-3">Seu pedido</div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Produto">
-                  <Select value={productId} onValueChange={setProductId}>
-                    <SelectTrigger><SelectValue/></SelectTrigger>
-                    <SelectContent>
-                      {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
-                          {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Quantidade">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={product?.stock ?? 1}
-                    value={qty}
-                    onChange={(e) => setQty(Math.max(1, Math.min(product?.stock ?? 1, Number(e.target.value))))}
-                  />
-                </Field>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs uppercase tracking-wider opacity-60">Seu pedido</div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addCartLine}
+                  disabled={products.length === 0}
+                  style={{ borderColor: `${neonColor}55`, color: textColor }}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />Adicionar produto
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {cartLines.map((line, idx) => {
+                  const maxStock = line.product?.stock ?? 1;
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-lg p-3 space-y-2"
+                      style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}08` }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase tracking-wider opacity-60">Produto {idx + 1}</span>
+                        {cartLines.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeCartLine(idx)}
+                            className="opacity-60 hover:opacity-100"
+                            aria-label="Remover produto"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Field label="Produto">
+                          <Select
+                            value={line.productId}
+                            onValueChange={(v) => updateCartLine(idx, { productId: v, qty: 1 })}
+                          >
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                              {products.map((p) => (
+                                <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
+                                  {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                        <Field label="Quantidade">
+                          <Input
+                            type="number"
+                            min={1}
+                            max={maxStock}
+                            value={line.qty}
+                            onChange={(e) => updateCartLine(idx, { qty: Math.max(1, Math.min(maxStock, Number(e.target.value) || 1)) })}
+                          />
+                        </Field>
+                      </div>
+                      <div className="text-right text-xs opacity-80">
+                        Subtotal: <span className="font-semibold">{brl(line.subtotal)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {cartLines.length === 0 && (
+                  <p className="text-xs opacity-60">Nenhum produto selecionado.</p>
+                )}
               </div>
             </div>
 
