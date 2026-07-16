@@ -191,11 +191,14 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   }
 
   const waNumber = (settings.whatsapp || "").replace(/\D/g, "");
+  const productsListMsg = cartLines
+    .filter((l) => l.product)
+    .map((l) => `• ${l.product!.name} (x${l.qty}) — ${brl(l.subtotal)}`)
+    .join("\n");
   const waMessage =
-    product && shipping
+    cartLines.length > 0 && shipping
       ? `Olá! Acabei de finalizar meu pedido na loja *${settings.storeName}*.\n\n` +
-        `*Produto:* ${product.name} (x${qty})\n` +
-        `*Valor unitário:* ${brl(product.price)}\n` +
+        `*Produtos:*\n${productsListMsg}\n\n` +
         `*Entrega (${shipping.label}):* ${brl(shipping.price)}\n` +
         (form.payment === "cartao" && cardFeeValue > 0 && !cardFeeAbsorbed ? `*Taxa cartão (${cardFeePct.toFixed(2)}%):* ${brl(cardFeeValue)}\n` : "") +
         `*Total:* ${brl(total)}\n` +
@@ -209,7 +212,6 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         (form.reference ? `*Ponto de referência:* ${form.reference}\n` : "") +
         `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? `Cartão ${cardBrand} ${cardInstallments}x` : form.payment === "debito" ? "Cartão de Débito" : "Dinheiro"}` +
         (form.notes ? `\n*Observações:* ${form.notes}` : "")
-
       : "";
   const waUrl = waNumber ? whatsappLink(waNumber, waMessage) : "";
 
