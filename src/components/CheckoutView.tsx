@@ -616,28 +616,30 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
           <aside className="p-6 h-fit lg:sticky lg:top-6" style={cardStyle}>
             <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4" style={{ color: neonColor }}/>Resumo</div>
             <div className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center gap-3">
-                {product?.imageUrl ? (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="h-14 w-14 rounded-lg object-cover shrink-0"
-                    style={{ border: `1px solid ${neonColor}33` }}
-                  />
-                ) : (
-                  <div
-                    className="h-14 w-14 rounded-lg grid place-items-center shrink-0"
-                    style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}10` }}
-                  >
-                    <ShoppingBag className="h-5 w-5 opacity-50" />
+              {cartLines.map((line, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  {line.product?.imageUrl ? (
+                    <img
+                      src={line.product.imageUrl}
+                      alt={line.product.name}
+                      className="h-14 w-14 rounded-lg object-cover shrink-0"
+                      style={{ border: `1px solid ${neonColor}33` }}
+                    />
+                  ) : (
+                    <div
+                      className="h-14 w-14 rounded-lg grid place-items-center shrink-0"
+                      style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}10` }}
+                    >
+                      <ShoppingBag className="h-5 w-5 opacity-50" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{line.product?.name ?? "—"}</div>
+                    <div className="text-xs opacity-60">Quantidade: {line.qty}</div>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{product?.name ?? "—"}</div>
-                  <div className="text-xs opacity-60">Quantidade: {qty}</div>
+                  <div className="text-sm font-semibold">{brl(line.subtotal)}</div>
                 </div>
-                <div className="text-sm font-semibold">{brl((product?.price ?? 0) * qty)}</div>
-              </div>
+              ))}
               <Row
                 label={shipping?.label || "Entrega"}
                 value={shipping ? brl(shipping.price) : (cepLoading ? "calculando..." : "selecione")}
