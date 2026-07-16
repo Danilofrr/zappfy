@@ -43,7 +43,6 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
     return { productId: c.productId, qty: c.qty, product: p, subtotal: (p?.price ?? 0) * c.qty };
   });
   const productsSubtotal = cartLines.reduce((s, l) => s + l.subtotal, 0);
-  const totalQty = cartLines.reduce((s, l) => s + l.qty, 0);
   const shipping: ShippingOption | undefined = settings.shippingOptions.find((s) => s.id === shippingId);
   const baseTotal = productsSubtotal + (shipping?.price ?? 0);
   const CARD_BRANDS = ["VISA", "MASTERCARD", "ELO", "AMEX"] as const;
