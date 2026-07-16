@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock } from "lucide-react";
+import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock, Plus, Trash2 } from "lucide-react";
 import { getShippingIcon } from "@/lib/shipping-icons";
 import { PaymentBadge } from "@/lib/payment-icons";
 import { brl } from "@/lib/format";
