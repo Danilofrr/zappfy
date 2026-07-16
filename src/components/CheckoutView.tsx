@@ -433,7 +433,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 <div className="flex justify-end pt-2">
                   <Button
                     onClick={() => {
-                      if (!product) return toast.error("Selecione um produto");
+                      if (cartLines.length === 0 || cartLines.some((l) => !l.product)) return toast.error("Selecione um produto");
                       if (!form.customer || !form.phone) return toast.error("Preencha nome e telefone");
                       setStep(2);
                     }}
