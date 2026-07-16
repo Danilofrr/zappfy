@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock } from "lucide-react";
+import { TrendingUp, ShoppingBag, CheckCircle2, PackageX, Lock, Plus, Trash2 } from "lucide-react";
 import { getShippingIcon } from "@/lib/shipping-icons";
 import { PaymentBadge } from "@/lib/payment-icons";
 import { brl } from "@/lib/format";
@@ -24,8 +24,9 @@ export type CheckoutViewProps = {
 };
 
 export function CheckoutView({ products, settings, onSubmit, showBackToPanel = false }: CheckoutViewProps) {
-  const [productId, setProductId] = useState(products[0]?.id ?? "");
-  const [qty, setQty] = useState(1);
+  const [cart, setCart] = useState<{ productId: string; qty: number }[]>(
+    products[0] ? [{ productId: products[0].id, qty: 1 }] : []
+  );
   const [form, setForm] = useState({
     customer: "", phone: "", cpf: "", email: "", cep: "", address: "", reference: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
   });
@@ -37,9 +38,13 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const [cardBrand, setCardBrand] = useState<string>("VISA");
   const [cardInstallments, setCardInstallments] = useState<number>(1);
 
-  const product = products.find((p) => p.id === productId);
+  const cartLines = cart.map((c) => {
+    const p = products.find((pp) => pp.id === c.productId);
+    return { productId: c.productId, qty: c.qty, product: p, subtotal: (p?.price ?? 0) * c.qty };
+  });
+  const productsSubtotal = cartLines.reduce((s, l) => s + l.subtotal, 0);
   const shipping: ShippingOption | undefined = settings.shippingOptions.find((s) => s.id === shippingId);
-  const baseTotal = (product?.price ?? 0) * qty + (shipping?.price ?? 0);
+  const baseTotal = productsSubtotal + (shipping?.price ?? 0);
   const CARD_BRANDS = ["VISA", "MASTERCARD", "ELO", "AMEX"] as const;
   const cardFeePct = form.payment === "cartao"
     ? Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[cardInstallments] ?? 0)
@@ -49,6 +54,18 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const cardFeeCharged = cardFeeAbsorbed ? 0 : cardFeeValue;
   const total = baseTotal + cardFeeCharged;
   const installmentValue = form.payment === "cartao" && cardInstallments > 0 ? total / cardInstallments : total;
+
+  function addCartLine() {
+    const firstAvail = products.find((p) => p.stock > 0 && !cart.some((c) => c.productId === p.id)) || products[0];
+    if (!firstAvail) return;
+    setCart((prev) => [...prev, { productId: firstAvail.id, qty: 1 }]);
+  }
+  function removeCartLine(idx: number) {
+    setCart((prev) => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx));
+  }
+  function updateCartLine(idx: number, patch: Partial<{ productId: string; qty: number }>) {
+    setCart((prev) => prev.map((l, i) => i === idx ? { ...l, ...patch } : l));
+  }
 
 
   async function lookupCep(raw: string) {
@@ -102,16 +119,17 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       toast.error("WhatsApp inválido");
       return;
     }
-    if (!product) { toast.error("Produto inválido — selecione um produto"); return; }
-    if (!Number.isFinite(qty) || qty < 1) { toast.error("Quantidade inválida"); return; }
+    if (cartLines.length === 0) { toast.error("Adicione ao menos um produto"); return; }
+    for (const l of cartLines) {
+      if (!l.product) { toast.error("Produto inválido — selecione um produto"); return; }
+      if (!Number.isFinite(l.qty) || l.qty < 1) { toast.error(`Quantidade inválida para ${l.product.name}`); return; }
+      if (l.product.stock < l.qty) { toast.error(`Estoque insuficiente para ${l.product.name}`); return; }
+    }
     if (!form.payment) { toast.error("Forma de pagamento não selecionada"); return; }
     if (!form.address?.trim()) { toast.error("Endereço não preenchido"); return; }
     if (!shipping) { toast.error("Selecione uma forma de entrega"); return; }
-    if (product.stock < qty) { toast.error("Estoque insuficiente para esta quantidade"); return; }
     if (!Number.isFinite(total) || total <= 0) { toast.error("Valor total inválido"); return; }
 
-    const unitPrice = Number(product.price ?? 0);
-    const itemCost = Number.isFinite(Number(product.cost)) ? Number(product.cost) : unitPrice;
     const shippingValue = Number(shipping.price ?? 0);
 
     const customerCpf = form.cpf.trim();
@@ -126,15 +144,19 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       reference: form.reference,
       district: form.district,
       city: form.city,
-      items: [{
-        productId: product.id,
-        name: product.name,
-        qty: Number(qty),
-        price: unitPrice,
-        cost: itemCost,
-        cpf: customerCpf,
-        email: customerEmail,
-      }],
+      items: cartLines.map((l) => {
+        const unitPrice = Number(l.product!.price ?? 0);
+        const itemCost = Number.isFinite(Number(l.product!.cost)) ? Number(l.product!.cost) : unitPrice;
+        return {
+          productId: l.product!.id,
+          name: l.product!.name,
+          qty: Number(l.qty),
+          price: unitPrice,
+          cost: itemCost,
+          cpf: customerCpf,
+          email: customerEmail,
+        };
+      }),
       shipping: shippingValue,
       total: Number(total),
       payment: form.payment,
@@ -168,11 +190,14 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   }
 
   const waNumber = (settings.whatsapp || "").replace(/\D/g, "");
+  const productsListMsg = cartLines
+    .filter((l) => l.product)
+    .map((l) => `• ${l.product!.name} (x${l.qty}) — ${brl(l.subtotal)}`)
+    .join("\n");
   const waMessage =
-    product && shipping
+    cartLines.length > 0 && shipping
       ? `Olá! Acabei de finalizar meu pedido na loja *${settings.storeName}*.\n\n` +
-        `*Produto:* ${product.name} (x${qty})\n` +
-        `*Valor unitário:* ${brl(product.price)}\n` +
+        `*Produtos:*\n${productsListMsg}\n\n` +
         `*Entrega (${shipping.label}):* ${brl(shipping.price)}\n` +
         (form.payment === "cartao" && cardFeeValue > 0 && !cardFeeAbsorbed ? `*Taxa cartão (${cardFeePct.toFixed(2)}%):* ${brl(cardFeeValue)}\n` : "") +
         `*Total:* ${brl(total)}\n` +
@@ -186,7 +211,6 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         (form.reference ? `*Ponto de referência:* ${form.reference}\n` : "") +
         `*Forma de pagamento:* ${form.payment === "pix" ? "PIX" : form.payment === "cartao" ? `Cartão ${cardBrand} ${cardInstallments}x` : form.payment === "debito" ? "Cartão de Débito" : "Dinheiro"}` +
         (form.notes ? `\n*Observações:* ${form.notes}` : "")
-
       : "";
   const waUrl = waNumber ? whatsappLink(waNumber, waMessage) : "";
 
@@ -205,15 +229,17 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 : "Em breve entraremos em contato pelo WhatsApp."}
             </p>
 
-            {product && shipping && (
+            {cartLines.length > 0 && shipping && (
               <div
                 className="mt-5 rounded-lg p-4 text-left text-sm space-y-1.5"
                 style={{ backgroundColor: `${neonColor}12`, border: `1px solid ${neonColor}33` }}
               >
-                <div className="flex justify-between opacity-80">
-                  <span>{product.name} (x{qty})</span>
-                  <span>{brl(product.price * qty)}</span>
-                </div>
+                {cartLines.map((l, i) => (
+                  <div key={i} className="flex justify-between opacity-80">
+                    <span>{l.product?.name ?? "—"} (x{l.qty})</span>
+                    <span>{brl(l.subtotal)}</span>
+                  </div>
+                ))}
                 <div className="flex justify-between opacity-80">
                   <span>Entrega ({shipping.label})</span>
                   <span>{brl(shipping.price)}</span>
@@ -312,29 +338,76 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           <div className="space-y-3">
             <div className="p-5" style={cardStyle}>
-              <div className="text-xs uppercase tracking-wider opacity-60 mb-3">Seu pedido</div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Produto">
-                  <Select value={productId} onValueChange={setProductId}>
-                    <SelectTrigger><SelectValue/></SelectTrigger>
-                    <SelectContent>
-                      {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
-                          {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Quantidade">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={product?.stock ?? 1}
-                    value={qty}
-                    onChange={(e) => setQty(Math.max(1, Math.min(product?.stock ?? 1, Number(e.target.value))))}
-                  />
-                </Field>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs uppercase tracking-wider opacity-60">Seu pedido</div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addCartLine}
+                  disabled={products.length === 0}
+                  style={{ borderColor: `${neonColor}55`, color: textColor }}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />Adicionar produto
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {cartLines.map((line, idx) => {
+                  const maxStock = line.product?.stock ?? 1;
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-lg p-3 space-y-2"
+                      style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}08` }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase tracking-wider opacity-60">Produto {idx + 1}</span>
+                        {cartLines.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeCartLine(idx)}
+                            className="opacity-60 hover:opacity-100"
+                            aria-label="Remover produto"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Field label="Produto">
+                          <Select
+                            value={line.productId}
+                            onValueChange={(v) => updateCartLine(idx, { productId: v, qty: 1 })}
+                          >
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                              {products.map((p) => (
+                                <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>
+                                  {p.name}{p.stock <= 0 ? " (indisponível)" : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                        <Field label="Quantidade">
+                          <Input
+                            type="number"
+                            min={1}
+                            max={maxStock}
+                            value={line.qty}
+                            onChange={(e) => updateCartLine(idx, { qty: Math.max(1, Math.min(maxStock, Number(e.target.value) || 1)) })}
+                          />
+                        </Field>
+                      </div>
+                      <div className="text-right text-xs opacity-80">
+                        Subtotal: <span className="font-semibold">{brl(line.subtotal)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {cartLines.length === 0 && (
+                  <p className="text-xs opacity-60">Nenhum produto selecionado.</p>
+                )}
               </div>
             </div>
 
@@ -359,7 +432,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 <div className="flex justify-end pt-2">
                   <Button
                     onClick={() => {
-                      if (!product) return toast.error("Selecione um produto");
+                      if (cartLines.length === 0 || cartLines.some((l) => !l.product)) return toast.error("Selecione um produto");
                       if (!form.customer || !form.phone) return toast.error("Preencha nome e telefone");
                       setStep(2);
                     }}
@@ -542,28 +615,30 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
           <aside className="p-6 h-fit lg:sticky lg:top-6" style={cardStyle}>
             <div className="flex items-center gap-2 text-sm font-semibold"><ShoppingBag className="h-4 w-4" style={{ color: neonColor }}/>Resumo</div>
             <div className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center gap-3">
-                {product?.imageUrl ? (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="h-14 w-14 rounded-lg object-cover shrink-0"
-                    style={{ border: `1px solid ${neonColor}33` }}
-                  />
-                ) : (
-                  <div
-                    className="h-14 w-14 rounded-lg grid place-items-center shrink-0"
-                    style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}10` }}
-                  >
-                    <ShoppingBag className="h-5 w-5 opacity-50" />
+              {cartLines.map((line, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  {line.product?.imageUrl ? (
+                    <img
+                      src={line.product.imageUrl}
+                      alt={line.product.name}
+                      className="h-14 w-14 rounded-lg object-cover shrink-0"
+                      style={{ border: `1px solid ${neonColor}33` }}
+                    />
+                  ) : (
+                    <div
+                      className="h-14 w-14 rounded-lg grid place-items-center shrink-0"
+                      style={{ border: `1px solid ${neonColor}33`, backgroundColor: `${neonColor}10` }}
+                    >
+                      <ShoppingBag className="h-5 w-5 opacity-50" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{line.product?.name ?? "—"}</div>
+                    <div className="text-xs opacity-60">Quantidade: {line.qty}</div>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{product?.name ?? "—"}</div>
-                  <div className="text-xs opacity-60">Quantidade: {qty}</div>
+                  <div className="text-sm font-semibold">{brl(line.subtotal)}</div>
                 </div>
-                <div className="text-sm font-semibold">{brl((product?.price ?? 0) * qty)}</div>
-              </div>
+              ))}
               <Row
                 label={shipping?.label || "Entrega"}
                 value={shipping ? brl(shipping.price) : (cepLoading ? "calculando..." : "selecione")}
