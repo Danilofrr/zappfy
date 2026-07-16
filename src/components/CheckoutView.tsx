@@ -24,8 +24,9 @@ export type CheckoutViewProps = {
 };
 
 export function CheckoutView({ products, settings, onSubmit, showBackToPanel = false }: CheckoutViewProps) {
-  const [productId, setProductId] = useState(products[0]?.id ?? "");
-  const [qty, setQty] = useState(1);
+  const [cart, setCart] = useState<{ productId: string; qty: number }[]>(
+    products[0] ? [{ productId: products[0].id, qty: 1 }] : []
+  );
   const [form, setForm] = useState({
     customer: "", phone: "", cpf: "", email: "", cep: "", address: "", reference: "", district: "", city: "", payment: "pix" as PaymentMethod, notes: "",
   });
@@ -37,9 +38,14 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const [cardBrand, setCardBrand] = useState<string>("VISA");
   const [cardInstallments, setCardInstallments] = useState<number>(1);
 
-  const product = products.find((p) => p.id === productId);
+  const cartLines = cart.map((c) => {
+    const p = products.find((pp) => pp.id === c.productId);
+    return { productId: c.productId, qty: c.qty, product: p, subtotal: (p?.price ?? 0) * c.qty };
+  });
+  const productsSubtotal = cartLines.reduce((s, l) => s + l.subtotal, 0);
+  const totalQty = cartLines.reduce((s, l) => s + l.qty, 0);
   const shipping: ShippingOption | undefined = settings.shippingOptions.find((s) => s.id === shippingId);
-  const baseTotal = (product?.price ?? 0) * qty + (shipping?.price ?? 0);
+  const baseTotal = productsSubtotal + (shipping?.price ?? 0);
   const CARD_BRANDS = ["VISA", "MASTERCARD", "ELO", "AMEX"] as const;
   const cardFeePct = form.payment === "cartao"
     ? Number(((settings.cardMachineFees ?? {})[cardBrand] ?? {})[cardInstallments] ?? 0)
@@ -49,6 +55,18 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
   const cardFeeCharged = cardFeeAbsorbed ? 0 : cardFeeValue;
   const total = baseTotal + cardFeeCharged;
   const installmentValue = form.payment === "cartao" && cardInstallments > 0 ? total / cardInstallments : total;
+
+  function addCartLine() {
+    const firstAvail = products.find((p) => p.stock > 0 && !cart.some((c) => c.productId === p.id)) || products[0];
+    if (!firstAvail) return;
+    setCart((prev) => [...prev, { productId: firstAvail.id, qty: 1 }]);
+  }
+  function removeCartLine(idx: number) {
+    setCart((prev) => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx));
+  }
+  function updateCartLine(idx: number, patch: Partial<{ productId: string; qty: number }>) {
+    setCart((prev) => prev.map((l, i) => i === idx ? { ...l, ...patch } : l));
+  }
 
 
   async function lookupCep(raw: string) {
