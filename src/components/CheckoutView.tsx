@@ -120,16 +120,17 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       toast.error("WhatsApp inválido");
       return;
     }
-    if (!product) { toast.error("Produto inválido — selecione um produto"); return; }
-    if (!Number.isFinite(qty) || qty < 1) { toast.error("Quantidade inválida"); return; }
+    if (cartLines.length === 0) { toast.error("Adicione ao menos um produto"); return; }
+    for (const l of cartLines) {
+      if (!l.product) { toast.error("Produto inválido — selecione um produto"); return; }
+      if (!Number.isFinite(l.qty) || l.qty < 1) { toast.error(`Quantidade inválida para ${l.product.name}`); return; }
+      if (l.product.stock < l.qty) { toast.error(`Estoque insuficiente para ${l.product.name}`); return; }
+    }
     if (!form.payment) { toast.error("Forma de pagamento não selecionada"); return; }
     if (!form.address?.trim()) { toast.error("Endereço não preenchido"); return; }
     if (!shipping) { toast.error("Selecione uma forma de entrega"); return; }
-    if (product.stock < qty) { toast.error("Estoque insuficiente para esta quantidade"); return; }
     if (!Number.isFinite(total) || total <= 0) { toast.error("Valor total inválido"); return; }
 
-    const unitPrice = Number(product.price ?? 0);
-    const itemCost = Number.isFinite(Number(product.cost)) ? Number(product.cost) : unitPrice;
     const shippingValue = Number(shipping.price ?? 0);
 
     const customerCpf = form.cpf.trim();
@@ -144,15 +145,19 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       reference: form.reference,
       district: form.district,
       city: form.city,
-      items: [{
-        productId: product.id,
-        name: product.name,
-        qty: Number(qty),
-        price: unitPrice,
-        cost: itemCost,
-        cpf: customerCpf,
-        email: customerEmail,
-      }],
+      items: cartLines.map((l) => {
+        const unitPrice = Number(l.product!.price ?? 0);
+        const itemCost = Number.isFinite(Number(l.product!.cost)) ? Number(l.product!.cost) : unitPrice;
+        return {
+          productId: l.product!.id,
+          name: l.product!.name,
+          qty: Number(l.qty),
+          price: unitPrice,
+          cost: itemCost,
+          cpf: customerCpf,
+          email: customerEmail,
+        };
+      }),
       shipping: shippingValue,
       total: Number(total),
       payment: form.payment,
