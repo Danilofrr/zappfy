@@ -346,7 +346,8 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                   variant="outline"
                   onClick={addCartLine}
                   disabled={products.length === 0}
-                  style={{ borderColor: `${neonColor}55`, color: textColor }}
+                  style={{ borderColor: `${neonColor}55`, color: textColor, backgroundColor: 'transparent' }}
+                  className="hover:opacity-80"
                 >
                   <Plus className="h-3.5 w-3.5 mr-1" />Adicionar produto
                 </Button>
