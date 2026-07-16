@@ -230,15 +230,17 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 : "Em breve entraremos em contato pelo WhatsApp."}
             </p>
 
-            {product && shipping && (
+            {cartLines.length > 0 && shipping && (
               <div
                 className="mt-5 rounded-lg p-4 text-left text-sm space-y-1.5"
                 style={{ backgroundColor: `${neonColor}12`, border: `1px solid ${neonColor}33` }}
               >
-                <div className="flex justify-between opacity-80">
-                  <span>{product.name} (x{qty})</span>
-                  <span>{brl(product.price * qty)}</span>
-                </div>
+                {cartLines.map((l, i) => (
+                  <div key={i} className="flex justify-between opacity-80">
+                    <span>{l.product?.name ?? "—"} (x{l.qty})</span>
+                    <span>{brl(l.subtotal)}</span>
+                  </div>
+                ))}
                 <div className="flex justify-between opacity-80">
                   <span>Entrega ({shipping.label})</span>
                   <span>{brl(shipping.price)}</span>
