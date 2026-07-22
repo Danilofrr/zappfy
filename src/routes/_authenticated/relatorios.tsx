@@ -24,7 +24,7 @@ function Page() {
     const orders = state.orders.filter((o) => new Date(o.date) >= start && new Date(o.date) < end && o.status !== "cancelado");
     const rev = orders.reduce((a, o) => a + o.total, 0);
     const cogs = orders.reduce((a, o) => a + o.items.reduce((b, it) => b + it.cost * it.qty, 0), 0);
-    const exps = state.expenses.filter((e) => new Date(e.date) >= start && new Date(e.date) < end).reduce((a, e) => a + e.amount, 0);
+    const exps = state.expenses.filter((e) => e.category !== "mercadorias" && new Date(e.date) >= start && new Date(e.date) < end).reduce((a, e) => a + e.amount, 0);
     return { mes: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""), Faturamento: rev, Lucro: rev - cogs - exps };
   });
 
