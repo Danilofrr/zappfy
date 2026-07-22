@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { Trophy, Eye, EyeOff, Pencil } from "lucide-react";
+import { Trophy, Eye, EyeOff, Pencil, LayoutGrid } from "lucide-react";
 import { useStore, useFinance } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "@/components/UserAvatar";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { brl as formatBRL } from "@/lib/format";
 import { usePrivacy, mask } from "@/hooks/use-privacy";
 import { useTheme } from "@/lib/theme";
 import { Sun, Moon } from "lucide-react";
+import { useDashboardEdit } from "@/hooks/use-dashboard-layout";
 
 export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   const { user, state } = useStore();
