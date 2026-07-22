@@ -119,6 +119,9 @@ function Dashboard() {
   const fin = useFinance({ start: range.start, end: range.end });
   const goalRev = state.settings.monthlyRevenueGoal;
   const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
+  const { layout, move, setVisible, reset } = useDashboardLayout();
+  const { on: editMode } = useDashboardEdit();
+
 
   const [showFbSpend] = useFbShowSpend();
 
