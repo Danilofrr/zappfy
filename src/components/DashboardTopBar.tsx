@@ -15,6 +15,9 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   const { revenue } = useFinance();
   const { on: privacy, toggle: togglePrivacy } = usePrivacy();
   const { theme, toggle: toggleTheme } = useTheme();
+  const { on: editMode, toggle: toggleEdit } = useDashboardEdit();
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const showEdit = path === "/";
 
   const prizeQ = useQuery({
     queryKey: ["public-prize"],
