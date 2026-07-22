@@ -25,7 +25,19 @@ import {
   RefreshCw,
   Clock,
   CreditCard,
+  ArrowUp,
+  ArrowDown,
+  EyeOff,
+  Plus,
+  RotateCcw,
+  X,
 } from "lucide-react";
+import {
+  useDashboardLayout,
+  useDashboardEdit,
+  DASHBOARD_BLOCK_META,
+  type DashboardBlockId,
+} from "@/hooks/use-dashboard-layout";
 
 import { useServerFn } from "@tanstack/react-start";
 import { syncFacebookAds } from "@/lib/integrations.functions";
