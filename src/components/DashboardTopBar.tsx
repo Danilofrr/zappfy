@@ -100,7 +100,7 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
               title={editMode ? "Sair do modo de edição" : "Personalizar cards da dashboard"}
               aria-label="Personalizar dashboard"
             >
-              <LayoutGrid className="h-4 w-4" />
+              <SquarePen className="h-4 w-4" />
             </button>
           )}
         </div>
