@@ -506,7 +506,49 @@ function Dashboard() {
         <StatCard label="Meta" value={pct(goalPct)} hint={m(brl(goalRev))} icon={Target} tone="warning" />
       </div>
 
+      {editMode && (
+        <div className="mt-5 rounded-2xl border border-primary/40 bg-primary/5 p-4">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-primary">Modo de personalização ativo</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Reordene com as setas, oculte cards ou adicione de volta abaixo. Toque no ícone no topo para sair.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+              title="Restaurar layout padrão"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Restaurar padrão
+            </button>
+          </div>
+          {hiddenBlocks.length > 0 && (
+            <div className="mt-3 border-t border-primary/20 pt-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                Cards ocultos — clique para adicionar
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {hiddenBlocks.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setVisible(b.id, true)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-card px-3 py-1 text-xs font-medium hover:bg-primary/10"
+                  >
+                    <Plus className="h-3 w-3" /> {DASHBOARD_BLOCK_META[b.id].label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
+      <div className="flex flex-col">
+
+      <Block id="financeiro">
       {/* Lucro real card */}
       <div className="mt-6 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-2xl border border-border bg-gradient-card p-6 shadow-elegant">
