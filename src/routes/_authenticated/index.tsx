@@ -25,7 +25,19 @@ import {
   RefreshCw,
   Clock,
   CreditCard,
+  ArrowUp,
+  ArrowDown,
+  EyeOff,
+  Plus,
+  RotateCcw,
+  X,
 } from "lucide-react";
+import {
+  useDashboardLayout,
+  useDashboardEdit,
+  DASHBOARD_BLOCK_META,
+  type DashboardBlockId,
+} from "@/hooks/use-dashboard-layout";
 
 import { useServerFn } from "@tanstack/react-start";
 import { syncFacebookAds } from "@/lib/integrations.functions";
@@ -107,6 +119,9 @@ function Dashboard() {
   const fin = useFinance({ start: range.start, end: range.end });
   const goalRev = state.settings.monthlyRevenueGoal;
   const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
+  const { layout, move, setVisible, reset } = useDashboardLayout();
+  const { on: editMode } = useDashboardEdit();
+
 
   const [showFbSpend] = useFbShowSpend();
 
@@ -343,6 +358,59 @@ function Dashboard() {
     { id: "custom", label: "Personalizado" },
   ];
 
+  const layoutIndex = (id: DashboardBlockId) => layout.findIndex((b) => b.id === id);
+  const hiddenBlocks = layout.filter((b) => !b.visible);
+
+  function Block({ id, children }: { id: DashboardBlockId; children: React.ReactNode }) {
+    const idx = layoutIndex(id);
+    const cfg = layout[idx];
+    if (!cfg) return null;
+    if (!cfg.visible && !editMode) return null;
+    return (
+      <div style={{ order: idx }} className={!cfg.visible ? "opacity-50" : ""}>
+        {editMode && (
+          <div className="mt-6 mb-2 flex items-center justify-between rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5">
+            <div className="text-xs font-semibold text-primary truncate">
+              {DASHBOARD_BLOCK_META[id].label}
+              <span className="ml-2 font-normal text-muted-foreground">
+                {DASHBOARD_BLOCK_META[id].description}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => move(id, -1)}
+                disabled={idx === 0}
+                className="grid h-7 w-7 place-items-center rounded-md hover:bg-primary/15 text-primary disabled:opacity-30 disabled:pointer-events-none"
+                title="Mover para cima"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => move(id, 1)}
+                disabled={idx === layout.length - 1}
+                className="grid h-7 w-7 place-items-center rounded-md hover:bg-primary/15 text-primary disabled:opacity-30 disabled:pointer-events-none"
+                title="Mover para baixo"
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisible(id, !cfg.visible)}
+                className="grid h-7 w-7 place-items-center rounded-md hover:bg-destructive/15 text-destructive"
+                title={cfg.visible ? "Ocultar card" : "Mostrar card"}
+              >
+                {cfg.visible ? <EyeOff className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+          </div>
+        )}
+        {children}
+      </div>
+    );
+  }
+
   return (
     <AppShell title="Dashboard" subtitle={`Saúde financeira — ${range.label}`}>
       <DashboardTopBar subtitle="Principal" />
@@ -438,7 +506,49 @@ function Dashboard() {
         <StatCard label="Meta" value={pct(goalPct)} hint={m(brl(goalRev))} icon={Target} tone="warning" />
       </div>
 
+      {editMode && (
+        <div className="mt-5 rounded-2xl border border-primary/40 bg-primary/5 p-4">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-primary">Modo de personalização ativo</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Reordene com as setas, oculte cards ou adicione de volta abaixo. Toque no ícone no topo para sair.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+              title="Restaurar layout padrão"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Restaurar padrão
+            </button>
+          </div>
+          {hiddenBlocks.length > 0 && (
+            <div className="mt-3 border-t border-primary/20 pt-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                Cards ocultos — clique para adicionar
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {hiddenBlocks.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setVisible(b.id, true)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-card px-3 py-1 text-xs font-medium hover:bg-primary/10"
+                  >
+                    <Plus className="h-3 w-3" /> {DASHBOARD_BLOCK_META[b.id].label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
+      <div className="flex flex-col">
+
+      <Block id="financeiro">
       {/* Lucro real card */}
       <div className="mt-6 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-2xl border border-border bg-gradient-card p-6 shadow-elegant">
@@ -525,8 +635,9 @@ function Dashboard() {
 
 
       </div>
+      </Block>
 
-
+      <Block id="chart">
       {/* Chart */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between mb-4">
@@ -561,7 +672,9 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
       </div>
+      </Block>
 
+      <Block id="champion">
       {/* Champion product of the month */}
       <div className="mt-6 rounded-2xl border border-border bg-gradient-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between mb-4">
@@ -613,7 +726,9 @@ function Dashboard() {
           </div>
         )}
       </div>
+      </Block>
 
+      <Block id="horarios">
       {/* Vendas por horário — gráfico com todas as 24h, destacando as melhores */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -786,7 +901,9 @@ function Dashboard() {
           </div>
         )}
       </div>
+      </Block>
 
+      <Block id="insights">
       {/* Ticket médio + Forma de pagamento */}
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Ticket médio */}
@@ -851,7 +968,9 @@ function Dashboard() {
           )}
         </div>
       </div>
+      </Block>
 
+      <Block id="recentes">
       {/* Recent orders */}
 
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
@@ -873,6 +992,9 @@ function Dashboard() {
             </div>
           ))}
         </div>
+      </div>
+      </Block>
+
       </div>
     </AppShell>
   );

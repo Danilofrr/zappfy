@@ -1,19 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
-import { Trophy, Eye, EyeOff, Pencil } from "lucide-react";
+import { Trophy, Eye, EyeOff, Pencil, LayoutGrid } from "lucide-react";
 import { useStore, useFinance } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "@/components/UserAvatar";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { brl as formatBRL } from "@/lib/format";
 import { usePrivacy, mask } from "@/hooks/use-privacy";
 import { useTheme } from "@/lib/theme";
 import { Sun, Moon } from "lucide-react";
+import { useDashboardEdit } from "@/hooks/use-dashboard-layout";
 
 export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
   const { user, state } = useStore();
   const { revenue } = useFinance();
   const { on: privacy, toggle: togglePrivacy } = usePrivacy();
   const { theme, toggle: toggleTheme } = useTheme();
+  const { on: editMode, toggle: toggleEdit } = useDashboardEdit();
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const showEdit = path === "/";
 
   const prizeQ = useQuery({
     queryKey: ["public-prize"],
@@ -84,6 +88,21 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
           >
             <Pencil className="h-4 w-4" />
           </Link>
+          {showEdit && (
+            <button
+              type="button"
+              onClick={toggleEdit}
+              className={`grid h-7 w-7 place-items-center rounded-md transition-colors ${
+                editMode
+                  ? "bg-primary/15 text-primary hover:bg-primary/25"
+                  : "hover:bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+              title={editMode ? "Sair do modo de edição" : "Personalizar cards da dashboard"}
+              aria-label="Personalizar dashboard"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
