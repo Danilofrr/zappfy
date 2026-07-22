@@ -557,7 +557,7 @@ function Dashboard() {
             <div className="min-w-0">
               <div className="text-sm font-semibold text-primary">Modo de personalização ativo</div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                Reordene com as setas, oculte cards ou adicione de volta abaixo. Toque no ícone no topo para sair.
+                Arraste os cards para reorganizar, oculte com o ícone ou adicione de volta abaixo. Toque no ícone no topo para sair.
               </div>
             </div>
             <button
