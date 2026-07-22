@@ -145,7 +145,7 @@ function computeDRE(state: any, start: Date, end: Date) {
   const proLabore = expenses.filter((e: any) => e.category === "prolabore" || e.category === "pro-labore").reduce((s: number, e: any) => s + e.amount, 0);
   const motoboy = expenses.filter((e: any) => e.category === "motoboy" || e.category === "entrega").reduce((s: number, e: any) => s + e.amount, 0);
   const outros = expenses
-    .filter((e: any) => !["ads", "prolabore", "pro-labore", "motoboy", "entrega"].includes(e.category))
+    .filter((e: any) => !["ads", "prolabore", "pro-labore", "motoboy", "entrega", "mercadorias"].includes(e.category))
     .reduce((s: number, e: any) => s + e.amount, 0);
   const operacional = motoboy + outros;
 
