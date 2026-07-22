@@ -118,6 +118,11 @@ function NewExpense({ open, setOpen, onAdd }: { open: boolean; setOpen: (v: bool
             <Field label="Valor (R$)"><Input type="number" step="0.01" value={f.amount} onChange={(e) => setF({...f, amount: Number(e.target.value)})}/></Field>
           </div>
           <Field label="Data"><Input type="date" value={f.date} onChange={(e) => setF({...f, date: e.target.value})}/></Field>
+          {f.category === "mercadorias" && (
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs text-warning-foreground">
+              <strong>Atenção:</strong> compra de estoque para revenda deve ser lançada em <strong>Compras &amp; Fornecedores</strong>. O custo é abatido do lucro automaticamente conforme os produtos são vendidos (COGS). Se lançar aqui também, o valor será descontado duas vezes — por isso essa categoria não entra no cálculo de lucro do Dashboard.
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
