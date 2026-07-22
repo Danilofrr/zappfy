@@ -672,7 +672,9 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
       </div>
+      </Block>
 
+      <Block id="champion">
       {/* Champion product of the month */}
       <div className="mt-6 rounded-2xl border border-border bg-gradient-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between mb-4">
