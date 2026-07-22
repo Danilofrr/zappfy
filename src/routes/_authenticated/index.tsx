@@ -25,12 +25,10 @@ import {
   RefreshCw,
   Clock,
   CreditCard,
-  ArrowUp,
-  ArrowDown,
   EyeOff,
   Plus,
   RotateCcw,
-  X,
+  GripVertical,
 } from "lucide-react";
 import {
   useDashboardLayout,
