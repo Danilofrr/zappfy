@@ -635,8 +635,9 @@ function Dashboard() {
 
 
       </div>
+      </Block>
 
-
+      <Block id="chart">
       {/* Chart */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between mb-4">
