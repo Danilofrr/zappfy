@@ -51,7 +51,7 @@ function Page() {
     const { start, end } = monthRange(d);
     const rev = state.orders.filter((o) => o.status !== "cancelado" && o.status !== "aguardando" && new Date(o.date) >= start && new Date(o.date) < end).reduce((a, o) => a + o.total, 0);
     const cogs = state.orders.filter((o) => o.status !== "cancelado" && o.status !== "aguardando" && new Date(o.date) >= start && new Date(o.date) < end).reduce((a, o) => a + o.items.reduce((b, it) => b + it.cost * it.qty, 0), 0);
-    const exps = state.expenses.filter((e) => new Date(e.date) >= start && new Date(e.date) < end).reduce((a, e) => a + e.amount, 0);
+    const exps = state.expenses.filter((e) => e.category !== "mercadorias" && new Date(e.date) >= start && new Date(e.date) < end).reduce((a, e) => a + e.amount, 0);
     running += rev - cogs - exps;
     evo.push({ mes: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""), saldo: running });
   }
