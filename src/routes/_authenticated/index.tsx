@@ -173,7 +173,7 @@ function Dashboard() {
     const rev = orders.reduce((a, o) => a + o.total, 0);
     const cogs = orders.reduce((a, o) => a + o.items.reduce((b, it) => b + it.cost * it.qty, 0), 0);
     const exps = state.expenses
-      .filter((e) => dateOnlyToLocalDate(e.date) >= start && dateOnlyToLocalDate(e.date) < end)
+      .filter((e) => e.category !== "mercadorias" && dateOnlyToLocalDate(e.date) >= start && dateOnlyToLocalDate(e.date) < end)
       .reduce((a, e) => a + e.amount, 0);
     return {
       mes: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),

@@ -38,7 +38,7 @@ function Page() {
     const rev = list.reduce((a, o) => a + o.total, 0);
     const cogs = list.reduce((a, o) => a + o.items.reduce((b, it) => b + it.cost * it.qty, 0), 0);
     const exps = state.expenses
-      .filter((e) => new Date(e.date) >= start && new Date(e.date) < end)
+      .filter((e) => e.category !== "mercadorias" && new Date(e.date) >= start && new Date(e.date) < end)
       .reduce((a, e) => a + e.amount, 0);
     return { revenue: rev, orders: list.length, profit: rev - cogs - exps };
   }, [ym, state.orders, state.expenses]);

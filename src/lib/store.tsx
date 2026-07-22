@@ -859,13 +859,15 @@ export function useFinance(range?: { start: Date; end: Date }) {
   // do investimento. Isso evita somar despesas antigas de categoria "ads" e
   // mantém Dashboard/Lucro iguais ao Gerenciador de Anúncios por dia.
   const adsSpend = monthAdsEntries.length > 0 ? adsEntrySpend : adsExpenseSpend;
-  const opEx = monthExpenses.filter((e) => e.category !== "ads").reduce((a, e) => a + e.amount, 0);
+  // "mercadorias" é compra de estoque; o custo já é abatido via COGS quando o produto é vendido.
+  // "ads" é somado à parte no card de Meta Ads. Ambos ficam fora do OpEx pra não duplicar.
+  const opEx = monthExpenses.filter((e) => e.category !== "ads" && e.category !== "mercadorias").reduce((a, e) => a + e.amount, 0);
 
   const profit = revenue - cogs - adsSpend - opEx - motoboyCost;
 
   const paidOrders = state.orders.filter((o) => o.status !== "cancelado" && o.status !== "aguardando");
   const allRevenue = paidOrders.reduce((a, o) => a + o.total, 0);
-  const allExpenses = state.expenses.reduce((a, e) => a + e.amount, 0);
+  const allExpenses = state.expenses.filter((e) => e.category !== "mercadorias").reduce((a, e) => a + e.amount, 0);
   const allAdsManual = state.ads.reduce((a, x) => a + (Number(x.invested) || 0), 0);
   const allCogs = paidOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
   const allMotoboy = motoboyFee * paidOrders.length;
