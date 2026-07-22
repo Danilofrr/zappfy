@@ -968,7 +968,9 @@ function Dashboard() {
           )}
         </div>
       </div>
+      </Block>
 
+      <Block id="recentes">
       {/* Recent orders */}
 
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
@@ -990,6 +992,9 @@ function Dashboard() {
             </div>
           ))}
         </div>
+      </div>
+      </Block>
+
       </div>
     </AppShell>
   );
