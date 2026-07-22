@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Trophy, Eye, EyeOff, Pencil, LayoutGrid } from "lucide-react";
+import { Trophy, Eye, EyeOff, Pencil, SquarePen } from "lucide-react";
 import { useStore, useFinance } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { UserAvatar } from "@/components/UserAvatar";
