@@ -867,7 +867,7 @@ export function useFinance(range?: { start: Date; end: Date }) {
 
   const paidOrders = state.orders.filter((o) => o.status !== "cancelado" && o.status !== "aguardando");
   const allRevenue = paidOrders.reduce((a, o) => a + o.total, 0);
-  const allExpenses = state.expenses.reduce((a, e) => a + e.amount, 0);
+  const allExpenses = state.expenses.filter((e) => e.category !== "mercadorias").reduce((a, e) => a + e.amount, 0);
   const allAdsManual = state.ads.reduce((a, x) => a + (Number(x.invested) || 0), 0);
   const allCogs = paidOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
   const allMotoboy = motoboyFee * paidOrders.length;
