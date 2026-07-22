@@ -726,7 +726,9 @@ function Dashboard() {
           </div>
         )}
       </div>
+      </Block>
 
+      <Block id="horarios">
       {/* Vendas por horário — gráfico com todas as 24h, destacando as melhores */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
