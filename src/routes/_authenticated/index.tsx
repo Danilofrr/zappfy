@@ -358,6 +358,59 @@ function Dashboard() {
     { id: "custom", label: "Personalizado" },
   ];
 
+  const layoutIndex = (id: DashboardBlockId) => layout.findIndex((b) => b.id === id);
+  const hiddenBlocks = layout.filter((b) => !b.visible);
+
+  function Block({ id, children }: { id: DashboardBlockId; children: React.ReactNode }) {
+    const idx = layoutIndex(id);
+    const cfg = layout[idx];
+    if (!cfg) return null;
+    if (!cfg.visible && !editMode) return null;
+    return (
+      <div style={{ order: idx }} className={!cfg.visible ? "opacity-50" : ""}>
+        {editMode && (
+          <div className="mt-6 mb-2 flex items-center justify-between rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5">
+            <div className="text-xs font-semibold text-primary truncate">
+              {DASHBOARD_BLOCK_META[id].label}
+              <span className="ml-2 font-normal text-muted-foreground">
+                {DASHBOARD_BLOCK_META[id].description}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => move(id, -1)}
+                disabled={idx === 0}
+                className="grid h-7 w-7 place-items-center rounded-md hover:bg-primary/15 text-primary disabled:opacity-30 disabled:pointer-events-none"
+                title="Mover para cima"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => move(id, 1)}
+                disabled={idx === layout.length - 1}
+                className="grid h-7 w-7 place-items-center rounded-md hover:bg-primary/15 text-primary disabled:opacity-30 disabled:pointer-events-none"
+                title="Mover para baixo"
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisible(id, !cfg.visible)}
+                className="grid h-7 w-7 place-items-center rounded-md hover:bg-destructive/15 text-destructive"
+                title={cfg.visible ? "Ocultar card" : "Mostrar card"}
+              >
+                {cfg.visible ? <EyeOff className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+          </div>
+        )}
+        {children}
+      </div>
+    );
+  }
+
   return (
     <AppShell title="Dashboard" subtitle={`Saúde financeira — ${range.label}`}>
       <DashboardTopBar subtitle="Principal" />
