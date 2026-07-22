@@ -88,6 +88,21 @@ export function DashboardTopBar({ subtitle }: { subtitle?: string }) {
           >
             <Pencil className="h-4 w-4" />
           </Link>
+          {showEdit && (
+            <button
+              type="button"
+              onClick={toggleEdit}
+              className={`grid h-7 w-7 place-items-center rounded-md transition-colors ${
+                editMode
+                  ? "bg-primary/15 text-primary hover:bg-primary/25"
+                  : "hover:bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+              title={editMode ? "Sair do modo de edição" : "Personalizar cards da dashboard"}
+              aria-label="Personalizar dashboard"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
