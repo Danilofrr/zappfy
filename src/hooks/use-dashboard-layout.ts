@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 
 export type DashboardBlockId =
+  | "kpi-revenue"
+  | "kpi-profit"
+  | "kpi-expenses"
+  | "kpi-cash"
+  | "kpi-orders"
+  | "kpi-goal"
   | "financeiro"
   | "chart"
   | "champion"
@@ -12,17 +18,29 @@ export type DashboardBlockConfig = { id: DashboardBlockId; visible: boolean };
 
 export const DASHBOARD_BLOCK_META: Record<
   DashboardBlockId,
-  { label: string; description: string }
+  { label: string; description: string; group: "kpi" | "section" }
 > = {
-  financeiro: { label: "Lucro Real + Meta Ads", description: "Resumo financeiro e ads" },
-  chart: { label: "Faturamento x Lucro", description: "Gráfico dos últimos 6 meses" },
-  champion: { label: "Produto Campeão", description: "Mais vendido do mês" },
-  horarios: { label: "Vendas por Horário", description: "Gráfico por hora + melhores dias" },
-  insights: { label: "Ticket Médio + Pagamentos", description: "Ticket e forma mais usada" },
-  recentes: { label: "Últimos Pedidos", description: "Lista rápida" },
+  "kpi-revenue": { label: "Faturamento", description: "Total vendido no período", group: "kpi" },
+  "kpi-profit": { label: "Lucro Líquido", description: "Lucro após custos e despesas", group: "kpi" },
+  "kpi-expenses": { label: "Total Gastos", description: "Soma de todas as saídas", group: "kpi" },
+  "kpi-cash": { label: "Saldo em Caixa", description: "Saldo acumulado", group: "kpi" },
+  "kpi-orders": { label: "Pedidos", description: "Quantidade de pedidos", group: "kpi" },
+  "kpi-goal": { label: "Meta", description: "Progresso da meta mensal", group: "kpi" },
+  financeiro: { label: "Lucro Real + Meta Ads", description: "Resumo financeiro e ads", group: "section" },
+  chart: { label: "Faturamento x Lucro", description: "Gráfico dos últimos 6 meses", group: "section" },
+  champion: { label: "Produto Campeão", description: "Mais vendido do mês", group: "section" },
+  horarios: { label: "Vendas por Horário", description: "Gráfico por hora + melhores dias", group: "section" },
+  insights: { label: "Ticket Médio + Pagamentos", description: "Ticket e forma mais usada", group: "section" },
+  recentes: { label: "Últimos Pedidos", description: "Lista rápida", group: "section" },
 };
 
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardBlockConfig[] = [
+  { id: "kpi-revenue", visible: true },
+  { id: "kpi-profit", visible: true },
+  { id: "kpi-expenses", visible: true },
+  { id: "kpi-cash", visible: true },
+  { id: "kpi-orders", visible: true },
+  { id: "kpi-goal", visible: true },
   { id: "financeiro", visible: true },
   { id: "chart", visible: true },
   { id: "champion", visible: true },
@@ -31,7 +49,7 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardBlockConfig[] = [
   { id: "recentes", visible: true },
 ];
 
-const LAYOUT_KEY = "zappfy:dashboard-layout:v1";
+const LAYOUT_KEY = "zappfy:dashboard-layout:v2";
 const EDIT_KEY = "zappfy:dashboard-edit";
 const EDIT_EVENT = "zappfy:dashboard-edit-toggle";
 
@@ -83,6 +101,22 @@ export function useDashboardLayout() {
     [layout, persist],
   );
 
+  // Move `source` to occupy the position of `target` (keeps groups separable
+  // because the caller only allows drops within the same group).
+  const moveTo = useCallback(
+    (source: DashboardBlockId, target: DashboardBlockId) => {
+      if (source === target) return;
+      const from = layout.findIndex((b) => b.id === source);
+      const to = layout.findIndex((b) => b.id === target);
+      if (from < 0 || to < 0) return;
+      const next = layout.slice();
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      persist(next);
+    },
+    [layout, persist],
+  );
+
   const setVisible = useCallback(
     (id: DashboardBlockId, visible: boolean) => {
       persist(layout.map((b) => (b.id === id ? { ...b, visible } : b)));
@@ -92,7 +126,7 @@ export function useDashboardLayout() {
 
   const reset = useCallback(() => persist(DEFAULT_DASHBOARD_LAYOUT), [persist]);
 
-  return { layout, move, setVisible, reset };
+  return { layout, move, moveTo, setVisible, reset };
 }
 
 export function useDashboardEdit() {
