@@ -359,40 +359,87 @@ function Dashboard() {
   const layoutIndex = (id: DashboardBlockId) => layout.findIndex((b) => b.id === id);
   const hiddenBlocks = layout.filter((b) => !b.visible);
 
+  function handleDragStart(e: React.DragEvent, id: DashboardBlockId) {
+    e.dataTransfer.setData("text/dashboard-block", id);
+    e.dataTransfer.effectAllowed = "move";
+  }
+  function handleDragOver(e: React.DragEvent, targetId: DashboardBlockId) {
+    if (!editMode) return;
+    const src = e.dataTransfer.types.includes("text/dashboard-block");
+    if (!src) return;
+    // Only allow dropping between blocks in the same group (kpi vs section)
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }
+  function handleDrop(e: React.DragEvent, targetId: DashboardBlockId) {
+    if (!editMode) return;
+    const sourceId = e.dataTransfer.getData("text/dashboard-block") as DashboardBlockId;
+    if (!sourceId || sourceId === targetId) return;
+    const sMeta = DASHBOARD_BLOCK_META[sourceId];
+    const tMeta = DASHBOARD_BLOCK_META[targetId];
+    if (!sMeta || !tMeta || sMeta.group !== tMeta.group) return;
+    e.preventDefault();
+    moveTo(sourceId, targetId);
+  }
+
+  function KpiBlock({ id, children }: { id: DashboardBlockId; children: React.ReactNode }) {
+    const idx = layoutIndex(id);
+    const cfg = layout[idx];
+    if (!cfg) return null;
+    if (!cfg.visible && !editMode) return null;
+    return (
+      <div
+        style={{ order: idx }}
+        draggable={editMode}
+        onDragStart={(e) => handleDragStart(e, id)}
+        onDragOver={(e) => handleDragOver(e, id)}
+        onDrop={(e) => handleDrop(e, id)}
+        className={`relative ${editMode ? "cursor-move ring-2 ring-primary/40 ring-offset-2 ring-offset-background rounded-2xl transition" : ""} ${!cfg.visible ? "opacity-50" : ""}`}
+      >
+        {children}
+        {editMode && (
+          <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-10">
+            <span className="grid h-6 w-6 place-items-center rounded-md bg-primary/15 text-primary" title="Arraste para mover">
+              <GripVertical className="h-3.5 w-3.5" />
+            </span>
+            <button
+              type="button"
+              onClick={() => setVisible(id, !cfg.visible)}
+              className="grid h-6 w-6 place-items-center rounded-md bg-destructive/15 text-destructive hover:bg-destructive/25"
+              title={cfg.visible ? "Ocultar card" : "Mostrar card"}
+            >
+              {cfg.visible ? <EyeOff className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function Block({ id, children }: { id: DashboardBlockId; children: React.ReactNode }) {
     const idx = layoutIndex(id);
     const cfg = layout[idx];
     if (!cfg) return null;
     if (!cfg.visible && !editMode) return null;
     return (
-      <div style={{ order: idx }} className={!cfg.visible ? "opacity-50" : ""}>
+      <div
+        style={{ order: idx }}
+        draggable={editMode}
+        onDragStart={(e) => handleDragStart(e, id)}
+        onDragOver={(e) => handleDragOver(e, id)}
+        onDrop={(e) => handleDrop(e, id)}
+        className={`${editMode ? "cursor-move" : ""} ${!cfg.visible ? "opacity-50" : ""}`}
+      >
         {editMode && (
           <div className="mt-6 mb-2 flex items-center justify-between rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5">
-            <div className="text-xs font-semibold text-primary truncate">
+            <div className="text-xs font-semibold text-primary truncate flex items-center gap-2">
+              <GripVertical className="h-3.5 w-3.5" />
               {DASHBOARD_BLOCK_META[id].label}
-              <span className="ml-2 font-normal text-muted-foreground">
+              <span className="font-normal text-muted-foreground">
                 {DASHBOARD_BLOCK_META[id].description}
               </span>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => move(id, -1)}
-                disabled={idx === 0}
-                className="grid h-7 w-7 place-items-center rounded-md hover:bg-primary/15 text-primary disabled:opacity-30 disabled:pointer-events-none"
-                title="Mover para cima"
-              >
-                <ArrowUp className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => move(id, 1)}
-                disabled={idx === layout.length - 1}
-                className="grid h-7 w-7 place-items-center rounded-md hover:bg-primary/15 text-primary disabled:opacity-30 disabled:pointer-events-none"
-                title="Mover para baixo"
-              >
-                <ArrowDown className="h-3.5 w-3.5" />
-              </button>
               <button
                 type="button"
                 onClick={() => setVisible(id, !cfg.visible)}
@@ -408,6 +455,7 @@ function Dashboard() {
       </div>
     );
   }
+
 
   return (
     <AppShell title="Dashboard" subtitle={`Saúde financeira — ${range.label}`}>
