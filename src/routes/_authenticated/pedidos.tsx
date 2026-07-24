@@ -158,7 +158,7 @@ function PedidosPage() {
       total: brl(o.total),
       observacoes: o.notes || "",
     });
-    window.open(whatsappLink(`55${phone}`, text), "_blank");
+    window.open(whatsappLink(phone, text), "_blank");
   }
 
   function openCustomerWhatsApp(o: Order) {
