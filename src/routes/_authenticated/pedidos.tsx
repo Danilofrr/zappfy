@@ -167,7 +167,7 @@ function PedidosPage() {
       toast.error("Cliente sem telefone cadastrado");
       return;
     }
-    window.open(`https://wa.me/55${phone}`, "_blank");
+    window.open(whatsappLink(phone), "_blank");
   }
 
   function printReceipt(o: Order) {
