@@ -295,10 +295,11 @@ export function normalizeWhatsAppPhone(phone: string): string {
   return `55${clean}`;
 }
 
-export function whatsappLink(phone: string, message: string): string {
+export function whatsappLink(phone: string, message?: string): string {
   const clean = normalizeWhatsAppPhone(phone);
-  const mensagemCodificada = encodeURIComponent(String(message ?? ""));
-  return `https://wa.me/${clean}?text=${mensagemCodificada}`;
+  const text = String(message ?? "").trim();
+  if (!text) return `https://wa.me/${clean}`;
+  return `https://wa.me/${clean}?text=${encodeURIComponent(text)}`;
 }
 
 export function googleMapsRouteUrl(address: string): string {
