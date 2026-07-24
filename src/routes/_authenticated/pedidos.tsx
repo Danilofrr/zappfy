@@ -161,6 +161,18 @@ function PedidosPage() {
     window.open(whatsappLink(`55${phone}`, text), "_blank");
   }
 
+  function openCustomerWhatsApp(o: Order) {
+    const phone = (o.phone || "").replace(/\D/g, "");
+    if (!phone) {
+      toast.error("Cliente sem telefone cadastrado");
+      return;
+    }
+    const storeName = state.settings.storeName || "nossa loja";
+    const produto = o.items.map((i) => `${i.qty}x ${i.name}`).join(", ");
+    const text = `Olá ${o.customer}, aqui é da ${storeName} referente ao seu pedido ${produto ? `de ${produto}` : ""}.\n\nPosso ajudar?`;
+    window.open(whatsappLink(`55${phone}`, text), "_blank");
+  }
+
   function printReceipt(o: Order) {
     const s = state.settings;
     const storeName = s.storeName || "Loja";
@@ -699,6 +711,13 @@ function PedidosPage() {
                         className="text-muted-foreground hover:text-blue-500 p-1"
                       >
                         <Bike className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => openCustomerWhatsApp(o)}
+                        title="Falar com o cliente no WhatsApp"
+                        className="text-muted-foreground hover:text-green-500 p-1"
+                      >
+                        <Phone className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => notifyDelivery(o)}
