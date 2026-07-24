@@ -288,10 +288,17 @@ export function buildCustomerMessage(trackingLink: string): string {
   return buildCustomerTrackingMessage(DEFAULT_CUSTOMER_TRACKING_TEMPLATE, { tracking_link: trackingLink });
 }
 
+export function normalizeWhatsAppPhone(phone: string): string {
+  const clean = String(phone ?? "").replace(/\D/g, "");
+  if (clean.startsWith("55") && clean.length >= 12) return clean;
+  if (clean.startsWith("0")) return `55${clean.slice(1)}`;
+  return `55${clean}`;
+}
+
 export function whatsappLink(phone: string, message: string): string {
-  const clean = phone.replace(/\D/g, "");
+  const clean = normalizeWhatsAppPhone(phone);
   const mensagemCodificada = encodeURIComponent(String(message ?? ""));
-  return `https://api.whatsapp.com/send?phone=${clean}&text=${mensagemCodificada}`;
+  return `https://wa.me/${clean}?text=${mensagemCodificada}`;
 }
 
 export function googleMapsRouteUrl(address: string): string {
