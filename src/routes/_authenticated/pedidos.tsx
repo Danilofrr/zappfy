@@ -1757,7 +1757,7 @@ function MotoboyDialog({
   }
 
   function send(phone: string) {
-    window.open(whatsappLink(`55${phone}`, text), "_blank");
+    window.open(whatsappLink(phone, text), "_blank");
     onClose();
   }
 
