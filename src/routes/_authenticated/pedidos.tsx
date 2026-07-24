@@ -158,7 +158,7 @@ function PedidosPage() {
       total: brl(o.total),
       observacoes: o.notes || "",
     });
-    window.open(whatsappLink(`55${phone}`, text), "_blank");
+    window.open(whatsappLink(phone, text), "_blank");
   }
 
   function openCustomerWhatsApp(o: Order) {
@@ -167,7 +167,7 @@ function PedidosPage() {
       toast.error("Cliente sem telefone cadastrado");
       return;
     }
-    window.open(`https://wa.me/55${phone}`, "_blank");
+    window.open(whatsappLink(phone), "_blank");
   }
 
   function printReceipt(o: Order) {
@@ -1757,7 +1757,7 @@ function MotoboyDialog({
   }
 
   function send(phone: string) {
-    window.open(whatsappLink(`55${phone}`, text), "_blank");
+    window.open(whatsappLink(phone, text), "_blank");
     onClose();
   }
 
