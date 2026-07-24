@@ -701,6 +701,13 @@ function PedidosPage() {
                         <Bike className="h-4 w-4" />
                       </button>
                       <button
+                        onClick={() => openCustomerWhatsApp(o)}
+                        title="Falar com o cliente no WhatsApp"
+                        className="text-muted-foreground hover:text-green-500 p-1"
+                      >
+                        <Phone className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => notifyDelivery(o)}
                         title="Avisar cliente no WhatsApp que o pedido saiu para entrega"
                         className="text-muted-foreground hover:text-green-500 p-1"
