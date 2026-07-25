@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   Plus, Pencil, Trash2, AlertTriangle, Upload, X, Image as ImageIcon,
-  Search, Wallet, DollarSign, BarChart3, Boxes, Package, Gift, LayoutGrid, List,
+  Search, Wallet, DollarSign, BarChart3, Boxes, Package, Gift, LayoutGrid, List, Truck,
 } from "lucide-react";
+import { ComprasSection } from "@/components/ComprasSection";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
