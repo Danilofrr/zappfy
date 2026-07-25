@@ -38,12 +38,18 @@ const statusList = [
 ] as const;
 
 function ComprasPage() {
-  const { state, user } = useStore();
+  const { state, user, updateProduct } = useStore();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [tab, setTab] = useState<"pedidos" | "fornecedores">("pedidos");
   const [openOrder, setOpenOrder] = useState(false);
   const [openSup, setOpenSup] = useState(false);
+
+  const productStockById = useMemo(() => {
+    const m = new Map<string, number>();
+    state.products.forEach((p) => m.set(p.id, p.stock));
+    return m;
+  }, [state.products]);
 
   async function load() {
     if (!user) return;
@@ -62,19 +68,40 @@ function ComprasPage() {
     return { pend, rec };
   }, [orders]);
 
+  async function adjustStock(productId: string | null, delta: number) {
+    if (!productId || !delta) return;
+    const prod = state.products.find((p) => p.id === productId);
+    if (!prod) return;
+    const newStock = Math.max(0, (prod.stock || 0) + delta);
+    try { await updateProduct(productId, { stock: newStock }); } catch (e: any) { toast.error(e?.message || "Erro ao atualizar estoque"); }
+  }
+
   async function deleteOrder(id: string) {
     if (!confirm("Excluir este pedido de reposição?")) return;
+    const target = orders.find((x) => x.id === id);
     const { error } = await (supabase.from("purchase_orders" as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
+    if (target && target.status === "recebido" && target.product_id) {
+      await adjustStock(target.product_id, -Number(target.quantity || 0));
+    }
     setOrders((p) => p.filter((x) => x.id !== id));
     toast.success("Pedido excluído");
   }
   async function updateStatus(id: string, status: PurchaseOrder["status"]) {
+    const current = orders.find((x) => x.id === id);
     const patch: any = { status };
     if (status === "recebido") patch.received_date = new Date().toISOString();
     const { data, error } = await (supabase.from("purchase_orders" as any) as any).update(patch).eq("id", id).select().single();
     if (error) return toast.error(error.message);
-    setOrders((p) => p.map((x) => x.id === id ? (data as PurchaseOrder) : x));
+    const updated = data as PurchaseOrder;
+    if (current && current.status !== "recebido" && status === "recebido" && updated.product_id) {
+      await adjustStock(updated.product_id, Number(updated.quantity || 0));
+      toast.success(`Estoque atualizado (+${updated.quantity})`);
+    } else if (current && current.status === "recebido" && status !== "recebido" && updated.product_id) {
+      await adjustStock(updated.product_id, -Number(updated.quantity || 0));
+      toast.success(`Estoque revertido (-${updated.quantity})`);
+    }
+    setOrders((p) => p.map((x) => x.id === id ? updated : x));
   }
   async function deleteSupplier(id: string) {
     if (!confirm("Excluir este fornecedor?")) return;
@@ -120,6 +147,7 @@ function ComprasPage() {
                   <th className="text-left px-4 py-3">Fornecedor</th>
                   <th className="text-left px-4 py-3">Produto</th>
                   <th className="text-right px-4 py-3">Qtd</th>
+                  <th className="text-right px-4 py-3">Estoque atual</th>
                   <th className="text-right px-4 py-3">Total</th>
                   <th className="text-left px-4 py-3">Status</th>
                   <th className="px-4 py-3"></th>
@@ -127,16 +155,22 @@ function ComprasPage() {
               </thead>
               <tbody>
                 {orders.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido de reposição.</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido de reposição.</td></tr>
                 )}
                 {orders.map((o) => {
                   const st = statusList.find((s) => s.value === o.status)!;
+                  const stock = o.product_id ? productStockById.get(o.product_id) : undefined;
                   return (
                     <tr key={o.id} className="border-t border-border hover:bg-secondary/30">
                       <td className="px-4 py-3 text-muted-foreground">{fmtDate(o.order_date)}</td>
                       <td className="px-4 py-3">{o.supplier_name || "—"}</td>
                       <td className="px-4 py-3">{o.product_name}</td>
                       <td className="px-4 py-3 text-right">{o.quantity}</td>
+                      <td className="px-4 py-3 text-right">
+                        {stock === undefined
+                          ? <span className="text-muted-foreground text-xs">—</span>
+                          : <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${stock === 0 ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-primary"}`}>{stock} un</span>}
+                      </td>
                       <td className="px-4 py-3 text-right font-semibold">{brl(Number(o.total))}</td>
                       <td className="px-4 py-3">
                         <Select value={o.status} onValueChange={(v) => updateStatus(o.id, v as any)}>
@@ -198,7 +232,12 @@ function ComprasPage() {
       <NewOrderDialog
         open={openOrder} setOpen={setOpenOrder}
         suppliers={suppliers} products={state.products}
-        onSaved={(o) => setOrders((p) => [o, ...p])}
+        onSaved={(o) => {
+          setOrders((p) => [o, ...p]);
+          if (o.status === "recebido" && o.product_id) {
+            adjustStock(o.product_id, Number(o.quantity || 0));
+          }
+        }}
       />
     </AppShell>
   );
