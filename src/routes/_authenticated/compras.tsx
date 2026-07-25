@@ -38,12 +38,18 @@ const statusList = [
 ] as const;
 
 function ComprasPage() {
-  const { state, user } = useStore();
+  const { state, user, updateProduct } = useStore();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [tab, setTab] = useState<"pedidos" | "fornecedores">("pedidos");
   const [openOrder, setOpenOrder] = useState(false);
   const [openSup, setOpenSup] = useState(false);
+
+  const productStockById = useMemo(() => {
+    const m = new Map<string, number>();
+    state.products.forEach((p) => m.set(p.id, p.stock));
+    return m;
+  }, [state.products]);
 
   async function load() {
     if (!user) return;
@@ -62,19 +68,40 @@ function ComprasPage() {
     return { pend, rec };
   }, [orders]);
 
+  async function adjustStock(productId: string | null, delta: number) {
+    if (!productId || !delta) return;
+    const prod = state.products.find((p) => p.id === productId);
+    if (!prod) return;
+    const newStock = Math.max(0, (prod.stock || 0) + delta);
+    try { await updateProduct(productId, { stock: newStock }); } catch (e: any) { toast.error(e?.message || "Erro ao atualizar estoque"); }
+  }
+
   async function deleteOrder(id: string) {
     if (!confirm("Excluir este pedido de reposição?")) return;
+    const target = orders.find((x) => x.id === id);
     const { error } = await (supabase.from("purchase_orders" as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
+    if (target && target.status === "recebido" && target.product_id) {
+      await adjustStock(target.product_id, -Number(target.quantity || 0));
+    }
     setOrders((p) => p.filter((x) => x.id !== id));
     toast.success("Pedido excluído");
   }
   async function updateStatus(id: string, status: PurchaseOrder["status"]) {
+    const current = orders.find((x) => x.id === id);
     const patch: any = { status };
     if (status === "recebido") patch.received_date = new Date().toISOString();
     const { data, error } = await (supabase.from("purchase_orders" as any) as any).update(patch).eq("id", id).select().single();
     if (error) return toast.error(error.message);
-    setOrders((p) => p.map((x) => x.id === id ? (data as PurchaseOrder) : x));
+    const updated = data as PurchaseOrder;
+    if (current && current.status !== "recebido" && status === "recebido" && updated.product_id) {
+      await adjustStock(updated.product_id, Number(updated.quantity || 0));
+      toast.success(`Estoque atualizado (+${updated.quantity})`);
+    } else if (current && current.status === "recebido" && status !== "recebido" && updated.product_id) {
+      await adjustStock(updated.product_id, -Number(updated.quantity || 0));
+      toast.success(`Estoque revertido (-${updated.quantity})`);
+    }
+    setOrders((p) => p.map((x) => x.id === id ? updated : x));
   }
   async function deleteSupplier(id: string) {
     if (!confirm("Excluir este fornecedor?")) return;
