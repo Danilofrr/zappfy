@@ -30,7 +30,7 @@ function EstoquePage() {
   const { state, addProduct, updateProduct, deleteProduct } = useStore();
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"produtos" | "kits">("produtos");
+  const [tab, setTab] = useState<"produtos" | "kits" | "compras">("produtos");
   const [view, setView] = useState<"tabela" | "cards">("tabela");
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<string>("todas");
