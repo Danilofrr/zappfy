@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   Plus, Pencil, Trash2, AlertTriangle, Upload, X, Image as ImageIcon,
-  Search, Wallet, DollarSign, BarChart3, Boxes, Package, Gift, LayoutGrid, List,
+  Search, Wallet, DollarSign, BarChart3, Boxes, Package, Gift, LayoutGrid, List, Truck,
 } from "lucide-react";
+import { ComprasSection } from "@/components/ComprasSection";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -29,7 +30,7 @@ function EstoquePage() {
   const { state, addProduct, updateProduct, deleteProduct } = useStore();
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"produtos" | "kits">("produtos");
+  const [tab, setTab] = useState<"produtos" | "kits" | "compras">("produtos");
   const [view, setView] = useState<"tabela" | "cards">("tabela");
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<string>("todas");
@@ -126,6 +127,16 @@ function EstoquePage() {
           }`}
         >
           <Gift className="h-4 w-4" /> Kits & Combos
+        </button>
+        <button
+          onClick={() => setTab("compras")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+            tab === "compras"
+              ? "bg-primary text-primary-foreground shadow-elegant"
+              : "bg-secondary/60 text-foreground hover:bg-secondary"
+          }`}
+        >
+          <Truck className="h-4 w-4" /> Compras & Fornecedores
         </button>
       </div>
 
@@ -236,7 +247,9 @@ function EstoquePage() {
         </div>
       )}
 
-      {tab === "kits" ? (
+      {tab === "compras" ? (
+        <ComprasSection />
+      ) : tab === "kits" ? (
         <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-elegant">
           <Gift className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <h3 className="font-semibold mb-1">Kits & Combos</h3>
