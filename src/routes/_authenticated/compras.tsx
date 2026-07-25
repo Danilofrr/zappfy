@@ -232,7 +232,12 @@ function ComprasPage() {
       <NewOrderDialog
         open={openOrder} setOpen={setOpenOrder}
         suppliers={suppliers} products={state.products}
-        onSaved={(o) => setOrders((p) => [o, ...p])}
+        onSaved={(o) => {
+          setOrders((p) => [o, ...p]);
+          if (o.status === "recebido" && o.product_id) {
+            adjustStock(o.product_id, Number(o.quantity || 0));
+          }
+        }}
       />
     </AppShell>
   );
