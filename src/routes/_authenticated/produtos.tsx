@@ -128,6 +128,16 @@ function EstoquePage() {
         >
           <Gift className="h-4 w-4" /> Kits & Combos
         </button>
+        <button
+          onClick={() => setTab("compras")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+            tab === "compras"
+              ? "bg-primary text-primary-foreground shadow-elegant"
+              : "bg-secondary/60 text-foreground hover:bg-secondary"
+          }`}
+        >
+          <Truck className="h-4 w-4" /> Compras & Fornecedores
+        </button>
       </div>
 
       {/* Search mobile */}
