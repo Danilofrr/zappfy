@@ -247,7 +247,9 @@ function EstoquePage() {
         </div>
       )}
 
-      {tab === "kits" ? (
+      {tab === "compras" ? (
+        <ComprasSection />
+      ) : tab === "kits" ? (
         <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-elegant">
           <Gift className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <h3 className="font-semibold mb-1">Kits & Combos</h3>
