@@ -138,6 +138,7 @@ export function ComprasSection() {
                   <th className="text-left px-4 py-3">Produto</th>
                   <th className="text-right px-4 py-3">Qtd</th>
                   <th className="text-right px-4 py-3">Estoque atual</th>
+                  <th className="text-right px-4 py-3">Estoque após receber</th>
                   <th className="text-right px-4 py-3">Total</th>
                   <th className="text-left px-4 py-3">Status</th>
                   <th className="px-4 py-3"></th>
@@ -145,7 +146,7 @@ export function ComprasSection() {
               </thead>
               <tbody>
                 {orders.length === 0 && (
-                  <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido de reposição.</td></tr>
+                  <tr><td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido de reposição.</td></tr>
                 )}
                 {orders.map((o) => {
                   const st = statusList.find((s) => s.value === o.status)!;
@@ -160,6 +161,19 @@ export function ComprasSection() {
                         {stock === undefined
                           ? <span className="text-muted-foreground text-xs">—</span>
                           : <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${stock === 0 ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-primary"}`}>{stock} un</span>}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {stock === undefined ? (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        ) : o.status === "recebido" ? (
+                          <span className="text-muted-foreground text-xs">já somado</span>
+                        ) : o.status === "cancelado" ? (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-success/15 text-success">
+                            {stock + Number(o.quantity || 0)} un
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold">{brl(Number(o.total))}</td>
                       <td className="px-4 py-3">
