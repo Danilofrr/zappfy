@@ -170,7 +170,7 @@ export function ComprasSection() {
                         ) : o.status === "cancelado" ? (
                           <span className="text-muted-foreground text-xs">—</span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-success/15 text-success">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary/15 text-primary ring-1 ring-primary/40">
                             {stock + Number(o.quantity || 0)} un
                           </span>
                         )}
