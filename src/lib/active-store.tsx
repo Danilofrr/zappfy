@@ -76,7 +76,16 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(ACTIVE_STORE_KEY, fallback.id);
     } catch {}
+    // Avisa o StoreProvider para recarregar os dados com a loja correta —
+    // sem isso, ao logar ele fica preso no fallback user.id e a dashboard
+    // aparece vazia (como se fosse um usuário novo).
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("zappfy:active-store-change", { detail: { id: fallback.id } }),
+      );
+    }
   }, [stores, activeStoreId]);
+
 
   const switchStore = useCallback(
     (id: string) => {
