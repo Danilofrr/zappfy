@@ -414,9 +414,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(() => readActiveStoreId());
+  const activeStoreIdRef = useRef<string | null>(activeStoreId);
   const loadedFor = useRef<string | null>(null);
+  const loadSeq = useRef(0);
+
+  useEffect(() => {
+    activeStoreIdRef.current = activeStoreId;
+  }, [activeStoreId]);
+
+  const resolveStoreId = useCallback(async (userId: string, preferredStoreId: string | null) => {
+    const { data, error } = await supabase
+      .from("stores")
+      .select("id,is_default")
+      .eq("owner_id", userId)
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: true });
+
+    if (error || !data?.length) return preferredStoreId ?? userId;
+
+    const validPreferred = preferredStoreId ? data.find((store) => store.id === preferredStoreId) : null;
+    const resolved = validPreferred?.id ?? data.find((store) => store.is_default)?.id ?? data[0]?.id ?? userId;
+
+    if (typeof window !== "undefined" && resolved !== preferredStoreId) {
+      try {
+        localStorage.setItem(ACTIVE_STORE_KEY, resolved);
+      } catch {}
+    }
+
+    return resolved;
+  }, []);
 
   const loadAll = useCallback(async (userId: string, storeId: string | null) => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     try {
       const sid = storeId ?? userId;
@@ -428,6 +457,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         supabase.from("settings").select("*").eq("store_id", sid).maybeSingle(),
       ]);
 
+      if (seq !== loadSeq.current) return;
+
       setState({
         products: (products.data ?? []).map(toProduct),
         orders: (orders.data ?? []).map(toOrder),
@@ -436,21 +467,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         settings: settings.data ? toSettings(settings.data) : emptySettings,
       });
     } catch (e: any) {
-      console.error(e);
-      toast.error("Erro ao carregar dados");
+      if (seq === loadSeq.current) {
+        console.error(e);
+        toast.error("Erro ao carregar dados");
+      }
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }, []);
 
+  const loadForUser = useCallback(async (userId: string, preferredStoreId: string | null) => {
+    const resolvedStoreId = await resolveStoreId(userId, preferredStoreId);
+    if (activeStoreIdRef.current !== resolvedStoreId) {
+      activeStoreIdRef.current = resolvedStoreId;
+      setActiveStoreId(resolvedStoreId);
+    }
+
+    const key = `${userId}:${resolvedStoreId ?? userId}`;
+    if (loadedFor.current !== key) {
+      loadedFor.current = key;
+      await loadAll(userId, resolvedStoreId);
+    }
+  }, [loadAll, resolveStoreId]);
+
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!mounted) return;
       setUser(data.user ?? null);
-      if (data.user && loadedFor.current !== `${data.user.id}:${activeStoreId ?? data.user.id}`) {
-        loadedFor.current = `${data.user.id}:${activeStoreId ?? data.user.id}`;
-        loadAll(data.user.id, activeStoreId);
+      if (data.user) {
+        await loadForUser(data.user.id, activeStoreIdRef.current ?? readActiveStoreId());
       } else if (!data.user) {
         setLoading(false);
       }
@@ -464,12 +510,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         return u;
       });
-      const key = u ? `${u.id}:${activeStoreId ?? u.id}` : null;
-      if ((event === "SIGNED_IN" || event === "USER_UPDATED") && u && loadedFor.current !== key) {
-        loadedFor.current = key;
-        loadAll(u.id, activeStoreId);
+      if ((event === "SIGNED_IN" || event === "USER_UPDATED") && u) {
+        loadForUser(u.id, activeStoreIdRef.current ?? readActiveStoreId());
       }
       if (event === "SIGNED_OUT") {
+        loadSeq.current += 1;
         loadedFor.current = null;
         setState(emptyState);
       }
@@ -492,13 +537,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     });
     return () => { mounted = false; sub.subscription.unsubscribe(); };
-  }, [loadAll, activeStoreId]);
+  }, [loadForUser]);
 
   // Reage a troca de loja ativa (StoreSwitcher dispara CustomEvent)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onChange = (e: Event) => {
       const id = (e as CustomEvent).detail?.id ?? readActiveStoreId();
+      activeStoreIdRef.current = id;
       setActiveStoreId(id);
       if (user) {
         loadedFor.current = `${user.id}:${id ?? user.id}`;
