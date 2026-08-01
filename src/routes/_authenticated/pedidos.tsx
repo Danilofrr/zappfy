@@ -1255,6 +1255,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
           <DialogTitle>Novo pedido</DialogTitle>
           <DialogDescription>Registre manualmente um pedido, com entrega, taxas, descontos, cupons e pagamento dividido.</DialogDescription>
         </DialogHeader>
+        <FormErrorBoundary title="Erro ao montar o formulário de pedido">
         <div className="grid gap-3">
           {/* Cliente */}
           <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
