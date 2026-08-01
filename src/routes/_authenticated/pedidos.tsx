@@ -1149,20 +1149,27 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   useEffect(() => {
     setCardFeeModeLocal(state.settings.cardFeeMode === "absorb" ? "absorb" : "passthrough");
   }, [state.settings.cardFeeMode]);
-  const machineFees: MachineFees = (state.settings.cardMachineFees && Object.keys(state.settings.cardMachineFees).length > 0)
-    ? state.settings.cardMachineFees
-    : loadMachineFees();
-  const currentCardFeePct = form.payment === "cartao"
-    ? (machineFees[cardBrand]?.[cardInstallments] ?? 0)
-    : 0;
+  const rawMachineFees =
+    state.settings.cardMachineFees && typeof state.settings.cardMachineFees === "object" && Object.keys(state.settings.cardMachineFees).length > 0
+      ? state.settings.cardMachineFees
+      : loadMachineFees();
+  const machineFees: MachineFees = (rawMachineFees && typeof rawMachineFees === "object" ? rawMachineFees : {}) as MachineFees;
 
+  const isCardForm = form.payment === "cartao";
+
+  // Ao trocar para PIX / dinheiro / débito, limpa parcelas herdadas do cartão.
+  useEffect(() => {
+    if (!isCardForm) setCardInstallments(1);
+  }, [isCardForm]);
+
+  const currentCardFeePct = isCardForm ? toNum(machineFees?.[cardBrand]?.[cardInstallments]) : 0;
 
   const selectedIds = new Set(lines.map((l) => l.productId));
   const available = state.products.filter((p) => !selectedIds.has(p.id));
-  const safeNum = (n: number) => (Number.isFinite(n) ? n : 0);
+  const safeNum = (n: unknown) => toNum(n);
   const subtotal = roundMoney(lines.reduce((sum, l) => {
     const prod = state.products.find((p) => p.id === l.productId);
-    return sum + (prod?.price ?? 0) * l.qty;
+    return sum + toNum(prod?.price) * Math.max(1, toNum(l?.qty) || 1);
   }, 0));
   const dv = Math.max(0, safeNum(discountValue));
   const orderBase = roundMoney(subtotal + safeNum(shippingValue) + safeNum(feeValue));
@@ -1171,14 +1178,14 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
       ? roundMoney(Math.min(orderBase, (orderBase * Math.min(dv, 100)) / 100))
       : roundMoney(Math.min(orderBase, dv));
   const baseTotal = roundMoney(Math.max(0, orderBase - discountAmount));
-  const cardFeeAmount = form.payment === "cartao" && currentCardFeePct > 0
+  const cardFeeAmount = isCardForm && currentCardFeePct > 0
     ? roundMoney(baseTotal * (currentCardFeePct / 100))
     : 0;
   const isPassthrough = cardFeeModeLocal === "passthrough";
-  const total = form.payment === "cartao" && isPassthrough
+  const total = isCardForm && isPassthrough
     ? roundMoney(baseTotal + cardFeeAmount)
     : baseTotal;
-  const netReceived = form.payment === "cartao" && !isPassthrough
+  const netReceived = isCardForm && !isPassthrough
     ? roundMoney(Math.max(0, baseTotal - cardFeeAmount))
     : baseTotal;
 
