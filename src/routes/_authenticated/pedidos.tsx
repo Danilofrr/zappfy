@@ -1428,7 +1428,19 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             <SectionLabel icon={CreditCard}>Pagamento</SectionLabel>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Forma">
-                <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
+                <Select value={form.payment} onValueChange={(v: any) => {
+                  try {
+                    const next = String(v || "pix") as typeof form.payment;
+                    if (next !== "cartao") {
+                      // limpa parcelas/taxas herdadas do cartão
+                      setCardInstallments(1);
+                    }
+                    setForm((prev) => ({ ...prev, payment: next }));
+                  } catch (err) {
+                    console.error("[pedidos] falha ao trocar forma de pagamento", err);
+                    toast.error("Não foi possível alterar a forma de pagamento");
+                  }
+                }}>
                   <SelectTrigger><SelectValue/></SelectTrigger>
                   <SelectContent>
                     {paymentOptions.map((p) => (
