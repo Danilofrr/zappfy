@@ -1095,8 +1095,18 @@ function parseDecimalInput(value: string) {
   return Number.isFinite(n) ? Math.max(0, n) : 0;
 }
 
-function roundMoney(value: number) {
-  return Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+function toNum(value: unknown): number {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "string") {
+    const n = Number(value.replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  }
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function roundMoney(value: unknown) {
+  return Math.round(toNum(value) * 100) / 100;
 }
 
 function SectionLabel({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
