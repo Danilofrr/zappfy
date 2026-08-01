@@ -853,6 +853,7 @@ function EditOrderDialog({
           <DialogTitle>Editar pedido</DialogTitle>
           <DialogDescription>Altere dados do cliente, itens, valores e pagamento.</DialogDescription>
         </DialogHeader>
+        <FormErrorBoundary title="Erro ao carregar a edição do pedido">
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Cliente" icon={UserIcon} iconTone="primary"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
@@ -987,6 +988,7 @@ function EditOrderDialog({
 
           <Field label="Observações"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} /></Field>
         </div>
+        </FormErrorBoundary>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={() => {
