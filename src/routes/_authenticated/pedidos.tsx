@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
 import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
 import { QuantitySelector } from "@/components/QuantitySelector";
+import { FormErrorBoundary } from "@/components/FormErrorBoundary";
 import { whatsappLink } from "@/lib/tracking";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
@@ -852,6 +853,7 @@ function EditOrderDialog({
           <DialogTitle>Editar pedido</DialogTitle>
           <DialogDescription>Altere dados do cliente, itens, valores e pagamento.</DialogDescription>
         </DialogHeader>
+        <FormErrorBoundary title="Erro ao carregar a edição do pedido">
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Cliente" icon={UserIcon} iconTone="primary"><Input value={form.customer} onChange={(e) => setForm({...form, customer: e.target.value})} /></Field>
@@ -986,6 +988,7 @@ function EditOrderDialog({
 
           <Field label="Observações"><Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} /></Field>
         </div>
+        </FormErrorBoundary>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={() => {
@@ -1095,8 +1098,18 @@ function parseDecimalInput(value: string) {
   return Number.isFinite(n) ? Math.max(0, n) : 0;
 }
 
-function roundMoney(value: number) {
-  return Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+function toNum(value: unknown): number {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "string") {
+    const n = Number(value.replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  }
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function roundMoney(value: unknown) {
+  return Math.round(toNum(value) * 100) / 100;
 }
 
 function SectionLabel({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
@@ -1149,20 +1162,27 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
   useEffect(() => {
     setCardFeeModeLocal(state.settings.cardFeeMode === "absorb" ? "absorb" : "passthrough");
   }, [state.settings.cardFeeMode]);
-  const machineFees: MachineFees = (state.settings.cardMachineFees && Object.keys(state.settings.cardMachineFees).length > 0)
-    ? state.settings.cardMachineFees
-    : loadMachineFees();
-  const currentCardFeePct = form.payment === "cartao"
-    ? (machineFees[cardBrand]?.[cardInstallments] ?? 0)
-    : 0;
+  const rawMachineFees =
+    state.settings.cardMachineFees && typeof state.settings.cardMachineFees === "object" && Object.keys(state.settings.cardMachineFees).length > 0
+      ? state.settings.cardMachineFees
+      : loadMachineFees();
+  const machineFees: MachineFees = (rawMachineFees && typeof rawMachineFees === "object" ? rawMachineFees : {}) as MachineFees;
 
+  const isCardForm = form.payment === "cartao";
+
+  // Ao trocar para PIX / dinheiro / débito, limpa parcelas herdadas do cartão.
+  useEffect(() => {
+    if (!isCardForm) setCardInstallments(1);
+  }, [isCardForm]);
+
+  const currentCardFeePct = isCardForm ? toNum(machineFees?.[cardBrand]?.[cardInstallments]) : 0;
 
   const selectedIds = new Set(lines.map((l) => l.productId));
   const available = state.products.filter((p) => !selectedIds.has(p.id));
-  const safeNum = (n: number) => (Number.isFinite(n) ? n : 0);
+  const safeNum = (n: unknown) => toNum(n);
   const subtotal = roundMoney(lines.reduce((sum, l) => {
     const prod = state.products.find((p) => p.id === l.productId);
-    return sum + (prod?.price ?? 0) * l.qty;
+    return sum + toNum(prod?.price) * Math.max(1, toNum(l?.qty) || 1);
   }, 0));
   const dv = Math.max(0, safeNum(discountValue));
   const orderBase = roundMoney(subtotal + safeNum(shippingValue) + safeNum(feeValue));
@@ -1171,14 +1191,14 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
       ? roundMoney(Math.min(orderBase, (orderBase * Math.min(dv, 100)) / 100))
       : roundMoney(Math.min(orderBase, dv));
   const baseTotal = roundMoney(Math.max(0, orderBase - discountAmount));
-  const cardFeeAmount = form.payment === "cartao" && currentCardFeePct > 0
+  const cardFeeAmount = isCardForm && currentCardFeePct > 0
     ? roundMoney(baseTotal * (currentCardFeePct / 100))
     : 0;
   const isPassthrough = cardFeeModeLocal === "passthrough";
-  const total = form.payment === "cartao" && isPassthrough
+  const total = isCardForm && isPassthrough
     ? roundMoney(baseTotal + cardFeeAmount)
     : baseTotal;
-  const netReceived = form.payment === "cartao" && !isPassthrough
+  const netReceived = isCardForm && !isPassthrough
     ? roundMoney(Math.max(0, baseTotal - cardFeeAmount))
     : baseTotal;
 
@@ -1238,6 +1258,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
           <DialogTitle>Novo pedido</DialogTitle>
           <DialogDescription>Registre manualmente um pedido, com entrega, taxas, descontos, cupons e pagamento dividido.</DialogDescription>
         </DialogHeader>
+        <FormErrorBoundary title="Erro ao montar o formulário de pedido">
         <div className="grid gap-3">
           {/* Cliente */}
           <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
@@ -1407,7 +1428,19 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             <SectionLabel icon={CreditCard}>Pagamento</SectionLabel>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Forma">
-                <Select value={form.payment} onValueChange={(v: any) => setForm({...form, payment: v})}>
+                <Select value={form.payment} onValueChange={(v: any) => {
+                  try {
+                    const next = String(v || "pix") as typeof form.payment;
+                    if (next !== "cartao") {
+                      // limpa parcelas/taxas herdadas do cartão
+                      setCardInstallments(1);
+                    }
+                    setForm((prev) => ({ ...prev, payment: next }));
+                  } catch (err) {
+                    console.error("[pedidos] falha ao trocar forma de pagamento", err);
+                    toast.error("Não foi possível alterar a forma de pagamento");
+                  }
+                }}>
                   <SelectTrigger><SelectValue/></SelectTrigger>
                   <SelectContent>
                     {paymentOptions.map((p) => (
@@ -1557,6 +1590,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             )}
           </div>
         </div>
+        </FormErrorBoundary>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button
@@ -1633,10 +1667,10 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
     }
   }, [open, state.settings.cardMachineFees]);
 
-  function setFee(brand: string, parcela: number, value: number) {
+  function setFee(brand: string, parcela: number, value: unknown) {
     setFees((prev) => ({
       ...prev,
-      [brand]: { ...(prev[brand] || {}), [parcela]: value },
+      [brand]: { ...(prev[brand] || {}), [parcela]: Math.max(0, toNum(value)) },
     }));
   }
 
@@ -1668,14 +1702,14 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
                     if (parcela > 1 && noInstallment(b)) {
                       return <td key={b} className="px-2 py-2 text-muted-foreground text-center">—</td>;
                     }
-                    const val = fees[b]?.[parcela] ?? 0;
+                    const val = toNum(fees[b]?.[parcela]);
                     return (
                       <td key={b} className="px-2 py-2">
                         <div className="relative">
                           <Input
                             type="number" min={0} step="0.01"
                             value={val}
-                            onChange={(e) => setFee(b, parcela, Number(e.target.value))}
+                            onChange={(e) => setFee(b, parcela, e.target.value)}
                             className="h-8 pr-7 text-sm"
                             placeholder="0"
                           />
