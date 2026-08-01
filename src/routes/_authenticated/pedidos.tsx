@@ -1575,6 +1575,7 @@ function NewOrderDialog({ open, setOpen, onCreate }: { open: boolean; setOpen: (
             )}
           </div>
         </div>
+        </FormErrorBoundary>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button
