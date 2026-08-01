@@ -1653,10 +1653,10 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
     }
   }, [open, state.settings.cardMachineFees]);
 
-  function setFee(brand: string, parcela: number, value: number) {
+  function setFee(brand: string, parcela: number, value: unknown) {
     setFees((prev) => ({
       ...prev,
-      [brand]: { ...(prev[brand] || {}), [parcela]: value },
+      [brand]: { ...(prev[brand] || {}), [parcela]: Math.max(0, toNum(value)) },
     }));
   }
 
