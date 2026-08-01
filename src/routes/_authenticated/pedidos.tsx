@@ -1688,14 +1688,14 @@ function MachineFeesDialog({ open, onClose }: { open: boolean; onClose: () => vo
                     if (parcela > 1 && noInstallment(b)) {
                       return <td key={b} className="px-2 py-2 text-muted-foreground text-center">—</td>;
                     }
-                    const val = fees[b]?.[parcela] ?? 0;
+                    const val = toNum(fees[b]?.[parcela]);
                     return (
                       <td key={b} className="px-2 py-2">
                         <div className="relative">
                           <Input
                             type="number" min={0} step="0.01"
                             value={val}
-                            onChange={(e) => setFee(b, parcela, Number(e.target.value))}
+                            onChange={(e) => setFee(b, parcela, e.target.value)}
                             className="h-8 pr-7 text-sm"
                             placeholder="0"
                           />
