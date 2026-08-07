@@ -29,6 +29,7 @@ import {
   Plus,
   RotateCcw,
   GripVertical,
+  Paperclip,
 } from "lucide-react";
 import {
   useDashboardLayout,
@@ -259,6 +260,28 @@ function Dashboard() {
       return d >= range.start && d < range.end;
     });
   }, [state.orders, range.start, range.end]);
+
+  // Contagem de comprovantes no período do filtro principal
+  const [receiptCounts, setReceiptCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      if (state.orders.length === 0) return;
+      const { data, error } = await supabase
+        .from("order_receipts")
+        .select("order_id");
+      if (!cancel && data) {
+        const counts: Record<string, number> = {};
+        data.forEach((r: any) => {
+          counts[r.order_id] = (counts[r.order_id] || 0) + 1;
+        });
+        setReceiptCounts(counts);
+      }
+    })();
+    return () => { cancel = true; };
+  }, [state.orders]);
+
+
 
   // Filtro independente do card "Vendas por Horário"
   const [hourPeriod, setHourPeriod] = useState<Period>("month");
@@ -1026,8 +1049,16 @@ function Dashboard() {
         <div className="space-y-2">
           {state.orders.slice(0, 6).map((o) => (
             <div key={o.id} className="flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
-              <div className="min-w-0">
-                <div className="font-medium truncate">{o.customer}</div>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium truncate flex items-center gap-2">
+                  {o.customer}
+                  {receiptCounts[o.id] > 0 && (
+                    <span className="flex items-center gap-0.5 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full" title={`${receiptCounts[o.id]} comprovante(s)`}>
+                      <Paperclip className="h-2.5 w-2.5" />
+                      {receiptCounts[o.id]}
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-muted-foreground truncate">{o.items[0]?.name} · {o.district}</div>
               </div>
               <div className="text-right shrink-0">
