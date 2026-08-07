@@ -29,6 +29,7 @@ import {
   Plus,
   RotateCcw,
   GripVertical,
+  Paperclip,
 } from "lucide-react";
 import {
   useDashboardLayout,
