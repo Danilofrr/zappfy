@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp, CalendarIcon, Phone, Home, Building2, ShoppingCart, Hash, DollarSign, Flag, Search, X } from "lucide-react";
+import { Plus, Trash2, Copy, ExternalLink, MessageCircle, Pencil, Bike, Receipt, Tag, Truck, CreditCard, Settings, Percent, Save, ShoppingBag, User as UserIcon, MapPin, StickyNote, Wallet, ChevronDown, ChevronUp, CalendarIcon, Phone, Home, Building2, ShoppingCart, Hash, DollarSign, Flag, Search, X, Paperclip } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -475,6 +475,7 @@ function PedidosPage() {
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [open, setOpen] = useState(false);
   const [trackingOpen, setTrackingOpen] = useState<string | null>(null);
+  const [receiptsOrder, setReceiptsOrder] = useState<Order | null>(null);
 
   type DateRangeKey = "all" | "today" | "yesterday" | "7d" | "30d" | "month" | "custom";
   const [dateRange, setDateRange] = useState<DateRangeKey>("all");
@@ -712,6 +713,13 @@ function PedidosPage() {
                         <Bike className="h-4 w-4" />
                       </button>
                       <button
+                        onClick={() => setReceiptsOrder(o)}
+                        title="Comprovantes do pedido"
+                        className="text-muted-foreground hover:text-primary p-1"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => openCustomerWhatsApp(o)}
                         title="Falar com o cliente no WhatsApp"
                         className="text-muted-foreground hover:text-green-500 p-1"
@@ -784,6 +792,12 @@ function PedidosPage() {
         order={motoboyFor}
         onClose={() => setMotoboyFor(null)}
         buildText={buildMotoboyText}
+      />
+
+      <OrderReceiptsModal
+        order={receiptsOrder}
+        open={!!receiptsOrder}
+        onOpenChange={(open) => !open && setReceiptsOrder(null)}
       />
     </AppShell>
   );
