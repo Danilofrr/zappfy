@@ -266,6 +266,7 @@ function Dashboard() {
   useEffect(() => {
     let cancel = false;
     (async () => {
+      if (state.orders.length === 0) return;
       const { data, error } = await supabase
         .from("order_receipts")
         .select("order_id");
@@ -278,7 +279,8 @@ function Dashboard() {
       }
     })();
     return () => { cancel = true; };
-  }, [ordersInRange]); // Recarrega quando os pedidos mudam para garantir consistência básica
+  }, [state.orders]);
+
 
 
   // Filtro independente do card "Vendas por Horário"
