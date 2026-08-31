@@ -108,7 +108,7 @@ function rangeFor(period: Period, customStart?: string, customEnd?: string): { s
 }
 
 function Dashboard() {
-  const { state } = useStore();
+  const { state, loading } = useStore();
   const { on: privacy } = usePrivacy();
   const m = (v: string) => mask(v, privacy);
   const [period, setPeriod] = useState<Period>("today");
