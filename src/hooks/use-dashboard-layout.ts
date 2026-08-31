@@ -10,9 +10,11 @@ export type DashboardBlockId =
   | "financeiro"
   | "chart"
   | "champion"
+  | "produtos-dia"
   | "horarios"
   | "insights"
   | "recentes";
+
 
 export type DashboardBlockConfig = { id: DashboardBlockId; visible: boolean };
 
