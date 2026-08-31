@@ -511,6 +511,28 @@ function Dashboard() {
     );
   }
 
+  // Enquanto os dados da loja carregam, mostramos esqueleto — sem isso a tela
+  // aparece zerada por alguns instantes e parece uma conta nova.
+  const bootstrapping = loading && state.orders.length === 0 && state.products.length === 0;
+  if (bootstrapping) {
+    return (
+      <AppShell title="Dashboard" subtitle="Carregando seus dados…">
+        <DashboardTopBar subtitle="Principal" />
+        <div className="mb-5 h-16 rounded-2xl border border-border bg-card animate-pulse" />
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-24 rounded-2xl border border-border bg-card animate-pulse" />
+          ))}
+        </div>
+        <div className="mt-6 grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 h-72 rounded-2xl border border-border bg-card animate-pulse" />
+          <div className="h-72 rounded-2xl border border-border bg-card animate-pulse" />
+        </div>
+        <div className="mt-6 h-72 rounded-2xl border border-border bg-card animate-pulse" />
+      </AppShell>
+    );
+  }
+
 
   return (
     <AppShell title="Dashboard" subtitle={`Saúde financeira — ${range.label}`}>
