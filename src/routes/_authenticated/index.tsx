@@ -108,7 +108,7 @@ function rangeFor(period: Period, customStart?: string, customEnd?: string): { s
 }
 
 function Dashboard() {
-  const { state } = useStore();
+  const { state, loading } = useStore();
   const { on: privacy } = usePrivacy();
   const m = (v: string) => mask(v, privacy);
   const [period, setPeriod] = useState<Period>("today");
@@ -173,6 +173,38 @@ function Dashboard() {
     const share = totalRevenue > 0 ? (best.revenue / totalRevenue) * 100 : 0;
     return { ...best, imageUrl: product?.imageUrl, share };
   }, [state.orders, state.products]);
+
+  // Produtos vendidos hoje (ranking com foto)
+  const dayProducts = useMemo(() => {
+    const start = startOfDay(new Date());
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    const agg = new Map<string, { name: string; qty: number; revenue: number; profit: number }>();
+    let totalQty = 0;
+    for (const o of state.orders) {
+      const d = new Date(o.date);
+      if (d < start || d >= end || o.status === "cancelado") continue;
+      for (const it of o.items) {
+        const cur = agg.get(it.productId) ?? { name: it.name, qty: 0, revenue: 0, profit: 0 };
+        cur.qty += it.qty;
+        cur.revenue += it.price * it.qty;
+        cur.profit += (it.price - it.cost) * it.qty;
+        agg.set(it.productId, cur);
+        totalQty += it.qty;
+      }
+    }
+    const list = Array.from(agg.entries())
+      .map(([id, v]) => ({
+        id,
+        ...v,
+        imageUrl: state.products.find((p) => p.id === id)?.imageUrl,
+        share: totalQty > 0 ? (v.qty / totalQty) * 100 : 0,
+      }))
+      .sort((a, b) => b.qty - a.qty || b.revenue - a.revenue);
+    return { list, totalQty };
+  }, [state.orders, state.products]);
+
+
 
 
   // Build 6-month series
@@ -476,6 +508,28 @@ function Dashboard() {
         )}
         {children}
       </div>
+    );
+  }
+
+  // Enquanto os dados da loja carregam, mostramos esqueleto — sem isso a tela
+  // aparece zerada por alguns instantes e parece uma conta nova.
+  const bootstrapping = loading && state.orders.length === 0 && state.products.length === 0;
+  if (bootstrapping) {
+    return (
+      <AppShell title="Dashboard" subtitle="Carregando seus dados…">
+        <DashboardTopBar subtitle="Principal" />
+        <div className="mb-5 h-16 rounded-2xl border border-border bg-card animate-pulse" />
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-24 rounded-2xl border border-border bg-card animate-pulse" />
+          ))}
+        </div>
+        <div className="mt-6 grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 h-72 rounded-2xl border border-border bg-card animate-pulse" />
+          <div className="h-72 rounded-2xl border border-border bg-card animate-pulse" />
+        </div>
+        <div className="mt-6 h-72 rounded-2xl border border-border bg-card animate-pulse" />
+      </AppShell>
     );
   }
 
@@ -795,6 +849,81 @@ function Dashboard() {
         )}
       </div>
       </Block>
+
+      <Block id="produtos-dia">
+      {/* Produtos vendidos hoje */}
+      <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <Package className="h-4 w-4 text-primary" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold">Produtos vendidos hoje</div>
+              <div className="text-xs text-muted-foreground">Ranking do dia por unidades vendidas</div>
+            </div>
+          </div>
+          <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2.5 py-1">
+            {dayProducts.totalQty} un. hoje
+          </span>
+        </div>
+
+        {dayProducts.list.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-6 text-center">
+            Nenhum produto vendido hoje ainda.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {dayProducts.list.map((p, i) => (
+              <div
+                key={p.id}
+                className={`flex items-center gap-3 rounded-xl border p-2.5 ${
+                  i === 0 ? "border-primary/40 bg-primary/5" : "border-border bg-secondary/20"
+                }`}
+              >
+                <span
+                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold ${
+                    i === 0 ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                  }`}
+                >
+                  {i + 1}º
+                </span>
+                {p.imageUrl ? (
+                  <img
+                    src={p.imageUrl}
+                    alt={p.name}
+                    loading="lazy"
+                    className="h-12 w-12 shrink-0 rounded-lg object-cover border border-border"
+                  />
+                ) : (
+                  <div className="h-12 w-12 shrink-0 rounded-lg bg-secondary/40 border border-border grid place-items-center">
+                    <Package className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">{p.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {p.qty} {p.qty === 1 ? "unidade" : "unidades"} · {pct(p.share)} do dia
+                  </div>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className={`h-full ${i === 0 ? "bg-primary" : "bg-muted-foreground/50"}`}
+                      style={{ width: `${Math.max(4, p.share)}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="text-sm font-bold">{m(brl(p.revenue))}</div>
+                  <div className="text-[11px] text-muted-foreground">lucro {m(brl(p.profit))}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      </Block>
+
+
 
       <Block id="horarios">
       {/* Vendas por horário — gráfico com todas as 24h, destacando as melhores */}

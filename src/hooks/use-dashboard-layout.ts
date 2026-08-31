@@ -10,9 +10,11 @@ export type DashboardBlockId =
   | "financeiro"
   | "chart"
   | "champion"
+  | "produtos-dia"
   | "horarios"
   | "insights"
   | "recentes";
+
 
 export type DashboardBlockConfig = { id: DashboardBlockId; visible: boolean };
 
@@ -28,6 +30,7 @@ export const DASHBOARD_BLOCK_META: Record<
   "kpi-goal": { label: "Meta", description: "Progresso da meta mensal", group: "kpi" },
   financeiro: { label: "Lucro Real + Meta Ads", description: "Resumo financeiro e ads", group: "section" },
   chart: { label: "Faturamento x Lucro", description: "Gráfico dos últimos 6 meses", group: "section" },
+  "produtos-dia": { label: "Produtos vendidos hoje", description: "Ranking do dia com fotos", group: "section" },
   champion: { label: "Produto Campeão", description: "Mais vendido do mês", group: "section" },
   horarios: { label: "Vendas por Horário", description: "Gráfico por hora + melhores dias", group: "section" },
   insights: { label: "Ticket Médio + Pagamentos", description: "Ticket e forma mais usada", group: "section" },
@@ -44,6 +47,7 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardBlockConfig[] = [
   { id: "financeiro", visible: true },
   { id: "chart", visible: true },
   { id: "champion", visible: true },
+  { id: "produtos-dia", visible: true },
   { id: "horarios", visible: true },
   { id: "insights", visible: true },
   { id: "recentes", visible: true },
