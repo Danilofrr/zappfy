@@ -828,6 +828,81 @@ function Dashboard() {
       </div>
       </Block>
 
+      <Block id="produtos-dia">
+      {/* Produtos vendidos hoje */}
+      <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <Package className="h-4 w-4 text-primary" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold">Produtos vendidos hoje</div>
+              <div className="text-xs text-muted-foreground">Ranking do dia por unidades vendidas</div>
+            </div>
+          </div>
+          <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2.5 py-1">
+            {dayProducts.totalQty} un. hoje
+          </span>
+        </div>
+
+        {dayProducts.list.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-6 text-center">
+            Nenhum produto vendido hoje ainda.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {dayProducts.list.map((p, i) => (
+              <div
+                key={p.id}
+                className={`flex items-center gap-3 rounded-xl border p-2.5 ${
+                  i === 0 ? "border-primary/40 bg-primary/5" : "border-border bg-secondary/20"
+                }`}
+              >
+                <span
+                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold ${
+                    i === 0 ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                  }`}
+                >
+                  {i + 1}º
+                </span>
+                {p.imageUrl ? (
+                  <img
+                    src={p.imageUrl}
+                    alt={p.name}
+                    loading="lazy"
+                    className="h-12 w-12 shrink-0 rounded-lg object-cover border border-border"
+                  />
+                ) : (
+                  <div className="h-12 w-12 shrink-0 rounded-lg bg-secondary/40 border border-border grid place-items-center">
+                    <Package className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">{p.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {p.qty} {p.qty === 1 ? "unidade" : "unidades"} · {pct(p.share)} do dia
+                  </div>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className={`h-full ${i === 0 ? "bg-primary" : "bg-muted-foreground/50"}`}
+                      style={{ width: `${Math.max(4, p.share)}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="text-sm font-bold">{m(brl(p.revenue))}</div>
+                  <div className="text-[11px] text-muted-foreground">lucro {m(brl(p.profit))}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      </Block>
+
+
+
       <Block id="horarios">
       {/* Vendas por horário — gráfico com todas as 24h, destacando as melhores */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
