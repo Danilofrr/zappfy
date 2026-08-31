@@ -174,6 +174,38 @@ function Dashboard() {
     return { ...best, imageUrl: product?.imageUrl, share };
   }, [state.orders, state.products]);
 
+  // Produtos vendidos hoje (ranking com foto)
+  const dayProducts = useMemo(() => {
+    const start = startOfDay(new Date());
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    const agg = new Map<string, { name: string; qty: number; revenue: number; profit: number }>();
+    let totalQty = 0;
+    for (const o of state.orders) {
+      const d = new Date(o.date);
+      if (d < start || d >= end || o.status === "cancelado") continue;
+      for (const it of o.items) {
+        const cur = agg.get(it.productId) ?? { name: it.name, qty: 0, revenue: 0, profit: 0 };
+        cur.qty += it.qty;
+        cur.revenue += it.price * it.qty;
+        cur.profit += (it.price - it.cost) * it.qty;
+        agg.set(it.productId, cur);
+        totalQty += it.qty;
+      }
+    }
+    const list = Array.from(agg.entries())
+      .map(([id, v]) => ({
+        id,
+        ...v,
+        imageUrl: state.products.find((p) => p.id === id)?.imageUrl,
+        share: totalQty > 0 ? (v.qty / totalQty) * 100 : 0,
+      }))
+      .sort((a, b) => b.qty - a.qty || b.revenue - a.revenue);
+    return { list, totalQty };
+  }, [state.orders, state.products]);
+
+
+
 
   // Build 6-month series
   const series = Array.from({ length: 6 }).map((_, idx) => {
