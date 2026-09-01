@@ -404,6 +404,10 @@ type Ctx = {
   deleteAd: (id: string) => Promise<void>;
   /** Entrada de mercadoria: soma ao estoque, cria o pedido de compra e a movimentação (saída de caixa). */
   addStockPurchase: (input: StockPurchaseInput) => Promise<StockMovement | null>;
+  /** Marca um pedido de compra existente como recebido: soma estoque e desconta do caixa (uma única vez). */
+  receivePurchaseOrder: (po: StockPurchaseInput & { purchaseOrderId: string }) => Promise<void>;
+  /** Estorna a compra vinculada a um pedido de reposição, se existir. */
+  reversePurchaseOrder: (purchaseOrderId: string) => Promise<void>;
   /** Estorna uma compra: devolve o dinheiro ao caixa e remove as unidades do estoque. */
   reverseStockPurchase: (movementId: string) => Promise<void>;
   updateSettings: (s: Partial<Settings>) => Promise<void>;
