@@ -133,13 +133,45 @@ export type Settings = {
 };
 
 
+export type StockMovement = {
+  id: string;
+  productId: string | null;
+  productName: string;
+  purchaseOrderId: string | null;
+  /** compra = entrada (saída de caixa) | estorno = cancelamento da compra | ajuste = correção manual */
+  type: "compra" | "estorno" | "ajuste";
+  /** quantidade movimentada (positiva na compra, negativa no estorno) */
+  quantity: number;
+  unitCost: number;
+  /** impacto no caixa: positivo = saída de caixa; negativo = devolução ao caixa */
+  total: number;
+  supplierName: string;
+  paymentMethod: string;
+  notes: string;
+  occurredAt: string;
+};
+
+export type StockPurchaseInput = {
+  productId: string | null;
+  productName: string;
+  quantity: number;
+  unitCost: number;
+  supplierId?: string | null;
+  supplierName?: string;
+  paymentMethod?: string;
+  notes?: string;
+  occurredAt?: string;
+};
+
 type State = {
   products: Product[];
   orders: Order[];
   expenses: Expense[];
   ads: AdEntry[];
+  stockMovements: StockMovement[];
   settings: Settings;
 };
+
 export const DEFAULT_MOTOBOY_TEMPLATE = `🛵 *NOVA ENTREGA*\n\n👤 *Cliente:* {cliente}\n📦 *Produto:* {produto}\n📍 *Endereço:* {endereco}\n🗺️ *Localização:* {mapa}\n📱 *Telefone:* {telefone}\n\n💰 *Pagamento:* {pagamento}\n💵 *Total:* {total}`;
 export const DEFAULT_DELIVERY_TEMPLATE = `Oba! 🎉 Seu pedido{produto} acabou de sair para entrega!\n\nOlá *{cliente}*, tudo bem? Em instantes você o receberá no endereço:\n{endereco}\n\nQualquer dúvida é só chamar por aqui. 🛵\n— {loja}`;
 
