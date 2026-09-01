@@ -238,7 +238,7 @@ const emptySettings: Settings = {
   slug: "",
 };
 
-const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
+const emptyState: State = { products: [], orders: [], expenses: [], ads: [], stockMovements: [], settings: emptySettings };
 
 // ---------- Seed data (for new accounts / reset) ----------
 const today = new Date();
