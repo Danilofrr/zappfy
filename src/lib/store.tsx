@@ -496,11 +496,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const sid = storeId ?? userId;
-      const [products, orders, expenses, ads, settings] = await Promise.all([
+      const [products, orders, expenses, ads, movements, settings] = await Promise.all([
         supabase.from("products").select("*").eq("store_id", sid).order("created_at", { ascending: false }),
         supabase.from("orders").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("expenses").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("ads").select("*").eq("user_id", userId).order("date", { ascending: true }),
+        supabase.from("stock_movements").select("*").eq("user_id", userId).order("occurred_at", { ascending: false }),
         supabase.from("settings").select("*").eq("store_id", sid).maybeSingle(),
       ]);
 
@@ -511,8 +512,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         orders: (orders.data ?? []).map(toOrder),
         expenses: (expenses.data ?? []).map(toExpense),
         ads: (ads.data ?? []).map(toAd),
+        stockMovements: (movements.data ?? []).map(toMovement),
         settings: settings.data ? toSettings(settings.data) : emptySettings,
       });
+
     } catch (e: any) {
       if (seq === loadSeq.current) {
         console.error(e);
