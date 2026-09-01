@@ -1085,12 +1085,15 @@ export function useFinance(range?: { start: Date; end: Date }) {
 
   const paidOrders = state.orders.filter((o) => o.status !== "cancelado" && o.status !== "aguardando");
   const allRevenue = paidOrders.reduce((a, o) => a + o.total, 0);
-  const allExpenses = state.expenses.filter((e) => e.category !== "mercadorias").reduce((a, e) => a + e.amount, 0);
+  // Todas as despesas contam no caixa (inclusive "mercadorias" lançadas manualmente),
+  // pois representam dinheiro que realmente saiu.
+  const allExpenses = state.expenses.reduce((a, e) => a + e.amount, 0);
   const allAdsManual = state.ads.reduce((a, x) => a + (Number(x.invested) || 0), 0);
-  const allCogs = paidOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
   const allMotoboy = motoboyFee * paidOrders.length;
-  const cash = allRevenue - allExpenses - allAdsManual - allCogs - allMotoboy;
+  // Compras de estoque saem do caixa no momento da compra (estornos voltam, pois têm total negativo).
+  // O CMV NÃO entra no caixa aqui para não contabilizar o custo duas vezes: ele já impacta o Lucro na venda.
+  const stockPurchases = state.stockMovements.reduce((a, m) => a + (Number(m.total) || 0), 0);
+  const cash = allRevenue - allExpenses - allAdsManual - allMotoboy - stockPurchases;
 
-
-  return { revenue, cogs, adsSpend, opEx, motoboyCost, profit, cash, ordersCount: monthOrders.length };
+  return { revenue, cogs, adsSpend, opEx, motoboyCost, profit, cash, stockPurchases, ordersCount: monthOrders.length };
 }
