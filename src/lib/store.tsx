@@ -837,6 +837,124 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, ads: s.ads.filter((x) => x.id !== id) }));
     },
+    async addStockPurchase(input) {
+      if (!user) return null;
+      const sid = activeStoreId ?? user.id;
+      const qty = Math.max(0, Math.trunc(Number(input.quantity) || 0));
+      const unitCost = Math.max(0, Number(input.unitCost) || 0);
+      if (!qty) { toast.error("Informe a quantidade"); return null; }
+      const total = Math.round(qty * unitCost * 100) / 100;
+      const occurredAt = input.occurredAt || new Date().toISOString();
+      const productName = input.productName
+        || state.products.find((p) => p.id === input.productId)?.name
+        || "";
+
+      // 1) Pedido de compra (registro do histórico de compras)
+      const { data: po, error: poErr } = await supabase.from("purchase_orders").insert({
+        user_id: user.id,
+        store_id: sid,
+        supplier_id: input.supplierId || null,
+        supplier_name: input.supplierName || "",
+        product_id: input.productId || null,
+        product_name: productName,
+        quantity: qty,
+        unit_cost: unitCost,
+        total,
+        status: "recebido",
+        order_date: occurredAt,
+        received_date: occurredAt,
+        payment_method: input.paymentMethod || null,
+        notes: input.notes || null,
+      } as any).select().single();
+      if (poErr) { toast.error(poErr.message); return null; }
+
+      // 2) Movimentação financeira/estoque (única por compra — nunca desconta duas vezes)
+      const { data: mv, error: mvErr } = await supabase.from("stock_movements").insert({
+        user_id: user.id,
+        store_id: sid,
+        product_id: input.productId || null,
+        product_name: productName,
+        purchase_order_id: po.id,
+        type: "compra",
+        quantity: qty,
+        unit_cost: unitCost,
+        total,
+        supplier_name: input.supplierName || null,
+        payment_method: input.paymentMethod || null,
+        notes: input.notes || null,
+        occurred_at: occurredAt,
+      }).select().single();
+      if (mvErr) { toast.error(mvErr.message); return null; }
+
+      // 3) Soma ao estoque existente (nunca substitui)
+      let updatedProduct: Product | null = null;
+      if (input.productId) {
+        const { data: current } = await supabase.from("products").select("stock").eq("id", input.productId).maybeSingle();
+        const base = Number(current?.stock ?? state.products.find((p) => p.id === input.productId)?.stock ?? 0);
+        const { data: pd } = await supabase.from("products").update({ stock: base + qty }).eq("id", input.productId).select().single();
+        if (pd) updatedProduct = toProduct(pd);
+      }
+
+      const movement = toMovement(mv);
+      setState((s) => ({
+        ...s,
+        stockMovements: [movement, ...s.stockMovements],
+        products: updatedProduct ? s.products.map((p) => (p.id === updatedProduct!.id ? updatedProduct! : p)) : s.products,
+      }));
+      return movement;
+    },
+    async reverseStockPurchase(movementId) {
+      if (!user) return;
+      const sid = activeStoreId ?? user.id;
+      const mv = state.stockMovements.find((m) => m.id === movementId);
+      if (!mv || mv.type !== "compra") return;
+      const already = state.stockMovements.some(
+        (m) => m.type === "estorno" && (m.purchaseOrderId
+          ? m.purchaseOrderId === mv.purchaseOrderId
+          : m.notes?.includes(mv.id)),
+      );
+      if (already) { toast.error("Esta compra já foi estornada"); return; }
+
+      const { data: rev, error } = await supabase.from("stock_movements").insert({
+        user_id: user.id,
+        store_id: sid,
+        product_id: mv.productId,
+        product_name: mv.productName,
+        purchase_order_id: mv.purchaseOrderId,
+        type: "estorno",
+        quantity: -mv.quantity,
+        unit_cost: mv.unitCost,
+        total: -mv.total,
+        supplier_name: mv.supplierName || null,
+        payment_method: mv.paymentMethod || null,
+        notes: `Estorno da compra ${mv.id}`,
+        occurred_at: new Date().toISOString(),
+      }).select().single();
+      if (error) { toast.error(error.message); return; }
+
+      if (mv.purchaseOrderId) {
+        await supabase.from("purchase_orders").update({ status: "cancelado" }).eq("id", mv.purchaseOrderId);
+      }
+
+      let updatedProduct: Product | null = null;
+      if (mv.productId) {
+        const { data: current } = await supabase.from("products").select("stock").eq("id", mv.productId).maybeSingle();
+        const base = Number(current?.stock ?? 0);
+        const { data: pd } = await supabase.from("products")
+          .update({ stock: Math.max(0, base - mv.quantity) })
+          .eq("id", mv.productId).select().single();
+        if (pd) updatedProduct = toProduct(pd);
+      }
+
+      const reversal = toMovement(rev);
+      setState((s) => ({
+        ...s,
+        stockMovements: [reversal, ...s.stockMovements],
+        products: updatedProduct ? s.products.map((p) => (p.id === updatedProduct!.id ? updatedProduct! : p)) : s.products,
+      }));
+      toast.success("Compra estornada");
+    },
+
     async updateSettings(p) {
       if (!user) return;
       const patch: any = {};
