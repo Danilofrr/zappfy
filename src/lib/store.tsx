@@ -907,7 +907,54 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }));
       return movement;
     },
+    async receivePurchaseOrder(po) {
+      if (!user) return;
+      const sid = activeStoreId ?? user.id;
+      const qty = Math.max(0, Math.trunc(Number(po.quantity) || 0));
+      const unitCost = Math.max(0, Number(po.unitCost) || 0);
+      if (!qty) return;
+      // Idempotente: se já existe movimentação para este pedido, não desconta de novo.
+      if (state.stockMovements.some((m) => m.purchaseOrderId === po.purchaseOrderId && m.type === "compra")) return;
+      const total = Math.round(qty * unitCost * 100) / 100;
+      const occurredAt = po.occurredAt || new Date().toISOString();
+      const { data: mv, error } = await supabase.from("stock_movements").insert({
+        user_id: user.id,
+        store_id: sid,
+        product_id: po.productId || null,
+        product_name: po.productName || "",
+        purchase_order_id: po.purchaseOrderId,
+        type: "compra",
+        quantity: qty,
+        unit_cost: unitCost,
+        total,
+        supplier_name: po.supplierName || null,
+        payment_method: po.paymentMethod || null,
+        notes: po.notes || null,
+        occurred_at: occurredAt,
+      }).select().single();
+      if (error) { toast.error(error.message); return; }
+
+      let updatedProduct: Product | null = null;
+      if (po.productId) {
+        const { data: current } = await supabase.from("products").select("stock").eq("id", po.productId).maybeSingle();
+        const base = Number(current?.stock ?? 0);
+        const { data: pd } = await supabase.from("products").update({ stock: base + qty }).eq("id", po.productId).select().single();
+        if (pd) updatedProduct = toProduct(pd);
+      }
+      const movement = toMovement(mv);
+      setState((s) => ({
+        ...s,
+        stockMovements: [movement, ...s.stockMovements],
+        products: updatedProduct ? s.products.map((p) => (p.id === updatedProduct!.id ? updatedProduct! : p)) : s.products,
+      }));
+    },
+    async reversePurchaseOrder(purchaseOrderId) {
+      const mv = state.stockMovements.find((m) => m.purchaseOrderId === purchaseOrderId && m.type === "compra");
+      if (!mv) return;
+      await value.reverseStockPurchase(mv.id);
+    },
     async reverseStockPurchase(movementId) {
+
       if (!user) return;
       const sid = activeStoreId ?? user.id;
       const mv = state.stockMovements.find((m) => m.id === movementId);
