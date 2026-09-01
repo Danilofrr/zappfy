@@ -283,6 +283,21 @@ const fromExpense = (e: Omit<Expense, "id">) => ({
 const toAd = (r: any): AdEntry => ({
   id: r.id, date: r.date, invested: Number(r.invested), purchases: r.purchases, revenue: Number(r.revenue),
 });
+const toMovement = (r: any): StockMovement => ({
+  id: r.id,
+  productId: r.product_id ?? null,
+  productName: r.product_name ?? "",
+  purchaseOrderId: r.purchase_order_id ?? null,
+  type: (r.type ?? "compra") as StockMovement["type"],
+  quantity: Number(r.quantity) || 0,
+  unitCost: Number(r.unit_cost) || 0,
+  total: Number(r.total) || 0,
+  supplierName: r.supplier_name ?? "",
+  paymentMethod: r.payment_method ?? "",
+  notes: r.notes ?? "",
+  occurredAt: r.occurred_at ?? r.created_at,
+});
+
 
 const toSettings = (r: any): Settings => ({
   storeName: r.store_name, whatsapp: r.whatsapp ?? "", pixKey: r.pix_key ?? "",
