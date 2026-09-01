@@ -133,13 +133,45 @@ export type Settings = {
 };
 
 
+export type StockMovement = {
+  id: string;
+  productId: string | null;
+  productName: string;
+  purchaseOrderId: string | null;
+  /** compra = entrada (saída de caixa) | estorno = cancelamento da compra | ajuste = correção manual */
+  type: "compra" | "estorno" | "ajuste";
+  /** quantidade movimentada (positiva na compra, negativa no estorno) */
+  quantity: number;
+  unitCost: number;
+  /** impacto no caixa: positivo = saída de caixa; negativo = devolução ao caixa */
+  total: number;
+  supplierName: string;
+  paymentMethod: string;
+  notes: string;
+  occurredAt: string;
+};
+
+export type StockPurchaseInput = {
+  productId: string | null;
+  productName: string;
+  quantity: number;
+  unitCost: number;
+  supplierId?: string | null;
+  supplierName?: string;
+  paymentMethod?: string;
+  notes?: string;
+  occurredAt?: string;
+};
+
 type State = {
   products: Product[];
   orders: Order[];
   expenses: Expense[];
   ads: AdEntry[];
+  stockMovements: StockMovement[];
   settings: Settings;
 };
+
 export const DEFAULT_MOTOBOY_TEMPLATE = `🛵 *NOVA ENTREGA*\n\n👤 *Cliente:* {cliente}\n📦 *Produto:* {produto}\n📍 *Endereço:* {endereco}\n🗺️ *Localização:* {mapa}\n📱 *Telefone:* {telefone}\n\n💰 *Pagamento:* {pagamento}\n💵 *Total:* {total}`;
 export const DEFAULT_DELIVERY_TEMPLATE = `Oba! 🎉 Seu pedido{produto} acabou de sair para entrega!\n\nOlá *{cliente}*, tudo bem? Em instantes você o receberá no endereço:\n{endereco}\n\nQualquer dúvida é só chamar por aqui. 🛵\n— {loja}`;
 
@@ -206,7 +238,7 @@ const emptySettings: Settings = {
   slug: "",
 };
 
-const emptyState: State = { products: [], orders: [], expenses: [], ads: [], settings: emptySettings };
+const emptyState: State = { products: [], orders: [], expenses: [], ads: [], stockMovements: [], settings: emptySettings };
 
 // ---------- Seed data (for new accounts / reset) ----------
 const today = new Date();
@@ -283,6 +315,21 @@ const fromExpense = (e: Omit<Expense, "id">) => ({
 const toAd = (r: any): AdEntry => ({
   id: r.id, date: r.date, invested: Number(r.invested), purchases: r.purchases, revenue: Number(r.revenue),
 });
+const toMovement = (r: any): StockMovement => ({
+  id: r.id,
+  productId: r.product_id ?? null,
+  productName: r.product_name ?? "",
+  purchaseOrderId: r.purchase_order_id ?? null,
+  type: (r.type ?? "compra") as StockMovement["type"],
+  quantity: Number(r.quantity) || 0,
+  unitCost: Number(r.unit_cost) || 0,
+  total: Number(r.total) || 0,
+  supplierName: r.supplier_name ?? "",
+  paymentMethod: r.payment_method ?? "",
+  notes: r.notes ?? "",
+  occurredAt: r.occurred_at ?? r.created_at,
+});
+
 
 const toSettings = (r: any): Settings => ({
   storeName: r.store_name, whatsapp: r.whatsapp ?? "", pixKey: r.pix_key ?? "",
@@ -355,6 +402,14 @@ type Ctx = {
   deleteExpense: (id: string) => Promise<void>;
   addAd: (a: Omit<AdEntry, "id">) => Promise<void>;
   deleteAd: (id: string) => Promise<void>;
+  /** Entrada de mercadoria: soma ao estoque, cria o pedido de compra e a movimentação (saída de caixa). */
+  addStockPurchase: (input: StockPurchaseInput) => Promise<StockMovement | null>;
+  /** Marca um pedido de compra existente como recebido: soma estoque e desconta do caixa (uma única vez). */
+  receivePurchaseOrder: (po: StockPurchaseInput & { purchaseOrderId: string }) => Promise<void>;
+  /** Estorna a compra vinculada a um pedido de reposição, se existir. */
+  reversePurchaseOrder: (purchaseOrderId: string) => Promise<void>;
+  /** Estorna uma compra: devolve o dinheiro ao caixa e remove as unidades do estoque. */
+  reverseStockPurchase: (movementId: string) => Promise<void>;
   updateSettings: (s: Partial<Settings>) => Promise<void>;
   resetSeed: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -449,11 +504,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const sid = storeId ?? userId;
-      const [products, orders, expenses, ads, settings] = await Promise.all([
+      const [products, orders, expenses, ads, movements, settings] = await Promise.all([
         supabase.from("products").select("*").eq("store_id", sid).order("created_at", { ascending: false }),
         supabase.from("orders").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("expenses").select("*").eq("store_id", sid).order("date", { ascending: false }),
         supabase.from("ads").select("*").eq("user_id", userId).order("date", { ascending: true }),
+        supabase.from("stock_movements").select("*").eq("user_id", userId).order("occurred_at", { ascending: false }),
         supabase.from("settings").select("*").eq("store_id", sid).maybeSingle(),
       ]);
 
@@ -464,8 +520,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         orders: (orders.data ?? []).map(toOrder),
         expenses: (expenses.data ?? []).map(toExpense),
         ads: (ads.data ?? []).map(toAd),
+        stockMovements: (movements.data ?? []).map(toMovement),
         settings: settings.data ? toSettings(settings.data) : emptySettings,
       });
+
     } catch (e: any) {
       if (seq === loadSeq.current) {
         console.error(e);
@@ -783,6 +841,171 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, ads: s.ads.filter((x) => x.id !== id) }));
     },
+    async addStockPurchase(input) {
+      if (!user) return null;
+      const sid = activeStoreId ?? user.id;
+      const qty = Math.max(0, Math.trunc(Number(input.quantity) || 0));
+      const unitCost = Math.max(0, Number(input.unitCost) || 0);
+      if (!qty) { toast.error("Informe a quantidade"); return null; }
+      const total = Math.round(qty * unitCost * 100) / 100;
+      const occurredAt = input.occurredAt || new Date().toISOString();
+      const productName = input.productName
+        || state.products.find((p) => p.id === input.productId)?.name
+        || "";
+
+      // 1) Pedido de compra (registro do histórico de compras)
+      const { data: po, error: poErr } = await supabase.from("purchase_orders").insert({
+        user_id: user.id,
+        store_id: sid,
+        supplier_id: input.supplierId || null,
+        supplier_name: input.supplierName || "",
+        product_id: input.productId || null,
+        product_name: productName,
+        quantity: qty,
+        unit_cost: unitCost,
+        total,
+        status: "recebido",
+        order_date: occurredAt,
+        received_date: occurredAt,
+        payment_method: input.paymentMethod || null,
+        notes: input.notes || null,
+      } as any).select().single();
+      if (poErr) { toast.error(poErr.message); return null; }
+
+      // 2) Movimentação financeira/estoque (única por compra — nunca desconta duas vezes)
+      const { data: mv, error: mvErr } = await supabase.from("stock_movements").insert({
+        user_id: user.id,
+        store_id: sid,
+        product_id: input.productId || null,
+        product_name: productName,
+        purchase_order_id: po.id,
+        type: "compra",
+        quantity: qty,
+        unit_cost: unitCost,
+        total,
+        supplier_name: input.supplierName || null,
+        payment_method: input.paymentMethod || null,
+        notes: input.notes || null,
+        occurred_at: occurredAt,
+      }).select().single();
+      if (mvErr) { toast.error(mvErr.message); return null; }
+
+      // 3) Soma ao estoque existente (nunca substitui)
+      let updatedProduct: Product | null = null;
+      if (input.productId) {
+        const { data: current } = await supabase.from("products").select("stock").eq("id", input.productId).maybeSingle();
+        const base = Number(current?.stock ?? state.products.find((p) => p.id === input.productId)?.stock ?? 0);
+        const { data: pd } = await supabase.from("products").update({ stock: base + qty }).eq("id", input.productId).select().single();
+        if (pd) updatedProduct = toProduct(pd);
+      }
+
+      const movement = toMovement(mv);
+      setState((s) => ({
+        ...s,
+        stockMovements: [movement, ...s.stockMovements],
+        products: updatedProduct ? s.products.map((p) => (p.id === updatedProduct!.id ? updatedProduct! : p)) : s.products,
+      }));
+      return movement;
+    },
+    async receivePurchaseOrder(po) {
+      if (!user) return;
+      const sid = activeStoreId ?? user.id;
+      const qty = Math.max(0, Math.trunc(Number(po.quantity) || 0));
+      const unitCost = Math.max(0, Number(po.unitCost) || 0);
+      if (!qty) return;
+      // Idempotente: se já existe movimentação para este pedido, não desconta de novo.
+      if (state.stockMovements.some((m) => m.purchaseOrderId === po.purchaseOrderId && m.type === "compra")) return;
+      const total = Math.round(qty * unitCost * 100) / 100;
+      const occurredAt = po.occurredAt || new Date().toISOString();
+      const { data: mv, error } = await supabase.from("stock_movements").insert({
+        user_id: user.id,
+        store_id: sid,
+        product_id: po.productId || null,
+        product_name: po.productName || "",
+        purchase_order_id: po.purchaseOrderId,
+        type: "compra",
+        quantity: qty,
+        unit_cost: unitCost,
+        total,
+        supplier_name: po.supplierName || null,
+        payment_method: po.paymentMethod || null,
+        notes: po.notes || null,
+        occurred_at: occurredAt,
+      }).select().single();
+      if (error) { toast.error(error.message); return; }
+
+      let updatedProduct: Product | null = null;
+      if (po.productId) {
+        const { data: current } = await supabase.from("products").select("stock").eq("id", po.productId).maybeSingle();
+        const base = Number(current?.stock ?? 0);
+        const { data: pd } = await supabase.from("products").update({ stock: base + qty }).eq("id", po.productId).select().single();
+        if (pd) updatedProduct = toProduct(pd);
+      }
+      const movement = toMovement(mv);
+      setState((s) => ({
+        ...s,
+        stockMovements: [movement, ...s.stockMovements],
+        products: updatedProduct ? s.products.map((p) => (p.id === updatedProduct!.id ? updatedProduct! : p)) : s.products,
+      }));
+    },
+    async reversePurchaseOrder(purchaseOrderId) {
+      const mv = state.stockMovements.find((m) => m.purchaseOrderId === purchaseOrderId && m.type === "compra");
+      if (!mv) return;
+      await value.reverseStockPurchase(mv.id);
+    },
+    async reverseStockPurchase(movementId) {
+
+      if (!user) return;
+      const sid = activeStoreId ?? user.id;
+      const mv = state.stockMovements.find((m) => m.id === movementId);
+      if (!mv || mv.type !== "compra") return;
+      const already = state.stockMovements.some(
+        (m) => m.type === "estorno" && (m.purchaseOrderId
+          ? m.purchaseOrderId === mv.purchaseOrderId
+          : m.notes?.includes(mv.id)),
+      );
+      if (already) { toast.error("Esta compra já foi estornada"); return; }
+
+      const { data: rev, error } = await supabase.from("stock_movements").insert({
+        user_id: user.id,
+        store_id: sid,
+        product_id: mv.productId,
+        product_name: mv.productName,
+        purchase_order_id: mv.purchaseOrderId,
+        type: "estorno",
+        quantity: -mv.quantity,
+        unit_cost: mv.unitCost,
+        total: -mv.total,
+        supplier_name: mv.supplierName || null,
+        payment_method: mv.paymentMethod || null,
+        notes: `Estorno da compra ${mv.id}`,
+        occurred_at: new Date().toISOString(),
+      }).select().single();
+      if (error) { toast.error(error.message); return; }
+
+      if (mv.purchaseOrderId) {
+        await supabase.from("purchase_orders").update({ status: "cancelado" }).eq("id", mv.purchaseOrderId);
+      }
+
+      let updatedProduct: Product | null = null;
+      if (mv.productId) {
+        const { data: current } = await supabase.from("products").select("stock").eq("id", mv.productId).maybeSingle();
+        const base = Number(current?.stock ?? 0);
+        const { data: pd } = await supabase.from("products")
+          .update({ stock: Math.max(0, base - mv.quantity) })
+          .eq("id", mv.productId).select().single();
+        if (pd) updatedProduct = toProduct(pd);
+      }
+
+      const reversal = toMovement(rev);
+      setState((s) => ({
+        ...s,
+        stockMovements: [reversal, ...s.stockMovements],
+        products: updatedProduct ? s.products.map((p) => (p.id === updatedProduct!.id ? updatedProduct! : p)) : s.products,
+      }));
+      toast.success("Compra estornada");
+    },
+
     async updateSettings(p) {
       if (!user) return;
       const patch: any = {};
@@ -913,12 +1136,15 @@ export function useFinance(range?: { start: Date; end: Date }) {
 
   const paidOrders = state.orders.filter((o) => o.status !== "cancelado" && o.status !== "aguardando");
   const allRevenue = paidOrders.reduce((a, o) => a + o.total, 0);
-  const allExpenses = state.expenses.filter((e) => e.category !== "mercadorias").reduce((a, e) => a + e.amount, 0);
+  // Todas as despesas contam no caixa (inclusive "mercadorias" lançadas manualmente),
+  // pois representam dinheiro que realmente saiu.
+  const allExpenses = state.expenses.reduce((a, e) => a + e.amount, 0);
   const allAdsManual = state.ads.reduce((a, x) => a + (Number(x.invested) || 0), 0);
-  const allCogs = paidOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
   const allMotoboy = motoboyFee * paidOrders.length;
-  const cash = allRevenue - allExpenses - allAdsManual - allCogs - allMotoboy;
+  // Compras de estoque saem do caixa no momento da compra (estornos voltam, pois têm total negativo).
+  // O CMV NÃO entra no caixa aqui para não contabilizar o custo duas vezes: ele já impacta o Lucro na venda.
+  const stockPurchases = state.stockMovements.reduce((a, m) => a + (Number(m.total) || 0), 0);
+  const cash = allRevenue - allExpenses - allAdsManual - allMotoboy - stockPurchases;
 
-
-  return { revenue, cogs, adsSpend, opEx, motoboyCost, profit, cash, ordersCount: monthOrders.length };
+  return { revenue, cogs, adsSpend, opEx, motoboyCost, profit, cash, stockPurchases, ordersCount: monthOrders.length };
 }

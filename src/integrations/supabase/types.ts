@@ -932,11 +932,13 @@ export type Database = {
           id: string
           notes: string | null
           order_date: string
+          payment_method: string | null
           product_id: string | null
           product_name: string
           quantity: number
           received_date: string | null
           status: string
+          store_id: string | null
           supplier_id: string | null
           supplier_name: string
           total: number
@@ -949,11 +951,13 @@ export type Database = {
           id?: string
           notes?: string | null
           order_date?: string
+          payment_method?: string | null
           product_id?: string | null
           product_name: string
           quantity?: number
           received_date?: string | null
           status?: string
+          store_id?: string | null
           supplier_id?: string | null
           supplier_name?: string
           total?: number
@@ -966,11 +970,13 @@ export type Database = {
           id?: string
           notes?: string | null
           order_date?: string
+          payment_method?: string | null
           product_id?: string | null
           product_name?: string
           quantity?: number
           received_date?: string | null
           status?: string
+          store_id?: string | null
           supplier_id?: string | null
           supplier_name?: string
           total?: number
@@ -991,6 +997,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
           {
@@ -1321,6 +1334,92 @@ export type Database = {
             foreignKeyName: "settings_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          occurred_at: string
+          payment_method: string | null
+          product_id: string | null
+          product_name: string
+          purchase_order_id: string | null
+          quantity: number
+          store_id: string | null
+          supplier_name: string | null
+          total: number
+          type: string
+          unit_cost: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          payment_method?: string | null
+          product_id?: string | null
+          product_name?: string
+          purchase_order_id?: string | null
+          quantity?: number
+          store_id?: string | null
+          supplier_name?: string | null
+          total?: number
+          type?: string
+          unit_cost?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          payment_method?: string | null
+          product_id?: string | null
+          product_name?: string
+          purchase_order_id?: string | null
+          quantity?: number
+          store_id?: string | null
+          supplier_name?: string | null
+          total?: number
+          type?: string
+          unit_cost?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
