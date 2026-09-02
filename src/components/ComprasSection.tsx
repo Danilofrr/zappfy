@@ -31,7 +31,7 @@ const statusList = [
 ] as const;
 
 export function ComprasSection() {
-  const { state, user, updateProduct } = useStore();
+  const { state, user, receivePurchaseOrder, reversePurchaseOrder } = useStore();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [sub, setSub] = useState<"pedidos" | "fornecedores">("pedidos");
@@ -61,21 +61,13 @@ export function ComprasSection() {
     return { pend, rec };
   }, [orders]);
 
-  async function adjustStock(productId: string | null, delta: number) {
-    if (!productId || !delta) return;
-    const prod = state.products.find((p) => p.id === productId);
-    if (!prod) return;
-    const newStock = Math.max(0, (prod.stock || 0) + delta);
-    try { await updateProduct(productId, { stock: newStock }); } catch (e: any) { toast.error(e?.message || "Erro ao atualizar estoque"); }
-  }
-
   async function deleteOrder(id: string) {
     if (!confirm("Excluir este pedido de reposição?")) return;
     const target = orders.find((x) => x.id === id);
     const { error } = await (supabase.from("purchase_orders" as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
-    if (target && target.status === "recebido" && target.product_id) {
-      await adjustStock(target.product_id, -Number(target.quantity || 0));
+    if (target && target.status === "recebido") {
+      await reversePurchaseOrder(target.id);
     }
     setOrders((p) => p.filter((x) => x.id !== id));
     toast.success("Pedido excluído");
@@ -87,12 +79,21 @@ export function ComprasSection() {
     const { data, error } = await (supabase.from("purchase_orders" as any) as any).update(patch).eq("id", id).select().single();
     if (error) return toast.error(error.message);
     const updated = data as PurchaseOrder;
-    if (current && current.status !== "recebido" && status === "recebido" && updated.product_id) {
-      await adjustStock(updated.product_id, Number(updated.quantity || 0));
-      toast.success(`Estoque atualizado (+${updated.quantity})`);
-    } else if (current && current.status === "recebido" && status !== "recebido" && updated.product_id) {
-      await adjustStock(updated.product_id, -Number(updated.quantity || 0));
-      toast.success(`Estoque revertido (-${updated.quantity})`);
+    if (current && current.status !== "recebido" && status === "recebido") {
+      await receivePurchaseOrder({
+        purchaseOrderId: updated.id,
+        productId: updated.product_id,
+        productName: updated.product_name,
+        quantity: Number(updated.quantity || 0),
+        unitCost: Number(updated.unit_cost || 0),
+        supplierName: updated.supplier_name,
+        notes: updated.notes,
+        occurredAt: updated.received_date || new Date().toISOString(),
+      });
+      toast.success(`Estoque atualizado (+${updated.quantity}) e valor abatido do caixa`);
+    } else if (current && current.status === "recebido" && status !== "recebido") {
+      await reversePurchaseOrder(updated.id);
+      toast.success(`Estoque revertido (-${updated.quantity}) e valor devolvido ao caixa`);
     }
     setOrders((p) => p.map((x) => x.id === id ? updated : x));
   }
@@ -238,8 +239,17 @@ export function ComprasSection() {
         suppliers={suppliers} products={state.products}
         onSaved={(o) => {
           setOrders((p) => [o, ...p]);
-          if (o.status === "recebido" && o.product_id) {
-            adjustStock(o.product_id, Number(o.quantity || 0));
+          if (o.status === "recebido") {
+            receivePurchaseOrder({
+              purchaseOrderId: o.id,
+              productId: o.product_id,
+              productName: o.product_name,
+              quantity: Number(o.quantity || 0),
+              unitCost: Number(o.unit_cost || 0),
+              supplierName: o.supplier_name,
+              notes: o.notes,
+              occurredAt: o.received_date || o.order_date,
+            });
           }
         }}
       />
