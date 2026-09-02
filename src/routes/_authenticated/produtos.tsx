@@ -12,8 +12,11 @@ import {
 import {
   Plus, Pencil, Trash2, AlertTriangle, Upload, X, Image as ImageIcon,
   Search, Wallet, DollarSign, BarChart3, Boxes, Package, Gift, LayoutGrid, List, Truck,
+  PackagePlus, History,
 } from "lucide-react";
 import { ComprasSection } from "@/components/ComprasSection";
+import { AddStockDialog } from "@/components/AddStockDialog";
+import { ProductHistoryDialog } from "@/components/ProductHistoryDialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -30,6 +33,8 @@ function EstoquePage() {
   const { state, addProduct, updateProduct, deleteProduct } = useStore();
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
+  const [stockFor, setStockFor] = useState<Product | null>(null);
+  const [historyFor, setHistoryFor] = useState<Product | null>(null);
   const [tab, setTab] = useState<"produtos" | "kits" | "compras">("produtos");
   const [view, setView] = useState<"tabela" | "cards">("tabela");
   const [query, setQuery] = useState("");
@@ -313,6 +318,8 @@ function EstoquePage() {
                       <td className="px-4 py-3 text-right text-emerald-400 font-semibold">{pct(margin)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
+                          <button title="Adicionar estoque" onClick={() => setStockFor(p)} className="p-1 text-muted-foreground hover:text-primary"><PackagePlus className="h-4 w-4" /></button>
+                          <button title="Histórico" onClick={() => setHistoryFor(p)} className="p-1 text-muted-foreground hover:text-sky-400"><History className="h-4 w-4" /></button>
                           <button onClick={() => { setEditing(p); setOpen(true); }} className="p-1 text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
                           <button onClick={() => { if (confirm("Excluir produto?")) deleteProduct(p.id); }} className="p-1 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                         </div>
@@ -350,6 +357,8 @@ function EstoquePage() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    <button title="Adicionar estoque" onClick={() => setStockFor(p)} className="p-1.5 text-muted-foreground hover:text-primary"><PackagePlus className="h-4 w-4" /></button>
+                    <button title="Histórico" onClick={() => setHistoryFor(p)} className="p-1.5 text-muted-foreground hover:text-sky-400"><History className="h-4 w-4" /></button>
                     <button onClick={() => { setEditing(p); setOpen(true); }} className="p-1.5 text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
                     <button onClick={() => { if (confirm("Excluir produto?")) deleteProduct(p.id); }} className="p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </div>
@@ -371,6 +380,9 @@ function EstoquePage() {
           })}
         </div>
       )}
+
+      <AddStockDialog open={!!stockFor} onOpenChange={(v) => { if (!v) setStockFor(null); }} product={stockFor} />
+      <ProductHistoryDialog open={!!historyFor} onOpenChange={(v) => { if (!v) setHistoryFor(null); }} product={historyFor} />
 
       <ProductDialog
         open={open}
