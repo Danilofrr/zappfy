@@ -624,38 +624,38 @@ function PedidosPage() {
       {(() => {
         const renderActions = (o: typeof filtered[number], compact = false) => (
           <div className={`flex items-center ${compact ? "flex-wrap gap-1" : "justify-end gap-0.5"}`}>
-            <button onClick={() => setEditing(o)} title="Editar pedido" className="text-muted-foreground hover:text-primary p-1">
+            <button onClick={() => setEditing(o)} title="Editar pedido" className="text-muted-foreground hover:text-primary p-0.5">
               <Pencil className="h-4 w-4" />
             </button>
-            <button onClick={() => printReceipt(o)} title="Gerar recibo e imprimir" className="text-muted-foreground hover:text-primary p-1">
+            <button onClick={() => printReceipt(o)} title="Gerar recibo e imprimir" className="text-muted-foreground hover:text-primary p-0.5">
               <Receipt className="h-4 w-4" />
             </button>
-            <button onClick={() => printLabel(o)} title="Gerar etiqueta de envio" className="text-muted-foreground hover:text-primary p-1">
+            <button onClick={() => printLabel(o)} title="Gerar etiqueta de envio" className="text-muted-foreground hover:text-primary p-0.5">
               <Tag className="h-4 w-4" />
             </button>
-            <button onClick={() => setMotoboyFor(o)} title="Enviar endereço para o motoboy no WhatsApp" className="text-muted-foreground hover:text-blue-500 p-1">
+            <button onClick={() => setMotoboyFor(o)} title="Enviar endereço para o motoboy no WhatsApp" className="text-muted-foreground hover:text-blue-500 p-0.5">
               <Bike className="h-4 w-4" />
             </button>
-            <button onClick={() => setReceiptsOrder(o)} title="Comprovantes do pedido" className="text-muted-foreground hover:text-primary p-1">
+            <button onClick={() => setReceiptsOrder(o)} title="Comprovantes do pedido" className="text-muted-foreground hover:text-primary p-0.5">
               <Paperclip className="h-4 w-4" />
             </button>
-            <button onClick={() => openCustomerWhatsApp(o)} title="Falar com o cliente no WhatsApp" className="text-muted-foreground hover:text-green-500 p-1">
+            <button onClick={() => openCustomerWhatsApp(o)} title="Falar com o cliente no WhatsApp" className="text-muted-foreground hover:text-green-500 p-0.5">
               <Phone className="h-4 w-4" />
             </button>
-            <button onClick={() => notifyDelivery(o)} title="Avisar cliente no WhatsApp que o pedido saiu para entrega" className="text-muted-foreground hover:text-green-500 p-1">
+            <button onClick={() => notifyDelivery(o)} title="Avisar cliente no WhatsApp que o pedido saiu para entrega" className="text-muted-foreground hover:text-green-500 p-0.5">
               <MessageCircle className="h-4 w-4" />
             </button>
             <button
               onClick={() => setTrackingOpen(trackingOpen === o.id ? null : o.id)}
               title="Rastreamento da entrega em tempo real"
-              className={`p-1 ${trackingOpen === o.id ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+              className={`p-0.5 ${trackingOpen === o.id ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
             >
               <MapPin className="h-4 w-4" />
             </button>
             <button
               onClick={() => { if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id); }}
               title="Excluir pedido"
-              className="text-muted-foreground hover:text-destructive p-1"
+              className="text-muted-foreground hover:text-destructive p-0.5"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -664,7 +664,7 @@ function PedidosPage() {
 
         const renderStatus = (o: typeof filtered[number], full = false) => (
           <Select value={o.status} onValueChange={(v) => handleStatusChange(o, v as OrderStatus)}>
-            <SelectTrigger className={`h-8 ${full ? "w-full" : "w-[130px] xl:w-[150px]"} border-0 text-xs px-2 ${statusMap[o.status]?.color ?? ""}`}>
+            <SelectTrigger className={`h-8 ${full ? "w-full" : "w-full max-w-[150px] truncate"} border-0 text-xs px-2 ${statusMap[o.status]?.color ?? ""}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
