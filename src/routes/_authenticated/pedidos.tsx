@@ -623,7 +623,7 @@ function PedidosPage() {
 
       {(() => {
         const renderActions = (o: typeof filtered[number], compact = false) => (
-          <div className={`flex items-center ${compact ? "flex-wrap gap-1" : "justify-end gap-0.5"}`}>
+          <div className={`flex items-center flex-wrap ${compact ? "gap-1" : "justify-end gap-0.5"}`}>
             <button onClick={() => setEditing(o)} title="Editar pedido" className="text-muted-foreground hover:text-primary p-0.5">
               <Pencil className="h-4 w-4" />
             </button>
