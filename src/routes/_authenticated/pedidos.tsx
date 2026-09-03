@@ -621,152 +621,189 @@ function PedidosPage() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-elegant">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-secondary/40">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium">Cliente</th>
-                <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Produto</th>
-                <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Bairro</th>
-                <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Data</th>
-                <th className="text-right px-4 py-3 font-medium">Valor</th>
-                <th className="text-right px-4 py-3 font-medium">Lucro</th>
-                <th className="text-left px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
+      {(() => {
+        const renderActions = (o: typeof filtered[number], compact = false) => (
+          <div className={`flex items-center ${compact ? "flex-wrap gap-1" : "justify-end gap-0.5"}`}>
+            <button onClick={() => setEditing(o)} title="Editar pedido" className="text-muted-foreground hover:text-primary p-1">
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button onClick={() => printReceipt(o)} title="Gerar recibo e imprimir" className="text-muted-foreground hover:text-primary p-1">
+              <Receipt className="h-4 w-4" />
+            </button>
+            <button onClick={() => printLabel(o)} title="Gerar etiqueta de envio" className="text-muted-foreground hover:text-primary p-1">
+              <Tag className="h-4 w-4" />
+            </button>
+            <button onClick={() => setMotoboyFor(o)} title="Enviar endereço para o motoboy no WhatsApp" className="text-muted-foreground hover:text-blue-500 p-1">
+              <Bike className="h-4 w-4" />
+            </button>
+            <button onClick={() => setReceiptsOrder(o)} title="Comprovantes do pedido" className="text-muted-foreground hover:text-primary p-1">
+              <Paperclip className="h-4 w-4" />
+            </button>
+            <button onClick={() => openCustomerWhatsApp(o)} title="Falar com o cliente no WhatsApp" className="text-muted-foreground hover:text-green-500 p-1">
+              <Phone className="h-4 w-4" />
+            </button>
+            <button onClick={() => notifyDelivery(o)} title="Avisar cliente no WhatsApp que o pedido saiu para entrega" className="text-muted-foreground hover:text-green-500 p-1">
+              <MessageCircle className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setTrackingOpen(trackingOpen === o.id ? null : o.id)}
+              title="Rastreamento da entrega em tempo real"
+              className={`p-1 ${trackingOpen === o.id ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+            >
+              <MapPin className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => { if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id); }}
+              title="Excluir pedido"
+              className="text-muted-foreground hover:text-destructive p-1"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        );
+
+        const renderStatus = (o: typeof filtered[number], full = false) => (
+          <Select value={o.status} onValueChange={(v) => handleStatusChange(o, v as OrderStatus)}>
+            <SelectTrigger className={`h-8 ${full ? "w-full" : "w-[130px] xl:w-[150px]"} border-0 text-xs px-2 ${statusMap[o.status]?.color ?? ""}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {statusList.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+
+        return (
+          <>
+            {/* Mobile / tablet: cards */}
+            <div className="lg:hidden space-y-3">
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
+                <div className="rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</div>
               )}
-              {filtered.map((o) => (
-                <Fragment key={o.id}>
-                <tr className="border-t border-border hover:bg-secondary/30">
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{o.customer}</div>
-                    <div className="text-xs text-muted-foreground">{o.phone}</div>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <div className="truncate max-w-[260px]">
-                      {o.items.map((it) => `${it.qty}x ${it.name}`).join(", ")}
+              {filtered.map((o) => {
+                const profit = getOrderProfit(o);
+                const revenueBase = getOrderNetReceived(o);
+                const margin = revenueBase > 0 ? (profit / revenueBase) * 100 : 0;
+                return (
+                  <div key={o.id} className="rounded-2xl border border-border bg-card p-4 shadow-elegant">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{o.customer}</div>
+                        <div className="text-xs text-muted-foreground truncate">{o.phone}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-semibold">{brl(o.total)}</div>
+                        <div className={`text-xs font-semibold ${profit >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                          {brl(profit)} · {margin.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-sm break-words">
+                      {(o.items ?? []).map((it) => `${it.qty}x ${it.name}`).join(", ")}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {o.items.reduce((n, it) => n + it.qty, 0)} item(s) · {o.payment.toUpperCase()}
+                      {(o.items ?? []).reduce((n, it) => n + it.qty, 0)} item(s) · {String(o.payment ?? "").toUpperCase()}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">{o.district}</td>
-                  <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">{fmtDate(o.date)}</td>
-                  <td className="px-4 py-3 text-right font-semibold">{brl(o.total)}</td>
-                  {(() => {
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {[o.district, fmtDate(o.date)].filter(Boolean).join(" · ")}
+                    </div>
+                    <div className="mt-3">{renderStatus(o, true)}</div>
+                    <div className="mt-3 border-t border-border pt-2">{renderActions(o, true)}</div>
+                    {trackingOpen === o.id && (
+                      <div className="mt-3">
+                        <DeliveryTrackingPanel
+                          orderId={o.id}
+                          customerPhone={o.phone}
+                          orderAddress={[o.address, o.district, o.city].filter(Boolean).join(", ")}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop: tabela */}
+            <div className="hidden lg:block w-full max-w-full rounded-2xl border border-border bg-card overflow-hidden shadow-elegant">
+              <table className="w-full table-fixed text-sm box-border">
+                <colgroup>
+                  <col className="w-[15%]" />
+                  <col className="w-[24%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[13%]" />
+                </colgroup>
+                <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-secondary/40">
+                  <tr>
+                    <th className="text-left px-2 py-3 font-medium">Cliente</th>
+                    <th className="text-left px-2 py-3 font-medium">Produto</th>
+                    <th className="text-left px-2 py-3 font-medium">Bairro</th>
+                    <th className="text-left px-2 py-3 font-medium">Data</th>
+                    <th className="text-right px-2 py-3 font-medium">Valor</th>
+                    <th className="text-right px-2 py-3 font-medium">Lucro</th>
+                    <th className="text-left px-2 py-3 font-medium">Status</th>
+                    <th className="text-right px-2 py-3 font-medium">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 && (
+                    <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
+                  )}
+                  {filtered.map((o) => {
                     const profit = getOrderProfit(o);
                     const revenueBase = getOrderNetReceived(o);
                     const margin = revenueBase > 0 ? (profit / revenueBase) * 100 : 0;
-                    const cls = profit >= 0 ? "text-emerald-500" : "text-destructive";
                     return (
-                      <td className="px-4 py-3 text-right">
-                        <div className={`font-semibold ${cls}`}>{brl(profit)}</div>
-                        <div className="text-[11px] text-muted-foreground">{margin.toFixed(1)}%</div>
-                      </td>
+                      <Fragment key={o.id}>
+                        <tr className="border-t border-border hover:bg-secondary/30 align-middle">
+                          <td className="px-2 py-3">
+                            <div className="font-medium truncate">{o.customer}</div>
+                            <div className="text-xs text-muted-foreground truncate">{o.phone}</div>
+                          </td>
+                          <td className="px-2 py-3">
+                            <div className="truncate">
+                              {(o.items ?? []).map((it) => `${it.qty}x ${it.name}`).join(", ")}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {(o.items ?? []).reduce((n, it) => n + it.qty, 0)} item(s) · {String(o.payment ?? "").toUpperCase()}
+                            </div>
+                          </td>
+                          <td className="px-2 py-3 truncate">{o.district}</td>
+                          <td className="px-2 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDate(o.date)}</td>
+                          <td className="px-2 py-3 text-right font-semibold whitespace-nowrap">{brl(o.total)}</td>
+                          <td className="px-2 py-3 text-right whitespace-nowrap">
+                            <div className={`font-semibold ${profit >= 0 ? "text-emerald-500" : "text-destructive"}`}>{brl(profit)}</div>
+                            <div className="text-[11px] text-muted-foreground">{margin.toFixed(1)}%</div>
+                          </td>
+                          <td className="px-2 py-3">{renderStatus(o)}</td>
+                          <td className="px-1 py-3 text-right">{renderActions(o)}</td>
+                        </tr>
+                        {trackingOpen === o.id && (
+                          <tr className="border-t border-border bg-secondary/10">
+                            <td colSpan={8} className="px-4 py-4">
+                              <DeliveryTrackingPanel
+                                orderId={o.id}
+                                customerPhone={o.phone}
+                                orderAddress={[o.address, o.district, o.city].filter(Boolean).join(", ")}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
-                  })()}
-                  <td className="px-4 py-3">
-                    <Select value={o.status} onValueChange={(v) => handleStatusChange(o, v as OrderStatus)}>
-                      <SelectTrigger className={`h-8 w-[170px] border-0 ${statusMap[o.status].color}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusList.map((s) => (
-                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => setEditing(o)}
-                        title="Editar pedido"
-                        className="text-muted-foreground hover:text-primary p-1"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => printReceipt(o)}
-                        title="Gerar recibo e imprimir"
-                        className="text-muted-foreground hover:text-primary p-1"
-                      >
-                        <Receipt className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => printLabel(o)}
-                        title="Gerar etiqueta de envio"
-                        className="text-muted-foreground hover:text-primary p-1"
-                      >
-                        <Tag className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setMotoboyFor(o)}
-                        title="Enviar endereço para o motoboy no WhatsApp"
-                        className="text-muted-foreground hover:text-blue-500 p-1"
-                      >
-                        <Bike className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setReceiptsOrder(o)}
-                        title="Comprovantes do pedido"
-                        className="text-muted-foreground hover:text-primary p-1"
-                      >
-                        <Paperclip className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => openCustomerWhatsApp(o)}
-                        title="Falar com o cliente no WhatsApp"
-                        className="text-muted-foreground hover:text-green-500 p-1"
-                      >
-                        <Phone className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => notifyDelivery(o)}
-                        title="Avisar cliente no WhatsApp que o pedido saiu para entrega"
-                        className="text-muted-foreground hover:text-green-500 p-1"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setTrackingOpen(trackingOpen === o.id ? null : o.id)}
-                        title="Rastreamento da entrega em tempo real"
-                        className={`p-1 ${trackingOpen === o.id ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
-                      >
-                        <MapPin className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => { if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id); }}
-                        className="text-muted-foreground hover:text-destructive p-1"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        );
+      })()}
 
-                </tr>
-                {trackingOpen === o.id && (
-                  <tr className="border-t border-border bg-secondary/10">
-                    <td colSpan={8} className="px-4 py-4">
-                      <DeliveryTrackingPanel
-                        orderId={o.id}
-                        customerPhone={o.phone}
-                        orderAddress={[o.address, o.district, o.city].filter(Boolean).join(", ")}
-                      />
-                    </td>
-                  </tr>
-                )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       <a
         href={checkoutLink}
