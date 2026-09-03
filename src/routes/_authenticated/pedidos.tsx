@@ -780,8 +780,8 @@ function PedidosPage() {
                             <div className={`font-semibold ${profit >= 0 ? "text-emerald-500" : "text-destructive"}`}>{brl(profit)}</div>
                             <div className="text-[11px] text-muted-foreground">{margin.toFixed(1)}%</div>
                           </td>
-                          <td className="px-2 py-3">{renderStatus(o)}</td>
-                          <td className="px-1 py-3 text-right">{renderActions(o)}</td>
+                          <td className="px-2 py-3 overflow-hidden">{renderStatus(o)}</td>
+                          <td className="px-1 py-3 text-right overflow-hidden">{renderActions(o)}</td>
                         </tr>
                         {trackingOpen === o.id && (
                           <tr className="border-t border-border bg-secondary/10">
