@@ -623,39 +623,39 @@ function PedidosPage() {
 
       {(() => {
         const renderActions = (o: typeof filtered[number], compact = false) => (
-          <div className={`flex items-center ${compact ? "flex-wrap gap-1" : "justify-end gap-0.5"}`}>
-            <button onClick={() => setEditing(o)} title="Editar pedido" className="text-muted-foreground hover:text-primary p-1">
+          <div className={`flex items-center flex-wrap ${compact ? "gap-1" : "justify-end gap-0.5"}`}>
+            <button onClick={() => setEditing(o)} title="Editar pedido" className="text-muted-foreground hover:text-primary p-0.5">
               <Pencil className="h-4 w-4" />
             </button>
-            <button onClick={() => printReceipt(o)} title="Gerar recibo e imprimir" className="text-muted-foreground hover:text-primary p-1">
+            <button onClick={() => printReceipt(o)} title="Gerar recibo e imprimir" className="text-muted-foreground hover:text-primary p-0.5">
               <Receipt className="h-4 w-4" />
             </button>
-            <button onClick={() => printLabel(o)} title="Gerar etiqueta de envio" className="text-muted-foreground hover:text-primary p-1">
+            <button onClick={() => printLabel(o)} title="Gerar etiqueta de envio" className="text-muted-foreground hover:text-primary p-0.5">
               <Tag className="h-4 w-4" />
             </button>
-            <button onClick={() => setMotoboyFor(o)} title="Enviar endereço para o motoboy no WhatsApp" className="text-muted-foreground hover:text-blue-500 p-1">
+            <button onClick={() => setMotoboyFor(o)} title="Enviar endereço para o motoboy no WhatsApp" className="text-muted-foreground hover:text-blue-500 p-0.5">
               <Bike className="h-4 w-4" />
             </button>
-            <button onClick={() => setReceiptsOrder(o)} title="Comprovantes do pedido" className="text-muted-foreground hover:text-primary p-1">
+            <button onClick={() => setReceiptsOrder(o)} title="Comprovantes do pedido" className="text-muted-foreground hover:text-primary p-0.5">
               <Paperclip className="h-4 w-4" />
             </button>
-            <button onClick={() => openCustomerWhatsApp(o)} title="Falar com o cliente no WhatsApp" className="text-muted-foreground hover:text-green-500 p-1">
+            <button onClick={() => openCustomerWhatsApp(o)} title="Falar com o cliente no WhatsApp" className="text-muted-foreground hover:text-green-500 p-0.5">
               <Phone className="h-4 w-4" />
             </button>
-            <button onClick={() => notifyDelivery(o)} title="Avisar cliente no WhatsApp que o pedido saiu para entrega" className="text-muted-foreground hover:text-green-500 p-1">
+            <button onClick={() => notifyDelivery(o)} title="Avisar cliente no WhatsApp que o pedido saiu para entrega" className="text-muted-foreground hover:text-green-500 p-0.5">
               <MessageCircle className="h-4 w-4" />
             </button>
             <button
               onClick={() => setTrackingOpen(trackingOpen === o.id ? null : o.id)}
               title="Rastreamento da entrega em tempo real"
-              className={`p-1 ${trackingOpen === o.id ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+              className={`p-0.5 ${trackingOpen === o.id ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
             >
               <MapPin className="h-4 w-4" />
             </button>
             <button
               onClick={() => { if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id); }}
               title="Excluir pedido"
-              className="text-muted-foreground hover:text-destructive p-1"
+              className="text-muted-foreground hover:text-destructive p-0.5"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -664,7 +664,7 @@ function PedidosPage() {
 
         const renderStatus = (o: typeof filtered[number], full = false) => (
           <Select value={o.status} onValueChange={(v) => handleStatusChange(o, v as OrderStatus)}>
-            <SelectTrigger className={`h-8 ${full ? "w-full" : "w-[130px] xl:w-[150px]"} border-0 text-xs px-2 ${statusMap[o.status]?.color ?? ""}`}>
+            <SelectTrigger className={`h-8 ${full ? "w-full" : "w-full max-w-[150px] truncate"} border-0 text-xs px-2 ${statusMap[o.status]?.color ?? ""}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -728,15 +728,15 @@ function PedidosPage() {
             {/* Desktop: tabela */}
             <div className="hidden lg:block w-full max-w-full rounded-2xl border border-border bg-card overflow-hidden shadow-elegant">
               <table className="w-full table-fixed text-sm box-border">
-                <colgroup>
-                  <col className="w-[15%]" />
-                  <col className="w-[24%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[9%]" />
-                  <col className="w-[9%]" />
-                  <col className="w-[11%]" />
+              <colgroup>
                   <col className="w-[13%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[17%]" />
+                  <col className="w-[16%]" />
                 </colgroup>
                 <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-secondary/40">
                   <tr>
@@ -780,8 +780,8 @@ function PedidosPage() {
                             <div className={`font-semibold ${profit >= 0 ? "text-emerald-500" : "text-destructive"}`}>{brl(profit)}</div>
                             <div className="text-[11px] text-muted-foreground">{margin.toFixed(1)}%</div>
                           </td>
-                          <td className="px-2 py-3">{renderStatus(o)}</td>
-                          <td className="px-1 py-3 text-right">{renderActions(o)}</td>
+                          <td className="px-2 py-3 overflow-hidden">{renderStatus(o)}</td>
+                          <td className="px-1 py-3 text-right overflow-hidden">{renderActions(o)}</td>
                         </tr>
                         {trackingOpen === o.id && (
                           <tr className="border-t border-border bg-secondary/10">
