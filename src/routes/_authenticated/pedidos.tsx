@@ -728,15 +728,15 @@ function PedidosPage() {
             {/* Desktop: tabela */}
             <div className="hidden lg:block w-full max-w-full rounded-2xl border border-border bg-card overflow-hidden shadow-elegant">
               <table className="w-full table-fixed text-sm box-border">
-                <colgroup>
-                  <col className="w-[15%]" />
-                  <col className="w-[24%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[9%]" />
-                  <col className="w-[9%]" />
-                  <col className="w-[11%]" />
+              <colgroup>
                   <col className="w-[13%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[17%]" />
+                  <col className="w-[16%]" />
                 </colgroup>
                 <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-secondary/40">
                   <tr>
