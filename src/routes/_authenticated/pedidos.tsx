@@ -546,8 +546,17 @@ function PedidosPage() {
         return true;
       });
     },
-    [state.orders, filter, dateBounds, search],
+    [state.orders, filter, dateBounds, debouncedSearch],
   );
+
+  // Renderiza a lista em blocos para não montar centenas de linhas de uma vez
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [filter, dateBounds, debouncedSearch]);
+
+  const visibleOrders = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = filtered.length > visibleOrders.length;
+
 
   const dateOptions: { key: DateRangeKey; label: string }[] = [
     { key: "all", label: "Todo período" },
