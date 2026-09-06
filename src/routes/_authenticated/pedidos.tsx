@@ -520,7 +520,7 @@ function PedidosPage() {
 
   const filtered = useMemo(
     () => {
-      const q = search.trim().toLowerCase();
+      const q = debouncedSearch.trim().toLowerCase();
       const qDigits = q.replace(/\D/g, "");
       return state.orders.filter((o) => {
         if (filter !== "all" && o.status !== filter) return false;
