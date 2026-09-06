@@ -396,6 +396,7 @@ function EstoquePage() {
               </div>
             );
           })}
+          {loadMoreButton && <div className="col-span-full text-center">{loadMoreButton}</div>}
         </div>
       )}
 
