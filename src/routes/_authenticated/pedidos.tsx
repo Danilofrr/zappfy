@@ -695,7 +695,7 @@ function PedidosPage() {
               {filtered.length === 0 && (
                 <div className="rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</div>
               )}
-              {filtered.map((o) => {
+              {visibleOrders.map((o) => {
                 const profit = getOrderProfit(o);
                 const revenueBase = getOrderNetReceived(o);
                 const margin = revenueBase > 0 ? (profit / revenueBase) * 100 : 0;
@@ -736,6 +736,15 @@ function PedidosPage() {
                   </div>
                 );
               })}
+              {hasMore && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium hover:bg-secondary"
+                >
+                  Carregar mais ({filtered.length - visibleOrders.length} restantes)
+                </button>
+              )}
             </div>
 
             {/* Desktop: tabela */}
@@ -767,7 +776,7 @@ function PedidosPage() {
                   {filtered.length === 0 && (
                     <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
                   )}
-                  {filtered.map((o) => {
+                  {visibleOrders.map((o) => {
                     const profit = getOrderProfit(o);
                     const revenueBase = getOrderNetReceived(o);
                     const margin = revenueBase > 0 ? (profit / revenueBase) * 100 : 0;
@@ -812,6 +821,17 @@ function PedidosPage() {
                   })}
                 </tbody>
               </table>
+              {hasMore && (
+                <div className="border-t border-border p-3 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                    className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
+                  >
+                    Carregar mais ({filtered.length - visibleOrders.length} restantes)
+                  </button>
+                </div>
+              )}
             </div>
           </>
         );
