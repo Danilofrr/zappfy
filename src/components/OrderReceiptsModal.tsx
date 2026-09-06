@@ -293,7 +293,7 @@ export function OrderReceiptsModal({ order, open, onOpenChange, onReceiptsChange
       <Dialog open={!!previewUrl} onOpenChange={(open) => !open && setPreviewUrl(null)}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95 border-none">
           <div className="relative w-full h-[80vh] flex items-center justify-center">
-            <img 
+            <img loading="lazy" decoding="async"
               src={previewUrl || ""} 
               alt="Preview" 
               className="max-w-full max-h-full object-contain"
