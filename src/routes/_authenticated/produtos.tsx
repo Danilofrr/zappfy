@@ -18,6 +18,7 @@ import { ComprasSection } from "@/components/ComprasSection";
 import { AddStockDialog } from "@/components/AddStockDialog";
 import { ProductHistoryDialog } from "@/components/ProductHistoryDialog";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/produtos")({
@@ -38,6 +39,9 @@ function EstoquePage() {
   const [tab, setTab] = useState<"produtos" | "kits" | "compras">("produtos");
   const [view, setView] = useState<"tabela" | "cards">("tabela");
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query, 350);
+  const PAGE_SIZE = 40;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [cat, setCat] = useState<string>("todas");
 
   const categories = useMemo(() => {
@@ -47,7 +51,7 @@ function EstoquePage() {
   }, [state.products]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = debouncedQuery.trim().toLowerCase();
     return state.products.filter((p) => {
       if (cat !== "todas" && p.category !== cat) return false;
       if (!q) return true;
@@ -57,7 +61,20 @@ function EstoquePage() {
         skuOf(p.id).toLowerCase().includes(q)
       );
     });
-  }, [state.products, query, cat]);
+  }, [state.products, debouncedQuery, cat]);
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [debouncedQuery, cat]);
+  const visibleProducts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMoreProducts = filtered.length > visibleProducts.length;
+  const loadMoreButton = hasMoreProducts ? (
+    <button
+      type="button"
+      onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+      className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
+    >
+      Carregar mais ({filtered.length - visibleProducts.length} restantes)
+    </button>
+  ) : null;
 
   const scope = useMemo(
     () => (cat === "todas" ? state.products : state.products.filter((p) => p.category === cat)),
@@ -286,7 +303,7 @@ function EstoquePage() {
                 {filtered.length === 0 && (
                   <tr><td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>
                 )}
-                {filtered.map((p) => {
+                {visibleProducts.map((p) => {
                   const margin = p.price ? ((p.price - p.cost) / p.price) * 100 : 0;
                   const low = p.stock <= p.minStock;
                   const out = p.stock <= 0;
@@ -294,7 +311,7 @@ function EstoquePage() {
                     <tr key={p.id} className="border-t border-border hover:bg-secondary/30">
                       <td className="px-4 py-3">
                         {p.imageUrl ? (
-                          <img src={p.imageUrl} alt={p.name} className="h-9 w-9 rounded-md object-cover border border-border" />
+                          <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" className="h-9 w-9 rounded-md object-cover border border-border" />
                         ) : (
                           <div className="h-9 w-9 rounded-md bg-secondary/50 grid place-items-center"><ImageIcon className="h-4 w-4 text-muted-foreground" /></div>
                         )}
@@ -330,13 +347,14 @@ function EstoquePage() {
               </tbody>
             </table>
           </div>
+          {loadMoreButton && <div className="border-t border-border p-3 text-center">{loadMoreButton}</div>}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.length === 0 && (
             <div className="col-span-full text-center text-muted-foreground py-10">Nenhum produto encontrado.</div>
           )}
-          {filtered.map((p) => {
+          {visibleProducts.map((p) => {
             const margin = p.price ? ((p.price - p.cost) / p.price) * 100 : 0;
             const profit = p.price - p.cost;
             const low = p.stock <= p.minStock;
@@ -345,7 +363,7 @@ function EstoquePage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     {p.imageUrl ? (
-                      <img src={p.imageUrl} alt={p.name} className="h-14 w-14 rounded-lg object-cover shrink-0 border border-border" />
+                      <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" className="h-14 w-14 rounded-lg object-cover shrink-0 border border-border" />
                     ) : (
                       <div className="h-14 w-14 rounded-lg grid place-items-center bg-secondary/40 border border-border shrink-0">
                         <ImageIcon className="h-5 w-5 text-muted-foreground" />
