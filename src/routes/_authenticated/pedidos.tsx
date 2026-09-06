@@ -483,6 +483,9 @@ function PedidosPage() {
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
   const [search, setSearch] = useState<string>("");
+  const debouncedSearch = useDebouncedValue(search, 350);
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const dateBounds = useMemo(() => {
     const now = new Date();
