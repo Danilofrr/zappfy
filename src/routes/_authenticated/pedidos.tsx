@@ -31,6 +31,7 @@ import zappfyLabelLogo from "@/assets/zappfy-logo-label.png";
 import motoboyLabelIcon from "@/assets/motoboy-icon.png";
 
 import { useEffect, useMemo, useState, Fragment } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "sonner";
 import { getSenderInfo } from "@/lib/sender-info";
 import { DeliveryTrackingPanel } from "@/components/DeliveryTrackingPanel";
@@ -482,6 +483,9 @@ function PedidosPage() {
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
   const [search, setSearch] = useState<string>("");
+  const debouncedSearch = useDebouncedValue(search, 350);
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const dateBounds = useMemo(() => {
     const now = new Date();
@@ -516,7 +520,7 @@ function PedidosPage() {
 
   const filtered = useMemo(
     () => {
-      const q = search.trim().toLowerCase();
+      const q = debouncedSearch.trim().toLowerCase();
       const qDigits = q.replace(/\D/g, "");
       return state.orders.filter((o) => {
         if (filter !== "all" && o.status !== filter) return false;
@@ -542,8 +546,17 @@ function PedidosPage() {
         return true;
       });
     },
-    [state.orders, filter, dateBounds, search],
+    [state.orders, filter, dateBounds, debouncedSearch],
   );
+
+  // Renderiza a lista em blocos para não montar centenas de linhas de uma vez
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [filter, dateBounds, debouncedSearch]);
+
+  const visibleOrders = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = filtered.length > visibleOrders.length;
+
 
   const dateOptions: { key: DateRangeKey; label: string }[] = [
     { key: "all", label: "Todo período" },
@@ -682,7 +695,7 @@ function PedidosPage() {
               {filtered.length === 0 && (
                 <div className="rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</div>
               )}
-              {filtered.map((o) => {
+              {visibleOrders.map((o) => {
                 const profit = getOrderProfit(o);
                 const revenueBase = getOrderNetReceived(o);
                 const margin = revenueBase > 0 ? (profit / revenueBase) * 100 : 0;
@@ -723,6 +736,15 @@ function PedidosPage() {
                   </div>
                 );
               })}
+              {hasMore && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium hover:bg-secondary"
+                >
+                  Carregar mais ({filtered.length - visibleOrders.length} restantes)
+                </button>
+              )}
             </div>
 
             {/* Desktop: tabela */}
@@ -754,7 +776,7 @@ function PedidosPage() {
                   {filtered.length === 0 && (
                     <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
                   )}
-                  {filtered.map((o) => {
+                  {visibleOrders.map((o) => {
                     const profit = getOrderProfit(o);
                     const revenueBase = getOrderNetReceived(o);
                     const margin = revenueBase > 0 ? (profit / revenueBase) * 100 : 0;
@@ -799,6 +821,17 @@ function PedidosPage() {
                   })}
                 </tbody>
               </table>
+              {hasMore && (
+                <div className="border-t border-border p-3 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                    className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
+                  >
+                    Carregar mais ({filtered.length - visibleOrders.length} restantes)
+                  </button>
+                </div>
+              )}
             </div>
           </>
         );

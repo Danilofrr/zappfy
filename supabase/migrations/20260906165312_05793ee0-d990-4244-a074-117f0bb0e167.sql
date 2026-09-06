@@ -1,0 +1,15 @@
+CREATE INDEX IF NOT EXISTS idx_orders_store_date ON public.orders (store_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_store_status ON public.orders (store_id, status);
+CREATE INDEX IF NOT EXISTS idx_products_store_created ON public.products (store_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_expenses_store_date ON public.expenses (store_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_ads_user_date ON public.ads (user_id, date);
+CREATE INDEX IF NOT EXISTS idx_stock_movements_store_occurred ON public.stock_movements (store_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_store_date ON public.purchase_orders (store_id, order_date DESC);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_product ON public.purchase_orders (product_id);
+CREATE INDEX IF NOT EXISTS idx_returns_user_date ON public.returns (user_id, return_date DESC);
+CREATE INDEX IF NOT EXISTS idx_order_receipts_order ON public.order_receipts (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_receipts_store ON public.order_receipts (store_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_tracking_store_status ON public.delivery_tracking (store_id, status);
+CREATE INDEX IF NOT EXISTS idx_suppliers_user ON public.suppliers (user_id);
+CREATE INDEX IF NOT EXISTS idx_couriers_store_active ON public.couriers (store_id, active);
+CREATE INDEX IF NOT EXISTS idx_access_logs_created ON public.access_logs (created_at DESC);

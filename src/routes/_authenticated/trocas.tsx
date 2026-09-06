@@ -76,7 +76,12 @@ function TrocasPage() {
     [rows],
   );
 
-  const filtered = rows.filter((r) => r.type === tab);
+  const filtered = useMemo(() => rows.filter((r) => r.type === tab), [rows, tab]);
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [tab]);
+  const visibleRows = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMoreRows = filtered.length > visibleRows.length;
 
   async function restockIfNeeded(row: ReturnRow) {
     if (row.status !== "devolvido_estoque") return row;
@@ -174,7 +179,7 @@ function TrocasPage() {
               {filtered.length === 0 && (
                 <tr><td colSpan={tab === "cliente" ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">Nenhum registro ainda.</td></tr>
               )}
-              {filtered.map((r) => {
+              {visibleRows.map((r) => {
                 const st = statusList.find((s) => s.value === r.status)!;
                 return (
                   <tr key={r.id} className="border-t border-border hover:bg-secondary/30">
@@ -204,6 +209,21 @@ function TrocasPage() {
                 );
               })}
             </tbody>
+          </table>
+          {hasMoreRows && (
+            <div className="border-t border-border p-3 text-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
+              >
+                Carregar mais ({filtered.length - visibleRows.length} restantes)
+              </button>
+            </div>
+          )}
+          <table className="hidden">
+            <tbody>
+
           </table>
         </div>
       </div>
