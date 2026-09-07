@@ -823,6 +823,8 @@ function Dashboard() {
               <img
                 src={champion.imageUrl}
                 alt={champion.name}
+                loading="lazy"
+                decoding="async"
                 className="h-20 w-20 lg:h-24 lg:w-24 rounded-xl object-cover border border-border shrink-0"
               />
             ) : (

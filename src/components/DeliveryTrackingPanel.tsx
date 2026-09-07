@@ -25,8 +25,31 @@ import {
   whatsappLink,
   type DeliveryStatus,
 } from "@/lib/tracking";
-import { TrackingMap } from "./TrackingMap";
-import { DestinationPicker } from "./DestinationPicker";
+import { lazy, Suspense } from "react";
+import { ClientOnly } from "@tanstack/react-router";
+
+// Leaflet só existe no navegador: carrega os mapas após a hidratação.
+const TrackingMapLazy = lazy(() => import("./TrackingMap").then((m) => ({ default: m.TrackingMap })));
+function TrackingMap(props: React.ComponentProps<typeof TrackingMapLazy>) {
+  return (
+    <ClientOnly fallback={<div style={{ height: props.height ?? 160 }} />}>
+      <Suspense fallback={<div style={{ height: props.height ?? 160 }} />}>
+        <TrackingMapLazy {...props} />
+      </Suspense>
+    </ClientOnly>
+  );
+}
+const DestinationPickerLazy = lazy(() => import("./DestinationPicker").then((m) => ({ default: m.DestinationPicker })));
+function DestinationPicker(props: React.ComponentProps<typeof DestinationPickerLazy>) {
+  if (!props.open) return null;
+  return (
+    <ClientOnly fallback={null}>
+      <Suspense fallback={null}>
+        <DestinationPickerLazy {...props} />
+      </Suspense>
+    </ClientOnly>
+  );
+}
 import { useStore } from "@/lib/store";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
