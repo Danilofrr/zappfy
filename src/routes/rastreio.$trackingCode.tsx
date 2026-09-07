@@ -1,7 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrackingMap } from "@/components/TrackingMap";
+import { lazy, Suspense } from "react";
+import { ClientOnly } from "@tanstack/react-router";
+
+// Leaflet só existe no navegador: carrega o mapa após a hidratação.
+const TrackingMapLazy = lazy(() => import("@/components/TrackingMap").then((m) => ({ default: m.TrackingMap })));
+function TrackingMap(props: React.ComponentProps<typeof TrackingMapLazy>) {
+  return (
+    <ClientOnly fallback={<div style={{ height: props.height ?? 320 }} />}>
+      <Suspense fallback={<div style={{ height: props.height ?? 320 }} />}>
+        <TrackingMapLazy {...props} />
+      </Suspense>
+    </ClientOnly>
+  );
+}
 import {
   STATUS_BADGE_DEFAULTS,
   STATUS_INFO,
