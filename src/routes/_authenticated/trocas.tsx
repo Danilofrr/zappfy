@@ -221,10 +221,6 @@ function TrocasPage() {
               </button>
             </div>
           )}
-          <table className="hidden">
-            <tbody>
-
-          </table>
         </div>
       </div>
 
