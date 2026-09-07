@@ -1108,6 +1108,15 @@ export function monthRange(date = new Date()) {
 export function useFinance(range?: { start: Date; end: Date }) {
   const { state } = useStore();
   const { start, end } = range ?? monthRange();
+  // Memoiza o cálculo: sem isso ele reprocessa todos os pedidos/despesas
+  // em cada render de qualquer componente que use este hook.
+  return useMemo(
+    () => computeFinance(state, start, end),
+    [state, start.getTime(), end.getTime()],
+  );
+}
+
+function computeFinance(state: State, start: Date, end: Date) {
   const motoboyFee = Number(state.settings.motoboyFee ?? 0);
 
   const monthOrders = state.orders.filter(
