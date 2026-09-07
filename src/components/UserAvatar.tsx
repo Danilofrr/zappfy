@@ -30,6 +30,8 @@ export function UserAvatar({
   if (url) {
     return (
       <img
+        loading="lazy"
+        decoding="async"
         src={url}
         alt={name ?? "Avatar"}
         style={dim}
