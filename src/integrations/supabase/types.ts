@@ -2218,6 +2218,26 @@ export type Database = {
         }
         Returns: string
       }
+      submit_public_order_multi: {
+        Args: {
+          _address: string
+          _cep: string
+          _city: string
+          _cpf?: string
+          _customer: string
+          _district: string
+          _email?: string
+          _items: Json
+          _notes?: string
+          _payment: string
+          _phone: string
+          _reference: string
+          _shipping_value: number
+          _slug: string
+          _total: number
+        }
+        Returns: string
+      }
       update_courier: {
         Args: {
           _active: boolean
