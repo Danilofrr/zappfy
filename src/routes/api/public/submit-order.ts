@@ -92,7 +92,6 @@ export const Route = createFileRoute("/api/public/submit-order")({
         }
 
         const { slug, order } = parsed.data;
-        const item = order.items[0];
 
         const SUPABASE_URL = process.env.SUPABASE_URL;
         const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
