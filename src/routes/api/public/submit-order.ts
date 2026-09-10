@@ -118,18 +118,20 @@ export const Route = createFileRoute("/api/public/submit-order")({
           _reference: order.reference ?? "",
           _district: order.district ?? "",
           _city: order.city ?? "",
-          _product_id: item.productId,
-          _quantity: Number(item.qty),
-          _unit_price: Number(item.price),
+          _items: order.items.map((it) => ({
+            productId: it.productId,
+            qty: Number(it.qty),
+            price: Number(it.price),
+          })),
           _shipping_value: Number(order.shipping ?? 0),
           _total: Number(order.total ?? 0),
           _payment: order.payment,
           _notes: buildOrderNotes(order),
         };
 
-        console.log("[submit-order] rpc call", { slug, productId: item.productId, qty: item.qty });
+        console.log("[submit-order] rpc call", { slug, itemCount: order.items.length });
 
-        const { data, error } = await (supabase as any).rpc("submit_public_order", rpcArgs);
+        const { data, error } = await (supabase as any).rpc("submit_public_order_multi", rpcArgs);
 
         if (error) {
           console.error("[submit-order] supabase rpc error", { code: (error as any)?.code, message: error.message });
