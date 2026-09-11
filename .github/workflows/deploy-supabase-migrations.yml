@@ -75,6 +75,7 @@ jobs:
 
           awk -F '|' '
             function trim(value) {
+              gsub(/`/, "", value)
               gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
               return value
             }
@@ -179,8 +180,8 @@ jobs:
           set -euo pipefail
           supabase migration list --linked | tee before-reconciliation.txt
           while IFS= read -r version; do
-            local_version="$(awk -F '|' -v wanted="$version" '{gsub(/[[:space:]]/, "", $1); if ($1 == wanted) print $1}' before-reconciliation.txt)"
-            remote_version="$(awk -F '|' -v wanted="$version" '{gsub(/[[:space:]]/, "", $2); if ($2 == wanted) print $2}' before-reconciliation.txt)"
+            local_version="$(awk -F '|' -v wanted="$version" '{gsub(/`/, "", $1); gsub(/[[:space:]]/, "", $1); if ($1 == wanted) print $1}' before-reconciliation.txt)"
+            remote_version="$(awk -F '|' -v wanted="$version" '{gsub(/`/, "", $2); gsub(/[[:space:]]/, "", $2); if ($2 == wanted) print $2}' before-reconciliation.txt)"
             if [[ -n "$local_version" && -z "$remote_version" ]]; then
               supabase migration repair --linked --status applied "$version"
             elif [[ -z "$local_version" && -n "$remote_version" ]]; then
