@@ -1,0 +1,199 @@
+name: Apply courier inventory auto consumption
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/apply-courier-inventory-auto-consume.yml"
+      - "supabase/migrations/20260911235500_auto_consume_courier_inventory.sql"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: courier-inventory-auto-consume-production
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Apply and verify automatic courier inventory consumption
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      MIGRATION_VERSION: "20260911235500"
+      MIGRATION_FILE: "supabase/migrations/20260911235500_auto_consume_courier_inventory.sql"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets and migration file
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_ACCESS_TOKEN:?Missing SUPABASE_ACCESS_TOKEN secret}"
+          : "${SUPABASE_DB_PASSWORD:?Missing SUPABASE_DB_PASSWORD secret}"
+          : "${SUPABASE_PROJECT_ID:?Missing SUPABASE_PROJECT_ID secret}"
+          test -s "$MIGRATION_FILE"
+
+      - name: Check whether automation already exists
+        id: precheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          project = os.environ["SUPABASE_PROJECT_ID"]
+          token = os.environ["SUPABASE_ACCESS_TOKEN"]
+          query = """
+          select
+            to_regprocedure('public.consume_courier_inventory_for_order(uuid,uuid,uuid,uuid,text)') is not null as consume_function,
+            to_regprocedure('public.sync_courier_inventory_on_delivery_status()') is not null as sync_function,
+            exists (
+              select 1
+              from pg_trigger
+              where tgname = 'trg_sync_courier_inventory_on_delivery_status'
+                and not tgisinternal
+            ) as sync_trigger,
+            exists (
+              select 1
+              from information_schema.columns
+              where table_schema='public'
+                and table_name='courier_inventory_movements'
+                and column_name='order_id'
+            ) as order_id_column,
+            exists (
+              select 1
+              from information_schema.columns
+              where table_schema='public'
+                and table_name='courier_inventory_movements'
+                and column_name='delivery_tracking_id'
+            ) as tracking_id_column;
+          """
+          req = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{project}/database/query",
+              data=json.dumps({"query": query, "read_only": True}).encode(),
+              headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req, timeout=60) as response:
+              payload = json.loads(response.read().decode())
+          rows = payload if isinstance(payload, list) else payload.get("result", payload)
+          row = rows[0] if isinstance(rows, list) and rows else rows
+          required = ["consume_function", "sync_function", "sync_trigger", "order_id_column", "tracking_id_column"]
+          ready = isinstance(row, dict) and all(bool(row.get(k)) for k in required)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"already_ready={'true' if ready else 'false'}\n")
+          print("Automatic courier inventory consumption already ready:", ready)
+          PY
+
+      - name: Apply only the automatic consumption migration
+        if: steps.precheck.outputs.already_ready != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib, urllib.request, urllib.error
+
+          project = os.environ["SUPABASE_PROJECT_ID"]
+          token = os.environ["SUPABASE_ACCESS_TOKEN"]
+          sql = pathlib.Path(os.environ["MIGRATION_FILE"]).read_text()
+          req = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{project}/database/query",
+              data=json.dumps({"query": sql, "read_only": False}).encode(),
+              headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+              method="POST",
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=120) as response:
+                  response.read()
+          except urllib.error.HTTPError as exc:
+              body = exc.read().decode(errors="replace")
+              raise SystemExit(f"Supabase Management API returned HTTP {exc.code}: {body[:4000]}")
+          print("Automatic courier inventory migration applied successfully.")
+          PY
+
+      - name: Verify automation objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          project = os.environ["SUPABASE_PROJECT_ID"]
+          token = os.environ["SUPABASE_ACCESS_TOKEN"]
+          query = """
+          select
+            to_regprocedure('public.consume_courier_inventory_for_order(uuid,uuid,uuid,uuid,text)') is not null as consume_function,
+            to_regprocedure('public.sync_courier_inventory_on_delivery_status()') is not null as sync_function,
+            exists (
+              select 1 from pg_trigger
+              where tgname='trg_sync_courier_inventory_on_delivery_status'
+                and not tgisinternal
+            ) as sync_trigger;
+          """
+          req = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{project}/database/query",
+              data=json.dumps({"query": query, "read_only": True}).encode(),
+              headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req, timeout=60) as response:
+              payload = json.loads(response.read().decode())
+          rows = payload if isinstance(payload, list) else payload.get("result", payload)
+          row = rows[0] if isinstance(rows, list) and rows else rows
+          required = ["consume_function", "sync_function", "sync_trigger"]
+          missing = [k for k in required if not (isinstance(row, dict) and row.get(k))]
+          if missing:
+              raise SystemExit("Automatic inventory verification failed. Missing: " + ", ".join(missing))
+          print("Verified automatic courier inventory consumption.")
+          PY
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Register migration history safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$SUPABASE_PROJECT_ID"
+          supabase migration list --linked | tee migration-history.txt
+
+          remote_version="$(awk -F '|' -v wanted="$MIGRATION_VERSION" '
+            function clean(v) { gsub(/`/, "", v); gsub(/[[:space:]]/, "", v); return v }
+            { local=clean($1); remote=clean($2); if (local==wanted) print remote }
+          ' migration-history.txt | tail -n1)"
+
+          if [[ "$remote_version" != "$MIGRATION_VERSION" ]]; then
+            supabase migration repair --linked --status applied "$MIGRATION_VERSION"
+          else
+            echo "Migration $MIGRATION_VERSION is already registered remotely."
+          fi
+
+      - name: Reload PostgREST schema cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+          project = os.environ["SUPABASE_PROJECT_ID"]
+          token = os.environ["SUPABASE_ACCESS_TOKEN"]
+          req = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{project}/database/query",
+              data=json.dumps({"query": "NOTIFY pgrst, 'reload schema';", "read_only": False}).encode(),
+              headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req, timeout=60) as response:
+              response.read()
+          print("PostgREST schema cache reload requested.")
+          PY
