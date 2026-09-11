@@ -2305,6 +2305,9 @@ export type Database = {
         | "chegando"
         | "entregue"
         | "cancelado"
+        | "nao_entregue"
+        | "retornando"
+        | "devolvido"
       payment_status: "pago" | "pendente" | "vencido" | "cancelado"
       subscription_status:
         | "ativo"
@@ -2447,6 +2450,9 @@ export const Constants = {
         "chegando",
         "entregue",
         "cancelado",
+        "nao_entregue",
+        "retornando",
+        "devolvido",
       ],
       payment_status: ["pago", "pendente", "vencido", "cancelado"],
       subscription_status: [
