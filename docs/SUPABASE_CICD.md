@@ -69,3 +69,12 @@ Antes de incorporar o PR que habilita o workflow:
 Se o histórico local e remoto divergir, o deploy deve permanecer com falha. Corrija
 explicitamente o histórico com o procedimento de reparo da Supabase CLI após
 validar o estado real do banco; não use `db reset` em produção.
+
+## Reconciliação excepcional do histórico legado
+
+O procedimento único, com diagnóstico somente leitura, prova de equivalência,
+dupla confirmação e artefatos de auditoria está documentado em
+[`SUPABASE_MIGRATION_RECONCILIATION.md`](SUPABASE_MIGRATION_RECONCILIATION.md).
+Não tente contornar o erro com `--include-all`: migrations legadas têm DML e não
+podem ser executadas novamente. Depois da reconciliação, este workflow normal
+continua sendo o único responsável por executar `supabase db push --linked`.

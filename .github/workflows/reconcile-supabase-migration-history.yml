@@ -1,0 +1,174 @@
+name: Reconcile Supabase migration history
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "diagnose is read-only; reconcile changes migration history only"
+        required: true
+        type: choice
+        default: diagnose
+        options:
+          - diagnose
+          - reconcile
+      confirmation:
+        description: "For reconcile, type RECONCILE_HISTORY_ONLY"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-production-migrations
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Diagnose or reconcile production migration history
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      PENDING_VERSION: "20260911120000"
+
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate request and immutable baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_ACCESS_TOKEN:?Missing SUPABASE_ACCESS_TOKEN secret}"
+          : "${SUPABASE_DB_PASSWORD:?Missing SUPABASE_DB_PASSWORD secret}"
+          : "${SUPABASE_PROJECT_ID:?Missing SUPABASE_PROJECT_ID secret}"
+          test -f "supabase/migrations/${PENDING_VERSION}_delivery_load_control.sql"
+          test "$(find supabase/migrations -maxdepth 1 -name '*.sql' | wc -l)" -eq 93
+          sha256sum --check supabase/legacy-migrations.sha256
+          if [[ "${{ inputs.mode }}" == "reconcile" && "${{ inputs.confirmation }}" != "RECONCILE_HISTORY_ONLY" ]]; then
+            echo "Refusing reconciliation: exact confirmation was not provided." >&2
+            exit 1
+          fi
+
+      - name: Link production project
+        shell: bash
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Print safety plan before any history change
+        shell: bash
+        run: |
+          cat <<'PLAN'
+          SAFETY PLAN
+          1. Record local hashes and the local/remote migration table.
+          2. Temporarily exclude the pending delivery migration on the runner only.
+          3. Rebuild the legacy schema in a shadow database and compare it to production.
+          4. Stop unless the auth, extensions, public, and storage schemas have zero differences.
+          5. In diagnose mode, stop without changing anything.
+          6. In reconcile mode only, mark remote-only versions reverted and equivalent
+             legacy local-only versions applied in migration HISTORY only.
+          7. Verify that 20260911120000 is the sole pending version and run db push
+             with --dry-run. This workflow never runs db push without --dry-run.
+
+          No db reset, SQL migration replay, table/data deletion, or database recreation
+          is performed by this workflow. A failed equivalence check performs no repair.
+          PLAN
+
+      - name: Capture migration status and remote schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reconciliation-report
+          sha256sum supabase/migrations/*.sql > reconciliation-report/local-migrations.sha256
+          supabase migration list --linked | tee reconciliation-report/migration-list-before.txt
+          python3 scripts/supabase-migration-status.py reconciliation-report/migration-list-before.txt local-only > reconciliation-report/local-only-before.txt
+          python3 scripts/supabase-migration-status.py reconciliation-report/migration-list-before.txt remote-only > reconciliation-report/remote-only-before.txt
+          supabase db dump --linked --schema auth,extensions,public,storage --file reconciliation-report/remote-schema.sql
+
+      - name: Prove legacy schema equivalence in a shadow database
+        id: equivalence
+        shell: bash
+        run: |
+          set -euo pipefail
+          pending="supabase/migrations/${PENDING_VERSION}_delivery_load_control.sql"
+          held="${RUNNER_TEMP}/$(basename "$pending")"
+          mv "$pending" "$held"
+          restore_pending() { mv "$held" "$pending" 2>/dev/null || true; }
+          trap restore_pending EXIT
+
+          supabase db diff --linked --schema auth,extensions,public,storage --file reconciliation-report/legacy-schema-diff.sql
+          if [[ -s reconciliation-report/legacy-schema-diff.sql ]]; then
+            echo "Legacy migrations do not reproduce the production schema; no history may be changed." >&2
+            cat reconciliation-report/legacy-schema-diff.sql
+            exit 1
+          fi
+          echo "The legacy migration chain and production schemas are equivalent."
+
+      - name: Stop after read-only diagnosis
+        if: inputs.mode == 'diagnose'
+        shell: bash
+        run: |
+          echo "Diagnosis complete. No migration history or production schema was changed."
+          echo "Review the reconciliation-report artifact before authorizing reconcile mode."
+
+      - name: Reconcile migration history only
+        if: inputs.mode == 'reconcile'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t remote_only < reconciliation-report/remote-only-before.txt
+          mapfile -t local_only < reconciliation-report/local-only-before.txt
+          legacy_local_only=()
+          for version in "${local_only[@]}"; do
+            if [[ "$version" == "$PENDING_VERSION" ]]; then
+              continue
+            fi
+            [[ "$version" < "$PENDING_VERSION" ]] || {
+              echo "Unexpected pending version $version; refusing repair." >&2
+              exit 1
+            }
+            legacy_local_only+=("$version")
+          done
+
+          echo "History-only repair plan:"
+          printf '  remote-only -> reverted: %s\n' "${remote_only[*]:-(none)}"
+          printf '  legacy local-only -> applied: %s\n' "${legacy_local_only[*]:-(none)}"
+          echo "  remains pending: $PENDING_VERSION"
+
+          if ((${#remote_only[@]})); then
+            supabase migration repair --linked --status reverted "${remote_only[@]}"
+          fi
+          if ((${#legacy_local_only[@]})); then
+            supabase migration repair --linked --status applied "${legacy_local_only[@]}"
+          fi
+
+      - name: Verify reconciliation without applying SQL
+        if: inputs.mode == 'reconcile'
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration list --linked | tee reconciliation-report/migration-list-after.txt
+          python3 scripts/supabase-migration-status.py reconciliation-report/migration-list-after.txt remote-only > reconciliation-report/remote-only-after.txt
+          python3 scripts/supabase-migration-status.py reconciliation-report/migration-list-after.txt local-only > reconciliation-report/local-only-after.txt
+          test ! -s reconciliation-report/remote-only-after.txt
+          test "$(cat reconciliation-report/local-only-after.txt)" = "$PENDING_VERSION"
+          supabase db push --linked --dry-run | tee reconciliation-report/db-push-dry-run.txt
+          grep -q "$PENDING_VERSION" reconciliation-report/db-push-dry-run.txt
+          echo "History reconciled. The delivery migration is still pending."
+
+      - name: Upload reconciliation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-reconciliation-${{ inputs.mode }}-${{ github.run_id }}
+          path: reconciliation-report/
+          if-no-files-found: warn
+          retention-days: 30

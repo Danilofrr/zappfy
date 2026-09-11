@@ -52,6 +52,12 @@ jobs:
         shell: bash
         run: supabase migration list --linked
 
+      - name: Refuse unresolved migration-history divergence
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db push --linked --dry-run
+
       - name: Apply pending migrations
         shell: bash
         run: supabase db push --linked
