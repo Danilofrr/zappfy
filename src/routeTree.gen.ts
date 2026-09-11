@@ -9,67 +9,61 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as CheckoutRouteImport } from './routes/checkout'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as EntregasZappfyIndexRouteImport } from './routes/entregas-zappfy.index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as TrialCodeRouteImport } from './routes/trial.$code'
-import { Route as RastreioTrackingCodeRouteImport } from './routes/rastreio.$trackingCode'
-import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
-import { Route as EntregasZappfyStoreSlugRouteImport } from './routes/entregas-zappfy.$storeSlug'
-import { Route as EntregaCourierTokenRouteImport } from './routes/entrega.$courierToken'
-import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
-import { Route as AtivarContaTokenRouteImport } from './routes/ativar-conta.$token'
-import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
-import { Route as AuthenticatedTaxasRouteImport } from './routes/_authenticated/taxas'
-import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
-import { Route as AuthenticatedRastreamentoRouteImport } from './routes/_authenticated/rastreamento'
-import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
-import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
-import { Route as AuthenticatedPorProdutoRouteImport } from './routes/_authenticated/por-produto'
-import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
-import { Route as AuthenticatedPersonalizarRastreamentoRouteImport } from './routes/_authenticated/personalizar-rastreamento'
-import { Route as AuthenticatedPersonalizarCheckoutRouteImport } from './routes/_authenticated/personalizar-checkout'
-import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
-import { Route as AuthenticatedMotoboysRouteImport } from './routes/_authenticated/motoboys'
-import { Route as AuthenticatedMinhaAssinaturaRouteImport } from './routes/_authenticated/minha-assinatura'
-import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
-import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
-import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
-import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
-import { Route as AuthenticatedDreRouteImport } from './routes/_authenticated/dre'
-import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
-import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticated/compras'
-import { Route as AuthenticatedAssinaturaBloqueadaRouteImport } from './routes/_authenticated/assinatura-bloqueada'
-import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as EntregasZappfyStoreSlugIndexRouteImport } from './routes/entregas-zappfy.$storeSlug.index'
+import { Route as AuthenticatedAdsRouteImport } from './routes/_authenticated/ads'
+import { Route as AuthenticatedAssinaturaBloqueadaRouteImport } from './routes/_authenticated/assinatura-bloqueada'
+import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticated/compras'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedDreRouteImport } from './routes/_authenticated/dre'
+import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
+import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
+import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
+import { Route as AuthenticatedMinhaAssinaturaRouteImport } from './routes/_authenticated/minha-assinatura'
+import { Route as AuthenticatedMotoboysRouteImport } from './routes/_authenticated/motoboys'
+import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
+import { Route as AuthenticatedPersonalizarCheckoutRouteImport } from './routes/_authenticated/personalizar-checkout'
+import { Route as AuthenticatedPersonalizarRastreamentoRouteImport } from './routes/_authenticated/personalizar-rastreamento'
+import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
+import { Route as AuthenticatedPorProdutoRouteImport } from './routes/_authenticated/por-produto'
+import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
+import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
+import { Route as AuthenticatedRastreamentoRouteImport } from './routes/_authenticated/rastreamento'
+import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
+import { Route as AuthenticatedTaxasRouteImport } from './routes/_authenticated/taxas'
+import { Route as AuthenticatedTrocasRouteImport } from './routes/_authenticated/trocas'
+import { Route as AtivarContaTokenRouteImport } from './routes/ativar-conta.$token'
+import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
+import { Route as EntregaCourierTokenRouteImport } from './routes/entrega.$courierToken'
+import { Route as EntregasZappfyIndexRouteImport } from './routes/entregas-zappfy.index'
+import { Route as EntregasZappfyStoreSlugRouteImport } from './routes/entregas-zappfy.$storeSlug'
+import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
+import { Route as RastreioTrackingCodeRouteImport } from './routes/rastreio.$trackingCode'
+import { Route as TrialCodeRouteImport } from './routes/trial.$code'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as EntregasZappfyStoreSlugLoginRouteImport } from './routes/entregas-zappfy.$storeSlug.login'
-import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
-import { Route as ApiPublicKiwifyWebhookRouteImport } from './routes/api/public/kiwify-webhook'
-import { Route as AuthenticatedAdminTrialsRouteImport } from './routes/_authenticated/admin.trials'
-import { Route as AuthenticatedAdminRelatoriosRouteImport } from './routes/_authenticated/admin.relatorios'
-import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
-import { Route as AuthenticatedAdminPagamentosRouteImport } from './routes/_authenticated/admin.pagamentos'
-import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
-import { Route as AuthenticatedAdminEntregasZappfyRouteImport } from './routes/_authenticated/admin.entregas-zappfy'
-import { Route as AuthenticatedAdminCuponsRouteImport } from './routes/_authenticated/admin.cupons'
-import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
-import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
 import { Route as AuthenticatedAdminAssinaturasRouteImport } from './routes/_authenticated/admin.assinaturas'
+import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
+import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
+import { Route as AuthenticatedAdminCuponsRouteImport } from './routes/_authenticated/admin.cupons'
+import { Route as AuthenticatedAdminEntregasZappfyRouteImport } from './routes/_authenticated/admin.entregas-zappfy'
+import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
+import { Route as AuthenticatedAdminPagamentosRouteImport } from './routes/_authenticated/admin.pagamentos'
+import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
+import { Route as AuthenticatedAdminRelatoriosRouteImport } from './routes/_authenticated/admin.relatorios'
+import { Route as AuthenticatedAdminTrialsRouteImport } from './routes/_authenticated/admin.trials'
+import { Route as ApiPublicKiwifyWebhookRouteImport } from './routes/api/public/kiwify-webhook'
+import { Route as ApiPublicSubmitOrderRouteImport } from './routes/api/public/submit-order'
+import { Route as EntregasZappfyStoreSlugIndexRouteImport } from './routes/entregas-zappfy.$storeSlug.index'
+import { Route as EntregasZappfyStoreSlugLoginRouteImport } from './routes/entregas-zappfy.$storeSlug.login'
 import { Route as ApiPublicHooksSyncFacebookAdsRouteImport } from './routes/api/public/hooks/sync-facebook-ads'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -77,13 +71,14 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EntregasZappfyIndexRoute = EntregasZappfyIndexRouteImport.update({
-  id: '/entregas-zappfy/',
-  path: '/entregas-zappfy/',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -91,147 +86,14 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const TrialCodeRoute = TrialCodeRouteImport.update({
-  id: '/trial/$code',
-  path: '/trial/$code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RastreioTrackingCodeRoute = RastreioTrackingCodeRouteImport.update({
-  id: '/rastreio/$trackingCode',
-  path: '/rastreio/$trackingCode',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LojaSlugRoute = LojaSlugRouteImport.update({
-  id: '/loja/$slug',
-  path: '/loja/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EntregasZappfyStoreSlugRoute = EntregasZappfyStoreSlugRouteImport.update({
-  id: '/entregas-zappfy/$storeSlug',
-  path: '/entregas-zappfy/$storeSlug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EntregaCourierTokenRoute = EntregaCourierTokenRouteImport.update({
-  id: '/entrega/$courierToken',
-  path: '/entrega/$courierToken',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutSlugRoute = CheckoutSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => CheckoutRoute,
-} as any)
-const AtivarContaTokenRoute = AtivarContaTokenRouteImport.update({
-  id: '/ativar-conta/$token',
-  path: '/ativar-conta/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedTrocasRoute = AuthenticatedTrocasRouteImport.update({
-  id: '/trocas',
-  path: '/trocas',
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedTaxasRoute = AuthenticatedTaxasRouteImport.update({
-  id: '/taxas',
-  path: '/taxas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
-  id: '/relatorios',
-  path: '/relatorios',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedRastreamentoRoute =
-  AuthenticatedRastreamentoRouteImport.update({
-    id: '/rastreamento',
-    path: '/rastreamento',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
-  id: '/produtos',
-  path: '/produtos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPrecificacaoRoute =
-  AuthenticatedPrecificacaoRouteImport.update({
-    id: '/precificacao',
-    path: '/precificacao',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedPorProdutoRoute = AuthenticatedPorProdutoRouteImport.update({
-  id: '/por-produto',
-  path: '/por-produto',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
-  id: '/planos',
-  path: '/planos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPersonalizarRastreamentoRoute =
-  AuthenticatedPersonalizarRastreamentoRouteImport.update({
-    id: '/personalizar-rastreamento',
-    path: '/personalizar-rastreamento',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedPersonalizarCheckoutRoute =
-  AuthenticatedPersonalizarCheckoutRouteImport.update({
-    id: '/personalizar-checkout',
-    path: '/personalizar-checkout',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
-  id: '/pedidos',
-  path: '/pedidos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedMotoboysRoute = AuthenticatedMotoboysRouteImport.update({
-  id: '/motoboys',
-  path: '/motoboys',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedMinhaAssinaturaRoute =
-  AuthenticatedMinhaAssinaturaRouteImport.update({
-    id: '/minha-assinatura',
-    path: '/minha-assinatura',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
-  id: '/metas',
-  path: '/metas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedIntegracoesRoute =
-  AuthenticatedIntegracoesRouteImport.update({
-    id: '/integracoes',
-    path: '/integracoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedIndicadoresRoute =
-  AuthenticatedIndicadoresRouteImport.update({
-    id: '/indicadores',
-    path: '/indicadores',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
-  id: '/financeiro',
-  path: '/financeiro',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDreRoute = AuthenticatedDreRouteImport.update({
-  id: '/dre',
-  path: '/dre',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedConfiguracoesRoute =
-  AuthenticatedConfiguracoesRouteImport.update({
-    id: '/configuracoes',
-    path: '/configuracoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedComprasRoute = AuthenticatedComprasRouteImport.update({
-  id: '/compras',
-  path: '/compras',
+const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAssinaturaBloqueadaRoute =
@@ -240,88 +102,163 @@ const AuthenticatedAssinaturaBloqueadaRoute =
     path: '/assinatura-bloqueada',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdsRoute = AuthenticatedAdsRouteImport.update({
-  id: '/ads',
-  path: '/ads',
+const AuthenticatedComprasRoute = AuthenticatedComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const EntregasZappfyStoreSlugIndexRoute =
-  EntregasZappfyStoreSlugIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => EntregasZappfyStoreSlugRoute,
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDreRoute = AuthenticatedDreRouteImport.update({
+  id: '/dre',
+  path: '/dre',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedIndicadoresRoute =
+  AuthenticatedIndicadoresRouteImport.update({
+    id: '/indicadores',
+    path: '/indicadores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIntegracoesRoute =
+  AuthenticatedIntegracoesRouteImport.update({
+    id: '/integracoes',
+    path: '/integracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
+  id: '/metas',
+  path: '/metas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMinhaAssinaturaRoute =
+  AuthenticatedMinhaAssinaturaRouteImport.update({
+    id: '/minha-assinatura',
+    path: '/minha-assinatura',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMotoboysRoute = AuthenticatedMotoboysRouteImport.update({
+  id: '/motoboys',
+  path: '/motoboys',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPersonalizarCheckoutRoute =
+  AuthenticatedPersonalizarCheckoutRouteImport.update({
+    id: '/personalizar-checkout',
+    path: '/personalizar-checkout',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPersonalizarRastreamentoRoute =
+  AuthenticatedPersonalizarRastreamentoRouteImport.update({
+    id: '/personalizar-rastreamento',
+    path: '/personalizar-rastreamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPorProdutoRoute = AuthenticatedPorProdutoRouteImport.update({
+  id: '/por-produto',
+  path: '/por-produto',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPrecificacaoRoute =
+  AuthenticatedPrecificacaoRouteImport.update({
+    id: '/precificacao',
+    path: '/precificacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRastreamentoRoute =
+  AuthenticatedRastreamentoRouteImport.update({
+    id: '/rastreamento',
+    path: '/rastreamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTaxasRoute = AuthenticatedTaxasRouteImport.update({
+  id: '/taxas',
+  path: '/taxas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTrocasRoute = AuthenticatedTrocasRouteImport.update({
+  id: '/trocas',
+  path: '/trocas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AtivarContaTokenRoute = AtivarContaTokenRouteImport.update({
+  id: '/ativar-conta/$token',
+  path: '/ativar-conta/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutSlugRoute = CheckoutSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CheckoutRoute,
+} as any)
+const EntregaCourierTokenRoute = EntregaCourierTokenRouteImport.update({
+  id: '/entrega/$courierToken',
+  path: '/entrega/$courierToken',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregasZappfyIndexRoute = EntregasZappfyIndexRouteImport.update({
+  id: '/entregas-zappfy/',
+  path: '/entregas-zappfy/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregasZappfyStoreSlugRoute = EntregasZappfyStoreSlugRouteImport.update({
+  id: '/entregas-zappfy/$storeSlug',
+  path: '/entregas-zappfy/$storeSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LojaSlugRoute = LojaSlugRouteImport.update({
+  id: '/loja/$slug',
+  path: '/loja/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RastreioTrackingCodeRoute = RastreioTrackingCodeRouteImport.update({
+  id: '/rastreio/$trackingCode',
+  path: '/rastreio/$trackingCode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrialCodeRoute = TrialCodeRouteImport.update({
+  id: '/trial/$code',
+  path: '/trial/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const EntregasZappfyStoreSlugLoginRoute =
-  EntregasZappfyStoreSlugLoginRouteImport.update({
-    id: '/login',
-    path: '/login',
-    getParentRoute: () => EntregasZappfyStoreSlugRoute,
-  } as any)
-const ApiPublicSubmitOrderRoute = ApiPublicSubmitOrderRouteImport.update({
-  id: '/api/public/submit-order',
-  path: '/api/public/submit-order',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicKiwifyWebhookRoute = ApiPublicKiwifyWebhookRouteImport.update({
-  id: '/api/public/kiwify-webhook',
-  path: '/api/public/kiwify-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedAdminTrialsRoute =
-  AuthenticatedAdminTrialsRouteImport.update({
-    id: '/trials',
-    path: '/trials',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminRelatoriosRoute =
-  AuthenticatedAdminRelatoriosRouteImport.update({
-    id: '/relatorios',
-    path: '/relatorios',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminPlanosRoute =
-  AuthenticatedAdminPlanosRouteImport.update({
-    id: '/planos',
-    path: '/planos',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminPagamentosRoute =
-  AuthenticatedAdminPagamentosRouteImport.update({
-    id: '/pagamentos',
-    path: '/pagamentos',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
-  id: '/logs',
-  path: '/logs',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminEntregasZappfyRoute =
-  AuthenticatedAdminEntregasZappfyRouteImport.update({
-    id: '/entregas-zappfy',
-    path: '/entregas-zappfy',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminCuponsRoute =
-  AuthenticatedAdminCuponsRouteImport.update({
-    id: '/cupons',
-    path: '/cupons',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminConfiguracoesRoute =
-  AuthenticatedAdminConfiguracoesRouteImport.update({
-    id: '/configuracoes',
-    path: '/configuracoes',
+const AuthenticatedAdminAssinaturasRoute =
+  AuthenticatedAdminAssinaturasRouteImport.update({
+    id: '/assinaturas',
+    path: '/assinaturas',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminClientesRoute =
@@ -330,11 +267,74 @@ const AuthenticatedAdminClientesRoute =
     path: '/clientes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminAssinaturasRoute =
-  AuthenticatedAdminAssinaturasRouteImport.update({
-    id: '/assinaturas',
-    path: '/assinaturas',
+const AuthenticatedAdminConfiguracoesRoute =
+  AuthenticatedAdminConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
     getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminCuponsRoute =
+  AuthenticatedAdminCuponsRouteImport.update({
+    id: '/cupons',
+    path: '/cupons',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminEntregasZappfyRoute =
+  AuthenticatedAdminEntregasZappfyRouteImport.update({
+    id: '/entregas-zappfy',
+    path: '/entregas-zappfy',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminPagamentosRoute =
+  AuthenticatedAdminPagamentosRouteImport.update({
+    id: '/pagamentos',
+    path: '/pagamentos',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPlanosRoute =
+  AuthenticatedAdminPlanosRouteImport.update({
+    id: '/planos',
+    path: '/planos',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminRelatoriosRoute =
+  AuthenticatedAdminRelatoriosRouteImport.update({
+    id: '/relatorios',
+    path: '/relatorios',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminTrialsRoute =
+  AuthenticatedAdminTrialsRouteImport.update({
+    id: '/trials',
+    path: '/trials',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const ApiPublicKiwifyWebhookRoute = ApiPublicKiwifyWebhookRouteImport.update({
+  id: '/api/public/kiwify-webhook',
+  path: '/api/public/kiwify-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSubmitOrderRoute = ApiPublicSubmitOrderRouteImport.update({
+  id: '/api/public/submit-order',
+  path: '/api/public/submit-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregasZappfyStoreSlugIndexRoute =
+  EntregasZappfyStoreSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => EntregasZappfyStoreSlugRoute,
+  } as any)
+const EntregasZappfyStoreSlugLoginRoute =
+  EntregasZappfyStoreSlugLoginRouteImport.update({
+    id: '/login',
+    path: '/login',
+    getParentRoute: () => EntregasZappfyStoreSlugRoute,
   } as any)
 const ApiPublicHooksSyncFacebookAdsRoute =
   ApiPublicHooksSyncFacebookAdsRouteImport.update({
@@ -682,18 +682,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -703,18 +696,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/entregas-zappfy/': {
-      id: '/entregas-zappfy/'
-      path: '/entregas-zappfy'
-      fullPath: '/entregas-zappfy/'
-      preLoaderRoute: typeof EntregasZappfyIndexRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -724,200 +717,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/trial/$code': {
-      id: '/trial/$code'
-      path: '/trial/$code'
-      fullPath: '/trial/$code'
-      preLoaderRoute: typeof TrialCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rastreio/$trackingCode': {
-      id: '/rastreio/$trackingCode'
-      path: '/rastreio/$trackingCode'
-      fullPath: '/rastreio/$trackingCode'
-      preLoaderRoute: typeof RastreioTrackingCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/loja/$slug': {
-      id: '/loja/$slug'
-      path: '/loja/$slug'
-      fullPath: '/loja/$slug'
-      preLoaderRoute: typeof LojaSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/entregas-zappfy/$storeSlug': {
-      id: '/entregas-zappfy/$storeSlug'
-      path: '/entregas-zappfy/$storeSlug'
-      fullPath: '/entregas-zappfy/$storeSlug'
-      preLoaderRoute: typeof EntregasZappfyStoreSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/entrega/$courierToken': {
-      id: '/entrega/$courierToken'
-      path: '/entrega/$courierToken'
-      fullPath: '/entrega/$courierToken'
-      preLoaderRoute: typeof EntregaCourierTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout/$slug': {
-      id: '/checkout/$slug'
-      path: '/$slug'
-      fullPath: '/checkout/$slug'
-      preLoaderRoute: typeof CheckoutSlugRouteImport
-      parentRoute: typeof CheckoutRoute
-    }
-    '/ativar-conta/$token': {
-      id: '/ativar-conta/$token'
-      path: '/ativar-conta/$token'
-      fullPath: '/ativar-conta/$token'
-      preLoaderRoute: typeof AtivarContaTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/trocas': {
-      id: '/_authenticated/trocas'
-      path: '/trocas'
-      fullPath: '/trocas'
-      preLoaderRoute: typeof AuthenticatedTrocasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/taxas': {
-      id: '/_authenticated/taxas'
-      path: '/taxas'
-      fullPath: '/taxas'
-      preLoaderRoute: typeof AuthenticatedTaxasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/relatorios': {
-      id: '/_authenticated/relatorios'
-      path: '/relatorios'
-      fullPath: '/relatorios'
-      preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/rastreamento': {
-      id: '/_authenticated/rastreamento'
-      path: '/rastreamento'
-      fullPath: '/rastreamento'
-      preLoaderRoute: typeof AuthenticatedRastreamentoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/produtos': {
-      id: '/_authenticated/produtos'
-      path: '/produtos'
-      fullPath: '/produtos'
-      preLoaderRoute: typeof AuthenticatedProdutosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/precificacao': {
-      id: '/_authenticated/precificacao'
-      path: '/precificacao'
-      fullPath: '/precificacao'
-      preLoaderRoute: typeof AuthenticatedPrecificacaoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/por-produto': {
-      id: '/_authenticated/por-produto'
-      path: '/por-produto'
-      fullPath: '/por-produto'
-      preLoaderRoute: typeof AuthenticatedPorProdutoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/planos': {
-      id: '/_authenticated/planos'
-      path: '/planos'
-      fullPath: '/planos'
-      preLoaderRoute: typeof AuthenticatedPlanosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/personalizar-rastreamento': {
-      id: '/_authenticated/personalizar-rastreamento'
-      path: '/personalizar-rastreamento'
-      fullPath: '/personalizar-rastreamento'
-      preLoaderRoute: typeof AuthenticatedPersonalizarRastreamentoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/personalizar-checkout': {
-      id: '/_authenticated/personalizar-checkout'
-      path: '/personalizar-checkout'
-      fullPath: '/personalizar-checkout'
-      preLoaderRoute: typeof AuthenticatedPersonalizarCheckoutRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/pedidos': {
-      id: '/_authenticated/pedidos'
-      path: '/pedidos'
-      fullPath: '/pedidos'
-      preLoaderRoute: typeof AuthenticatedPedidosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/motoboys': {
-      id: '/_authenticated/motoboys'
-      path: '/motoboys'
-      fullPath: '/motoboys'
-      preLoaderRoute: typeof AuthenticatedMotoboysRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/minha-assinatura': {
-      id: '/_authenticated/minha-assinatura'
-      path: '/minha-assinatura'
-      fullPath: '/minha-assinatura'
-      preLoaderRoute: typeof AuthenticatedMinhaAssinaturaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/metas': {
-      id: '/_authenticated/metas'
-      path: '/metas'
-      fullPath: '/metas'
-      preLoaderRoute: typeof AuthenticatedMetasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/integracoes': {
-      id: '/_authenticated/integracoes'
-      path: '/integracoes'
-      fullPath: '/integracoes'
-      preLoaderRoute: typeof AuthenticatedIntegracoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/indicadores': {
-      id: '/_authenticated/indicadores'
-      path: '/indicadores'
-      fullPath: '/indicadores'
-      preLoaderRoute: typeof AuthenticatedIndicadoresRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/financeiro': {
-      id: '/_authenticated/financeiro'
-      path: '/financeiro'
-      fullPath: '/financeiro'
-      preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dre': {
-      id: '/_authenticated/dre'
-      path: '/dre'
-      fullPath: '/dre'
-      preLoaderRoute: typeof AuthenticatedDreRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/configuracoes': {
-      id: '/_authenticated/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/compras': {
-      id: '/_authenticated/compras'
-      path: '/compras'
-      fullPath: '/compras'
-      preLoaderRoute: typeof AuthenticatedComprasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/assinatura-bloqueada': {
-      id: '/_authenticated/assinatura-bloqueada'
-      path: '/assinatura-bloqueada'
-      fullPath: '/assinatura-bloqueada'
-      preLoaderRoute: typeof AuthenticatedAssinaturaBloqueadaRouteImport
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ads': {
@@ -927,19 +731,208 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+    '/_authenticated/assinatura-bloqueada': {
+      id: '/_authenticated/assinatura-bloqueada'
+      path: '/assinatura-bloqueada'
+      fullPath: '/assinatura-bloqueada'
+      preLoaderRoute: typeof AuthenticatedAssinaturaBloqueadaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/entregas-zappfy/$storeSlug/': {
-      id: '/entregas-zappfy/$storeSlug/'
-      path: '/'
-      fullPath: '/entregas-zappfy/$storeSlug/'
-      preLoaderRoute: typeof EntregasZappfyStoreSlugIndexRouteImport
-      parentRoute: typeof EntregasZappfyStoreSlugRoute
+    '/_authenticated/compras': {
+      id: '/_authenticated/compras'
+      path: '/compras'
+      fullPath: '/compras'
+      preLoaderRoute: typeof AuthenticatedComprasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dre': {
+      id: '/_authenticated/dre'
+      path: '/dre'
+      fullPath: '/dre'
+      preLoaderRoute: typeof AuthenticatedDreRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro': {
+      id: '/_authenticated/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/indicadores': {
+      id: '/_authenticated/indicadores'
+      path: '/indicadores'
+      fullPath: '/indicadores'
+      preLoaderRoute: typeof AuthenticatedIndicadoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/integracoes': {
+      id: '/_authenticated/integracoes'
+      path: '/integracoes'
+      fullPath: '/integracoes'
+      preLoaderRoute: typeof AuthenticatedIntegracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/metas': {
+      id: '/_authenticated/metas'
+      path: '/metas'
+      fullPath: '/metas'
+      preLoaderRoute: typeof AuthenticatedMetasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/minha-assinatura': {
+      id: '/_authenticated/minha-assinatura'
+      path: '/minha-assinatura'
+      fullPath: '/minha-assinatura'
+      preLoaderRoute: typeof AuthenticatedMinhaAssinaturaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/motoboys': {
+      id: '/_authenticated/motoboys'
+      path: '/motoboys'
+      fullPath: '/motoboys'
+      preLoaderRoute: typeof AuthenticatedMotoboysRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pedidos': {
+      id: '/_authenticated/pedidos'
+      path: '/pedidos'
+      fullPath: '/pedidos'
+      preLoaderRoute: typeof AuthenticatedPedidosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/personalizar-checkout': {
+      id: '/_authenticated/personalizar-checkout'
+      path: '/personalizar-checkout'
+      fullPath: '/personalizar-checkout'
+      preLoaderRoute: typeof AuthenticatedPersonalizarCheckoutRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/personalizar-rastreamento': {
+      id: '/_authenticated/personalizar-rastreamento'
+      path: '/personalizar-rastreamento'
+      fullPath: '/personalizar-rastreamento'
+      preLoaderRoute: typeof AuthenticatedPersonalizarRastreamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/planos': {
+      id: '/_authenticated/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof AuthenticatedPlanosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/por-produto': {
+      id: '/_authenticated/por-produto'
+      path: '/por-produto'
+      fullPath: '/por-produto'
+      preLoaderRoute: typeof AuthenticatedPorProdutoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/precificacao': {
+      id: '/_authenticated/precificacao'
+      path: '/precificacao'
+      fullPath: '/precificacao'
+      preLoaderRoute: typeof AuthenticatedPrecificacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/produtos': {
+      id: '/_authenticated/produtos'
+      path: '/produtos'
+      fullPath: '/produtos'
+      preLoaderRoute: typeof AuthenticatedProdutosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rastreamento': {
+      id: '/_authenticated/rastreamento'
+      path: '/rastreamento'
+      fullPath: '/rastreamento'
+      preLoaderRoute: typeof AuthenticatedRastreamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios': {
+      id: '/_authenticated/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/taxas': {
+      id: '/_authenticated/taxas'
+      path: '/taxas'
+      fullPath: '/taxas'
+      preLoaderRoute: typeof AuthenticatedTaxasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/trocas': {
+      id: '/_authenticated/trocas'
+      path: '/trocas'
+      fullPath: '/trocas'
+      preLoaderRoute: typeof AuthenticatedTrocasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/ativar-conta/$token': {
+      id: '/ativar-conta/$token'
+      path: '/ativar-conta/$token'
+      fullPath: '/ativar-conta/$token'
+      preLoaderRoute: typeof AtivarContaTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/$slug': {
+      id: '/checkout/$slug'
+      path: '/$slug'
+      fullPath: '/checkout/$slug'
+      preLoaderRoute: typeof CheckoutSlugRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
+    '/entrega/$courierToken': {
+      id: '/entrega/$courierToken'
+      path: '/entrega/$courierToken'
+      fullPath: '/entrega/$courierToken'
+      preLoaderRoute: typeof EntregaCourierTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entregas-zappfy/': {
+      id: '/entregas-zappfy/'
+      path: '/entregas-zappfy'
+      fullPath: '/entregas-zappfy/'
+      preLoaderRoute: typeof EntregasZappfyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entregas-zappfy/$storeSlug': {
+      id: '/entregas-zappfy/$storeSlug'
+      path: '/entregas-zappfy/$storeSlug'
+      fullPath: '/entregas-zappfy/$storeSlug'
+      preLoaderRoute: typeof EntregasZappfyStoreSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loja/$slug': {
+      id: '/loja/$slug'
+      path: '/loja/$slug'
+      fullPath: '/loja/$slug'
+      preLoaderRoute: typeof LojaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rastreio/$trackingCode': {
+      id: '/rastreio/$trackingCode'
+      path: '/rastreio/$trackingCode'
+      fullPath: '/rastreio/$trackingCode'
+      preLoaderRoute: typeof RastreioTrackingCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trial/$code': {
+      id: '/trial/$code'
+      path: '/trial/$code'
+      fullPath: '/trial/$code'
+      preLoaderRoute: typeof TrialCodeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
@@ -948,81 +941,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/entregas-zappfy/$storeSlug/login': {
-      id: '/entregas-zappfy/$storeSlug/login'
-      path: '/login'
-      fullPath: '/entregas-zappfy/$storeSlug/login'
-      preLoaderRoute: typeof EntregasZappfyStoreSlugLoginRouteImport
-      parentRoute: typeof EntregasZappfyStoreSlugRoute
-    }
-    '/api/public/submit-order': {
-      id: '/api/public/submit-order'
-      path: '/api/public/submit-order'
-      fullPath: '/api/public/submit-order'
-      preLoaderRoute: typeof ApiPublicSubmitOrderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/kiwify-webhook': {
-      id: '/api/public/kiwify-webhook'
-      path: '/api/public/kiwify-webhook'
-      fullPath: '/api/public/kiwify-webhook'
-      preLoaderRoute: typeof ApiPublicKiwifyWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/admin/trials': {
-      id: '/_authenticated/admin/trials'
-      path: '/trials'
-      fullPath: '/admin/trials'
-      preLoaderRoute: typeof AuthenticatedAdminTrialsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/relatorios': {
-      id: '/_authenticated/admin/relatorios'
-      path: '/relatorios'
-      fullPath: '/admin/relatorios'
-      preLoaderRoute: typeof AuthenticatedAdminRelatoriosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/planos': {
-      id: '/_authenticated/admin/planos'
-      path: '/planos'
-      fullPath: '/admin/planos'
-      preLoaderRoute: typeof AuthenticatedAdminPlanosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/pagamentos': {
-      id: '/_authenticated/admin/pagamentos'
-      path: '/pagamentos'
-      fullPath: '/admin/pagamentos'
-      preLoaderRoute: typeof AuthenticatedAdminPagamentosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/logs': {
-      id: '/_authenticated/admin/logs'
-      path: '/logs'
-      fullPath: '/admin/logs'
-      preLoaderRoute: typeof AuthenticatedAdminLogsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/entregas-zappfy': {
-      id: '/_authenticated/admin/entregas-zappfy'
-      path: '/entregas-zappfy'
-      fullPath: '/admin/entregas-zappfy'
-      preLoaderRoute: typeof AuthenticatedAdminEntregasZappfyRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/cupons': {
-      id: '/_authenticated/admin/cupons'
-      path: '/cupons'
-      fullPath: '/admin/cupons'
-      preLoaderRoute: typeof AuthenticatedAdminCuponsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/configuracoes': {
-      id: '/_authenticated/admin/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/admin/configuracoes'
-      preLoaderRoute: typeof AuthenticatedAdminConfiguracoesRouteImport
+    '/_authenticated/admin/assinaturas': {
+      id: '/_authenticated/admin/assinaturas'
+      path: '/assinaturas'
+      fullPath: '/admin/assinaturas'
+      preLoaderRoute: typeof AuthenticatedAdminAssinaturasRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/clientes': {
@@ -1032,12 +955,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminClientesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/assinaturas': {
-      id: '/_authenticated/admin/assinaturas'
-      path: '/assinaturas'
-      fullPath: '/admin/assinaturas'
-      preLoaderRoute: typeof AuthenticatedAdminAssinaturasRouteImport
+    '/_authenticated/admin/configuracoes': {
+      id: '/_authenticated/admin/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/admin/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAdminConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/cupons': {
+      id: '/_authenticated/admin/cupons'
+      path: '/cupons'
+      fullPath: '/admin/cupons'
+      preLoaderRoute: typeof AuthenticatedAdminCuponsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/entregas-zappfy': {
+      id: '/_authenticated/admin/entregas-zappfy'
+      path: '/entregas-zappfy'
+      fullPath: '/admin/entregas-zappfy'
+      preLoaderRoute: typeof AuthenticatedAdminEntregasZappfyRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/logs': {
+      id: '/_authenticated/admin/logs'
+      path: '/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AuthenticatedAdminLogsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pagamentos': {
+      id: '/_authenticated/admin/pagamentos'
+      path: '/pagamentos'
+      fullPath: '/admin/pagamentos'
+      preLoaderRoute: typeof AuthenticatedAdminPagamentosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/planos': {
+      id: '/_authenticated/admin/planos'
+      path: '/planos'
+      fullPath: '/admin/planos'
+      preLoaderRoute: typeof AuthenticatedAdminPlanosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/relatorios': {
+      id: '/_authenticated/admin/relatorios'
+      path: '/relatorios'
+      fullPath: '/admin/relatorios'
+      preLoaderRoute: typeof AuthenticatedAdminRelatoriosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/trials': {
+      id: '/_authenticated/admin/trials'
+      path: '/trials'
+      fullPath: '/admin/trials'
+      preLoaderRoute: typeof AuthenticatedAdminTrialsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/public/kiwify-webhook': {
+      id: '/api/public/kiwify-webhook'
+      path: '/api/public/kiwify-webhook'
+      fullPath: '/api/public/kiwify-webhook'
+      preLoaderRoute: typeof ApiPublicKiwifyWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/submit-order': {
+      id: '/api/public/submit-order'
+      path: '/api/public/submit-order'
+      fullPath: '/api/public/submit-order'
+      preLoaderRoute: typeof ApiPublicSubmitOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entregas-zappfy/$storeSlug/': {
+      id: '/entregas-zappfy/$storeSlug/'
+      path: '/'
+      fullPath: '/entregas-zappfy/$storeSlug/'
+      preLoaderRoute: typeof EntregasZappfyStoreSlugIndexRouteImport
+      parentRoute: typeof EntregasZappfyStoreSlugRoute
+    }
+    '/entregas-zappfy/$storeSlug/login': {
+      id: '/entregas-zappfy/$storeSlug/login'
+      path: '/login'
+      fullPath: '/entregas-zappfy/$storeSlug/login'
+      preLoaderRoute: typeof EntregasZappfyStoreSlugLoginRouteImport
+      parentRoute: typeof EntregasZappfyStoreSlugRoute
     }
     '/api/public/hooks/sync-facebook-ads': {
       id: '/api/public/hooks/sync-facebook-ads'

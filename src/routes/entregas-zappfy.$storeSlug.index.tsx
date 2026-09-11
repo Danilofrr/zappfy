@@ -2,7 +2,22 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Bike, MapPin, Phone, Loader2, RefreshCw, Package, ArrowRight, Store, LogOut } from "lucide-react";
+import {
+  Bike,
+  MapPin,
+  Phone,
+  Loader2,
+  RefreshCw,
+  Package,
+  Store,
+  LogOut,
+  Navigation,
+  MessageCircle,
+  CheckCircle2,
+  AlertTriangle,
+  Undo2,
+  ArrowRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { formatRelative, orderShortNumber } from "@/lib/tracking";
 import { getCourierSession, clearCourierSession } from "@/lib/courier-session";
@@ -35,13 +50,25 @@ type CentralTheme = {
 };
 
 type Delivery = {
+  id: string;
   tracking_code: string;
+  courier_token: string;
   status: string;
+  accepted_at: string | null;
   created_at: string;
   notes: string | null;
   order: {
-    id: string; customer: string; phone: string; address: string;
-    district: string; city: string; total: number; date: string; notes: string | null;
+    id: string;
+    customer: string;
+    phone: string;
+    address: string;
+    district: string;
+    city: string;
+    total: number;
+    date: string;
+    notes: string | null;
+    payment: string;
+    items: { name: string; qty: number }[];
   };
 };
 
@@ -53,17 +80,33 @@ type ActiveDelivery = {
   order: { id: string; customer: string; address: string };
 };
 
-type Me = { courier_id: string; name: string; phone: string; store_id: string; store_name: string; slug: string };
+type Me = {
+  courier_id: string;
+  name: string;
+  phone: string;
+  store_id: string;
+  store_name: string;
+  slug: string;
+};
 
 const DEFAULT_THEME: CentralTheme = {
-  id: "", logo_url: null, logo_size: 48,
-  header_color: "#0f172a", header_text_color: "#ffffff",
-  background_color: "#0b1220", card_color: "#0f172a",
-  card_border_color: "#1e293b", card_shadow_color: "#000000", card_radius: 16,
-  text_color: "#e5e7eb", title_color: "#ffffff",
-  button_color: "#10b981", button_text_color: "#ffffff",
+  id: "",
+  logo_url: null,
+  logo_size: 48,
+  header_color: "#0f172a",
+  header_text_color: "#ffffff",
+  background_color: "#0b1220",
+  card_color: "#0f172a",
+  card_border_color: "#1e293b",
+  card_shadow_color: "#000000",
+  card_radius: 16,
+  text_color: "#e5e7eb",
+  title_color: "#ffffff",
+  button_color: "#10b981",
+  button_text_color: "#ffffff",
   icon_color: "#10b981",
-  footer_text: "Powered by Zappfy", brand_name: "Entregas Zappfy",
+  footer_text: "Powered by Zappfy",
+  brand_name: "Entregas Zappfy",
 };
 
 function CentralPage() {
@@ -101,18 +144,19 @@ function CentralPage() {
       setMe(meRes as Me);
       setLoading(false);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [storeSlug, navigate]);
 
   async function loadDeliveries() {
     const session = getCourierSession(storeSlug);
     if (!session) return;
-    const [{ data: avail }, { data: act }] = await Promise.all([
-      (supabase as any).rpc("list_available_deliveries_v2", { _session: session }),
-      (supabase as any).rpc("list_my_active_deliveries", { _session: session }),
-    ]);
-    if (Array.isArray(avail)) setAvailable(avail as Delivery[]);
-    if (Array.isArray(act)) setActive(act as ActiveDelivery[]);
+    const { data: deliveries } = await (supabase as any).rpc("list_my_delivery_load", {
+      _session: session,
+    });
+    if (Array.isArray(deliveries)) setAvailable(deliveries as Delivery[]);
+    setActive([]);
   }
 
   useEffect(() => {
@@ -123,24 +167,53 @@ function CentralPage() {
       .channel(`central_${me.store_id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "delivery_tracking", filter: `store_id=eq.${me.store_id}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "delivery_tracking",
+          filter: `store_id=eq.${me.store_id}`,
+        },
         () => loadDeliveries(),
       )
       .subscribe();
-    return () => { clearInterval(interval); supabase.removeChannel(channel); };
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.store_id]);
 
-  async function accept(d: Delivery) {
+  async function action(d: Delivery, actionName: string) {
     const session = getCourierSession(storeSlug);
     if (!session) return;
     setAccepting(d.tracking_code);
-    const { data, error } = await (supabase as any).rpc("accept_delivery_v2", { _session: session, _code: d.tracking_code });
+    let reason: string | null = null;
+    if (actionName === "fail")
+      reason =
+        prompt(
+          "Motivo: cliente ausente, recusou, endereço não encontrado, não respondeu, pagamento ou outro",
+        )?.trim() || null;
+    if (actionName === "deliver" && !confirm("Confirmar que este pedido foi entregue?")) {
+      setAccepting(null);
+      return;
+    }
+    const { error } = await (supabase as any).rpc("courier_delivery_action", {
+      _session: session,
+      _tracking_id: d.id,
+      _action: actionName,
+      _reason: reason,
+    });
     setAccepting(null);
-    if (error) { toast.error(error.message); return; }
-    const result = data as { courier_token: string };
-    toast.success("Entrega aceita! Boa rota 🛵");
-    navigate({ to: "/entrega/$courierToken", params: { courierToken: result.courier_token } });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Entrega atualizada");
+    if (actionName === "accept" || actionName === "start") {
+      navigate({ to: "/entrega/$courierToken", params: { courierToken: d.courier_token } });
+      return;
+    }
+    loadDeliveries();
   }
 
   function logout() {
@@ -160,22 +233,36 @@ function CentralPage() {
 
   if (loading || !me) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: theme.background_color, color: theme.text_color }}>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: theme.background_color, color: theme.text_color }}
+      >
         <Loader2 className="h-6 w-6 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-16" style={{ background: theme.background_color, color: theme.text_color }}>
+    <div
+      className="min-h-screen pb-16"
+      style={{ background: theme.background_color, color: theme.text_color }}
+    >
       <header
         className="entregas-mobile-header w-full px-5 py-5 flex items-center gap-3"
         style={{ background: theme.header_color, color: theme.header_text_color }}
       >
         {theme.logo_url ? (
-          <img src={theme.logo_url} alt={theme.brand_name} style={{ height: theme.logo_size, width: "auto" }} className="object-contain" />
+          <img
+            src={theme.logo_url}
+            alt={theme.brand_name}
+            style={{ height: theme.logo_size, width: "auto" }}
+            className="object-contain"
+          />
         ) : (
-          <div className="grid h-10 w-10 place-items-center rounded-xl" style={{ background: theme.button_color, color: theme.button_text_color }}>
+          <div
+            className="grid h-10 w-10 place-items-center rounded-xl"
+            style={{ background: theme.button_color, color: theme.button_text_color }}
+          >
             <Bike className="h-5 w-5" />
           </div>
         )}
@@ -208,6 +295,38 @@ function CentralPage() {
           <strong style={{ color: theme.title_color }}>{me.store_name}</strong>
         </section>
 
+        <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {[
+            [
+              "Para entregar",
+              available.filter((d) => ["aguardando_motoboy", "preparando"].includes(d.status))
+                .length,
+            ],
+            [
+              "Em rota",
+              available.filter((d) => ["saiu_para_entrega", "chegando"].includes(d.status)).length,
+            ],
+            ["Entregues", available.filter((d) => d.status === "entregue").length],
+            ["Não entregues", available.filter((d) => d.status === "nao_entregue").length],
+            [
+              "Produtos em posse",
+              available
+                .filter((d) => !["entregue", "devolvido", "cancelado"].includes(d.status))
+                .reduce(
+                  (n, d) => n + (d.order.items || []).reduce((s, i) => s + Number(i.qty), 0),
+                  0,
+                ),
+            ],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="p-3 text-center" style={cardStyle}>
+              <div className="text-xl font-bold" style={{ color: theme.title_color }}>
+                {value}
+              </div>
+              <div className="text-xs opacity-70">{label}</div>
+            </div>
+          ))}
+        </section>
+
         {active.length > 0 && (
           <section>
             <h2 className="text-sm font-semibold mb-2 opacity-80">Minhas entregas em andamento</h2>
@@ -215,7 +334,12 @@ function CentralPage() {
               {active.map((a) => (
                 <button
                   key={a.tracking_code}
-                  onClick={() => navigate({ to: "/entrega/$courierToken", params: { courierToken: a.courier_token } })}
+                  onClick={() =>
+                    navigate({
+                      to: "/entrega/$courierToken",
+                      params: { courierToken: a.courier_token },
+                    })
+                  }
                   className="w-full flex items-center justify-between p-3 text-left transition hover:opacity-90"
                   style={cardStyle}
                 >
@@ -223,7 +347,9 @@ function CentralPage() {
                     <div className="opacity-70">
                       {a.accepted_at ? `Aceita ${formatRelative(a.accepted_at)}` : "Em andamento"}
                     </div>
-                    <div className="font-semibold" style={{ color: theme.title_color }}>{a.order.customer}</div>
+                    <div className="font-semibold" style={{ color: theme.title_color }}>
+                      {a.order.customer}
+                    </div>
                     <div className="opacity-70 truncate">{a.order.address}</div>
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0" style={{ color: theme.icon_color }} />
@@ -235,31 +361,50 @@ function CentralPage() {
 
         <section>
           <h2 className="text-sm font-semibold mb-2 opacity-80">
-            Entregas disponíveis {available.length > 0 && <span className="opacity-60">({available.length})</span>}
+            Minhas entregas{" "}
+            {available.length > 0 && <span className="opacity-60">({available.length})</span>}
           </h2>
 
           {available.length === 0 ? (
             <div className="p-6 text-center" style={cardStyle}>
-              <Package className="h-8 w-8 mx-auto mb-2 opacity-50" style={{ color: theme.icon_color }} />
-              <div className="text-sm font-medium" style={{ color: theme.title_color }}>Nenhuma entrega disponível</div>
-              <div className="text-xs opacity-70 mt-1">Assim que a loja liberar uma entrega, ela aparece aqui automaticamente.</div>
+              <Package
+                className="h-8 w-8 mx-auto mb-2 opacity-50"
+                style={{ color: theme.icon_color }}
+              />
+              <div className="text-sm font-medium" style={{ color: theme.title_color }}>
+                Nenhuma entrega atribuída
+              </div>
+              <div className="text-xs opacity-70 mt-1">
+                Quando a loja atribuir um pedido a você, ele aparecerá automaticamente.
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
               {available.map((d) => {
-                const addr = [d.order.address, d.order.district, d.order.city].filter(Boolean).join(", ");
+                const addr = [d.order.address, d.order.district, d.order.city]
+                  .filter(Boolean)
+                  .join(", ");
                 const isAccepting = accepting === d.tracking_code;
                 return (
                   <div key={d.tracking_code} className="p-4 space-y-3" style={cardStyle}>
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="text-xs opacity-70">Pedido #{orderShortNumber(d.order.id)}</div>
-                        <div className="font-semibold" style={{ color: theme.title_color }}>{d.order.customer}</div>
+                        <div className="text-xs opacity-70">
+                          Pedido #{orderShortNumber(d.order.id)}
+                        </div>
+                        <div className="font-semibold" style={{ color: theme.title_color }}>
+                          {d.order.customer}
+                        </div>
                       </div>
-                      <div className="text-[11px] opacity-70 text-right">{formatRelative(d.created_at)}</div>
+                      <div className="text-[11px] opacity-70 text-right">
+                        {formatRelative(d.created_at)}
+                      </div>
                     </div>
                     <div className="flex items-start gap-2 text-sm">
-                      <MapPin className="h-4 w-4 mt-0.5 shrink-0" style={{ color: theme.icon_color }} />
+                      <MapPin
+                        className="h-4 w-4 mt-0.5 shrink-0"
+                        style={{ color: theme.icon_color }}
+                      />
                       <div className="flex-1">{addr || "Endereço não informado"}</div>
                     </div>
                     {d.order.phone && (
@@ -269,19 +414,99 @@ function CentralPage() {
                       </div>
                     )}
                     {d.notes && (
-                      <div className="text-xs italic opacity-80 pt-1 border-t" style={{ borderColor: theme.card_border_color }}>
+                      <div
+                        className="text-xs italic opacity-80 pt-1 border-t"
+                        style={{ borderColor: theme.card_border_color }}
+                      >
                         Obs: {d.notes}
                       </div>
                     )}
-                    <Button
-                      onClick={() => accept(d)}
-                      disabled={isAccepting}
-                      className="w-full h-11 font-semibold"
-                      style={{ background: theme.button_color, color: theme.button_text_color }}
+                    <div
+                      className="rounded-lg p-2 text-xs"
+                      style={{ background: `${theme.button_color}18` }}
                     >
-                      {isAccepting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bike className="h-4 w-4 mr-2" />}
-                      Aceitar Entrega
-                    </Button>
+                      {(d.order.items || []).map((i) => `${i.qty}x ${i.name}`).join(" · ")}
+                      <div className="mt-1 font-semibold">
+                        {(d.order.items || []).reduce((n, i) => n + Number(i.qty), 0)} produtos · R${" "}
+                        {Number(d.order.total).toFixed(2)} ·{" "}
+                        {String(d.order.payment || "").toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-11 items-center justify-center rounded-md border text-sm"
+                      >
+                        <Navigation className="mr-1 h-4 w-4" />
+                        Abrir rota
+                      </a>
+                      <a
+                        href={`https://wa.me/${String(d.order.phone || "").replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-11 items-center justify-center rounded-md border text-sm"
+                      >
+                        <MessageCircle className="mr-1 h-4 w-4" />
+                        WhatsApp
+                      </a>
+                      <a
+                        href={`tel:${d.order.phone}`}
+                        className="inline-flex h-11 items-center justify-center rounded-md border text-sm"
+                      >
+                        <Phone className="mr-1 h-4 w-4" />
+                        Ligar
+                      </a>
+                      {!d.accepted_at && (
+                        <Button disabled={isAccepting} onClick={() => action(d, "accept")}>
+                          <Bike className="mr-1 h-4 w-4" />
+                          Aceitar
+                        </Button>
+                      )}
+                      {d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status) && (
+                        <Button disabled={isAccepting} onClick={() => action(d, "start")}>
+                          <Bike className="mr-1 h-4 w-4" />
+                          Iniciar entrega
+                        </Button>
+                      )}
+                      {["saiu_para_entrega", "chegando", "nao_entregue"].includes(d.status) && (
+                        <Button
+                          disabled={isAccepting}
+                          onClick={() => action(d, "deliver")}
+                          style={{ background: theme.button_color }}
+                        >
+                          <CheckCircle2 className="mr-1 h-4 w-4" />
+                          Entregue
+                        </Button>
+                      )}
+                      {["saiu_para_entrega", "chegando"].includes(d.status) && (
+                        <Button
+                          disabled={isAccepting}
+                          variant="destructive"
+                          onClick={() => action(d, "fail")}
+                        >
+                          <AlertTriangle className="mr-1 h-4 w-4" />
+                          Não entregue
+                        </Button>
+                      )}
+                      {d.status === "nao_entregue" && (
+                        <Button disabled={isAccepting} onClick={() => action(d, "return")}>
+                          <Undo2 className="mr-1 h-4 w-4" />
+                          Retornando
+                        </Button>
+                      )}
+                      {d.status === "retornando" && (
+                        <Button
+                          disabled={isAccepting}
+                          variant="outline"
+                          onClick={() => action(d, "returned")}
+                        >
+                          <Package className="mr-1 h-4 w-4" />
+                          Devolvido à loja
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 );
               })}

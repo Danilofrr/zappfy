@@ -1,4 +1,3 @@
-export const ENTREGAS_DEFAULT_STORE_SLUG = "esparta";
 export const ENTREGAS_ICON_VERSION = "v=5";
 export const ENTREGAS_MANIFEST_URL = `/manifest-entregas.json?${ENTREGAS_ICON_VERSION}`;
 export const ENTREGAS_ICON_192_URL = `/entregas-icon-192.png?${ENTREGAS_ICON_VERSION}`;
@@ -25,11 +24,11 @@ export function rememberEntregasPwa(storeSlug?: string) {
 }
 
 export function getRememberedEntregasSlug() {
-  if (typeof window === "undefined") return ENTREGAS_DEFAULT_STORE_SLUG;
+  if (typeof window === "undefined") return null;
   try {
-    return localStorage.getItem(ENTREGAS_LAST_SLUG_KEY) || ENTREGAS_DEFAULT_STORE_SLUG;
+    return localStorage.getItem(ENTREGAS_LAST_SLUG_KEY);
   } catch {
-    return ENTREGAS_DEFAULT_STORE_SLUG;
+    return null;
   }
 }
 
@@ -40,7 +39,7 @@ export function getEntregasStandaloneRedirectSlug() {
     const marker = localStorage.getItem(ENTREGAS_PWA_MARKER_KEY) === "1";
     const slug = localStorage.getItem(ENTREGAS_LAST_SLUG_KEY);
     if (!marker && !slug) return null;
-    return slug || ENTREGAS_DEFAULT_STORE_SLUG;
+    return slug;
   } catch {
     return null;
   }
