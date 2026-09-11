@@ -235,11 +235,87 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_events: {
+        Row: {
+          courier_id: string | null
+          created_at: string
+          created_by: string | null
+          delivery_tracking_id: string
+          event_type: string
+          id: string
+          metadata: Json
+          new_status: string | null
+          old_status: string | null
+          order_id: string
+          store_id: string
+        }
+        Insert: {
+          courier_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_tracking_id: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          new_status?: string | null
+          old_status?: string | null
+          order_id: string
+          store_id: string
+        }
+        Update: {
+          courier_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_tracking_id?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          new_status?: string | null
+          old_status?: string | null
+          order_id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_events_courier_id_fkey"
+            columns: ["courier_id"]
+            isOneToOne: false
+            referencedRelation: "couriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_events_delivery_tracking_id_fkey"
+            columns: ["delivery_tracking_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_tracking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_events_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_tracking: {
         Row: {
           accepted_at: string | null
           accuracy: number | null
+          assigned_at: string | null
+          assigned_by: string | null
           completed_at: string | null
+          completion_latitude: number | null
+          completion_longitude: number | null
+          completion_notes: string | null
           courier_id: string | null
           courier_name: string | null
           courier_phone: string | null
@@ -251,6 +327,7 @@ export type Database = {
           delivery_latitude: number | null
           delivery_longitude: number | null
           estimated_arrival: string | null
+          failure_reason: string | null
           heading: number | null
           id: string
           last_updated_at: string | null
@@ -258,9 +335,12 @@ export type Database = {
           longitude: number | null
           notes: string | null
           order_id: string
+          proof_url: string | null
+          recipient_name: string | null
+          returned_at: string | null
           speed: number | null
           started_at: string | null
-          status: Database["public"]["Enums"]["delivery_status"]
+          status: string
           store_id: string
           tracking_code: string
           updated_at: string
@@ -268,7 +348,12 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           accuracy?: number | null
+          assigned_at?: string | null
+          assigned_by?: string | null
           completed_at?: string | null
+          completion_latitude?: number | null
+          completion_longitude?: number | null
+          completion_notes?: string | null
           courier_id?: string | null
           courier_name?: string | null
           courier_phone?: string | null
@@ -280,6 +365,7 @@ export type Database = {
           delivery_latitude?: number | null
           delivery_longitude?: number | null
           estimated_arrival?: string | null
+          failure_reason?: string | null
           heading?: number | null
           id?: string
           last_updated_at?: string | null
@@ -287,9 +373,12 @@ export type Database = {
           longitude?: number | null
           notes?: string | null
           order_id: string
+          proof_url?: string | null
+          recipient_name?: string | null
+          returned_at?: string | null
           speed?: number | null
           started_at?: string | null
-          status?: Database["public"]["Enums"]["delivery_status"]
+          status?: string
           store_id: string
           tracking_code: string
           updated_at?: string
@@ -297,7 +386,12 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           accuracy?: number | null
+          assigned_at?: string | null
+          assigned_by?: string | null
           completed_at?: string | null
+          completion_latitude?: number | null
+          completion_longitude?: number | null
+          completion_notes?: string | null
           courier_id?: string | null
           courier_name?: string | null
           courier_phone?: string | null
@@ -309,6 +403,7 @@ export type Database = {
           delivery_latitude?: number | null
           delivery_longitude?: number | null
           estimated_arrival?: string | null
+          failure_reason?: string | null
           heading?: number | null
           id?: string
           last_updated_at?: string | null
@@ -316,9 +411,12 @@ export type Database = {
           longitude?: number | null
           notes?: string | null
           order_id?: string
+          proof_url?: string | null
+          recipient_name?: string | null
+          returned_at?: string | null
           speed?: number | null
           started_at?: string | null
-          status?: Database["public"]["Enums"]["delivery_status"]
+          status?: string
           store_id?: string
           tracking_code?: string
           updated_at?: string
@@ -2004,8 +2102,25 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      assign_orders_to_courier: {
+        Args: { _courier_id: string; _order_ids: string[]; _store_id: string }
+        Returns: Json
+      }
       courier_create_session: {
         Args: { _courier_id: string; _token: string }
+        Returns: Json
+      }
+      courier_delivery_action: {
+        Args: {
+          _action: string
+          _lat?: number
+          _lng?: number
+          _notes?: string
+          _reason?: string
+          _recipient?: string
+          _session: string
+          _tracking_id: string
+        }
         Returns: Json
       }
       courier_login: {
@@ -2088,6 +2203,11 @@ export type Database = {
         Args: { _tracking_id: string }
         Returns: boolean
       }
+      get_courier_load_detail: {
+        Args: { _courier_id: string; _store_id: string }
+        Returns: Json
+      }
+      get_courier_loads: { Args: { _store_id: string }; Returns: Json }
       get_courier_view: { Args: { _token: string }; Returns: Json }
       get_store_by_slug: { Args: { _slug: string }; Returns: Json }
       get_tracking_public: { Args: { _code: string }; Returns: Json }
@@ -2153,6 +2273,7 @@ export type Database = {
       }
       list_couriers_for_store: { Args: { _store_id: string }; Returns: Json }
       list_my_active_deliveries: { Args: { _session: string }; Returns: Json }
+      list_my_delivery_load: { Args: { _session: string }; Returns: Json }
       list_my_stores: {
         Args: never
         Returns: {
@@ -2171,6 +2292,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      list_order_assignments: { Args: { _store_id: string }; Returns: Json }
       normalize_courier_phone: { Args: { _phone: string }; Returns: string }
       redeem_trial_invite: { Args: { _code: string }; Returns: Json }
       reset_courier_password: {
