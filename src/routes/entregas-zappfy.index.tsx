@@ -1,7 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Bike, Loader2 } from "lucide-react";
-import { ENTREGAS_APPLE_ICON_URL, ENTREGAS_DEFAULT_STORE_SLUG, ENTREGAS_LAST_SLUG_KEY, ENTREGAS_MANIFEST_URL, isStandaloneMode, rememberEntregasPwa } from "@/lib/entregas-pwa";
+import {
+  ENTREGAS_APPLE_ICON_URL,
+  ENTREGAS_LAST_SLUG_KEY,
+  ENTREGAS_MANIFEST_URL,
+  rememberEntregasPwa,
+} from "@/lib/entregas-pwa";
 
 export const Route = createFileRoute("/entregas-zappfy/")({
   ssr: false,
@@ -28,15 +33,14 @@ function EntregasIndex() {
     try {
       const s = localStorage.getItem(ENTREGAS_LAST_SLUG_KEY);
       if (s) {
-        navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug: s }, replace: true });
+        navigate({
+          to: "/entregas-zappfy/$storeSlug/login",
+          params: { storeSlug: s },
+          replace: true,
+        });
         return;
       }
     } catch {}
-    if (isStandaloneMode()) {
-      rememberEntregasPwa(ENTREGAS_DEFAULT_STORE_SLUG);
-      navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug: ENTREGAS_DEFAULT_STORE_SLUG }, replace: true });
-      return;
-    }
     setChecked(true);
   }, [navigate]);
 
@@ -64,7 +68,9 @@ function EntregasIndex() {
         </div>
         <div>
           <h1 className="text-xl font-bold">Central de Entregas</h1>
-          <p className="text-sm text-white/60 mt-1">Informe o identificador da sua loja para entrar.</p>
+          <p className="text-sm text-white/60 mt-1">
+            Informe o identificador da sua loja para entrar.
+          </p>
         </div>
         <input
           autoFocus
