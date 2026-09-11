@@ -1,27 +1,123 @@
-name: Deploy Supabase migrations
+name: Diagnose or reconcile Supabase migration history
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "supabase/migrations/**"
+    inputs:
+      mode:
+        description: "Start read-only; select reconcile only after reviewing a diagnose run"
+        required: true
+        default: diagnose
+        type: choice
+        options:
+          - diagnose
+          - reconcile
+      legacy_versions:
+        description: "Reconcile-only: comma-separated divergent legacy versions shown by diagnose"
+        required: false
+        type: string
+      confirmation:
+        description: "Reconcile-only: type RECONCILE LEGACY HISTORY"
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: supabase-production-migrations
+  group: supabase-production-migration-history
   cancel-in-progress: false
 
+env:
+  CANONICAL_VERSION: "20260911203202"
+
 jobs:
-  migrate:
-    name: Apply pending migrations to production
-    if: github.ref == 'refs/heads/main'
+  diagnose:
+    name: Diagnose migration history (read-only)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    outputs:
+      divergent_versions: ${{ steps.history.outputs.divergent_versions }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate configuration and canonical migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_ACCESS_TOKEN:?Missing SUPABASE_ACCESS_TOKEN secret}"
+          : "${SUPABASE_DB_PASSWORD:?Missing SUPABASE_DB_PASSWORD secret}"
+          : "${SUPABASE_PROJECT_ID:?Missing SUPABASE_PROJECT_ID secret}"
+          test -f "supabase/migrations/${CANONICAL_VERSION}_741feefa-6a9c-4164-a055-603db781a7a0.sql"
+          test ! -e "supabase/migrations/20260911120000_delivery_load_control.sql"
+
+      - name: Link production project
+        shell: bash
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Read migration history
+        id: history
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration list --linked | tee migration-history.txt
+
+          awk -F '|' '
+            function trim(value) {
+              gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+              return value
+            }
+            {
+              local_version = trim($1)
+              remote_version = trim($2)
+              if (local_version ~ /^[0-9]{14}$/ && remote_version == "") print local_version ":applied"
+              if (local_version == "" && remote_version ~ /^[0-9]{14}$/) print remote_version ":reverted"
+            }
+          ' migration-history.txt | sort -u > divergent-migrations.txt
+
+          if grep -Eq "^${CANONICAL_VERSION}:(applied|reverted)$" divergent-migrations.txt; then
+            echo "Canonical migration ${CANONICAL_VERSION} must exist in both local and remote history." >&2
+            exit 1
+          fi
+
+          divergent_versions="$(cut -d: -f1 divergent-migrations.txt | paste -sd, -)"
+          echo "divergent_versions=${divergent_versions}" >> "$GITHUB_OUTPUT"
+          echo "### Read-only migration diagnosis" >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          cat migration-history.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "Proposed history-only repairs (no SQL):" >> "$GITHUB_STEP_SUMMARY"
+          sed 's/^/- /' divergent-migrations.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload diagnosis for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-migration-diagnosis-${{ github.run_id }}
+          path: |
+            migration-history.txt
+            divergent-migrations.txt
+          if-no-files-found: error
+
+  reconcile:
+    name: Reconcile reviewed legacy history (no SQL execution)
+    if: inputs.mode == 'reconcile'
+    needs: diagnose
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Configure required reviewers on this environment. Approval is requested only
+    # after the read-only diagnose job above has completed successfully.
+    environment: production-migration-reconciliation
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -36,26 +132,64 @@ jobs:
         with:
           version: latest
 
-      - name: Validate required secrets
+      - name: Require explicit reviewed legacy versions
+        id: validate
         shell: bash
+        env:
+          REQUESTED_VERSIONS: ${{ inputs.legacy_versions }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          DETECTED_VERSIONS: ${{ needs.diagnose.outputs.divergent_versions }}
         run: |
           set -euo pipefail
-          : "${SUPABASE_ACCESS_TOKEN:?Missing SUPABASE_ACCESS_TOKEN secret}"
-          : "${SUPABASE_DB_PASSWORD:?Missing SUPABASE_DB_PASSWORD secret}"
-          : "${SUPABASE_PROJECT_ID:?Missing SUPABASE_PROJECT_ID secret}"
+          test "$CONFIRMATION" = "RECONCILE LEGACY HISTORY"
+          test -n "$REQUESTED_VERSIONS"
+
+          requested="$(tr ',' '\n' <<< "$REQUESTED_VERSIONS" | sed '/^[[:space:]]*$/d; s/^[[:space:]]*//; s/[[:space:]]*$//' | sort -u)"
+          detected="$(tr ',' '\n' <<< "$DETECTED_VERSIONS" | sed '/^[[:space:]]*$/d' | sort -u)"
+          while IFS= read -r version; do
+            [[ "$version" =~ ^[0-9]{14}$ ]]
+            if [[ "$version" == "$CANONICAL_VERSION" || "$version" == "20260911120000" ]]; then
+              echo "Refusing protected delivery migration version: $version" >&2
+              exit 1
+            fi
+            if [[ "$version" > "$CANONICAL_VERSION" ]]; then
+              echo "Only legacy versions older than ${CANONICAL_VERSION} may be reconciled." >&2
+              exit 1
+            fi
+            grep -Fxq "$version" <<< "$detected" || {
+              echo "Version $version is not divergent in this run's diagnosis." >&2
+              exit 1
+            }
+          done <<< "$requested"
+          {
+            echo 'versions<<EOF'
+            echo "$requested"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Link production project
         shell: bash
         run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
 
-      - name: Show migration status before deployment
+      - name: Reconcile only the reviewed history entries
         shell: bash
-        run: supabase migration list --linked
+        env:
+          VERSIONS: ${{ steps.validate.outputs.versions }}
+        run: |
+          set -euo pipefail
+          supabase migration list --linked | tee before-reconciliation.txt
+          while IFS= read -r version; do
+            local_version="$(awk -F '|' -v wanted="$version" '{gsub(/[[:space:]]/, "", $1); if ($1 == wanted) print $1}' before-reconciliation.txt)"
+            remote_version="$(awk -F '|' -v wanted="$version" '{gsub(/[[:space:]]/, "", $2); if ($2 == wanted) print $2}' before-reconciliation.txt)"
+            if [[ -n "$local_version" && -z "$remote_version" ]]; then
+              supabase migration repair --linked --status applied "$version"
+            elif [[ -z "$local_version" && -n "$remote_version" ]]; then
+              supabase migration repair --linked --status reverted "$version"
+            else
+              echo "Version $version is no longer divergent; refusing to modify it." >&2
+              exit 1
+            fi
+          done <<< "$VERSIONS"
 
-      - name: Apply pending migrations
-        shell: bash
-        run: supabase db push --linked
-
-      - name: Show applied migration status
-        shell: bash
-        run: supabase migration list --linked
+          # This workflow intentionally never invokes db push, db reset, or SQL.
+          supabase migration list --linked | tee after-reconciliation.txt
