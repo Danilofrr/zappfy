@@ -1,71 +1,69 @@
-# Deploy de migrations do Supabase
+# Diagnóstico e reconciliação do histórico de migrations
 
-O Lovable pode continuar sendo usado como preview da aplicação, mas o deploy do
-schema de produção é responsabilidade do workflow
-`.github/workflows/deploy-supabase-migrations.yml`.
+O workflow `.github/workflows/deploy-supabase-migrations.yml` não faz deploy de
+SQL. Ele existe somente para diagnosticar e, com aprovação humana, reconciliar o
+histórico de migrations entre o repositório e o projeto Supabase de produção.
 
-## Como o deploy funciona
+## Migration canônica de controle de carga
 
-O workflow pode ser iniciado de duas formas:
+`20260911203202_741feefa-6a9c-4164-a055-603db781a7a0.sql` é a versão canônica e já
+está registrada no histórico remoto. A antiga cópia
+`20260911120000_delivery_load_control.sql` diferia apenas pela quebra de linha no
+fim do arquivo e foi removida. A versão `20260911120000` não é uma migration
+pendente e não deve ser reparada nem executada.
 
-- automaticamente, por um `push` na branch `main` que altere algum arquivo em
-  `supabase/migrations/**`;
-- manualmente, por **Actions > Deploy Supabase migrations > Run workflow**, para
-  aplicar migrations que já estejam na `main`.
+O workflow protege explicitamente as duas versões: o diagnóstico falha se
+`20260911203202` não aparecer dos dois lados do histórico, e a reconciliação
+recusa tanto `20260911203202` quanto `20260911120000`.
 
-O job somente aceita execuções cujo ref seja a branch `main`, inclusive no disparo
-manual. Ele:
+## Modo `diagnose` (sempre primeiro)
 
-1. instala a Supabase CLI com a action oficial;
-2. vincula a CLI ao projeto de produção;
-3. exibe a tabela de migrations locais e remotas antes do deploy;
-4. executa `supabase db push --linked`, que aplica somente as migrations locais
-   ainda ausentes no histórico remoto;
-5. exibe novamente a tabela de migrations, deixando registrado no log o estado
-   aplicado.
+Execute manualmente **Actions / Diagnose or reconcile Supabase migration history /
+Run workflow**, mantendo o modo padrão `diagnose`. Esse job é read-only em relação
+ao banco: executa apenas `supabase migration list --linked`, publica a tabela no
+resumo da execução e salva `migration-history.txt` e `divergent-migrations.txt`
+como artefato.
 
-Os deploys são serializados por `concurrency`, sem cancelar uma execução em
-andamento. Se o vínculo, a consulta do histórico ou uma migration falhar, o job
-termina com erro e os passos seguintes não são executados. O workflow não contém
-comandos de reset, remoção ou recriação do banco.
+Revise o artefato e confirme fora do workflow se cada migration divergente legada
+representa SQL que já existe no banco. Não avance em caso de dúvida.
 
-> Migrations são código de produção: antes do merge, revise cada SQL para garantir
-> que ele próprio não contém operações destrutivas. A automação não transforma uma
-> migration destrutiva em uma migration segura.
+## Modo `reconcile` (somente depois da revisão)
+
+1. Crie o environment `production-migration-reconciliation`, copie nele os três
+   secrets descritos abaixo e configure **required reviewers**.
+2. Inicie uma nova execução manual no modo `reconcile`.
+3. Em `legacy_versions`, informe somente as versões legadas divergentes aprovadas,
+   separadas por vírgula.
+4. Em `confirmation`, digite exatamente `RECONCILE LEGACY HISTORY`.
+5. Revise novamente o resultado do job `diagnose`. Só então aprove o job
+   `reconcile` no environment protegido.
+
+A reconciliação só aceita versões numéricas anteriores a `20260911203202` que
+continuem divergentes no diagnóstico da própria execução. Para uma versão apenas
+local, registra `applied`; para uma versão apenas remota e sem arquivo local,
+registra `reverted`. Essas operações alteram apenas o histórico da CLI e nunca
+executam o SQL das migrations.
+
+## Garantias de segurança
+
+- não há gatilho automático por `push`;
+- `diagnose` é o modo padrão e não altera o histórico remoto;
+- `reconcile` depende de um diagnóstico bem-sucedido e de aprovação do environment;
+- não existe `supabase db push`, execução de SQL ou reaplicação de migration;
+- não existe `supabase db reset`, exclusão ou recriação de dados;
+- a migration canônica `20260911203202` nunca é marcada como `reverted`;
+- somente versões legadas explicitamente revisadas podem ter o histórico reparado.
 
 ## Secrets obrigatórios
 
-No GitHub, abra **Settings > Environments > production**, crie o environment
-`production` e cadastre nele exatamente estes três secrets:
+Cadastre estes secrets nos environments `production` e
+`production-migration-reconciliation`:
 
-| Secret                  | Conteúdo                                                                                            |
-| ----------------------- | --------------------------------------------------------------------------------------------------- |
-| `SUPABASE_ACCESS_TOKEN` | Personal access token criado em **Supabase Dashboard > Account > Access Tokens**.                   |
-| `SUPABASE_DB_PASSWORD`  | Senha do banco do projeto de produção.                                                              |
-| `SUPABASE_PROJECT_ID`   | Project ref do projeto Supabase de produção (o identificador exibido nas configurações do projeto). |
+| Secret                  | Conteúdo                                                                   |
+| ----------------------- | -------------------------------------------------------------------------- |
+| `SUPABASE_ACCESS_TOKEN` | Personal access token de **Supabase Dashboard > Account > Access Tokens**. |
+| `SUPABASE_DB_PASSWORD`  | Senha do banco do projeto de produção.                                     |
+| `SUPABASE_PROJECT_ID`   | Project ref do projeto Supabase de produção.                               |
 
-O project ref não é uma credencial por si só, mas é mantido no environment para
-que o destino de produção seja configurado no GitHub e não no workflow. Não use a
-anon key, a service-role key nem uma connection string nesse fluxo.
-
-Opcionalmente, configure **required reviewers** no environment `production` para
-exigir aprovação humana do job depois do merge. Os secrets do environment só são
-liberados para o runner após as regras de proteção serem satisfeitas.
-
-## Primeiro deploy
-
-Antes de incorporar o PR que habilita o workflow:
-
-1. confirme que o `SUPABASE_PROJECT_ID` pertence ao projeto de produção correto;
-2. cadastre os três secrets no environment `production`;
-3. confira se o histórico remoto de migrations corresponde aos arquivos já
-   versionados em `supabase/migrations`;
-4. depois que este workflow estiver na `main`, abra **Actions > Deploy Supabase
-   migrations > Run workflow**, selecione a branch `main` e confirme a execução
-   para aplicar as migrations pendentes que já estavam versionadas;
-5. acompanhe o job na aba Actions. As próximas alterações em migrations serão
-   executadas automaticamente quando incorporadas à `main`.
-
-Se o histórico local e remoto divergir, o deploy deve permanecer com falha. Corrija
-explicitamente o histórico com o procedimento de reparo da Supabase CLI após
-validar o estado real do banco; não use `db reset` em produção.
+Não use anon key, service-role key ou connection string nesse fluxo. Nunca tente
+resolver divergências de produção com `db reset` ou reaplicando migrations antigas.
