@@ -227,6 +227,17 @@ const statusLabel = (status: string) => {
   return labels[status] || status.replaceAll("_", " ");
 };
 
+const paymentRecordForDelivery = (delivery: any) => {
+  const received = Array.isArray(delivery?.received_payments) ? delivery.received_payments : [];
+  if (received.length > 0) {
+    return {
+      items: [{ _paymentBreakdown: received }],
+      total: Number(delivery?.received_payment_total ?? delivery?.order?.total ?? 0),
+    };
+  }
+  return delivery?.order || {};
+};
+
 function MotoboysPage() {
   const { activeStoreId, activeStore } = useActiveStore();
   const { state } = useStore();
@@ -316,7 +327,7 @@ function MotoboysPage() {
     setInventoryRows(Array.isArray(data) ? data : []);
   }
 
-  async function load() {
+  async function load(showLoading = true) {
     if (!activeStoreId) {
       setList([]);
       setLoads([]);
@@ -324,7 +335,7 @@ function MotoboysPage() {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (showLoading) setLoading(true);
     const [{ data, error }, { data: loadData, error: loadError }, { data: inventoryData, error: inventoryError }] =
       await Promise.all([
         (supabase as any).rpc("list_couriers_for_store", { _store_id: activeStoreId }),
@@ -337,17 +348,31 @@ function MotoboysPage() {
     setList((data as Courier[]) || []);
     setLoads(Array.isArray(loadData) ? loadData : []);
     setInventoryRows(Array.isArray(inventoryData) ? inventoryData : []);
-    setLoading(false);
+    if (showLoading) setLoading(false);
   }
 
-  async function loadHistory(couriers = list) {
+  async function loadHistory(couriers = list, showLoading = true) {
     if (!activeStoreId || couriers.length === 0) {
       setHistoryByCourier({});
       return;
     }
 
-    setHistoryLoading(true);
+    if (showLoading) setHistoryLoading(true);
     try {
+      const { data: receivedRows, error: receivedError } = await (supabase as any)
+      .from("delivery_tracking")
+      .select("order_id,courier_id,received_payments,received_payment_total,completed_at")
+      .eq("store_id", activeStoreId)
+      .not("completed_at", "is", null)
+      .gte("completed_at", range.start.toISOString())
+      .lte("completed_at", range.end.toISOString());
+
+    if (receivedError) console.error("Erro ao carregar pagamentos recebidos dos motoboys", receivedError);
+
+    const receivedByOrder = new Map<string, any>(
+      (Array.isArray(receivedRows) ? receivedRows : []).map((row: any) => [String(row.order_id || ""), row]),
+    );
+
       const results = await Promise.all(
         couriers.map(async (courier) => {
           const { data, error } = await (supabase as any).rpc("get_courier_load_detail", {
@@ -358,10 +383,22 @@ function MotoboysPage() {
 
           const orders = Array.isArray(data?.orders) ? data.orders : [];
           const events = Array.isArray(data?.events) ? data.events : [];
-          const deliveredOrders = orders.filter(
+          const deliveredOrders = orders
+          .filter(
             (delivery: any) =>
               delivery.status === "entregue" && isWithin(delivery.completed_at, range.start, range.end),
-          );
+          )
+          .map((delivery: any) => {
+            const orderId = String(delivery?.order?.id || delivery?.order_id || "");
+            const received = receivedByOrder.get(orderId);
+            return received
+              ? {
+                  ...delivery,
+                  received_payments: received.received_payments,
+                  received_payment_total: received.received_payment_total,
+                }
+              : delivery;
+          });
           const eventsInPeriod = events.filter((event: any) =>
             isWithin(event.created_at, range.start, range.end),
           );
@@ -390,7 +427,7 @@ function MotoboysPage() {
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível carregar o histórico dos motoboys");
     } finally {
-      setHistoryLoading(false);
+      if (showLoading) setHistoryLoading(false);
     }
   }
 
@@ -418,31 +455,40 @@ function MotoboysPage() {
   }, [activeTab, list, period, customFrom, customTo]);
 
   useEffect(() => {
-    if (!activeStoreId) return;
-    const channel = supabase
-      .channel(`motoboy_loads_${activeStoreId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "delivery_tracking", filter: `store_id=eq.${activeStoreId}` },
-        () => load(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "delivery_events", filter: `store_id=eq.${activeStoreId}` },
-        () => {
-          if (activeTab === "load") loadHistory();
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "courier_inventory", filter: `store_id=eq.${activeStoreId}` },
-        () => loadInventory(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [activeStoreId, activeTab, list, period, customFrom, customTo]);
+  if (!activeStoreId) return;
+
+  let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  const scheduleOperationalRefresh = (includeHistory: boolean) => {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      void load(false);
+      if (includeHistory && activeTab === "load" && list.length > 0) {
+        void loadHistory(list, false);
+      }
+    }, 500);
+  };
+
+  const channel = supabase
+    .channel(`motoboy_loads_${activeStoreId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "delivery_events", filter: `store_id=eq.${activeStoreId}` },
+      () => scheduleOperationalRefresh(true),
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "courier_inventory", filter: `store_id=eq.${activeStoreId}` },
+      () => {
+        void loadInventory();
+      },
+    )
+    .subscribe();
+
+  return () => {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    supabase.removeChannel(channel);
+  };
+}, [activeStoreId, activeTab, list, period, customFrom, customTo]);
 
   async function openLoad(c: Courier) {
     if (!activeStoreId) return;
@@ -647,9 +693,19 @@ function MotoboysPage() {
   const activeDetailOrders = (detail?.orders || []).filter(
     (delivery: any) => !["entregue", "devolvido", "cancelado"].includes(delivery.status),
   );
-  const modalDeliveredOrders = (detail?.orders || []).filter(
-    (delivery: any) => delivery.status === "entregue" && isWithin(delivery.completed_at, range.start, range.end),
-  );
+  const modalDeliveredOrders = (detail?.orders || [])
+    .filter(
+      (delivery: any) => delivery.status === "entregue" && isWithin(delivery.completed_at, range.start, range.end),
+    )
+    .map((delivery: any) => {
+      const orderId = String(delivery?.order?.id || delivery?.order_id || "");
+      return (
+        detailHistory?.deliveredOrders.find(
+          (historyDelivery: any) =>
+            String(historyDelivery?.order?.id || historyDelivery?.order_id || "") === orderId,
+        ) || delivery
+      );
+    });
   const modalEvents = (detail?.events || []).filter((event: any) =>
     isWithin(event.created_at, range.start, range.end),
   );
@@ -737,8 +793,8 @@ function MotoboysPage() {
                 const mobileQty = mobileStock.reduce((sum, item) => sum + Number(item.quantity), 0);
                 const mobileValue = mobileStock.reduce((sum, item) => sum + Number(item.sale_value || 0), 0);
                 const paymentTotals = sumPaymentBreakdowns(
-                  (history?.deliveredOrders || []).map((delivery: any) => delivery.order || {}),
-                );
+        (history?.deliveredOrders || []).map((delivery: any) => paymentRecordForDelivery(delivery)),
+      );
                 return (
                   <div key={loadItem.courier_id} className="overflow-hidden rounded-2xl border bg-card transition-colors hover:border-primary/40">
                     <div className="flex items-center justify-between gap-3 border-b p-4">
@@ -828,7 +884,7 @@ function MotoboysPage() {
                     <div key={delivery.id} className="flex items-center justify-between gap-3 rounded-lg bg-background/60 px-2.5 py-2 text-xs">
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-foreground">{delivery.order?.customer || "Cliente não informado"}</div>
-                        <div className="text-[10px] text-muted-foreground">Pedido #{String(delivery.order?.id || delivery.order_id || "").slice(0, 8)}</div><div className="mt-0.5 text-[10px] font-medium text-primary">{formatPaymentBreakdown(delivery.order)}</div>
+                        <div className="text-[10px] text-muted-foreground">Pedido #{String(delivery.order?.id || delivery.order_id || "").slice(0, 8)}</div><div className="mt-0.5 text-[10px] font-medium text-primary">{formatPaymentBreakdown(paymentRecordForDelivery(delivery))}</div>
                       </div>
                       <div className="shrink-0 text-[10px] text-muted-foreground">
                         {delivery.completed_at
@@ -1073,7 +1129,7 @@ function MotoboysPage() {
 
             <TabsContent value="deliveries" className="pt-3">
               <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="h-4 w-4 text-primary" /> Entregas concluídas em <b className="text-foreground">{periodLabel}</b></div>
-              {modalDeliveredOrders.length === 0 ? <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhuma entrega concluída neste período.</div> : <div className="space-y-2">{modalDeliveredOrders.map((delivery: any) => <div key={delivery.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><b>Pedido #{String(delivery.order.id).slice(0, 8)}</b><div className="mt-1 font-medium">{delivery.order.customer}</div><div className="text-muted-foreground">{(delivery.order.items || []).map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`).join(", ")}</div><div className="mt-1">{delivery.order.district} · {brl(Number(delivery.order.total))}</div><div className="mt-1 font-medium text-primary">Pagamento: {formatPaymentBreakdown(delivery.order)}</div></div><div className="text-xs text-muted-foreground sm:text-right"><div className="font-medium text-primary">Entregue</div>{delivery.completed_at ? new Date(delivery.completed_at).toLocaleString("pt-BR") : "Horário não informado"}</div></div></div>)}</div>}
+              {modalDeliveredOrders.length === 0 ? <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhuma entrega concluída neste período.</div> : <div className="space-y-2">{modalDeliveredOrders.map((delivery: any) => <div key={delivery.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><b>Pedido #{String(delivery.order.id).slice(0, 8)}</b><div className="mt-1 font-medium">{delivery.order.customer}</div><div className="text-muted-foreground">{(delivery.order.items || []).map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`).join(", ")}</div><div className="mt-1">{delivery.order.district} · {brl(Number(delivery.order.total))}</div><div className="mt-1 font-medium text-primary">Pagamento: {formatPaymentBreakdown(paymentRecordForDelivery(delivery))}</div></div><div className="text-xs text-muted-foreground sm:text-right"><div className="font-medium text-primary">Entregue</div>{delivery.completed_at ? new Date(delivery.completed_at).toLocaleString("pt-BR") : "Horário não informado"}</div></div></div>)}</div>}
             </TabsContent>
 
             <TabsContent value="timeline" className="pt-3">
