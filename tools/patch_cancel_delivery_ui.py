@@ -1,0 +1,261 @@
+from pathlib import Path
+
+path = Path('src/routes/entrega.$courierToken.tsx')
+text = path.read_text()
+
+
+def replace_once(old: str, new: str, label: str) -> None:
+    global text
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f'{label}: expected 1 occurrence, found {count}')
+    text = text.replace(old, new, 1)
+
+
+replace_once(
+    '  Wifi,\n  WifiOff,\n} from "lucide-react";',
+    '  Wifi,\n  WifiOff,\n  XCircle,\n} from "lucide-react";',
+    'XCircle import',
+)
+
+replace_once(
+    '''const EMPTY_RECEIVED_PAYMENT: ReceivedPaymentForm = {
+  pix: "",
+  dinheiro: "",
+  cartao: "",
+};''',
+    '''const EMPTY_RECEIVED_PAYMENT: ReceivedPaymentForm = {
+  pix: "",
+  dinheiro: "",
+  cartao: "",
+};
+
+const DELIVERY_FAILURE_REASONS = [
+  "Cliente não estava no local",
+  "Cliente cancelou o pedido",
+  "Cliente recusou receber",
+  "Endereço não encontrado",
+  "Cliente não respondeu",
+] as const;''',
+    'failure reasons',
+)
+
+replace_once(
+    '  const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);\n  const [signatureOpen, setSignatureOpen] = useState(false);',
+    '  const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);\n  const [cancelOpen, setCancelOpen] = useState(false);\n  const [cancelReason, setCancelReason] = useState("");\n  const [cancelling, setCancelling] = useState(false);\n  const [signatureOpen, setSignatureOpen] = useState(false);',
+    'cancel states',
+)
+
+finalize_anchor = '''  async function finalizeDelivery() {
+    if (!data || finalizing) return;
+    setFinishConfirmOpen(false);
+    setFinalizing(true);
+
+    try {
+      if (paymentDirty || !data.received_payment_updated_at) {
+        const paymentSaved = await saveReceivedPayment(true);
+        if (!paymentSaved) return;
+      }
+
+      const { error } = await (supabase as any).rpc("finalize_courier_delivery", {
+        _token: courierToken,
+        _proof_url: proofUrl,
+        _signature_url: signatureUrl,
+      });
+      if (error) throw error;
+
+      stopWatch();
+      await load();
+      toast.success("Entrega finalizada e pedido marcado como entregue! 🎉");
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível finalizar a entrega. Tente novamente.");
+    } finally {
+      setFinalizing(false);
+    }
+  }
+'''
+
+cancel_function = finalize_anchor + '''
+  async function cancelDelivery() {
+    if (!data || cancelling) return;
+    const reason = cancelReason.trim();
+    if (!reason) {
+      toast.error("Informe o motivo da entrega não realizada.");
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      const { data: result, error } = await (supabase as any).rpc("cancel_courier_delivery", {
+        _token: courierToken,
+        _reason: reason,
+      });
+      if (error) throw error;
+
+      stopWatch();
+      setCancelOpen(false);
+      setCancelReason("");
+      await load();
+      toast.success(
+        result?.order_status === "cancelado"
+          ? "Entrega não realizada e pedido cancelado."
+          : "Entrega marcada como não entregue e disponível para nova atribuição.",
+      );
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível cancelar a entrega.");
+    } finally {
+      setCancelling(false);
+    }
+  }
+'''
+replace_once(finalize_anchor, cancel_function, 'cancel function')
+
+replace_once(
+    '  const isFinished = data.status === "entregue" || data.status === "cancelado";',
+    '  const isFailed = data.status === "nao_entregue";\n  const isFinished = ["entregue", "cancelado", "devolvido", "nao_entregue"].includes(data.status);',
+    'finished states',
+)
+
+payment_start_marker = '''        {!isFinished && (
+          <section className="rounded-2xl p-4 space-y-4" style={cardStyle}>'''
+payment_start = text.index(payment_start_marker)
+controls_marker = '''        {!isFinished && (
+          <>
+            {data.status === "aguardando_motoboy" || data.status === "preparando" ? ('''
+controls_start = text.index(controls_marker, payment_start)
+payment_block = text[payment_start:controls_start]
+text = text[:payment_start] + text[controls_start:]
+
+started_anchor = '''            ) : (
+              <>
+                <section className="rounded-2xl p-4 space-y-3" style={cardStyle}>'''
+started_insert = '''            ) : (
+              <>
+''' + payment_block + '''                <section className="rounded-2xl p-4 space-y-3" style={cardStyle}>'''
+replace_once(started_anchor, started_insert, 'move payment after start')
+
+final_button_tail = '''                  </Button>
+
+                  {!paymentMatches && ('''
+cancel_button = '''                  </Button>
+
+                  <Button
+                    type="button"
+                    disabled={cancelling || finalizing}
+                    onClick={() => {
+                      setCancelReason("");
+                      setCancelOpen(true);
+                    }}
+                    className="w-full h-12 text-base"
+                    style={{ background: "#dc2626", color: "#fff" }}
+                  >
+                    {cancelling ? (
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    ) : (
+                      <XCircle className="h-5 w-5 mr-2" />
+                    )}
+                    Cancelar Entrega
+                  </Button>
+
+                  {!paymentMatches && ('''
+replace_once(final_button_tail, cancel_button, 'cancel delivery button')
+
+replace_once(
+    '            <CheckCircle2 className="h-10 w-10 mx-auto" style={{ color: t.primary_color }} />',
+    '''            {isFailed ? (
+              <AlertTriangle className="h-10 w-10 mx-auto" style={{ color: "#dc2626" }} />
+            ) : (
+              <CheckCircle2 className="h-10 w-10 mx-auto" style={{ color: t.primary_color }} />
+            )}''',
+    'finished icon',
+)
+
+replace_once(
+    '{data.status === "entregue" ? "Entrega finalizada" : "Entrega cancelada"}',
+    '{data.status === "entregue" ? "Entrega finalizada" : isFailed ? "Entrega não realizada" : "Entrega cancelada"}',
+    'finished label',
+)
+
+finish_modal_anchor = '''      {finishConfirmOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/75 p-4 flex items-end sm:items-center justify-center">'''
+cancel_modal = '''      {cancelOpen && (
+        <div className="fixed inset-0 z-[65] bg-black/75 p-4 flex items-end sm:items-center justify-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 text-gray-900 space-y-4 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-red-100 text-red-600">
+                <XCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">Cancelar entrega?</div>
+                <div className="mt-1 text-sm text-gray-600">
+                  Use esta opção quando a entrega já foi iniciada, mas não foi possível entregar ao cliente. Ela será registrada como não entregue no seu histórico.
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-semibold">Motivo</div>
+              <div className="grid gap-2">
+                {DELIVERY_FAILURE_REASONS.map((reason) => (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => setCancelReason(reason)}
+                    className="rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition"
+                    style={{
+                      borderColor: cancelReason === reason ? "#dc2626" : "#d1d5db",
+                      background: cancelReason === reason ? "#fef2f2" : "#ffffff",
+                      color: cancelReason === reason ? "#b91c1c" : "#111827",
+                    }}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-1">
+                <label className="mb-1 block text-xs font-medium text-gray-500">Outro motivo</label>
+                <input
+                  value={DELIVERY_FAILURE_REASONS.includes(cancelReason as any) ? "" : cancelReason}
+                  onChange={(event) => setCancelReason(event.target.value)}
+                  placeholder="Digite outro motivo..."
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-red-500"
+                />
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-red-50 p-3 text-xs text-red-700">
+              Se o cliente cancelou o pedido, ele será marcado como cancelado. Nos demais motivos, o pedido voltará para aguardando e poderá ser atribuído novamente.
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={cancelling}
+                onClick={() => {
+                  setCancelOpen(false);
+                  setCancelReason("");
+                }}
+                style={{ background: "#fff", color: "#111827", borderColor: "#d1d5db" }}
+              >
+                Voltar
+              </Button>
+              <Button
+                type="button"
+                disabled={cancelling || !cancelReason.trim()}
+                onClick={cancelDelivery}
+                style={{ background: "#dc2626", color: "#fff" }}
+              >
+                {cancelling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+''' + finish_modal_anchor
+replace_once(finish_modal_anchor, cancel_modal, 'cancel modal')
+
+path.write_text(text)
