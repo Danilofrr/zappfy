@@ -293,3 +293,17 @@ div[style*="Edit with Lovable"],
   position: absolute !important;
   z-index: -9999 !important;
 }
+
+/* Central de Entregas: mantém o botão de remover comprovante legível no mobile,
+   mesmo quando o tema global está em modo escuro. */
+img[alt="Comprovante"] + button {
+  background: #ffffff !important;
+  color: #dc2626 !important;
+  border-color: #fecaca !important;
+  box-shadow: none !important;
+}
+
+img[alt="Comprovante"] + button:hover {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+}
