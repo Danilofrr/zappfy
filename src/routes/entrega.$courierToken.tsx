@@ -137,12 +137,21 @@ const DEFAULT_THEME: CourierTheme = {
 const roundMoney = (value: unknown) => Math.round((Number(value) || 0) * 100) / 100;
 
 function parseMoneyInput(value: string) {
-  const normalized = String(value || "")
+  let normalized = String(value || "")
     .replace(/\s/g, "")
     .replace(/R\$/gi, "")
-    .replace(/\./g, "")
-    .replace(",", ".")
-    .replace(/[^0-9.]/g, "");
+    .replace(/[^0-9.,]/g, "");
+
+  if (normalized.includes(",")) {
+    normalized = normalized.replace(/\./g, "").replace(",", ".");
+  } else {
+    const dots = normalized.match(/\./g)?.length || 0;
+    if (dots > 1) {
+      const lastDot = normalized.lastIndexOf(".");
+      normalized = `${normalized.slice(0, lastDot).replace(/\./g, "")}${normalized.slice(lastDot)}`;
+    }
+  }
+
   return roundMoney(normalized);
 }
 
@@ -391,6 +400,14 @@ function CourierPage() {
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível anexar o comprovante.");
     }
+  }
+
+  function handleProofSelection(input: HTMLInputElement) {
+    const file = input.files?.[0];
+    if (!file) return;
+    void handleProof(file).finally(() => {
+      input.value = "";
+    });
   }
 
   async function removeEvidence(kind: "proof" | "signature") {
@@ -870,10 +887,7 @@ function CourierPage() {
                           capture="environment"
                           className="hidden"
                           disabled={evidenceSaving}
-                          onChange={async (event) => {
-                            await handleProof(event.target.files?.[0]);
-                            event.currentTarget.value = "";
-                          }}
+                          onChange={(event) => handleProofSelection(event.currentTarget)}
                         />
                       </label>
 
@@ -894,10 +908,7 @@ function CourierPage() {
                           accept="image/*"
                           className="hidden"
                           disabled={evidenceSaving}
-                          onChange={async (event) => {
-                            await handleProof(event.target.files?.[0]);
-                            event.currentTarget.value = "";
-                          }}
+                          onChange={(event) => handleProofSelection(event.currentTarget)}
                         />
                       </label>
                     </div>
