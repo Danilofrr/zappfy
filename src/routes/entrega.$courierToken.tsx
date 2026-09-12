@@ -9,7 +9,22 @@ import {
   orderShortNumber,
   type DeliveryStatus,
 } from "@/lib/tracking";
-import { Bike, MapPin, Navigation, CheckCircle2, AlertTriangle, Loader2, Phone, Power, Wifi, WifiOff } from "lucide-react";
+import {
+  AlertTriangle,
+  Bike,
+  CheckCircle2,
+  FileImage,
+  Loader2,
+  MapPin,
+  Navigation,
+  Phone,
+  Power,
+  Signature,
+  Trash2,
+  Upload,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/entrega/$courierToken")({
@@ -47,6 +62,8 @@ type CourierView = {
   notes: string | null;
   started_at: string | null;
   completed_at: string | null;
+  proof_url?: string | null;
+  signature_url?: string | null;
   order: {
     id: string;
     customer: string;
@@ -57,6 +74,8 @@ type CourierView = {
     total: number;
     notes: string | null;
     date: string;
+    payment?: string;
+    items?: { name: string; qty: number }[];
   };
   store: { name: string; whatsapp: string; logo_url: string | null };
   settings?: CourierTheme;
@@ -82,6 +101,32 @@ const DEFAULT_THEME: CourierTheme = {
   header_logo_align: "center",
 };
 
+async function imageFileToDataUrl(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("Envie uma imagem do comprovante.");
+  if (file.size > 3 * 1024 * 1024) throw new Error("A imagem deve ter no máximo 3 MB.");
+  const raw = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    reader.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const next = new Image();
+    next.onload = () => resolve(next);
+    next.onerror = () => reject(new Error("Imagem inválida."));
+    next.src = raw;
+  });
+  const max = 1400;
+  const scale = Math.min(1, max / Math.max(img.width, img.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(img.width * scale));
+  canvas.height = Math.max(1, Math.round(img.height * scale));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return raw;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
+
 function CourierPage() {
   const { courierToken } = Route.useParams();
   const [data, setData] = useState<CourierView | null>(null);
@@ -90,24 +135,35 @@ function CourierPage() {
   const [permError, setPermError] = useState<string | null>(null);
   const [lastSent, setLastSent] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  const [online, setOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
+  const [proofUrl, setProofUrl] = useState<string | null>(null);
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+  const [finalizing, setFinalizing] = useState(false);
+  const [signatureOpen, setSignatureOpen] = useState(false);
   const watchIdRef = useRef<number | null>(null);
-  const lastPosRef = useRef<{ lat: number; lng: number; t: number } | null>(null);
   const latestPosRef = useRef<GeolocationPosition | null>(null);
   const wakeLockRef = useRef<any>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [online, setOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
+  const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = useRef(false);
 
   async function load() {
     const { data: res, error } = await supabase.rpc("get_courier_view", { _token: courierToken });
-    if (!error && res) setData(res as CourierView);
+    if (!error && res) {
+      const view = res as CourierView;
+      setData(view);
+      setProofUrl(view.proof_url || null);
+      setSignatureUrl(view.signature_url || null);
+    }
     setLoading(false);
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [courierToken]);
+  useEffect(() => {
+    load();
+  }, [courierToken]);
 
   useEffect(() => () => stopWatch(), []);
 
-  // online/offline indicator
   useEffect(() => {
     const on = () => setOnline(true);
     const off = () => setOnline(false);
@@ -119,17 +175,6 @@ function CourierPage() {
     };
   }, []);
 
-  // Re-acquire wake lock if it was released (e.g., tab hidden then visible)
-  useEffect(() => {
-    const onVis = () => {
-      if (document.visibilityState === "visible" && watching && !wakeLockRef.current) {
-        requestWakeLock();
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [watching]);
-
   async function requestWakeLock() {
     try {
       if ("wakeLock" in navigator) {
@@ -140,18 +185,16 @@ function CourierPage() {
   }
 
   function stopWatch() {
-    if (watchIdRef.current != null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
-    if (heartbeatRef.current) {
-      clearInterval(heartbeatRef.current);
-      heartbeatRef.current = null;
-    }
+    if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
+    watchIdRef.current = null;
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    heartbeatRef.current = null;
     if (wakeLockRef.current) {
-      try { wakeLockRef.current.release(); } catch {}
-      wakeLockRef.current = null;
+      try {
+        wakeLockRef.current.release();
+      } catch {}
     }
+    wakeLockRef.current = null;
     setWatching(false);
   }
 
@@ -168,124 +211,155 @@ function CourierPage() {
       _accuracy: accuracy ?? undefined,
     });
     setSending(false);
-    if (error) {
-      console.error(error);
-    } else {
-      setLastSent(Date.now());
-    }
-  }
-
-  function startHeartbeat() {
-    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-    heartbeatRef.current = setInterval(() => {
-      // Re-send the most recent known position every 10s so the client sees
-      // last_updated_at advancing even when the courier is stopped.
-      const pos = latestPosRef.current;
-      if (pos) {
-        sendLocation(pos);
-      } else if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (p) => sendLocation(p),
-          () => {},
-          { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 },
-        );
-      }
-    }, 10_000);
+    if (!error) setLastSent(Date.now());
   }
 
   function startWatch(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
-      if (!("geolocation" in navigator)) {
-        const msg = "Seu navegador não suporta geolocalização.";
-        setPermError(msg);
-        reject(new Error(msg));
-        return;
-      }
+      if (!("geolocation" in navigator)) return reject(new Error("Geolocalização indisponível."));
       setPermError(null);
-      let resolved = false;
-      const id = navigator.geolocation.watchPosition(
+      let done = false;
+      watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
           latestPosRef.current = pos;
-          const { latitude, longitude } = pos.coords;
-          const now = Date.now();
-          const last = lastPosRef.current;
-          const movedEnough =
-            !last ||
-            now - last.t > 8000 ||
-            Math.hypot(latitude - last.lat, longitude - last.lng) * 111_000 > 15;
-          if (movedEnough) {
-            lastPosRef.current = { lat: latitude, lng: longitude, t: now };
-            sendLocation(pos);
-          }
-          if (!resolved) {
-            resolved = true;
+          sendLocation(pos);
+          if (!done) {
+            done = true;
             setWatching(true);
             requestWakeLock();
-            startHeartbeat();
+            heartbeatRef.current = setInterval(() => {
+              if (latestPosRef.current) sendLocation(latestPosRef.current);
+            }, 10000);
             resolve(pos);
           }
         },
         (err) => {
-          setPermError(
-            err.code === 1
-              ? "Permissão de localização negada. Permita a localização no navegador e tente novamente."
-              : err.message,
-          );
-          stopWatch();
-          if (!resolved) {
-            resolved = true;
-            reject(err);
-          }
+          setPermError(err.code === 1 ? "Permita a localização no navegador para iniciar a entrega." : err.message);
+          if (!done) reject(err);
         },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
       );
-      watchIdRef.current = id;
     });
   }
 
-  async function changeStatus(newStatus: "saiu_para_entrega" | "chegando" | "entregue") {
+  async function changeStatus(newStatus: "saiu_para_entrega" | "chegando") {
     const { error } = await supabase.rpc("update_courier_status", { _token: courierToken, _status: newStatus });
-    if (error) { toast.error(error.message); return; }
+    if (error) return toast.error(error.message);
     await load();
-    if (newStatus === "entregue") {
-      stopWatch();
-      toast.success("Entrega finalizada! 🎉");
-    } else if (newStatus === "saiu_para_entrega") {
-      toast.success("Entrega iniciada");
-    } else {
-      toast.success("Cliente notificado: você está chegando");
-    }
+    toast.success(newStatus === "saiu_para_entrega" ? "Entrega iniciada" : "Cliente notificado: você está chegando");
   }
 
   async function handleStart() {
     try {
       if (!watching) await startWatch();
     } catch {
-      return; // permission denied or error; keep button available
+      return;
     }
     if (data?.status === "aguardando_motoboy" || data?.status === "preparando") {
       await changeStatus("saiu_para_entrega");
     }
   }
 
+  async function handleProof(file?: File) {
+    if (!file) return;
+    try {
+      const url = await imageFileToDataUrl(file);
+      setProofUrl(url);
+      toast.success("Comprovante anexado. Ele será salvo ao finalizar a entrega.");
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível anexar o comprovante.");
+    }
+  }
+
+  function prepareSignatureCanvas() {
+    setSignatureOpen(true);
+    requestAnimationFrame(() => {
+      const canvas = signatureCanvasRef.current;
+      if (!canvas) return;
+      const ratio = Math.max(1, window.devicePixelRatio || 1);
+      const width = Math.max(280, canvas.clientWidth);
+      const height = 180;
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.scale(ratio, ratio);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = "#111827";
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+    });
+  }
+
+  function pointFromEvent(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = signatureCanvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  function signaturePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+    drawingRef.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const ctx = signatureCanvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const p = pointFromEvent(event);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  }
+
+  function signaturePointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (!drawingRef.current) return;
+    const ctx = signatureCanvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const p = pointFromEvent(event);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }
+
+  function clearSignature() {
+    const canvas = signatureCanvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    const ratio = Math.max(1, window.devicePixelRatio || 1);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    drawingRef.current = false;
+  }
+
+  function saveSignature() {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+    setSignatureUrl(canvas.toDataURL("image/png"));
+    setSignatureOpen(false);
+    toast.success("Assinatura registrada.");
+  }
+
+  async function finalizeDelivery() {
+    if (!confirm("Confirmar que o pedido foi entregue ao cliente?")) return;
+    setFinalizing(true);
+    const { error } = await (supabase as any).rpc("finalize_courier_delivery", {
+      _token: courierToken,
+      _proof_url: proofUrl,
+      _signature_url: signatureUrl,
+    });
+    setFinalizing(false);
+    if (error) return toast.error(error.message);
+    stopWatch();
+    await load();
+    toast.success("Entrega finalizada e pedido marcado como entregue! 🎉");
+  }
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0b1220] text-white">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center bg-[#0b1220] text-white"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
 
   if (!data) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0b1220] text-white text-center px-6">
-        <div>
-          <div className="text-4xl mb-2">🔒</div>
-          <h1 className="text-xl font-semibold">Link inválido</h1>
-          <p className="text-sm opacity-70 mt-2">Peça à loja para gerar um novo link.</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center bg-[#0b1220] text-white text-center px-6">Link de entrega inválido ou expirado.</div>;
   }
 
   const info = STATUS_INFO[data.status];
@@ -297,165 +371,145 @@ function CourierPage() {
     border: `1px solid ${t.card_border_color}`,
     boxShadow: `0 10px 26px -12px ${t.card_shadow_color}88`,
   };
-  const primarySoftBg = `${t.primary_color}22`;
-  const headerJustify = t.header_logo_align === "left" ? "flex-start" : t.header_logo_align === "right" ? "flex-end" : "center";
-  // Responsive: mobile uses ~85% of the configured desktop height.
-  const headerMobileH = Math.max(72, Math.round(t.header_height * 0.85));
-  const headerLogoMobile = Math.max(28, Math.round(t.header_logo_size * 0.85));
+  const soft = `${t.primary_color}22`;
 
   return (
     <div className="min-h-screen pb-10" style={{ background: t.background_color, color: t.text_color }}>
-      <style>{`@media (min-width: 768px){ header[data-courier-hdr]{ height: var(--hdr-h) !important; } header[data-courier-hdr] img{ height: var(--hdr-logo) !important; max-height: 80% !important; } }`}</style>
-      <header
-        data-courier-hdr
-        className="w-full flex items-center"
-        style={{
-          background: t.header_color,
-          justifyContent: headerJustify,
-          paddingLeft: t.header_logo_align === "center" ? 20 : 24,
-          paddingRight: t.header_logo_align === "center" ? 20 : 24,
-          ['--hdr-h' as any]: `${t.header_height}px`,
-          ['--hdr-logo' as any]: `${t.header_logo_size}px`,
-          height: `${headerMobileH}px`,
-        }}
-      >
-        {data.store.logo_url ? (
-          <img
-            src={data.store.logo_url}
-            alt={data.store.name}
-            style={{ height: headerLogoMobile, maxHeight: "78%", width: "auto" }}
-            className="object-contain"
-          />
-        ) : (
-          <div style={{ color: "#fff", fontWeight: 800, letterSpacing: 0.5, fontSize: 18 }}>{data.store.name}</div>
-        )}
+      <header className="w-full flex items-center justify-center px-5" style={{ background: t.header_color, height: 92 }}>
+        {data.store.logo_url ? <img src={data.store.logo_url} alt={data.store.name} className="max-h-16 object-contain" /> : <strong className="text-white text-xl">{data.store.name}</strong>}
       </header>
 
       <main className="max-w-md mx-auto px-4 space-y-4 mt-5">
-        {/* Store + order header (body) */}
         <section className="text-center space-y-2">
           <div className="text-xl font-extrabold" style={{ color: t.title_color }}>{data.store.name}</div>
           <div className="text-xs opacity-70">Pedido #{orderShortNumber(data.order.id)}</div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium" style={{ background: primarySoftBg, color: t.primary_color }}>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium" style={{ background: soft, color: t.primary_color }}>
             <Bike className="h-3.5 w-3.5" /> {info.label}
           </div>
         </section>
 
-        {/* Address */}
         <section className="rounded-2xl p-4" style={cardStyle}>
           <div className="flex items-start gap-2">
             <MapPin className="h-5 w-5 mt-0.5" style={{ color: t.icon_color }} />
             <div className="flex-1">
               <div className="text-xs uppercase tracking-wider opacity-60">Entregar em</div>
-              <div className="font-semibold leading-snug" style={{ color: t.title_color }}>{fullAddress}</div>
-              {data.order.notes && (
-                <div className="text-xs opacity-80 mt-2 whitespace-pre-wrap">{data.order.notes}</div>
-              )}
+              <div className="font-semibold" style={{ color: t.title_color }}>{fullAddress}</div>
             </div>
           </div>
-          <a
-            href={googleMapsRouteUrl(fullAddress)}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:opacity-90"
-            style={{ background: t.button_color, color: "#fff" }}
-          >
+          <a href={googleMapsRouteUrl(fullAddress)} target="_blank" rel="noreferrer" className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold" style={{ background: t.button_color, color: "#fff" }}>
             <Navigation className="h-4 w-4" /> Abrir rota no Google Maps
           </a>
         </section>
 
-        {/* Customer */}
         <section className="rounded-2xl p-4 space-y-2" style={cardStyle}>
           <div className="text-xs uppercase tracking-wider opacity-60">Cliente</div>
           <div className="font-semibold" style={{ color: t.title_color }}>{data.order.customer}</div>
-          {data.order.phone && (
-            <a
-              href={`tel:${data.order.phone}`}
-              className="inline-flex items-center gap-1.5 text-sm hover:opacity-80"
-              style={{ color: t.icon_color }}
-            >
-              <Phone className="h-3.5 w-3.5" /> {data.order.phone}
-            </a>
-          )}
-          {data.notes && (
-            <div className="text-xs italic opacity-80 pt-1 border-t" style={{ borderColor: t.card_border_color }}>Obs: {data.notes}</div>
-          )}
+          {data.order.phone && <a href={`tel:${data.order.phone}`} className="inline-flex items-center gap-1.5 text-sm" style={{ color: t.icon_color }}><Phone className="h-3.5 w-3.5" /> {data.order.phone}</a>}
+          {data.order.items?.length ? <div className="text-xs opacity-80 pt-2">{data.order.items.map(i => `${i.qty}x ${i.name}`).join(" · ")}</div> : null}
         </section>
 
-        {/* Status / actions */}
         {!isFinished && (
-          <section className="rounded-2xl p-4 space-y-3" style={cardStyle}>
-            {permError && (
-              <div className="rounded-lg bg-red-500/15 text-red-300 text-xs p-3 flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> {permError}
-              </div>
-            )}
-            {watching && (
-              <div className="rounded-lg text-xs p-3 space-y-1.5" style={{ background: primarySoftBg, color: t.primary_color }}>
-                <div className="flex items-center justify-between gap-2 font-medium">
-                  <span className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: t.primary_color }} />
-                    GPS ativo · enviando em tempo real
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: online ? t.primary_color : "#f87171" }}>
-                    {online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-                    {online ? "Online" : "Sem internet"}
-                  </span>
-                </div>
-                <div className="opacity-80">
-                  {sending ? "Sincronizando…" : `Último envio: ${formatRelative(lastSent ? new Date(lastSent) : null)}`}
-                </div>
-                <div className="opacity-70 text-[11px]">⚠️ Para manter o rastreamento ativo, não feche esta tela durante a entrega.</div>
-              </div>
-            )}
-            {!watching && data.status !== "aguardando_motoboy" && data.status !== "preparando" && (
-              <div className="rounded-lg text-xs p-3" style={{ background: "#f59e0b22", color: "#f59e0b" }}>
-                <div className="flex items-center gap-2 font-medium">
-                  <AlertTriangle className="h-3.5 w-3.5" /> GPS pausado
-                </div>
-                <div className="opacity-80 mt-1">Toque em "Retomar rastreamento" para voltar a enviar sua localização.</div>
-              </div>
-            )}
-
-            {data.status === "aguardando_motoboy" || data.status === "preparando" ? (
-              <Button onClick={handleStart} className="w-full h-12 text-base hover:opacity-90" style={{ background: t.primary_color, color: "#fff" }}>
-                <Bike className="h-5 w-5 mr-2" /> Iniciar Entrega
-              </Button>
+          <>
+            {(data.status === "aguardando_motoboy" || data.status === "preparando") ? (
+              <section className="rounded-2xl p-4" style={cardStyle}>
+                <Button onClick={handleStart} className="w-full h-12 text-base" style={{ background: t.primary_color, color: "#fff" }}><Bike className="h-5 w-5 mr-2" /> Iniciar Entrega</Button>
+                {permError && <div className="mt-3 text-xs text-red-400 flex gap-2"><AlertTriangle className="h-4 w-4" /> {permError}</div>}
+              </section>
             ) : (
               <>
-                {!watching && (
-                  <Button onClick={startWatch} className="w-full h-11 hover:opacity-90" style={{ background: t.primary_color, color: "#fff" }}>
-                    <MapPin className="h-4 w-4 mr-2" /> Retomar rastreamento
+                <section className="rounded-2xl p-4 space-y-3" style={cardStyle}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold" style={{ color: t.title_color }}>Comprovante de pagamento</div>
+                      <div className="text-xs opacity-65">Anexe uma foto do PIX, cartão ou recibo do cliente.</div>
+                    </div>
+                    <FileImage className="h-5 w-5" style={{ color: t.icon_color }} />
+                  </div>
+                  {proofUrl ? (
+                    <div className="space-y-2">
+                      <img src={proofUrl} alt="Comprovante" className="w-full max-h-64 object-contain rounded-xl bg-black/20" />
+                      <Button variant="outline" className="w-full" onClick={() => setProofUrl(null)}><Trash2 className="h-4 w-4 mr-2" /> Remover comprovante</Button>
+                    </div>
+                  ) : (
+                    <label className="flex h-12 cursor-pointer items-center justify-center rounded-xl border border-dashed text-sm font-medium hover:opacity-80">
+                      <Upload className="h-4 w-4 mr-2" /> Anexar comprovante
+                      <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleProof(e.target.files?.[0])} />
+                    </label>
+                  )}
+                </section>
+
+                <section className="rounded-2xl p-4 space-y-3" style={cardStyle}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold" style={{ color: t.title_color }}>Assinatura do cliente <span className="text-xs font-normal opacity-60">(opcional)</span></div>
+                      <div className="text-xs opacity-65">O cliente pode assinar com o dedo na tela.</div>
+                    </div>
+                    <Signature className="h-5 w-5" style={{ color: t.icon_color }} />
+                  </div>
+                  {signatureUrl ? (
+                    <div className="space-y-2">
+                      <img src={signatureUrl} alt="Assinatura do cliente" className="w-full h-36 object-contain rounded-xl bg-white" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" onClick={prepareSignatureCanvas}>Refazer</Button>
+                        <Button variant="outline" onClick={() => setSignatureUrl(null)}><Trash2 className="h-4 w-4 mr-2" /> Remover</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button variant="outline" className="w-full" onClick={prepareSignatureCanvas}><Signature className="h-4 w-4 mr-2" /> Coletar assinatura</Button>
+                  )}
+                </section>
+
+                <section className="rounded-2xl p-4 space-y-3" style={cardStyle}>
+                  {watching ? (
+                    <div className="rounded-lg text-xs p-3" style={{ background: soft, color: t.primary_color }}>
+                      <div className="flex justify-between"><span>GPS ativo</span><span className="flex items-center gap-1">{online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}{online ? "Online" : "Sem internet"}</span></div>
+                      <div className="opacity-70 mt-1">{sending ? "Sincronizando…" : `Último envio: ${formatRelative(lastSent ? new Date(lastSent) : null)}`}</div>
+                    </div>
+                  ) : <Button variant="outline" className="w-full" onClick={startWatch}><MapPin className="h-4 w-4 mr-2" /> Retomar rastreamento</Button>}
+                  {data.status !== "chegando" && <Button className="w-full" onClick={() => changeStatus("chegando")} style={{ background: t.secondary_color, color: "#fff" }}>Estou chegando</Button>}
+                  <Button disabled={finalizing} onClick={finalizeDelivery} className="w-full h-12 text-base" style={{ background: t.button_color, color: "#fff" }}>
+                    {finalizing ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <CheckCircle2 className="h-5 w-5 mr-2" />} Finalizar Entrega
                   </Button>
-                )}
-                {data.status !== "chegando" && (
-                  <Button onClick={() => changeStatus("chegando")} className="w-full h-11 hover:opacity-90" style={{ background: t.secondary_color, color: "#fff" }}>
-                    Estou chegando
-                  </Button>
-                )}
-                <Button onClick={() => changeStatus("entregue")} className="w-full h-12 text-base hover:opacity-90" style={{ background: t.button_color, color: "#fff" }}>
-                  <CheckCircle2 className="h-5 w-5 mr-2" /> Finalizar Entrega
-                </Button>
-                {watching && (
-                  <button onClick={stopWatch} className="w-full text-xs opacity-60 hover:opacity-100 inline-flex items-center justify-center gap-1 pt-1">
-                    <Power className="h-3 w-3" /> Pausar envio de localização
-                  </button>
-                )}
+                  {watching && <button onClick={stopWatch} className="w-full text-xs opacity-60 inline-flex items-center justify-center gap-1"><Power className="h-3 w-3" /> Pausar localização</button>}
+                </section>
               </>
             )}
-          </section>
+          </>
         )}
 
         {isFinished && (
-          <section className="rounded-2xl p-6 text-center" style={{ ...cardStyle, background: primarySoftBg, borderColor: `${t.primary_color}55` }}>
-            <CheckCircle2 className="h-10 w-10 mx-auto mb-2" style={{ color: t.primary_color }} />
+          <section className="rounded-2xl p-6 text-center space-y-3" style={{ ...cardStyle, background: soft, borderColor: `${t.primary_color}55` }}>
+            <CheckCircle2 className="h-10 w-10 mx-auto" style={{ color: t.primary_color }} />
             <div className="text-lg font-semibold" style={{ color: t.title_color }}>{data.status === "entregue" ? "Entrega finalizada" : "Entrega cancelada"}</div>
-            {data.completed_at && (
-              <div className="text-xs opacity-70 mt-1">{formatRelative(data.completed_at)}</div>
-            )}
+            {proofUrl && <div className="text-xs opacity-75">✓ Comprovante de pagamento anexado</div>}
+            {signatureUrl && <div className="text-xs opacity-75">✓ Assinatura do cliente registrada</div>}
           </section>
         )}
       </main>
+
+      {signatureOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 p-4 flex items-end sm:items-center justify-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-4 text-gray-900 space-y-3">
+            <div>
+              <div className="text-lg font-bold">Assinatura do cliente</div>
+              <div className="text-xs text-gray-500">Peça ao cliente para assinar com o dedo no espaço abaixo.</div>
+            </div>
+            <canvas
+              ref={signatureCanvasRef}
+              className="w-full h-[180px] rounded-xl border border-gray-300 touch-none bg-white"
+              onPointerDown={signaturePointerDown}
+              onPointerMove={signaturePointerMove}
+              onPointerUp={() => (drawingRef.current = false)}
+              onPointerCancel={() => (drawingRef.current = false)}
+            />
+            <div className="grid grid-cols-3 gap-2">
+              <Button variant="outline" onClick={clearSignature}>Limpar</Button>
+              <Button variant="outline" onClick={() => setSignatureOpen(false)}>Cancelar</Button>
+              <Button onClick={saveSignature}>Salvar</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="text-center text-[11px] opacity-50 mt-8">{t.footer_text}</footer>
     </div>
