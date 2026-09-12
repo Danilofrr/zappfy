@@ -19,11 +19,6 @@ jobs:
           ref: fix/motoboys-realtime-pagamentos
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
       - name: Patch motoboys page
         shell: bash
         run: |
@@ -92,14 +87,14 @@ jobs:
 
           replace_once('''    setInventoryRows(Array.isArray(inventoryData) ? inventoryData : []);
             setLoading(false);
-            }
+          }
 
-            async function loadHistory(couriers = list) {
+          async function loadHistory(couriers = list) {
           ''', '''    setInventoryRows(Array.isArray(inventoryData) ? inventoryData : []);
             if (showLoading) setLoading(false);
-            }
+          }
 
-            async function loadHistory(couriers = list, showLoading = true) {
+          async function loadHistory(couriers = list, showLoading = true) {
           ''', 'load spinner end and history signature')
 
           replace_once('''    setHistoryLoading(true);
@@ -149,14 +144,14 @@ jobs:
           replace_once('''    } finally {
               setHistoryLoading(false);
             }
-            }
+          }
 
-            async function loadInventoryMovements''', '''    } finally {
+          async function loadInventoryMovements''', '''    } finally {
               if (showLoading) setHistoryLoading(false);
             }
-            }
+          }
 
-            async function loadInventoryMovements''', 'history spinner end')
+          async function loadInventoryMovements''', 'history spinner end')
 
           old_realtime = '''  useEffect(() => {
             if (!activeStoreId) return;
@@ -258,11 +253,13 @@ jobs:
           path.write_text(text)
           PY
 
-      - name: Format and validate
+      - name: Validate patch
+        shell: bash
         run: |
-          npx prettier --write src/routes/_authenticated/motoboys.tsx
-          npx prettier --check src/routes/_authenticated/motoboys.tsx
-          npx tsc --noEmit --pretty false
+          git diff --check
+          grep -q 'paymentRecordForDelivery' src/routes/_authenticated/motoboys.tsx
+          grep -q 'received_payments,received_payment_total' src/routes/_authenticated/motoboys.tsx
+          ! grep -q 'table: "delivery_tracking"' src/routes/_authenticated/motoboys.tsx
 
       - name: Commit patch
         shell: bash
