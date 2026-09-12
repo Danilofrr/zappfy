@@ -142,12 +142,14 @@ function CourierPage() {
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [finalizing, setFinalizing] = useState(false);
   const [signatureOpen, setSignatureOpen] = useState(false);
+  const [evidenceSaving, setEvidenceSaving] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const latestPosRef = useRef<GeolocationPosition | null>(null);
   const wakeLockRef = useRef<any>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
+  const signatureHasInkRef = useRef(false);
 
   async function load() {
     const { data: res, error } = await supabase.rpc("get_courier_view", { _token: courierToken });
@@ -262,19 +264,57 @@ function CourierPage() {
     }
   }
 
+  async function persistEvidence(options: {
+    proofUrl?: string | null;
+    signatureUrl?: string | null;
+    clearProof?: boolean;
+    clearSignature?: boolean;
+  }) {
+    setEvidenceSaving(true);
+    try {
+      const { error } = await (supabase as any).rpc("save_courier_delivery_evidence", {
+        _token: courierToken,
+        _proof_url: options.proofUrl ?? null,
+        _signature_url: options.signatureUrl ?? null,
+        _clear_proof: options.clearProof ?? false,
+        _clear_signature: options.clearSignature ?? false,
+      });
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível salvar a comprovação da entrega.");
+      return false;
+    } finally {
+      setEvidenceSaving(false);
+    }
+  }
+
   async function handleProof(file?: File) {
     if (!file) return;
     try {
       const url = await imageFileToDataUrl(file);
+      const saved = await persistEvidence({ proofUrl: url });
+      if (!saved) return;
       setProofUrl(url);
-      toast.success("Comprovante anexado. Ele será salvo ao finalizar a entrega.");
+      toast.success("Comprovante salvo na entrega.");
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível anexar o comprovante.");
     }
   }
 
+  async function removeEvidence(kind: "proof" | "signature") {
+    const saved = await persistEvidence(
+      kind === "proof" ? { clearProof: true } : { clearSignature: true },
+    );
+    if (!saved) return;
+    if (kind === "proof") setProofUrl(null);
+    else setSignatureUrl(null);
+    toast.success(kind === "proof" ? "Comprovante removido." : "Assinatura removida.");
+  }
+
   function prepareSignatureCanvas() {
     setSignatureOpen(true);
+    signatureHasInkRef.current = false;
     requestAnimationFrame(() => {
       const canvas = signatureCanvasRef.current;
       if (!canvas) return;
@@ -303,6 +343,7 @@ function CourierPage() {
 
   function signaturePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
     drawingRef.current = true;
+    signatureHasInkRef.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
     const ctx = signatureCanvasRef.current?.getContext("2d");
     if (!ctx) return;
@@ -324,21 +365,28 @@ function CourierPage() {
     const canvas = signatureCanvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
-    const ratio = Math.max(1, window.devicePixelRatio || 1);
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
     drawingRef.current = false;
+    signatureHasInkRef.current = false;
   }
 
-  function saveSignature() {
+  async function saveSignature() {
     const canvas = signatureCanvasRef.current;
     if (!canvas) return;
-    setSignatureUrl(canvas.toDataURL("image/png"));
+    if (!signatureHasInkRef.current) {
+      toast.error("Peça ao cliente para assinar antes de salvar.");
+      return;
+    }
+    const url = canvas.toDataURL("image/png");
+    const saved = await persistEvidence({ signatureUrl: url });
+    if (!saved) return;
+    setSignatureUrl(url);
     setSignatureOpen(false);
-    toast.success("Assinatura registrada.");
+    toast.success("Assinatura salva na entrega.");
   }
 
   async function finalizeDelivery() {
@@ -437,19 +485,19 @@ function CourierPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <div className="font-semibold" style={{ color: t.title_color }}>Comprovante de pagamento</div>
-                      <div className="text-xs opacity-65">Anexe uma foto do PIX, cartão ou recibo do cliente.</div>
+                      <div className="text-xs opacity-65">Anexe uma foto do PIX, cartão ou recibo do cliente. O arquivo é salvo imediatamente.</div>
                     </div>
                     <FileImage className="h-5 w-5" style={{ color: t.icon_color }} />
                   </div>
                   {proofUrl ? (
                     <div className="space-y-2">
                       <img src={proofUrl} alt="Comprovante" className="w-full max-h-64 object-contain rounded-xl bg-black/20" />
-                      <Button variant="outline" className="w-full" onClick={() => setProofUrl(null)}><Trash2 className="h-4 w-4 mr-2" /> Remover comprovante</Button>
+                      <Button variant="outline" className="w-full" disabled={evidenceSaving} onClick={() => removeEvidence("proof")}><Trash2 className="h-4 w-4 mr-2" /> Remover comprovante</Button>
                     </div>
                   ) : (
-                    <label className="flex h-12 cursor-pointer items-center justify-center rounded-xl border border-dashed text-sm font-medium hover:opacity-80">
-                      <Upload className="h-4 w-4 mr-2" /> Anexar comprovante
-                      <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleProof(e.target.files?.[0])} />
+                    <label className={`flex h-12 items-center justify-center rounded-xl border border-dashed text-sm font-medium ${evidenceSaving ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:opacity-80"}`}>
+                      {evidenceSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />} {evidenceSaving ? "Salvando comprovante…" : "Anexar comprovante"}
+                      <input type="file" accept="image/*" capture="environment" className="hidden" disabled={evidenceSaving} onChange={e => handleProof(e.target.files?.[0])} />
                     </label>
                   )}
                 </section>
@@ -458,7 +506,7 @@ function CourierPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <div className="font-semibold" style={{ color: t.title_color }}>Assinatura do cliente <span className="text-xs font-normal opacity-60">(opcional)</span></div>
-                      <div className="text-xs opacity-65">O cliente pode assinar com o dedo na tela.</div>
+                      <div className="text-xs opacity-65">O cliente pode assinar com o dedo na tela. Ao salvar, a assinatura é enviada imediatamente.</div>
                     </div>
                     <Signature className="h-5 w-5" style={{ color: t.icon_color }} />
                   </div>
@@ -466,12 +514,12 @@ function CourierPage() {
                     <div className="space-y-2">
                       <img src={signatureUrl} alt="Assinatura do cliente" className="w-full h-36 object-contain rounded-xl bg-white" />
                       <div className="grid grid-cols-2 gap-2">
-                        <Button variant="outline" onClick={prepareSignatureCanvas}>Refazer</Button>
-                        <Button variant="outline" onClick={() => setSignatureUrl(null)}><Trash2 className="h-4 w-4 mr-2" /> Remover</Button>
+                        <Button variant="outline" disabled={evidenceSaving} onClick={prepareSignatureCanvas}>Refazer</Button>
+                        <Button variant="outline" disabled={evidenceSaving} onClick={() => removeEvidence("signature")}><Trash2 className="h-4 w-4 mr-2" /> Remover</Button>
                       </div>
                     </div>
                   ) : (
-                    <Button variant="outline" className="w-full" onClick={prepareSignatureCanvas}><Signature className="h-4 w-4 mr-2" /> Coletar assinatura</Button>
+                    <Button variant="outline" className="w-full" disabled={evidenceSaving} onClick={prepareSignatureCanvas}><Signature className="h-4 w-4 mr-2" /> Coletar assinatura</Button>
                   )}
                 </section>
 
@@ -483,8 +531,8 @@ function CourierPage() {
                     </div>
                   ) : <Button variant="outline" className="w-full" onClick={startWatch}><MapPin className="h-4 w-4 mr-2" /> Retomar rastreamento</Button>}
                   {data.status !== "chegando" && <Button className="w-full" onClick={() => changeStatus("chegando")} style={{ background: t.secondary_color, color: "#fff" }}>Estou chegando</Button>}
-                  <Button disabled={finalizing} onClick={finalizeDelivery} className="w-full h-12 text-base" style={{ background: t.button_color, color: "#fff" }}>
-                    {finalizing ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <CheckCircle2 className="h-5 w-5 mr-2" />} Finalizar Entrega
+                  <Button disabled={finalizing || evidenceSaving} onClick={finalizeDelivery} className="w-full h-12 text-base" style={{ background: t.button_color, color: "#fff" }}>
+                    {finalizing || evidenceSaving ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <CheckCircle2 className="h-5 w-5 mr-2" />} {evidenceSaving ? "Salvando comprovação…" : "Finalizar Entrega"}
                   </Button>
                   {watching && <button onClick={stopWatch} className="w-full text-xs opacity-60 inline-flex items-center justify-center gap-1"><Power className="h-3 w-3" /> Pausar localização</button>}
                 </section>
@@ -519,9 +567,9 @@ function CourierPage() {
               onPointerCancel={() => (drawingRef.current = false)}
             />
             <div className="grid grid-cols-3 gap-2">
-              <Button variant="outline" onClick={clearSignature}>Limpar</Button>
-              <Button variant="outline" onClick={() => setSignatureOpen(false)}>Cancelar</Button>
-              <Button onClick={saveSignature}>Salvar</Button>
+              <Button variant="outline" disabled={evidenceSaving} onClick={clearSignature}>Limpar</Button>
+              <Button variant="outline" disabled={evidenceSaving} onClick={() => setSignatureOpen(false)}>Cancelar</Button>
+              <Button disabled={evidenceSaving} onClick={saveSignature}>{evidenceSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>
             </div>
           </div>
         </div>
