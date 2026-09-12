@@ -1,0 +1,181 @@
+from pathlib import Path
+
+path = Path("src/routes/entrega.$courierToken.tsx")
+text = path.read_text()
+
+
+def replace_once(old: str, new: str, label: str) -> None:
+    global text
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{label}: expected 1 occurrence, found {count}")
+    text = text.replace(old, new, 1)
+
+
+replace_once(
+    "  const [finalizing, setFinalizing] = useState(false);\n",
+    "  const [finalizing, setFinalizing] = useState(false);\n  const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);\n",
+    "confirmation state",
+)
+
+old_finalize = '''  async function finalizeDelivery() {
+    if (!confirm("Confirmar que o pedido foi entregue ao cliente?")) return;
+    setFinalizing(true);
+
+    const paymentSaved = await saveReceivedPayment(true);
+    if (!paymentSaved) {
+      setFinalizing(false);
+      return;
+    }
+
+    const { error } = await (supabase as any).rpc("finalize_courier_delivery", {
+      _token: courierToken,
+      _proof_url: proofUrl,
+      _signature_url: signatureUrl,
+    });
+    setFinalizing(false);
+    if (error) return toast.error(error.message);
+    stopWatch();
+    await load();
+    toast.success("Entrega finalizada e pedido marcado como entregue! 🎉");
+  }
+'''
+
+new_finalize = '''  function requestFinalizeDelivery() {
+    if (!data || finalizing) return;
+    if (!paymentMatches) {
+      toast.error("Confira os valores recebidos antes de finalizar a entrega.");
+      return;
+    }
+    setFinishConfirmOpen(true);
+  }
+
+  async function finalizeDelivery() {
+    if (!data || finalizing) return;
+    setFinishConfirmOpen(false);
+    setFinalizing(true);
+
+    try {
+      if (paymentDirty || !data.received_payment_updated_at) {
+        const paymentSaved = await saveReceivedPayment(true);
+        if (!paymentSaved) return;
+      }
+
+      const { error } = await (supabase as any).rpc("finalize_courier_delivery", {
+        _token: courierToken,
+        _proof_url: proofUrl,
+        _signature_url: signatureUrl,
+      });
+      if (error) throw error;
+
+      stopWatch();
+      await load();
+      toast.success("Entrega finalizada e pedido marcado como entregue! 🎉");
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível finalizar a entrega. Tente novamente.");
+    } finally {
+      setFinalizing(false);
+    }
+  }
+'''
+replace_once(old_finalize, new_finalize, "finalization handler")
+
+old_button = '''                  <Button
+                    disabled={finalizing || evidenceSaving || paymentSaving}
+                    onClick={finalizeDelivery}
+                    className="w-full h-12 text-base"
+                    style={{ background: t.button_color, color: "#fff" }}
+                  >
+                    {finalizing || evidenceSaving || paymentSaving ? (
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                    )}
+                    Finalizar Entrega
+                  </Button>
+
+                  {watching && (
+'''
+
+new_button = '''                  <Button
+                    type="button"
+                    disabled={finalizing || evidenceSaving || paymentSaving || !paymentMatches}
+                    onClick={requestFinalizeDelivery}
+                    className="w-full h-12 text-base"
+                    style={{ background: t.button_color, color: "#fff" }}
+                  >
+                    {finalizing || evidenceSaving || paymentSaving ? (
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                    )}
+                    Finalizar Entrega
+                  </Button>
+
+                  {!paymentMatches && (
+                    <div className="text-center text-xs font-medium text-red-500">
+                      Confira os valores recebidos acima antes de finalizar.
+                    </div>
+                  )}
+
+                  {watching && (
+'''
+replace_once(old_button, new_button, "finalize button")
+
+marker = '''      {signatureOpen && (
+'''
+modal = '''      {finishConfirmOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/75 p-4 flex items-end sm:items-center justify-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 text-gray-900 space-y-4 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-green-100 text-green-600">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">Finalizar entrega?</div>
+                <div className="mt-1 text-sm text-gray-600">
+                  Confirme somente depois de entregar o pedido ao cliente. O pedido será marcado como entregue e o rastreamento será encerrado.
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-gray-50 p-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-gray-500">Pedido</span>
+                <strong>#{orderShortNumber(data.order.id)}</strong>
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-3">
+                <span className="text-gray-500">Valor recebido</span>
+                <strong>{brl(receivedTotal)}</strong>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={finalizing}
+                onClick={() => setFinishConfirmOpen(false)}
+                style={{ background: "#fff", color: "#111827", borderColor: "#d1d5db" }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={finalizing}
+                onClick={finalizeDelivery}
+                style={{ background: "#16a34a", color: "#fff" }}
+              >
+                {finalizing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                Confirmar entrega
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {signatureOpen && (
+'''
+replace_once(marker, modal, "confirmation modal")
+
+path.write_text(text)
