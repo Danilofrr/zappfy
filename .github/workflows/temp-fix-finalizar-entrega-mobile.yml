@@ -19,10 +19,10 @@ jobs:
           ref: fix/finalizar-entrega-mobile
           fetch-depth: 0
 
-      - name: Repair order label
+      - name: Restore existing order label helper
         shell: bash
         run: |
-          python3 -c 'from pathlib import Path; p=Path("src/routes/entrega.$courierToken.tsx"); t=p.read_text(); old="#{orderShortNumber(data.order.id)}"; new="#{String(data.order.id || \"\").slice(0, 8)}"; assert old in t; p.write_text(t.replace(old,new,1))'
+          python3 -c 'from pathlib import Path; p=Path("src/routes/entrega.$courierToken.tsx"); t=p.read_text(); old="#{String(data.order.id || \"\").slice(0, 8)}"; new="#{orderShortNumber(data.order.id)}"; assert old in t; p.write_text(t.replace(old,new,1))'
           git diff --check
 
       - name: Commit repair
@@ -32,5 +32,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add 'src/routes/entrega.$courierToken.tsx'
           git diff --cached --check
-          git commit -m "fix: correct delivery confirmation order label"
+          git commit -m "chore: restore delivery order number helper"
           git push origin HEAD:fix/finalizar-entrega-mobile
