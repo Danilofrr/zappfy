@@ -803,6 +803,32 @@ function MotoboysPage() {
                         <div className="flex items-center gap-2"><RotateCcw className="h-4 w-4 text-orange-500" /><span><b>{history?.returned ?? 0}</b> devoluções</span></div>
                       </div>
 
+                      {(history?.deliveredOrders.length ?? 0) > 0 && (
+              <div className="mt-4 rounded-xl border border-primary/25 bg-primary/5 p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> Clientes entregues
+                </div>
+                <div className="space-y-2">
+                  {history?.deliveredOrders.slice(0, 3).map((delivery: any) => (
+                    <div key={delivery.id} className="flex items-center justify-between gap-3 rounded-lg bg-background/60 px-2.5 py-2 text-xs">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-foreground">{delivery.order?.customer || "Cliente não informado"}</div>
+                        <div className="text-[10px] text-muted-foreground">Pedido #{String(delivery.order?.id || delivery.order_id || "").slice(0, 8)}</div>
+                      </div>
+                      <div className="shrink-0 text-[10px] text-muted-foreground">
+                        {delivery.completed_at
+                          ? new Date(delivery.completed_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                          : ""}
+                      </div>
+                    </div>
+                  ))}
+                  {(history?.deliveredOrders.length ?? 0) > 3 && (
+                    <div className="text-[11px] text-muted-foreground">+ {(history?.deliveredOrders.length ?? 0) - 3} outra(s) entrega(s). Veja todas em “Ver carga e histórico”.</div>
+                  )}
+                </div>
+              </div>
+            )}
+
                       <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                         <div className="rounded-xl border p-3">
                           <div className="text-xs text-muted-foreground">Pedidos em posse</div>
