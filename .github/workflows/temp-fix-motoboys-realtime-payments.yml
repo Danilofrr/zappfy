@@ -92,12 +92,7 @@ jobs:
           literal('    setHistoryLoading(true);', '    if (showLoading) setHistoryLoading(true);', 'history spinner start')
           regex(r'(\} finally \{\n\s*)setHistoryLoading\(false\);', r'\1if (showLoading) setHistoryLoading(false);', 'history spinner end')
 
-          literal(
-          '''    try {
-              const results = await Promise.all(
-          ''',
-          '''    try {
-              const { data: receivedRows, error: receivedError } = await (supabase as any)
+          payment_query = '''      const { data: receivedRows, error: receivedError } = await (supabase as any)
                 .from("delivery_tracking")
                 .select("order_id,courier_id,received_payments,received_payment_total,completed_at")
                 .eq("store_id", activeStoreId)
@@ -111,8 +106,12 @@ jobs:
                 (Array.isArray(receivedRows) ? receivedRows : []).map((row: any) => [String(row.order_id || ""), row]),
               );
 
-              const results = await Promise.all(
-          ''', 'actual payment query')
+          '''
+          regex(
+              r'(    try \{\n)(      const results = await Promise\.all\()',
+              lambda m: m.group(1) + payment_query + m.group(2),
+              'actual payment query',
+          )
 
           regex(
               r'''const deliveredOrders = orders\.filter\(\s*\(delivery: any\) =>\s*delivery\.status === "entregue" && isWithin\(delivery\.completed_at, range\.start, range\.end\),\s*\);''',
@@ -181,13 +180,14 @@ jobs:
           }, [activeStoreId, activeTab, list, period, customFrom, customTo]);'''
           text = text[:realtime_start] + new_realtime + text[realtime_end:]
 
-          literal(
-          '''                const paymentTotals = sumPaymentBreakdowns(
-                          (history?.deliveredOrders || []).map((delivery: any) => delivery.order || {}),
-                        );''',
-          '''                const paymentTotals = sumPaymentBreakdowns(
-                          (history?.deliveredOrders || []).map((delivery: any) => paymentRecordForDelivery(delivery)),
-                        );''', 'payment totals')
+          regex(
+              r'const paymentTotals = sumPaymentBreakdowns\(\s*\(history\?\.deliveredOrders \|\| \[\]\)\.map\(\(delivery: any\) => delivery\.order \|\| \{\}\),\s*\);',
+              '''const paymentTotals = sumPaymentBreakdowns(
+                  (history?.deliveredOrders || []).map((delivery: any) => paymentRecordForDelivery(delivery)),
+                );''',
+              'payment totals',
+              re.S,
+          )
 
           literal(
               '{formatPaymentBreakdown(delivery.order)}</div>\n                      </div>\n                      <div className="shrink-0 text-[10px] text-muted-foreground">',
