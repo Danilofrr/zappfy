@@ -3,24 +3,24 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Bike,
-  MapPin,
-  Phone,
-  Loader2,
-  RefreshCw,
-  Package,
-  Store,
-  LogOut,
-  Navigation,
-  MessageCircle,
-  CheckCircle2,
   AlertTriangle,
+  Bike,
+  CheckCircle2,
+  Loader2,
+  LogOut,
+  MapPin,
+  MessageCircle,
+  Navigation,
+  Package,
+  Phone,
+  RefreshCw,
+  Store,
   Undo2,
-  ArrowRight,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRelative, orderShortNumber } from "@/lib/tracking";
-import { getCourierSession, clearCourierSession } from "@/lib/courier-session";
+import { clearCourierSession, getCourierSession } from "@/lib/courier-session";
 import { rememberEntregasPwa } from "@/lib/entregas-pwa";
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug/")({
@@ -65,19 +65,10 @@ type Delivery = {
     district: string;
     city: string;
     total: number;
-    date: string;
     notes: string | null;
     payment: string;
     items: { name: string; qty: number }[];
   };
-};
-
-type ActiveDelivery = {
-  tracking_code: string;
-  courier_token: string;
-  status: string;
-  accepted_at: string | null;
-  order: { id: string; customer: string; address: string };
 };
 
 type Me = {
@@ -115,52 +106,71 @@ function CentralPage() {
   const [theme, setTheme] = useState<CentralTheme>(DEFAULT_THEME);
   const [me, setMe] = useState<Me | null>(null);
   const [available, setAvailable] = useState<Delivery[]>([]);
-  const [active, setActive] = useState<ActiveDelivery[]>([]);
   const [loading, setLoading] = useState(true);
-  const [accepting, setAccepting] = useState<string | null>(null);
+  const [busyTrackingCode, setBusyTrackingCode] = useState<string | null>(null);
 
-  // Bootstrap: theme + verify session
   useEffect(() => {
     let alive = true;
     rememberEntregasPwa(storeSlug);
+
     (async () => {
       setLoading(true);
       const session = getCourierSession(storeSlug);
       if (!session) {
-        navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
+        navigate({
+          to: "/entregas-zappfy/$storeSlug/login",
+          params: { storeSlug },
+          replace: true,
+        });
         return;
       }
+
       const [{ data: themeRes }, { data: meRes, error: meErr }] = await Promise.all([
         (supabase as any).rpc("get_zappfy_central_settings"),
         (supabase as any).rpc("courier_me", { _session: session }),
       ]);
+
       if (!alive) return;
       if (themeRes) setTheme({ ...DEFAULT_THEME, ...(themeRes as CentralTheme) });
+
       if (meErr || !meRes) {
         clearCourierSession(storeSlug);
-        navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
+        navigate({
+          to: "/entregas-zappfy/$storeSlug/login",
+          params: { storeSlug },
+          replace: true,
+        });
         return;
       }
+
       setMe(meRes as Me);
       setLoading(false);
     })();
+
     return () => {
       alive = false;
     };
-  }, [storeSlug, navigate]);
+  }, [navigate, storeSlug]);
 
   async function loadDeliveries() {
     const session = getCourierSession(storeSlug);
     if (!session) return;
-    const { data: deliveries } = await (supabase as any).rpc("list_my_delivery_load", {
+
+    const { data: deliveries, error } = await (supabase as any).rpc("list_my_delivery_load", {
       _session: session,
     });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
     if (Array.isArray(deliveries)) setAvailable(deliveries as Delivery[]);
-    setActive([]);
   }
 
   useEffect(() => {
     if (!me) return;
+
     loadDeliveries();
     const interval = setInterval(loadDeliveries, 15000);
     const channel = supabase
@@ -176,6 +186,7 @@ function CentralPage() {
         () => loadDeliveries(),
       )
       .subscribe();
+
     return () => {
       clearInterval(interval);
       supabase.removeChannel(channel);
@@ -186,41 +197,67 @@ function CentralPage() {
   async function action(d: Delivery, actionName: string) {
     const session = getCourierSession(storeSlug);
     if (!session) return;
-    setAccepting(d.tracking_code);
+
     let reason: string | null = null;
-    if (actionName === "fail")
+
+    if (actionName === "reject") {
+      const confirmed = confirm(
+        "Recusar esta entrega? O pedido deixará sua Central e voltará para o administrador atribuir a outro motoboy.",
+      );
+      if (!confirmed) return;
+      reason = "Recusada pelo motoboy";
+    }
+
+    if (actionName === "fail") {
       reason =
         prompt(
           "Motivo: cliente ausente, recusou, endereço não encontrado, não respondeu, pagamento ou outro",
         )?.trim() || null;
-    if (actionName === "deliver" && !confirm("Confirmar que este pedido foi entregue?")) {
-      setAccepting(null);
-      return;
     }
+
+    if (actionName === "deliver" && !confirm("Confirmar que este pedido foi entregue?")) return;
+
+    setBusyTrackingCode(d.tracking_code);
+
     const { error } = await (supabase as any).rpc("courier_delivery_action", {
       _session: session,
       _tracking_id: d.id,
       _action: actionName,
       _reason: reason,
     });
-    setAccepting(null);
+
+    setBusyTrackingCode(null);
+
     if (error) {
       toast.error(error.message);
       return;
     }
+
+    if (actionName === "reject") {
+      toast.success("Entrega recusada. O pedido voltou para o administrador.");
+      await loadDeliveries();
+      return;
+    }
+
     toast.success("Entrega atualizada");
+
     if (actionName === "accept" || actionName === "start") {
       navigate({ to: "/entrega/$courierToken", params: { courierToken: d.courier_token } });
       return;
     }
-    loadDeliveries();
+
+    await loadDeliveries();
   }
 
   function logout() {
     const session = getCourierSession(storeSlug);
     if (session) (supabase as any).rpc("courier_logout", { _session: session });
     clearCourierSession(storeSlug);
-    navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
+    navigate({
+      to: "/entregas-zappfy/$storeSlug/login",
+      params: { storeSlug },
+      replace: true,
+    });
   }
 
   const cardStyle: React.CSSProperties = {
@@ -241,6 +278,25 @@ function CentralPage() {
       </div>
     );
   }
+
+  const summary = [
+    [
+      "Para entregar",
+      available.filter((d) => ["aguardando_motoboy", "preparando"].includes(d.status)).length,
+    ],
+    [
+      "Em rota",
+      available.filter((d) => ["saiu_para_entrega", "chegando"].includes(d.status)).length,
+    ],
+    ["Entregues", available.filter((d) => d.status === "entregue").length],
+    ["Não entregues", available.filter((d) => d.status === "nao_entregue").length],
+    [
+      "Produtos em posse",
+      available
+        .filter((d) => !["entregue", "devolvido", "cancelado"].includes(d.status))
+        .reduce((n, d) => n + (d.order.items || []).reduce((s, i) => s + Number(i.qty), 0), 0),
+    ],
+  ] as const;
 
   return (
     <div
@@ -266,10 +322,12 @@ function CentralPage() {
             <Bike className="h-5 w-5" />
           </div>
         )}
+
         <div className="leading-tight min-w-0">
           <div className="text-lg font-extrabold truncate">{theme.brand_name}</div>
           <div className="text-xs opacity-80 truncate">Olá, {me.name}</div>
         </div>
+
         <button
           onClick={loadDeliveries}
           className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border"
@@ -278,6 +336,7 @@ function CentralPage() {
         >
           <RefreshCw className="h-3.5 w-3.5" />
         </button>
+
         <button
           onClick={logout}
           className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border"
@@ -296,29 +355,8 @@ function CentralPage() {
         </section>
 
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {[
-            [
-              "Para entregar",
-              available.filter((d) => ["aguardando_motoboy", "preparando"].includes(d.status))
-                .length,
-            ],
-            [
-              "Em rota",
-              available.filter((d) => ["saiu_para_entrega", "chegando"].includes(d.status)).length,
-            ],
-            ["Entregues", available.filter((d) => d.status === "entregue").length],
-            ["Não entregues", available.filter((d) => d.status === "nao_entregue").length],
-            [
-              "Produtos em posse",
-              available
-                .filter((d) => !["entregue", "devolvido", "cancelado"].includes(d.status))
-                .reduce(
-                  (n, d) => n + (d.order.items || []).reduce((s, i) => s + Number(i.qty), 0),
-                  0,
-                ),
-            ],
-          ].map(([label, value]) => (
-            <div key={String(label)} className="p-3 text-center" style={cardStyle}>
+          {summary.map(([label, value]) => (
+            <div key={label} className="p-3 text-center" style={cardStyle}>
               <div className="text-xl font-bold" style={{ color: theme.title_color }}>
                 {value}
               </div>
@@ -326,38 +364,6 @@ function CentralPage() {
             </div>
           ))}
         </section>
-
-        {active.length > 0 && (
-          <section>
-            <h2 className="text-sm font-semibold mb-2 opacity-80">Minhas entregas em andamento</h2>
-            <div className="space-y-2">
-              {active.map((a) => (
-                <button
-                  key={a.tracking_code}
-                  onClick={() =>
-                    navigate({
-                      to: "/entrega/$courierToken",
-                      params: { courierToken: a.courier_token },
-                    })
-                  }
-                  className="w-full flex items-center justify-between p-3 text-left transition hover:opacity-90"
-                  style={cardStyle}
-                >
-                  <div className="text-xs">
-                    <div className="opacity-70">
-                      {a.accepted_at ? `Aceita ${formatRelative(a.accepted_at)}` : "Em andamento"}
-                    </div>
-                    <div className="font-semibold" style={{ color: theme.title_color }}>
-                      {a.order.customer}
-                    </div>
-                    <div className="opacity-70 truncate">{a.order.address}</div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 shrink-0" style={{ color: theme.icon_color }} />
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
 
         <section>
           <h2 className="text-sm font-semibold mb-2 opacity-80">
@@ -384,7 +390,10 @@ function CentralPage() {
                 const addr = [d.order.address, d.order.district, d.order.city]
                   .filter(Boolean)
                   .join(", ");
-                const isAccepting = accepting === d.tracking_code;
+                const busy = busyTrackingCode === d.tracking_code;
+                const awaitingDecision =
+                  !d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status);
+
                 return (
                   <div key={d.tracking_code} className="p-4 space-y-3" style={cardStyle}>
                     <div className="flex items-start justify-between gap-2">
@@ -400,6 +409,7 @@ function CentralPage() {
                         {formatRelative(d.created_at)}
                       </div>
                     </div>
+
                     <div className="flex items-start gap-2 text-sm">
                       <MapPin
                         className="h-4 w-4 mt-0.5 shrink-0"
@@ -407,12 +417,14 @@ function CentralPage() {
                       />
                       <div className="flex-1">{addr || "Endereço não informado"}</div>
                     </div>
+
                     {d.order.phone && (
                       <div className="flex items-center gap-2 text-xs opacity-80">
                         <Phone className="h-3.5 w-3.5" style={{ color: theme.icon_color }} />
                         {d.order.phone}
                       </div>
                     )}
+
                     {d.notes && (
                       <div
                         className="text-xs italic opacity-80 pt-1 border-t"
@@ -421,6 +433,7 @@ function CentralPage() {
                         Obs: {d.notes}
                       </div>
                     )}
+
                     <div
                       className="rounded-lg p-2 text-xs"
                       style={{ background: `${theme.button_color}18` }}
@@ -432,6 +445,7 @@ function CentralPage() {
                         {String(d.order.payment || "").toUpperCase()}
                       </div>
                     </div>
+
                     <div className="grid grid-cols-2 gap-2">
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`}
@@ -442,6 +456,7 @@ function CentralPage() {
                         <Navigation className="mr-1 h-4 w-4" />
                         Abrir rota
                       </a>
+
                       <a
                         href={`https://wa.me/${String(d.order.phone || "").replace(/\D/g, "")}`}
                         target="_blank"
@@ -451,54 +466,75 @@ function CentralPage() {
                         <MessageCircle className="mr-1 h-4 w-4" />
                         WhatsApp
                       </a>
+
                       <a
                         href={`tel:${d.order.phone}`}
-                        className="inline-flex h-11 items-center justify-center rounded-md border text-sm"
+                        className={`inline-flex h-11 items-center justify-center rounded-md border text-sm ${
+                          awaitingDecision ? "col-span-2" : ""
+                        }`}
                       >
                         <Phone className="mr-1 h-4 w-4" />
                         Ligar
                       </a>
-                      {!d.accepted_at && (
-                        <Button disabled={isAccepting} onClick={() => action(d, "accept")}>
-                          <Bike className="mr-1 h-4 w-4" />
-                          Aceitar
-                        </Button>
+
+                      {awaitingDecision && (
+                        <>
+                          <Button
+                            disabled={busy}
+                            variant="destructive"
+                            onClick={() => action(d, "reject")}
+                            className="h-11"
+                          >
+                            <XCircle className="mr-1 h-4 w-4" />
+                            Recusar
+                          </Button>
+                          <Button
+                            disabled={busy}
+                            onClick={() => action(d, "accept")}
+                            className="h-11"
+                            style={{ background: theme.button_color, color: theme.button_text_color }}
+                          >
+                            <Bike className="mr-1 h-4 w-4" />
+                            Aceitar
+                          </Button>
+                        </>
                       )}
+
                       {d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status) && (
-                        <Button disabled={isAccepting} onClick={() => action(d, "start")}>
+                        <Button disabled={busy} onClick={() => action(d, "start")}>
                           <Bike className="mr-1 h-4 w-4" />
                           Iniciar entrega
                         </Button>
                       )}
+
                       {["saiu_para_entrega", "chegando", "nao_entregue"].includes(d.status) && (
                         <Button
-                          disabled={isAccepting}
+                          disabled={busy}
                           onClick={() => action(d, "deliver")}
-                          style={{ background: theme.button_color }}
+                          style={{ background: theme.button_color, color: theme.button_text_color }}
                         >
                           <CheckCircle2 className="mr-1 h-4 w-4" />
                           Entregue
                         </Button>
                       )}
+
                       {["saiu_para_entrega", "chegando"].includes(d.status) && (
-                        <Button
-                          disabled={isAccepting}
-                          variant="destructive"
-                          onClick={() => action(d, "fail")}
-                        >
+                        <Button disabled={busy} variant="destructive" onClick={() => action(d, "fail")}>
                           <AlertTriangle className="mr-1 h-4 w-4" />
                           Não entregue
                         </Button>
                       )}
+
                       {d.status === "nao_entregue" && (
-                        <Button disabled={isAccepting} onClick={() => action(d, "return")}>
+                        <Button disabled={busy} onClick={() => action(d, "return")}>
                           <Undo2 className="mr-1 h-4 w-4" />
                           Retornando
                         </Button>
                       )}
+
                       {d.status === "retornando" && (
                         <Button
-                          disabled={isAccepting}
+                          disabled={busy}
                           variant="outline"
                           onClick={() => action(d, "returned")}
                         >
