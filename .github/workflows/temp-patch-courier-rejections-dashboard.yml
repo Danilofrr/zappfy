@@ -1,4 +1,4 @@
-name: Temporary courier rejection dashboard patch
+name: Temporary courier rejection dashboard validation
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  patch:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,148 +19,42 @@ jobs:
           ref: feat/recusas-como-nao-entregues
           fetch-depth: 0
 
-      - name: Patch motoboys dashboard
+      - name: Adjust failed-delivery metadata
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
-          path = Path('src/routes/_authenticated/motoboys.tsx')
-          text = path.read_text()
-
-          def replace_once(old, new, label):
-              global text
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected 1 occurrence, found {count}')
-              text = text.replace(old, new, 1)
-
-          replace_once(
-              '  failed: number;\n  returned: number;',
-              '  failed: number;\n  failedOrders: any[];\n  returned: number;',
-              'CourierHistory type',
-          )
-
-          history_start = text.index('const eventsInPeriod = events.filter((event: any) =>')
-          return_anchor = '\n\n          return {\n            courierId: courier.id,'
-          insert_at = text.index(return_anchor, history_start)
-          builder = '''
-          const deliveryByOrderId = new Map<string, any>(
-            orders.map((delivery: any) => [
-              String(delivery?.order?.id || delivery?.order_id || ""),
-              delivery,
-            ]),
-          );
-          const failedOrders = eventsInPeriod
-            .filter((event: any) => event.event_type === "delivery_failed")
-            .map((event: any) => {
-              const orderId = String(event?.order_id || "");
-              const delivery = deliveryByOrderId.get(orderId);
-              const metadata =
-                event?.metadata && typeof event.metadata === "object" ? event.metadata : {};
-              const order = delivery?.order || {
-                id: orderId,
-                customer: metadata.customer || "Cliente não informado",
-                phone: metadata.phone || "",
-                address: metadata.address || "",
-                district: metadata.district || "",
-                city: metadata.city || "",
-                total: Number(metadata.order_total || 0),
-                payment: metadata.payment || "",
-                items: Array.isArray(metadata.items) ? metadata.items : [],
-              };
-
-              return {
-                ...event,
-                order,
-                reason: metadata.reason || delivery?.failure_reason || "Não entregue",
-                canReassign: metadata.can_reassign === true,
-                failureKind: metadata.kind || "delivery_failed",
-              };
-            });'''
-          text = text[:insert_at] + '\n' + builder + text[insert_at:]
-
-          replace_once(
-              'failed: eventsInPeriod.filter((event: any) => event.event_type === "delivery_failed").length,',
-              'failed: failedOrders.length,\n              failedOrders,',
-              'failed count',
-          )
-
-          possession_label = '<div className="text-xs text-muted-foreground">Pedidos em posse</div>'
-          possession_pos = text.index(possession_label)
-          card_start = text.rfind('<div className="mt-4 grid grid-cols-2 gap-2 text-sm">', 0, possession_pos)
-          if card_start < 0:
-              raise SystemExit('failed orders card: anchor not found')
-
-          block = '''{(history?.failedOrders?.length ?? 0) > 0 && (
-                        <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
-                          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            <AlertTriangle className="h-3.5 w-3.5 text-destructive" /> Pedidos não entregues
-                          </div>
-                          <div className="space-y-2">
-                            {history?.failedOrders?.slice(0, 3).map((failure: any) => (
-                              <div
-                                key={failure.id}
-                                className="rounded-lg border border-destructive/15 bg-background/60 px-2.5 py-2 text-xs"
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <div className="truncate font-semibold text-foreground">
-                                      {failure.order?.customer || "Cliente não informado"}
-                                    </div>
-                                    <div className="text-[10px] text-muted-foreground">
-                                      Pedido #{String(failure.order?.id || failure.order_id || "").slice(0, 8)}
-                                    </div>
-                                    <div className="mt-1 text-[10px] font-medium text-destructive">
-                                      {failure.reason || "Não entregue"}
-                                    </div>
-                                  </div>
-                                  <div className="shrink-0 text-right text-[10px] text-muted-foreground">
-                                    {failure.created_at
-                                      ? new Date(failure.created_at).toLocaleTimeString("pt-BR", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
-                                      : ""}
-                                  </div>
-                                </div>
-                                {failure.canReassign && (
-                                  <div className="mt-2 inline-flex rounded-full border border-orange-500/30 bg-orange-500/10 px-2 py-1 text-[10px] font-semibold text-orange-600 dark:text-orange-400">
-                                    Aguardando nova atribuição
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                            {(history?.failedOrders?.length ?? 0) > 3 && (
-                              <div className="text-[11px] text-muted-foreground">
-                                + {(history?.failedOrders?.length ?? 0) - 3} outro(s) pedido(s) não entregue(s). Veja todos em “Ver carga e histórico”.
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      '''
-          text = text[:card_start] + block + text[card_start:]
-
-          path.write_text(text)
+          p = Path('supabase/migrations/20260912210000_track_courier_rejections_as_failed.sql')
+          text = p.read_text()
+          old = "      'can_reassign', CASE WHEN _action = 'fail' THEN true ELSE NULL END,\n"
+          if old in text:
+              text = text.replace(old, "", 1)
+              p.write_text(text)
           PY
 
-      - name: Validate patch
+      - name: Validate source
         shell: bash
         run: |
           git diff --check
           grep -q 'failedOrders: any\[\]' 'src/routes/_authenticated/motoboys.tsx'
           grep -q 'failed: failedOrders.length' 'src/routes/_authenticated/motoboys.tsx'
           grep -q 'Aguardando nova atribuição' 'src/routes/_authenticated/motoboys.tsx'
-          grep -q 'Pedidos não entregues' 'src/routes/_authenticated/motoboys.tsx'
+          grep -q "'kind', 'assignment_rejected'" 'supabase/migrations/20260912210000_track_courier_rejections_as_failed.sql'
+          grep -q "'can_reassign', true" 'supabase/migrations/20260912210000_track_courier_rejections_as_failed.sql'
 
-      - name: Commit patch
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Commit metadata adjustment
         shell: bash
         run: |
+          if git diff --quiet; then exit 0; fi
           git config user.name "ChatGPT"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add 'src/routes/_authenticated/motoboys.tsx'
+          git add 'supabase/migrations/20260912210000_track_courier_rejections_as_failed.sql'
           git diff --cached --check
-          git commit -m "feat: mostrar recusas e pedidos não entregues por motoboy"
+          git commit -m "fix: limitar nova atribuicao a recusas de motoboy"
           git push origin HEAD:feat/recusas-como-nao-entregues
