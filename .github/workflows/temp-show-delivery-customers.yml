@@ -27,23 +27,20 @@ jobs:
           path = Path("src/routes/_authenticated/motoboys.tsx")
           text = path.read_text()
 
-          old = '''                      <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                        <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /><span><b>{history?.deliveredOrders.length ?? 0}</b> entregas</span></div>
-                        <div className="flex items-center gap-2"><PackageCheck className="h-4 w-4 text-primary" /><span><b>{history?.deliveredProducts ?? 0}</b> produtos</span></div>
-                        <div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-destructive" /><span><b>{history?.failed ?? 0}</b> não entregues</span></div>
-                        <div className="flex items-center gap-2"><RotateCcw className="h-4 w-4 text-orange-500" /><span><b>{history?.returned ?? 0}</b> devoluções</span></div>
-                      </div>
+          if "Clientes entregues" in text:
+              raise SystemExit(0)
 
-                      <div className="mt-4 grid grid-cols-2 gap-2 text-sm">'''
+          section = '>Resultado no período</div>'
+          section_pos = text.find(section)
+          if section_pos < 0:
+              raise SystemExit("Resultado no período section not found")
 
-          new = '''                      <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                        <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /><span><b>{history?.deliveredOrders.length ?? 0}</b> entregas</span></div>
-                        <div className="flex items-center gap-2"><PackageCheck className="h-4 w-4 text-primary" /><span><b>{history?.deliveredProducts ?? 0}</b> produtos</span></div>
-                        <div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-destructive" /><span><b>{history?.failed ?? 0}</b> não entregues</span></div>
-                        <div className="flex items-center gap-2"><RotateCcw className="h-4 w-4 text-orange-500" /><span><b>{history?.returned ?? 0}</b> devoluções</span></div>
-                      </div>
+          needle = '                      <div className="mt-4 grid grid-cols-2 gap-2 text-sm">'
+          insert_pos = text.find(needle, section_pos)
+          if insert_pos < 0:
+              raise SystemExit("Insertion point not found")
 
-                      {(history?.deliveredOrders.length ?? 0) > 0 && (
+          block = '''                      {(history?.deliveredOrders.length ?? 0) > 0 && (
                         <div className="mt-4 rounded-xl border border-primary/25 bg-primary/5 p-3">
                           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> Clientes entregues
@@ -69,12 +66,9 @@ jobs:
                         </div>
                       )}
 
-                      <div className="mt-4 grid grid-cols-2 gap-2 text-sm">'''
+'''
 
-          if old not in text:
-              raise SystemExit("Target block not found; refusing to modify file")
-
-          path.write_text(text.replace(old, new, 1))
+          path.write_text(text[:insert_pos] + block + text[insert_pos:])
           PY
 
           git diff --check
