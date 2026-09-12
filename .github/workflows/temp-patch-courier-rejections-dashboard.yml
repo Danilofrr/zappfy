@@ -36,51 +36,15 @@ jobs:
               text = text.replace(old, new, 1)
 
           replace_once(
-          '''type CourierHistory = {
-            raw: any;
-            deliveredOrders: any[];
-            deliveredProducts: number;
-            failed: number;
-            returned: number;
-            transportedValue: number;
-            eventsInPeriod: any[];
-          };''',
-          '''type CourierHistory = {
-            raw: any;
-            deliveredOrders: any[];
-            deliveredProducts: number;
-            failed: number;
-            failedOrders: any[];
-            returned: number;
-            transportedValue: number;
-            eventsInPeriod: any[];
-          };''',
-          'CourierHistory type')
+              '  failed: number;\n  returned: number;',
+              '  failed: number;\n  failedOrders: any[];\n  returned: number;',
+              'CourierHistory type',
+          )
 
-          replace_once(
-          '''          const eventsInPeriod = events.filter((event: any) =>
+          events_anchor = '''          const eventsInPeriod = events.filter((event: any) =>
             isWithin(event.created_at, range.start, range.end),
-          );
-
-          return {
-            courierId: courier.id,
-            history: {
-              raw: data,
-              deliveredOrders,
-              deliveredProducts: deliveredOrders.reduce(
-                (sum: number, delivery: any) => sum + totalItems(delivery.order?.items),
-                0,
-              ),
-              failed: eventsInPeriod.filter((event: any) => event.event_type === "delivery_failed").length,
-              returned: eventsInPeriod.filter((event: any) => event.event_type === "returned").length,
-              transportedValue: deliveredOrders.reduce(
-                (sum: number, delivery: any) => sum + Number(delivery.order?.total || 0),
-                0,
-              ),
-              eventsInPeriod,
-            } satisfies CourierHistory,
-          };''',
-          '''          const eventsInPeriod = events.filter((event: any) =>
+          );'''
+          failed_builder = '''          const eventsInPeriod = events.filter((event: any) =>
             isWithin(event.created_at, range.start, range.end),
           );
           const deliveryByOrderId = new Map<string, any>(
@@ -115,34 +79,20 @@ jobs:
                 canReassign: metadata.can_reassign === true,
                 failureKind: metadata.kind || "delivery_failed",
               };
-            });
+            });'''
+          replace_once(events_anchor, failed_builder, 'failed orders builder')
 
-          return {
-            courierId: courier.id,
-            history: {
-              raw: data,
-              deliveredOrders,
-              deliveredProducts: deliveredOrders.reduce(
-                (sum: number, delivery: any) => sum + totalItems(delivery.order?.items),
-                0,
-              ),
-              failed: failedOrders.length,
-              failedOrders,
-              returned: eventsInPeriod.filter((event: any) => event.event_type === "returned").length,
-              transportedValue: deliveredOrders.reduce(
-                (sum: number, delivery: any) => sum + Number(delivery.order?.total || 0),
-                0,
-              ),
-              eventsInPeriod,
-            } satisfies CourierHistory,
-          };''',
-          'history aggregation')
+          replace_once(
+              'failed: eventsInPeriod.filter((event: any) => event.event_type === "delivery_failed").length,',
+              'failed: failedOrders.length,\n              failedOrders,',
+              'failed count',
+          )
 
-          marker = '''                      <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+          marker = '''<div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                         <div className="rounded-xl border p-3">
                           <div className="text-xs text-muted-foreground">Pedidos em posse</div>'''
 
-          block = '''                      {(history?.failedOrders?.length ?? 0) > 0 && (
+          block = '''{(history?.failedOrders?.length ?? 0) > 0 && (
                         <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
                           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             <AlertTriangle className="h-3.5 w-3.5 text-destructive" /> Pedidos não entregues
@@ -203,6 +153,7 @@ jobs:
         run: |
           git diff --check
           grep -q 'failedOrders: any\[\]' 'src/routes/_authenticated/motoboys.tsx'
+          grep -q 'failed: failedOrders.length' 'src/routes/_authenticated/motoboys.tsx'
           grep -q 'Aguardando nova atribuição' 'src/routes/_authenticated/motoboys.tsx'
           grep -q 'Pedidos não entregues' 'src/routes/_authenticated/motoboys.tsx'
 
