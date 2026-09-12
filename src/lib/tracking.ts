@@ -9,7 +9,10 @@ export type DeliveryStatus =
   | "saiu_para_entrega"
   | "chegando"
   | "entregue"
-  | "cancelado";
+  | "cancelado"
+  | "nao_entregue"
+  | "retornando"
+  | "devolvido";
 
 export type StatusBadgeStyle = { bg: string; border: string; text: string; icon: string };
 
@@ -20,6 +23,9 @@ export const STATUS_BADGE_DEFAULTS: Record<DeliveryStatus, StatusBadgeStyle> = {
   chegando:           { bg: "#ede9fe", border: "#a78bfa", text: "#4c1d95", icon: "#7c3aed" },
   entregue:           { bg: "#dcfce7", border: "#22c55e", text: "#14532d", icon: "#16a34a" },
   cancelado:          { bg: "#fee2e2", border: "#ef4444", text: "#7f1d1d", icon: "#dc2626" },
+  nao_entregue:       { bg: "#fee2e2", border: "#ef4444", text: "#7f1d1d", icon: "#dc2626" },
+  retornando:          { bg: "#fef3c7", border: "#f59e0b", text: "#78350f", icon: "#d97706" },
+  devolvido:           { bg: "#e2e8f0", border: "#64748b", text: "#0f172a", icon: "#475569" },
 };
 
 export const STATUS_INFO: Record<DeliveryStatus, { label: string; message: string; emoji: string; Icon: LucideIcon; bg: string; color: string }> = {
@@ -29,10 +35,13 @@ export const STATUS_INFO: Record<DeliveryStatus, { label: string; message: strin
   chegando:           { label: "Chegando",           message: "Seu entregador está próximo do destino.",             emoji: "🟣", Icon: MapPin,         bg: "bg-purple-500/15",  color: "text-purple-400" },
   entregue:           { label: "Entregue",           message: "Pedido entregue com sucesso. Obrigado pela preferência.", emoji: "🟢", Icon: CheckCircle2,   bg: "bg-emerald-500/20", color: "text-emerald-500" },
   cancelado:          { label: "Cancelado",          message: "Este pedido foi cancelado.",                          emoji: "🔴", Icon: XCircle,        bg: "bg-destructive/15", color: "text-destructive" },
+  nao_entregue:       { label: "Não entregue",       message: "A tentativa de entrega não foi concluída.",           emoji: "🔴", Icon: XCircle,        bg: "bg-red-500/15",     color: "text-red-500" },
+  retornando:          { label: "Retornando",         message: "O pedido está retornando para a loja.",               emoji: "🟠", Icon: Bike,           bg: "bg-amber-500/15",   color: "text-amber-500" },
+  devolvido:           { label: "Devolvido",          message: "O pedido foi devolvido à loja.",                      emoji: "⚪", Icon: Package,        bg: "bg-slate-500/15",   color: "text-slate-500" },
 };
 
 export function getBadgeStyle(status: DeliveryStatus, overrides?: Partial<Record<DeliveryStatus, Partial<StatusBadgeStyle>>>): StatusBadgeStyle {
-  const d = STATUS_BADGE_DEFAULTS[status];
+  const d = STATUS_BADGE_DEFAULTS[status] || STATUS_BADGE_DEFAULTS.cancelado;
   const o = overrides?.[status] || {};
   return { bg: o.bg || d.bg, border: o.border || d.border, text: o.text || d.text, icon: o.icon || d.icon };
 }
@@ -46,7 +55,7 @@ export const TIMELINE_STEPS: { key: DeliveryStatus; label: string }[] = [
 ];
 
 export function deriveDisplayStatus(trackingStatus: DeliveryStatus, orderStatus?: string | null): DeliveryStatus {
-  if (["saiu_para_entrega", "chegando", "entregue", "cancelado"].includes(trackingStatus)) return trackingStatus;
+  if (["saiu_para_entrega", "chegando", "entregue", "cancelado", "nao_entregue", "retornando", "devolvido"].includes(trackingStatus)) return trackingStatus;
   const s = (orderStatus || "").toLowerCase();
   if (s === "entregue") return "entregue";
   if (s === "cancelado" || s === "cancelada") return "cancelado";
