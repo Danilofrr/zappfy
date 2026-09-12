@@ -266,6 +266,7 @@ function MotoboysPage() {
   const [customTo, setCustomTo] = useState(() => toDateInput(new Date()));
   const [historyByCourier, setHistoryByCourier] = useState<Record<string, CourierHistory>>({});
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [motoboyFee, setMotoboyFee] = useState(0);
 
   const [inventoryRows, setInventoryRows] = useState<CourierInventoryItem[]>([]);
   const [inventoryCourier, setInventoryCourier] = useState<Courier | null>(null);
@@ -333,6 +334,7 @@ function MotoboysPage() {
       setList([]);
       setLoads([]);
       setInventoryRows([]);
+      setMotoboyFee(0);
       setLoading(false);
       return;
     }
@@ -343,6 +345,13 @@ function MotoboysPage() {
         (supabase as any).rpc("get_courier_loads", { _store_id: activeStoreId }),
         (supabase as any).rpc("list_courier_inventory", { _store_id: activeStoreId }),
       ]);
+    const { data: feeSettings, error: feeError } = await (supabase as any)
+      .from("settings")
+      .select("motoboy_fee")
+      .eq("store_id", activeStoreId)
+      .maybeSingle();
+    if (feeError) console.error("Erro ao carregar taxa do motoboy", feeError);
+    setMotoboyFee(Number(feeSettings?.motoboy_fee || 0));
     if (error) toast.error(error.message);
     if (loadError) toast.error(loadError.message);
     if (inventoryError) console.error(inventoryError);
@@ -831,6 +840,8 @@ const failedOrders = eventsInPeriod
                 const paymentTotals = sumPaymentBreakdowns(
         (history?.deliveredOrders || []).map((delivery: any) => paymentRecordForDelivery(delivery)),
       );
+                const deliveredCount = history?.deliveredOrders.length ?? 0;
+                const courierFeeDue = deliveredCount * motoboyFee;
                 return (
                   <div key={loadItem.courier_id} className="overflow-hidden rounded-2xl border bg-card transition-colors hover:border-primary/40">
                     <div className="flex items-center justify-between gap-3 border-b p-4">
@@ -984,14 +995,24 @@ const failedOrders = eventsInPeriod
               </div>
             )}
 
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
                         <div className="rounded-xl border p-3">
-                          <div className="text-xs text-muted-foreground">Pedidos em posse</div>
-                          <div className="font-semibold text-primary">{brl(Number(loadItem.value_in_possession))}</div>
+                          <div className="text-[11px] text-muted-foreground">Pedidos em posse</div>
+                          <div className="mt-1 font-semibold text-primary">{brl(Number(loadItem.value_in_possession))}</div>
                         </div>
                         <div className="rounded-xl border p-3">
-                          <div className="text-xs text-muted-foreground">Entregue no período</div>
-                          <div className="font-semibold">{brl(history?.transportedValue ?? 0)}</div>
+                          <div className="text-[11px] text-muted-foreground">Entregue no período</div>
+                          <div className="mt-1 font-semibold">{brl(history?.transportedValue ?? 0)}</div>
+                        </div>
+                        <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <WalletCards className="h-3.5 w-3.5 text-primary" />
+                            Taxas do motoboy
+                          </div>
+                          <div className="mt-1 font-semibold text-primary">{brl(courierFeeDue)}</div>
+                          <div className="mt-1 text-[10px] leading-tight text-muted-foreground">
+                            {deliveredCount} {deliveredCount === 1 ? "entrega" : "entregas"} × {brl(motoboyFee)}
+                          </div>
                         </div>
                       </div>
 
