@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRelative, orderShortNumber } from "@/lib/tracking";
+import { brl } from "@/lib/format";
+import { normalizePaymentBreakdown, paymentMethodLabel } from "@/lib/order-payments";
 import { clearCourierSession, getCourierSession } from "@/lib/courier-session";
 import { rememberEntregasPwa } from "@/lib/entregas-pwa";
 
@@ -391,6 +393,7 @@ function CentralPage() {
                   .filter(Boolean)
                   .join(", ");
                 const busy = busyTrackingCode === d.tracking_code;
+                const paymentParts = normalizePaymentBreakdown(d.order);
                 const awaitingDecision =
                   !d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status);
 
@@ -441,8 +444,20 @@ function CentralPage() {
                       {(d.order.items || []).map((i) => `${i.qty}x ${i.name}`).join(" · ")}
                       <div className="mt-1 font-semibold">
                         {(d.order.items || []).reduce((n, i) => n + Number(i.qty), 0)} produtos · R${" "}
-                        {Number(d.order.total).toFixed(2)} ·{" "}
-                        {String(d.order.payment || "").toUpperCase()}
+                        {Number(d.order.total).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border p-3 text-xs space-y-1.5" style={{ borderColor: `${theme.button_color}55`, background: `${theme.button_color}10` }}>
+                      <div className="font-semibold" style={{ color: theme.title_color }}>Pagamento do cliente</div>
+                      {paymentParts.map((part, index) => (
+                        <div key={`${part.method}-${index}`} className="flex items-center justify-between gap-3">
+                          <span>{paymentMethodLabel(part.method)}</span>
+                          <strong style={{ color: theme.title_color }}>{brl(part.amount)}</strong>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between gap-3 border-t pt-1.5 font-semibold" style={{ borderColor: theme.card_border_color }}>
+                        <span>Total do pedido</span><span>{brl(d.order.total)}</span>
                       </div>
                     </div>
 
