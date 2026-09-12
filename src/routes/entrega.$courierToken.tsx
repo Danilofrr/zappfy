@@ -26,6 +26,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import { toast } from "sonner";
+import { brl } from "@/lib/format";
+import { normalizePaymentBreakdown, paymentMethodLabel } from "@/lib/order-payments";
 
 export const Route = createFileRoute("/entrega/$courierToken")({
   ssr: false,
@@ -372,6 +374,7 @@ function CourierPage() {
     boxShadow: `0 10px 26px -12px ${t.card_shadow_color}88`,
   };
   const soft = `${t.primary_color}22`;
+  const paymentParts = normalizePaymentBreakdown(data.order);
 
   return (
     <div className="min-h-screen pb-10" style={{ background: t.background_color, color: t.text_color }}>
@@ -406,6 +409,19 @@ function CourierPage() {
           <div className="font-semibold" style={{ color: t.title_color }}>{data.order.customer}</div>
           {data.order.phone && <a href={`tel:${data.order.phone}`} className="inline-flex items-center gap-1.5 text-sm" style={{ color: t.icon_color }}><Phone className="h-3.5 w-3.5" /> {data.order.phone}</a>}
           {data.order.items?.length ? <div className="text-xs opacity-80 pt-2">{data.order.items.map(i => `${i.qty}x ${i.name}`).join(" · ")}</div> : null}
+        </section>
+
+        <section className="rounded-2xl p-4 space-y-2" style={cardStyle}>
+          <div className="text-xs uppercase tracking-wider opacity-60">Forma de pagamento</div>
+          {paymentParts.map((part, index) => (
+            <div key={`${part.method}-${index}`} className="flex items-center justify-between gap-3 text-sm">
+              <span>{paymentMethodLabel(part.method)}</span>
+              <strong style={{ color: t.title_color }}>{brl(part.amount)}</strong>
+            </div>
+          ))}
+          <div className="flex items-center justify-between gap-3 border-t pt-2 text-sm font-semibold" style={{ borderColor: t.card_border_color }}>
+            <span>Total</span><span style={{ color: t.primary_color }}>{brl(data.order.total)}</span>
+          </div>
         </section>
 
         {!isFinished && (

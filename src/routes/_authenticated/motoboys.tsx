@@ -59,6 +59,7 @@ import { useActiveStore } from "@/lib/active-store";
 import { useStore } from "@/lib/store";
 import type { CourierLoad } from "@/lib/delivery-load";
 import { brl } from "@/lib/format";
+import { formatPaymentBreakdown, sumPaymentBreakdowns } from "@/lib/order-payments";
 
 export const Route = createFileRoute("/_authenticated/motoboys")({
   component: MotoboysPage,
@@ -735,6 +736,9 @@ function MotoboysPage() {
                 const mobileStock = inventoryByCourier[loadItem.courier_id] || [];
                 const mobileQty = mobileStock.reduce((sum, item) => sum + Number(item.quantity), 0);
                 const mobileValue = mobileStock.reduce((sum, item) => sum + Number(item.sale_value || 0), 0);
+                const paymentTotals = sumPaymentBreakdowns(
+                  (history?.deliveredOrders || []).map((delivery: any) => delivery.order || {}),
+                );
                 return (
                   <div key={loadItem.courier_id} className="overflow-hidden rounded-2xl border bg-card transition-colors hover:border-primary/40">
                     <div className="flex items-center justify-between gap-3 border-b p-4">
@@ -804,6 +808,17 @@ function MotoboysPage() {
                       </div>
 
                       {(history?.deliveredOrders.length ?? 0) > 0 && (
+                        <div className="mt-4 rounded-xl border bg-background/30 p-3">
+                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Valores recebidos nas entregas</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="rounded-lg border p-2"><div className="text-[10px] text-muted-foreground">Dinheiro</div><div className="text-xs font-bold text-foreground">{brl(paymentTotals.dinheiro)}</div></div>
+                            <div className="rounded-lg border p-2"><div className="text-[10px] text-muted-foreground">PIX</div><div className="text-xs font-bold text-foreground">{brl(paymentTotals.pix)}</div></div>
+                            <div className="rounded-lg border p-2"><div className="text-[10px] text-muted-foreground">Cartão</div><div className="text-xs font-bold text-foreground">{brl(paymentTotals.cartao)}</div></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {(history?.deliveredOrders.length ?? 0) > 0 && (
               <div className="mt-4 rounded-xl border border-primary/25 bg-primary/5 p-3">
                 <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> Clientes entregues
@@ -813,7 +828,7 @@ function MotoboysPage() {
                     <div key={delivery.id} className="flex items-center justify-between gap-3 rounded-lg bg-background/60 px-2.5 py-2 text-xs">
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-foreground">{delivery.order?.customer || "Cliente não informado"}</div>
-                        <div className="text-[10px] text-muted-foreground">Pedido #{String(delivery.order?.id || delivery.order_id || "").slice(0, 8)}</div>
+                        <div className="text-[10px] text-muted-foreground">Pedido #{String(delivery.order?.id || delivery.order_id || "").slice(0, 8)}</div><div className="mt-0.5 text-[10px] font-medium text-primary">{formatPaymentBreakdown(delivery.order)}</div>
                       </div>
                       <div className="shrink-0 text-[10px] text-muted-foreground">
                         {delivery.completed_at
@@ -1052,13 +1067,13 @@ function MotoboysPage() {
 
               <div>
                 <h3 className="mb-2 font-semibold">Pedidos em posse</h3>
-                {activeDetailOrders.length === 0 ? <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">Nenhum pedido está atualmente em posse deste motoboy.</div> : <div className="space-y-2">{activeDetailOrders.map((delivery: any) => <div key={delivery.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-wrap items-center justify-between gap-2"><b>Pedido #{String(delivery.order.id).slice(0, 8)}</b><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{statusLabel(delivery.status)}</span></div><div className="mt-1 font-medium">{delivery.order.customer}</div><div className="text-muted-foreground">{(delivery.order.items || []).map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`).join(", ")}</div><div className="mt-1">{delivery.order.district} · {brl(Number(delivery.order.total))}</div></div>)}</div>}
+                {activeDetailOrders.length === 0 ? <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">Nenhum pedido está atualmente em posse deste motoboy.</div> : <div className="space-y-2">{activeDetailOrders.map((delivery: any) => <div key={delivery.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-wrap items-center justify-between gap-2"><b>Pedido #{String(delivery.order.id).slice(0, 8)}</b><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{statusLabel(delivery.status)}</span></div><div className="mt-1 font-medium">{delivery.order.customer}</div><div className="text-muted-foreground">{(delivery.order.items || []).map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`).join(", ")}</div><div className="mt-1">{delivery.order.district} · {brl(Number(delivery.order.total))}</div><div className="mt-1 font-medium text-primary">Pagamento: {formatPaymentBreakdown(delivery.order)}</div></div>)}</div>}
               </div>
             </TabsContent>
 
             <TabsContent value="deliveries" className="pt-3">
               <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="h-4 w-4 text-primary" /> Entregas concluídas em <b className="text-foreground">{periodLabel}</b></div>
-              {modalDeliveredOrders.length === 0 ? <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhuma entrega concluída neste período.</div> : <div className="space-y-2">{modalDeliveredOrders.map((delivery: any) => <div key={delivery.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><b>Pedido #{String(delivery.order.id).slice(0, 8)}</b><div className="mt-1 font-medium">{delivery.order.customer}</div><div className="text-muted-foreground">{(delivery.order.items || []).map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`).join(", ")}</div><div className="mt-1">{delivery.order.district} · {brl(Number(delivery.order.total))}</div></div><div className="text-xs text-muted-foreground sm:text-right"><div className="font-medium text-primary">Entregue</div>{delivery.completed_at ? new Date(delivery.completed_at).toLocaleString("pt-BR") : "Horário não informado"}</div></div></div>)}</div>}
+              {modalDeliveredOrders.length === 0 ? <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhuma entrega concluída neste período.</div> : <div className="space-y-2">{modalDeliveredOrders.map((delivery: any) => <div key={delivery.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><b>Pedido #{String(delivery.order.id).slice(0, 8)}</b><div className="mt-1 font-medium">{delivery.order.customer}</div><div className="text-muted-foreground">{(delivery.order.items || []).map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`).join(", ")}</div><div className="mt-1">{delivery.order.district} · {brl(Number(delivery.order.total))}</div><div className="mt-1 font-medium text-primary">Pagamento: {formatPaymentBreakdown(delivery.order)}</div></div><div className="text-xs text-muted-foreground sm:text-right"><div className="font-medium text-primary">Entregue</div>{delivery.completed_at ? new Date(delivery.completed_at).toLocaleString("pt-BR") : "Horário não informado"}</div></div></div>)}</div>}
             </TabsContent>
 
             <TabsContent value="timeline" className="pt-3">

@@ -93,6 +93,13 @@ import {
   getOrderProfit,
   isCardPayment as isCardPaymentMethod,
 } from "@/lib/order-financials";
+import {
+  attachPaymentBreakdownToItems,
+  buildPaymentBreakdown,
+  formatPaymentBreakdown,
+  normalizePaymentBreakdown,
+  paymentMethodLabel,
+} from "@/lib/order-payments";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [{ title: "Pedidos — ZappFy" }] }),
@@ -249,7 +256,7 @@ function PedidosPage() {
       cep,
       mapa: mapsLink,
       itens: itemsTxt,
-      pagamento: o.payment.toUpperCase(),
+      pagamento: formatPaymentBreakdown(o),
       total: brl(o.total),
       observacoes: observacoesLimpas,
       loja: state.settings.storeName || "",
@@ -461,7 +468,7 @@ function PedidosPage() {
       <tr><td colspan="3" class="r">Subtotal produtos</td><td class="r">${brl(subtotal)}</td></tr>
       <tr><td colspan="3" class="r">Taxa de entrega</td><td class="r">${shippingValue > 0 ? brl(shippingValue) : "Grátis"}</td></tr>
       <tr><td colspan="3" class="r"><strong>Total com entrega</strong></td><td class="r"><strong>${brl(Math.round((subtotal + (shippingValue || 0)) * 100) / 100)}</strong></td></tr>
-      <tr><td colspan="3" class="r">Pagamento</td><td class="r">${htmlEscape(paymentLabels[o.payment] || o.payment)}</td></tr>
+      <tr><td colspan="3" class="r">Pagamento</td><td class="r">${htmlEscape(formatPaymentBreakdown(o))}</td></tr>
       ${cardTaxaValor > 0 ? `<tr><td colspan="3" class="r">Taxa cartão (${cardTaxaPct.toFixed(2)}%)</td><td class="r">${brl(cardTaxaValor)}</td></tr>` : ""}
       <tr class="total"><td colspan="3" class="r">TOTAL${cardTaxaValor > 0 || cardParcelas > 1 ? " com acréscimo" : ""}</td><td class="r">${brl(cardParcelas > 1 ? Math.round(cardParcelas * cardParcelaValor * 100) / 100 : o.total)}</td></tr>
       ${cardParcelas > 1 ? `<tr><td colspan="3" class="r">Parcelamento${cardBrand ? ` (${htmlEscape(cardBrand)})` : ""}</td><td class="r"><strong>${cardParcelas}x de ${brl(cardParcelaValor)}</strong></td></tr>` : ""}
@@ -999,7 +1006,7 @@ function PedidosPage() {
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {(o.items ?? []).reduce((n, it) => n + it.qty, 0)} item(s) ·{" "}
-                      {String(o.payment ?? "").toUpperCase()}
+                      {formatPaymentBreakdown(o)}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       {[o.district, fmtDate(o.date)].filter(Boolean).join(" · ")}
@@ -1109,7 +1116,7 @@ function PedidosPage() {
                             </div>
                             <div className="text-xs text-muted-foreground truncate">
                               {(o.items ?? []).reduce((n, it) => n + it.qty, 0)} item(s) ·{" "}
-                              {String(o.payment ?? "").toUpperCase()}
+                              {formatPaymentBreakdown(o)}
                             </div>
                           </td>
                           <td className="px-2 py-3 truncate">{o.district}</td>
@@ -1261,6 +1268,8 @@ function EditOrderDialog({
   const [total, setTotal] = useState<number>(0);
   const [totalEdited, setTotalEdited] = useState(false);
   const [orderDate, setOrderDate] = useState<Date | undefined>(undefined);
+  const [secondPayment, setSecondPayment] = useState<string>("none");
+  const [secondPaymentValue, setSecondPaymentValue] = useState<number>(0);
 
   useMemo(() => {
     if (order) {
@@ -1270,7 +1279,7 @@ function EditOrderDialog({
         address: order.address,
         district: order.district,
         city: order.city,
-        payment: order.payment as any,
+        payment: (normalizePaymentBreakdown(order)[0]?.method || order.payment) as any,
         status: order.status,
         notes: order.notes ?? "",
       });
@@ -1278,6 +1287,10 @@ function EditOrderDialog({
       setTotal(order.total);
       setTotalEdited(false);
       setOrderDate(order.date ? new Date(order.date) : new Date());
+      const paymentParts = normalizePaymentBreakdown(order);
+      const secondPart = paymentParts.length > 1 ? paymentParts[1] : null;
+      setSecondPayment(secondPart?.method || "none");
+      setSecondPaymentValue(secondPart?.amount || 0);
     }
   }, [order]);
 
@@ -1517,6 +1530,34 @@ function EditOrderDialog({
               </Field>
             </div>
 
+            <div className="rounded-lg border border-border/60 bg-secondary/20 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
+                <Wallet className="h-3.5 w-3.5" /> Pagamento dividido (opcional)
+              </div>
+              <div className="grid grid-cols-[1fr_150px] gap-2">
+                <Field label="2ª FORMA">
+                  <Select value={secondPayment} onValueChange={setSecondPayment}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— Nenhum —</SelectItem>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="cartao">Cartão</SelectItem>
+                      <SelectItem value="debito">Cartão de Débito</SelectItem>
+                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="VALOR DA 2ª PARTE">
+                  <Input type="number" min={0} step="0.01" value={secondPaymentValue} disabled={secondPayment === "none"} onChange={(e) => setSecondPaymentValue(Math.max(0, Number(e.target.value) || 0))} />
+                </Field>
+              </div>
+              {secondPayment !== "none" && secondPaymentValue > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  {paymentMethodLabel(form.payment)}: <b className="text-foreground">{brl(Math.max(0, total - secondPaymentValue))}</b> · {paymentMethodLabel(secondPayment)}: <b className="text-foreground">{brl(secondPaymentValue)}</b>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <Field label={`Total (R$)${totalEdited ? " — manual" : ""}`}>
                 <Input
@@ -1559,6 +1600,16 @@ function EditOrderDialog({
           </Button>
           <Button
             onClick={() => {
+              if (secondPayment !== "none") {
+                if (secondPayment === form.payment) {
+                  toast.error("A segunda forma de pagamento deve ser diferente da primeira.");
+                  return;
+                }
+                if (secondPaymentValue <= 0 || secondPaymentValue >= total) {
+                  toast.error("No pagamento dividido, informe um valor da 2ª parte maior que zero e menor que o total.");
+                  return;
+                }
+              }
               // Recalcula metadados da taxa do cartão se aplicável.
               const prevMeta = getOrderFeeMeta({ items: order?.items ?? [] });
               let nextItems = items as any[];
@@ -1584,6 +1635,13 @@ function EditOrderDialog({
                 });
                 nextItems = attachFeeMetaToItems(nextItems, rebuilt);
               }
+              const paymentBreakdown = buildPaymentBreakdown(
+                form.payment,
+                total,
+                secondPayment,
+                secondPaymentValue,
+              );
+              nextItems = attachPaymentBreakdownToItems(nextItems, paymentBreakdown);
               const patch: any = { ...form, items: nextItems, total };
               if (orderDate) {
                 // Preserva a hora original do pedido (ou usa agora, se for novo)
@@ -1735,7 +1793,7 @@ function NewOrderDialog({
     address: "",
     district: "",
     city: "",
-    payment: "pix" as "pix" | "cartao" | "dinheiro",
+    payment: "pix" as "pix" | "cartao" | "debito" | "dinheiro",
     status: "aguardando" as OrderStatus,
     notes: "",
   });
@@ -2331,6 +2389,15 @@ function NewOrderDialog({
                 </div>
               </div>
 
+              {secondPayment !== "none" && secondPaymentValue > 0 && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-xs">
+                  <div className="font-semibold text-foreground mb-1">Divisão do pagamento</div>
+                  <div className="flex justify-between"><span>{paymentMethodLabel(form.payment)}</span><b>{brl(Math.max(0, total - secondPaymentValue))}</b></div>
+                  <div className="flex justify-between"><span>{paymentMethodLabel(secondPayment)}</span><b>{brl(secondPaymentValue)}</b></div>
+                  <div className="mt-1 text-[10px] text-muted-foreground">A 1ª forma recebe automaticamente o restante do total.</div>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => setFeesOpen(true)}
@@ -2415,6 +2482,16 @@ function NewOrderDialog({
                 toast.error("Adicione ao menos um produto");
                 return;
               }
+              if (secondPayment !== "none") {
+                if (secondPayment === form.payment) {
+                  toast.error("Escolha uma forma diferente para o segundo pagamento.");
+                  return;
+                }
+                if (secondPaymentValue <= 0 || secondPaymentValue >= total) {
+                  toast.error("No pagamento dividido, o valor da 2ª parte precisa ser maior que zero e menor que o total.");
+                  return;
+                }
+              }
               const rawItems = lines.map((l) => {
                 const prod = state.products.find((p) => p.id === l.productId)!;
                 return {
@@ -2436,7 +2513,13 @@ function NewOrderDialog({
                       cardInstallments,
                     })
                   : null;
-              const items = attachFeeMetaToItems(rawItems as any[], feeMeta);
+              let items = attachFeeMetaToItems(rawItems as any[], feeMeta);
+              items = attachPaymentBreakdownToItems(items, buildPaymentBreakdown(
+                form.payment,
+                total,
+                secondPayment,
+                secondPaymentValue,
+              ));
               const extraNotesLines: string[] = [];
               if (shippingValue > 0) extraNotesLines.push(`Entrega: ${brl(shippingValue)}`);
               if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
