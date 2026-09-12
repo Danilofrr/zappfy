@@ -83,6 +83,7 @@ type CourierHistory = {
   deliveredOrders: any[];
   deliveredProducts: number;
   failed: number;
+  failedOrders: any[];
   returned: number;
   transportedValue: number;
   eventsInPeriod: any[];
@@ -403,6 +404,40 @@ function MotoboysPage() {
             isWithin(event.created_at, range.start, range.end),
           );
 
+const deliveryByOrderId = new Map<string, any>(
+  orders.map((delivery: any) => [
+    String(delivery?.order?.id || delivery?.order_id || ""),
+    delivery,
+  ]),
+);
+const failedOrders = eventsInPeriod
+  .filter((event: any) => event.event_type === "delivery_failed")
+  .map((event: any) => {
+    const orderId = String(event?.order_id || "");
+    const delivery = deliveryByOrderId.get(orderId);
+    const metadata =
+      event?.metadata && typeof event.metadata === "object" ? event.metadata : {};
+    const order = delivery?.order || {
+      id: orderId,
+      customer: metadata.customer || "Cliente não informado",
+      phone: metadata.phone || "",
+      address: metadata.address || "",
+      district: metadata.district || "",
+      city: metadata.city || "",
+      total: Number(metadata.order_total || 0),
+      payment: metadata.payment || "",
+      items: Array.isArray(metadata.items) ? metadata.items : [],
+    };
+
+    return {
+      ...event,
+      order,
+      reason: metadata.reason || delivery?.failure_reason || "Não entregue",
+      canReassign: metadata.can_reassign === true,
+      failureKind: metadata.kind || "delivery_failed",
+    };
+  });
+
           return {
             courierId: courier.id,
             history: {
@@ -412,7 +447,8 @@ function MotoboysPage() {
                 (sum: number, delivery: any) => sum + totalItems(delivery.order?.items),
                 0,
               ),
-              failed: eventsInPeriod.filter((event: any) => event.event_type === "delivery_failed").length,
+              failed: failedOrders.length,
+              failedOrders,
               returned: eventsInPeriod.filter((event: any) => event.event_type === "returned").length,
               transportedValue: deliveredOrders.reduce(
                 (sum: number, delivery: any) => sum + Number(delivery.order?.total || 0),
@@ -900,7 +936,55 @@ function MotoboysPage() {
               </div>
             )}
 
-                      <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                      {(history?.failedOrders?.length ?? 0) > 0 && (
+              <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <AlertTriangle className="h-3.5 w-3.5 text-destructive" /> Pedidos não entregues
+                </div>
+                <div className="space-y-2">
+                  {history?.failedOrders?.slice(0, 3).map((failure: any) => (
+                    <div
+                      key={failure.id}
+                      className="rounded-lg border border-destructive/15 bg-background/60 px-2.5 py-2 text-xs"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold text-foreground">
+                            {failure.order?.customer || "Cliente não informado"}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            Pedido #{String(failure.order?.id || failure.order_id || "").slice(0, 8)}
+                          </div>
+                          <div className="mt-1 text-[10px] font-medium text-destructive">
+                            {failure.reason || "Não entregue"}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right text-[10px] text-muted-foreground">
+                          {failure.created_at
+                            ? new Date(failure.created_at).toLocaleTimeString("pt-BR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : ""}
+                        </div>
+                      </div>
+                      {failure.canReassign && (
+                        <div className="mt-2 inline-flex rounded-full border border-orange-500/30 bg-orange-500/10 px-2 py-1 text-[10px] font-semibold text-orange-600 dark:text-orange-400">
+                          Aguardando nova atribuição
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {(history?.failedOrders?.length ?? 0) > 3 && (
+                    <div className="text-[11px] text-muted-foreground">
+                      + {(history?.failedOrders?.length ?? 0) - 3} outro(s) pedido(s) não entregue(s). Veja todos em “Ver carga e histórico”.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                         <div className="rounded-xl border p-3">
                           <div className="text-xs text-muted-foreground">Pedidos em posse</div>
                           <div className="font-semibold text-primary">{brl(Number(loadItem.value_in_possession))}</div>
