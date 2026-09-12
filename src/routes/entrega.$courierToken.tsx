@@ -664,7 +664,7 @@ function CourierPage() {
           <div className="text-xl font-extrabold" style={{ color: t.title_color }}>
             {data.store.name}
           </div>
-          <div className="text-xs opacity-70">Pedido #{orderShortNumber(data.order.id)}</div>
+          <div className="text-xs opacity-70">Pedido #{String(data.order.id || "").slice(0, 8)}</div>
           <div
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
             style={{ background: soft, color: t.primary_color }}
