@@ -194,7 +194,6 @@ BEGIN
       'notes', _notes,
       'recipient', _recipient,
       'kind', CASE WHEN _action = 'fail' THEN 'delivery_failed' ELSE NULL END,
-      'can_reassign', CASE WHEN _action = 'fail' THEN true ELSE NULL END,
       'customer', CASE WHEN _action = 'fail' THEN o.customer ELSE NULL END,
       'phone', CASE WHEN _action = 'fail' THEN o.phone ELSE NULL END,
       'address', CASE WHEN _action = 'fail' THEN o.address ELSE NULL END,
