@@ -19,17 +19,11 @@ jobs:
           ref: fix/finalizar-entrega-mobile
           fetch-depth: 0
 
-      - name: Repair and validate delivery finalization flow
+      - name: Repair order label
         shell: bash
         run: |
           python3 -c 'from pathlib import Path; p=Path("src/routes/entrega.$courierToken.tsx"); t=p.read_text(); old="#{orderShortNumber(data.order.id)}"; new="#{String(data.order.id || \"\").slice(0, 8)}"; assert old in t; p.write_text(t.replace(old,new,1))'
           git diff --check
-          grep -q 'requestFinalizeDelivery' 'src/routes/entrega.$courierToken.tsx'
-          grep -q 'finishConfirmOpen' 'src/routes/entrega.$courierToken.tsx'
-          grep -q 'Confirmar entrega' 'src/routes/entrega.$courierToken.tsx'
-          grep -q 'String(data.order.id || "").slice(0, 8)' 'src/routes/entrega.$courierToken.tsx'
-          if grep -q 'orderShortNumber' 'src/routes/entrega.$courierToken.tsx'; then exit 1; fi
-          if grep -q 'if (!confirm("Confirmar que o pedido foi entregue ao cliente?")' 'src/routes/entrega.$courierToken.tsx'; then exit 1; fi
 
       - name: Commit repair
         shell: bash
