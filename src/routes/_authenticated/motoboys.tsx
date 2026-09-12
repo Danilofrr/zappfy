@@ -1010,9 +1010,6 @@ const failedOrders = eventsInPeriod
                             Taxas do motoboy
                           </div>
                           <div className="mt-1 font-semibold text-primary">{brl(courierFeeDue)}</div>
-                          <div className="mt-1 text-[10px] leading-tight text-muted-foreground">
-                            {deliveredCount} {deliveredCount === 1 ? "entrega" : "entregas"} × {brl(motoboyFee)}
-                          </div>
                         </div>
                       </div>
 
