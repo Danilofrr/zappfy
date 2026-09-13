@@ -1208,7 +1208,12 @@ const failedOrders = eventsInPeriod
           </div>
 
           <Tabs defaultValue="current" className="mt-2">
-            <TabsList className="grid h-auto w-full grid-cols-3"><TabsTrigger value="current" className="gap-1.5"><Package className="h-4 w-4" /> Carga atual</TabsTrigger><TabsTrigger value="deliveries" className="gap-1.5"><CheckCircle2 className="h-4 w-4" /> Entregas</TabsTrigger><TabsTrigger value="timeline" className="gap-1.5"><History className="h-4 w-4" /> Histórico</TabsTrigger></TabsList>
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4">
+              <TabsTrigger value="current" className="gap-1.5"><Package className="h-4 w-4" /> Carga atual</TabsTrigger>
+              <TabsTrigger value="deliveries" className="gap-1.5"><CheckCircle2 className="h-4 w-4" /> Entregas</TabsTrigger>
+              <TabsTrigger value="failed" className="gap-1.5"><AlertTriangle className="h-4 w-4" /> Pedidos não entregues</TabsTrigger>
+              <TabsTrigger value="timeline" className="gap-1.5"><History className="h-4 w-4" /> Histórico</TabsTrigger>
+            </TabsList>
 
             <TabsContent value="current" className="space-y-5 pt-3">
               <div>
@@ -1232,6 +1237,59 @@ const failedOrders = eventsInPeriod
             <TabsContent value="deliveries" className="pt-3">
               <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="h-4 w-4 text-primary" /> Entregas concluídas em <b className="text-foreground">{periodLabel}</b></div>
               {modalDeliveredOrders.length === 0 ? <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhuma entrega concluída neste período.</div> : <div className="space-y-2">{modalDeliveredOrders.map((delivery: any) => <div key={delivery.id} className="rounded-xl border p-3 text-sm"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><b>Pedido #{String(delivery.order.id).slice(0, 8)}</b><div className="mt-1 font-medium">{delivery.order.customer}</div><div className="text-muted-foreground">{(delivery.order.items || []).map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`).join(", ")}</div><div className="mt-1">{delivery.order.district} · {brl(Number(delivery.order.total))}</div><div className="mt-1 font-medium text-primary">Pagamento: {formatPaymentBreakdown(paymentRecordForDelivery(delivery))}</div></div><div className="text-xs text-muted-foreground sm:text-right"><div className="font-medium text-primary">Entregue</div>{delivery.completed_at ? new Date(delivery.completed_at).toLocaleString("pt-BR") : "Horário não informado"}</div></div></div>)}</div>}
+            </TabsContent>
+
+            <TabsContent value="failed" className="pt-3">
+              <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                  Pedidos não entregues em <b className="text-foreground">{periodLabel}</b>
+                </div>
+                <span className="text-xs font-medium text-destructive">{detailHistory?.failedOrders?.length ?? 0} pedido(s)</span>
+              </div>
+              {(detailHistory?.failedOrders?.length ?? 0) === 0 ? (
+                <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhum pedido não entregue neste período.</div>
+              ) : (
+                <div className="space-y-3">
+                  {(detailHistory?.failedOrders || []).map((failure: any) => (
+                    <div key={`${failure.id}-${failure.order?.id || failure.order_id}`} className="rounded-xl border border-destructive/25 bg-destructive/5 p-4 text-sm">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <b>Pedido #{String(failure.order?.id || failure.order_id || "").slice(0, 8)}</b>
+                            {failure.canReassign && (
+                              <span className="rounded-full border border-orange-500/30 bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-600 dark:text-orange-400">Aguardando nova atribuição</span>
+                            )}
+                          </div>
+                          <div className="mt-2 text-base font-semibold">{failure.order?.customer || "Cliente não informado"}</div>
+                          {failure.order?.phone && <div className="mt-1 text-muted-foreground">Telefone: {failure.order.phone}</div>}
+                          {(failure.order?.address || failure.order?.district || failure.order?.city) && (
+                            <div className="mt-1 text-muted-foreground">
+                              {[failure.order?.address, failure.order?.district, failure.order?.city].filter(Boolean).join(" · ")}
+                            </div>
+                          )}
+                          {(failure.order?.items || []).length > 0 && (
+                            <div className="mt-2 text-muted-foreground">
+                              {(failure.order.items || []).map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`).join(", ")}
+                            </div>
+                          )}
+                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                            {Number(failure.order?.total || 0) > 0 && <span><b>Valor:</b> {brl(Number(failure.order.total))}</span>}
+                            {failure.order?.payment && <span><b>Pagamento:</b> {failure.order.payment}</span>}
+                          </div>
+                          <div className="mt-3 rounded-lg border border-destructive/20 bg-background/50 p-2.5">
+                            <span className="font-semibold text-destructive">Motivo:</span> {failure.reason || "Não entregue"}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-xs text-muted-foreground sm:text-right">
+                          <div className="font-medium text-destructive">Não entregue</div>
+                          {failure.created_at ? new Date(failure.created_at).toLocaleString("pt-BR") : "Horário não informado"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="timeline" className="pt-3">
