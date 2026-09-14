@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import L from "leaflet";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -53,10 +53,7 @@ type GeoPoint = {
   formattedAddress?: string | null;
 };
 
-type CurrentLocation = {
-  lat: number;
-  lng: number;
-};
+type CurrentLocation = { lat: number; lng: number };
 
 const FINAL_STATUSES = new Set(["entregue", "devolvido", "cancelado"]);
 
@@ -71,10 +68,8 @@ function deliveryAddress(delivery: CourierMapDelivery) {
 }
 
 function geocodeQuery(delivery: CourierMapDelivery) {
-  const parts = [delivery.order.address, delivery.order.district, delivery.order.city];
-  const joined = parts.filter(Boolean).join(", ");
-  if (!joined) return "";
-  return `${joined}, Pernambuco, Brasil`;
+  const address = deliveryAddress(delivery);
+  return address ? `${address}, Pernambuco, Brasil` : "";
 }
 
 function storageKey(deliveryId: string) {
@@ -87,20 +82,32 @@ function readStoredPoint(deliveryId: string): GeoPoint | null {
     const raw = window.localStorage.getItem(storageKey(deliveryId));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as GeoPoint;
-    if (!Number.isFinite(parsed.lat) || !Number.isFinite(parsed.lng)) return null;
-    return parsed;
+    return Number.isFinite(parsed.lat) && Number.isFinite(parsed.lng) ? parsed : null;
   } catch {
     return null;
   }
 }
 
 function writeStoredPoint(point: GeoPoint) {
-  if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(storageKey(point.deliveryId), JSON.stringify(point));
   } catch {
-    // Local cache is optional. Database cache remains the source of truth.
+    // Local cache is optional. The database cache is the persistent source.
   }
+}
+
+function pointFromDelivery(delivery: CourierMapDelivery): GeoPoint | null {
+  const lat = Number(delivery.delivery_latitude);
+  const lng = Number(delivery.delivery_longitude);
+  if (Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0) {
+    return {
+      deliveryId: delivery.id,
+      lat,
+      lng,
+      formattedAddress: delivery.delivery_geocoded_address,
+    };
+  }
+  return readStoredPoint(delivery.id);
 }
 
 function haversineKm(a: CurrentLocation, b: CurrentLocation) {
@@ -129,8 +136,7 @@ function statusLabel(status: string) {
 }
 
 function scheduledLabel(value: string | null) {
-  if (!value) return null;
-  return new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR");
+  return value ? new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR") : null;
 }
 
 function numberedIcon(number: number, color: string) {
@@ -156,7 +162,6 @@ function courierIcon() {
 
 function FitMap({ positions }: { positions: [number, number][] }) {
   const map = useMap();
-
   useEffect(() => {
     if (positions.length === 0) return;
     if (positions.length === 1) {
@@ -165,7 +170,6 @@ function FitMap({ positions }: { positions: [number, number][] }) {
     }
     map.fitBounds(L.latLngBounds(positions), { padding: [28, 28], maxZoom: 15 });
   }, [map, positions]);
-
   return null;
 }
 
@@ -174,47 +178,45 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
     () => deliveries.filter((delivery) => !FINAL_STATUSES.has(delivery.status)),
     [deliveries],
   );
+  const deliveryKey = useMemo(
+    () =>
+      mapDeliveries
+        .map(
+          (delivery) =>
+            `${delivery.id}:${delivery.delivery_latitude ?? ""}:${delivery.delivery_longitude ?? ""}:${delivery.order.address}:${delivery.order.city}`,
+        )
+        .join("|"),
+    [mapDeliveries],
+  );
   const [points, setPoints] = useState<Record<string, GeoPoint>>({});
   const [geocoding, setGeocoding] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
   const [currentLocation, setCurrentLocation] = useState<CurrentLocation | null>(null);
   const [locating, setLocating] = useState(false);
-  const attempted = useRef(new Set<string>());
-
-  useEffect(() => {
-    setPoints((current) => {
-      const next: Record<string, GeoPoint> = {};
-      for (const delivery of mapDeliveries) {
-        const lat = Number(delivery.delivery_latitude);
-        const lng = Number(delivery.delivery_longitude);
-        if (Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0) {
-          next[delivery.id] = {
-            deliveryId: delivery.id,
-            lat,
-            lng,
-            formattedAddress: delivery.delivery_geocoded_address,
-          };
-          continue;
-        }
-        const local = current[delivery.id] || readStoredPoint(delivery.id);
-        if (local) next[delivery.id] = local;
-      }
-      return next;
-    });
-  }, [mapDeliveries]);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function geocodeMissing() {
-      const missing = mapDeliveries.filter(
-        (delivery) => !points[delivery.id] && !attempted.current.has(delivery.id),
-      );
-      if (missing.length === 0) return;
+    async function syncAndGeocode() {
+      const initial: Record<string, GeoPoint> = {};
+      const missing: CourierMapDelivery[] = [];
+
+      for (const delivery of mapDeliveries) {
+        const known = pointFromDelivery(delivery);
+        if (known) initial[delivery.id] = known;
+        else missing.push(delivery);
+      }
+
+      if (!cancelled) setPoints(initial);
+      if (missing.length === 0) {
+        if (!cancelled) setGeocoding(false);
+        return;
+      }
 
       setGeocoding(true);
-      for (const delivery of missing) {
-        if (cancelled) break;
-        attempted.current.add(delivery.id);
+      for (let index = 0; index < missing.length; index += 1) {
+        if (cancelled) return;
+        const delivery = missing[index];
         const query = geocodeQuery(delivery);
         if (!query) continue;
 
@@ -225,10 +227,7 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
           url.searchParams.set("countrycodes", "br");
           url.searchParams.set("accept-language", "pt-BR");
           url.searchParams.set("q", query);
-
-          const response = await fetch(url.toString(), {
-            headers: { Accept: "application/json" },
-          });
+          const response = await fetch(url.toString(), { headers: { Accept: "application/json" } });
           if (!response.ok) throw new Error(`Geocoding ${response.status}`);
           const result = (await response.json()) as Array<{
             lat: string;
@@ -247,9 +246,7 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
             formattedAddress: first?.display_name || query,
           };
           writeStoredPoint(point);
-          if (!cancelled) {
-            setPoints((current) => ({ ...current, [delivery.id]: point }));
-          }
+          if (!cancelled) setPoints((current) => ({ ...current, [delivery.id]: point }));
 
           const session = getCourierSession(storeSlug);
           if (session) {
@@ -265,18 +262,19 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
           console.warn("Não foi possível localizar o endereço no mapa", error);
         }
 
-        if (!cancelled) {
+        if (index < missing.length - 1 && !cancelled) {
           await new Promise((resolve) => window.setTimeout(resolve, 1100));
         }
       }
+
       if (!cancelled) setGeocoding(false);
     }
 
-    void geocodeMissing();
+    void syncAndGeocode();
     return () => {
       cancelled = true;
     };
-  }, [mapDeliveries, points, storeSlug]);
+  }, [deliveryKey, mapDeliveries, retryNonce, storeSlug]);
 
   function locateCourier(showError = true) {
     if (!navigator.geolocation) {
@@ -286,10 +284,7 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setCurrentLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
+        setCurrentLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
         setLocating(false);
       },
       () => {
@@ -306,28 +301,22 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
 
   useEffect(() => {
     if (mapDeliveries.length > 0) locateCourier(false);
-    // Solicita a posição apenas ao abrir a aba Mapa; se a permissão já existir, é instantâneo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const resolved = useMemo(
     () =>
       mapDeliveries
-        .map((delivery) => {
-          const point = points[delivery.id];
-          return point ? { delivery, point } : null;
-        })
+        .map((delivery) => (points[delivery.id] ? { delivery, point: points[delivery.id] } : null))
         .filter(Boolean) as Array<{ delivery: CourierMapDelivery; point: GeoPoint }>,
     [mapDeliveries, points],
   );
 
   const ordered = useMemo(() => {
     if (resolved.length <= 1 || !currentLocation) return resolved;
-
     const remaining = [...resolved];
     const result: typeof resolved = [];
     let cursor: CurrentLocation = currentLocation;
-
     while (remaining.length > 0) {
       let bestIndex = 0;
       let bestDistance = Number.POSITIVE_INFINITY;
@@ -342,7 +331,6 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
       result.push(next);
       cursor = { lat: next.point.lat, lng: next.point.lng };
     }
-
     return result;
   }, [resolved, currentLocation]);
 
@@ -351,8 +339,6 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
     if (currentLocation) list.unshift([currentLocation.lat, currentLocation.lng]);
     return list;
   }, [ordered, currentLocation]);
-
-  const unresolvedCount = Math.max(0, mapDeliveries.length - resolved.length);
 
   function openCompleteRoute() {
     if (ordered.length === 0) return;
@@ -363,9 +349,7 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
       destination: `${destination.lat},${destination.lng}`,
       travelmode: "driving",
     });
-    if (currentLocation) {
-      params.set("origin", `${currentLocation.lat},${currentLocation.lng}`);
-    }
+    if (currentLocation) params.set("origin", `${currentLocation.lat},${currentLocation.lng}`);
     if (routeStops.length > 1) {
       params.set(
         "waypoints",
@@ -378,13 +362,6 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
     window.open(`https://www.google.com/maps/dir/?${params.toString()}`, "_blank", "noopener,noreferrer");
   }
 
-  function retryMissing() {
-    mapDeliveries.forEach((delivery) => {
-      if (!points[delivery.id]) attempted.current.delete(delivery.id);
-    });
-    setPoints((current) => ({ ...current }));
-  }
-
   const mapCardStyle = {
     background: theme.cardColor,
     borderColor: theme.cardBorderColor,
@@ -392,6 +369,7 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
     color: theme.textColor,
   };
   const routeColor = safeColor(theme.buttonColor, "#10b981");
+  const unresolvedCount = Math.max(0, mapDeliveries.length - resolved.length);
 
   if (mapDeliveries.length === 0) {
     return (
@@ -439,7 +417,7 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
               <AlertTriangle className="h-4 w-4" />
               {unresolvedCount} endereço(s) ainda não foram encontrados no mapa.
             </span>
-            <button type="button" onClick={retryMissing} className="font-semibold underline underline-offset-2">
+            <button type="button" onClick={() => setRetryNonce((value) => value + 1)} className="font-semibold underline underline-offset-2">
               Tentar novamente
             </button>
           </div>
@@ -448,7 +426,7 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
 
       <div className="overflow-hidden border" style={{ ...mapCardStyle, height: 430 }}>
         <MapContainer
-          center={positions[0] || [-8.0476, -34.877]}
+          center={(positions[0] || [-8.0476, -34.877]) as [number, number]}
           zoom={12}
           scrollWheelZoom
           style={{ height: "100%", width: "100%", background: "#e5e7eb" }}
@@ -490,7 +468,9 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
             </Marker>
           ))}
 
-          {positions.length > 1 && <Polyline positions={positions} pathOptions={{ color: routeColor, weight: 4, opacity: 0.72 }} />}
+          {positions.length > 1 && (
+            <Polyline positions={positions} pathOptions={{ color: routeColor, weight: 4, opacity: 0.72 }} />
+          )}
         </MapContainer>
       </div>
 
@@ -518,11 +498,7 @@ export function CourierDeliveryMap({ deliveries, storeSlug, theme, onOpenDeliver
               ? haversineKm(currentLocation, { lat: point.lat, lng: point.lng })
               : null;
             return (
-              <div
-                key={delivery.id}
-                className="flex items-start gap-3 rounded-xl border p-3"
-                style={{ borderColor: theme.cardBorderColor }}
-              >
+              <div key={delivery.id} className="flex items-start gap-3 rounded-xl border p-3" style={{ borderColor: theme.cardBorderColor }}>
                 <div
                   className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-extrabold"
                   style={{ background: routeColor, color: theme.buttonTextColor }}
