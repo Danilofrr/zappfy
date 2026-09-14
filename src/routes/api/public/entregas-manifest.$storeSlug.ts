@@ -30,22 +30,10 @@ export const Route = createFileRoute("/api/public/entregas-manifest/$storeSlug")
           categories: ["business", "productivity"],
           icons: [
             {
-              src: "/entregas-icon-192.png?v=6",
-              sizes: "192x192",
-              type: "image/png",
-              purpose: "any",
-            },
-            {
-              src: "/entregas-icon-512.png?v=6",
-              sizes: "512x512",
-              type: "image/png",
-              purpose: "any",
-            },
-            {
-              src: "/entregas-maskable-icon.png?v=6",
-              sizes: "512x512",
-              type: "image/png",
-              purpose: "maskable",
+              src: "/zappfy-entregas-icon.svg?v=6",
+              sizes: "any",
+              type: "image/svg+xml",
+              purpose: "any maskable",
             },
           ],
         };
