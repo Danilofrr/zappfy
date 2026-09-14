@@ -12,6 +12,9 @@ export type CourierLoad = {
   courier_id: string;
   name: string;
   active: boolean;
+  is_online: boolean;
+  online_updated_at: string | null;
+  in_route: boolean;
   orders_in_possession: number;
   products_in_possession: number;
   value_in_possession: number;

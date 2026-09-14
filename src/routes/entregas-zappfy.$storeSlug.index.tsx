@@ -14,6 +14,7 @@ import {
   Navigation,
   Package,
   Phone,
+  Power,
   RefreshCw,
   Store,
   Undo2,
@@ -79,6 +80,8 @@ type Me = {
   courier_id: string;
   name: string;
   phone: string;
+  is_online: boolean;
+  online_updated_at?: string | null;
   store_id: string;
   store_name: string;
   slug: string;
@@ -126,6 +129,7 @@ function CentralPage() {
   const [available, setAvailable] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyTrackingCode, setBusyTrackingCode] = useState<string | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -169,6 +173,31 @@ function CentralPage() {
       alive = false;
     };
   }, [navigate, storeSlug]);
+
+  async function toggleOnlineStatus() {
+    const session = getCourierSession(storeSlug);
+    if (!session || !me) return;
+
+    const nextOnline = !me.is_online;
+    setStatusBusy(true);
+    const { error } = await (supabase as any).rpc("courier_set_online", {
+      _session: session,
+      _online: nextOnline,
+    });
+    setStatusBusy(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setMe((current) =>
+      current
+        ? { ...current, is_online: nextOnline, online_updated_at: new Date().toISOString() }
+        : current,
+    );
+    toast.success(nextOnline ? "Você está ativo para entregas" : "Você está offline");
+  }
 
   async function loadDeliveries() {
     const session = getCourierSession(storeSlug);
@@ -260,6 +289,7 @@ function CentralPage() {
     toast.success("Entrega atualizada");
 
     if (actionName === "accept" || actionName === "start") {
+      setMe((current) => (current ? { ...current, is_online: true } : current));
       navigate({ to: "/entrega/$courierToken", params: { courierToken: d.courier_token } });
       return;
     }
@@ -385,6 +415,49 @@ function CentralPage() {
           <strong style={{ color: theme.title_color }}>{me.store_name}</strong>
         </section>
 
+        <section className="flex items-center justify-between gap-3 p-3" style={cardStyle}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
+              style={{
+                background: me.is_online
+                  ? `${theme.button_color}22`
+                  : `${theme.card_border_color}66`,
+                color: me.is_online ? theme.button_color : theme.text_color,
+              }}
+            >
+              <Power className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs opacity-65">Seu status de trabalho</div>
+              <div
+                className="font-semibold"
+                style={{ color: me.is_online ? theme.button_color : theme.title_color }}
+              >
+                {me.is_online ? "Ativo agora" : "Offline"}
+              </div>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant={me.is_online ? "outline" : "default"}
+            disabled={statusBusy}
+            onClick={toggleOnlineStatus}
+            style={
+              me.is_online
+                ? { borderColor: `${theme.button_color}88`, color: theme.button_color }
+                : { background: theme.button_color, color: theme.button_text_color }
+            }
+          >
+            {statusBusy ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Power className="mr-1 h-4 w-4" />
+            )}
+            {me.is_online ? "Ficar offline" : "Ficar ativo"}
+          </Button>
+        </section>
+
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {summary.map(([label, value]) => (
             <div key={label} className="p-3 text-center" style={cardStyle}>
@@ -425,9 +498,7 @@ function CentralPage() {
                 const paymentParts = normalizePaymentBreakdown(d.order);
                 const isScheduledForFuture = Boolean(d.scheduled_for && d.scheduled_for > todayKey);
                 const awaitingDecision =
-                  !isScheduledForFuture &&
-                  !d.accepted_at &&
-                  ["aguardando_motoboy", "preparando"].includes(d.status);
+                  !d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status);
 
                 return (
                   <div key={d.tracking_code} className="p-4 space-y-3" style={cardStyle}>
@@ -470,7 +541,7 @@ function CentralPage() {
                         </div>
                         {isScheduledForFuture && (
                           <div className="mt-1 opacity-70">
-                            O botão Aceitar será liberado no dia programado.
+                            Data planejada. Você pode aceitar agora e adiantar a entrega, se quiser.
                           </div>
                         )}
                       </div>
@@ -563,32 +634,12 @@ function CentralPage() {
                       <a
                         href={`tel:${d.order.phone}`}
                         className={`inline-flex h-11 items-center justify-center rounded-md border text-sm ${
-                          awaitingDecision || isScheduledForFuture ? "col-span-2" : ""
+                          awaitingDecision ? "col-span-2" : ""
                         }`}
                       >
                         <Phone className="mr-1 h-4 w-4" />
                         Ligar
                       </a>
-
-                      {isScheduledForFuture &&
-                        !d.accepted_at &&
-                        ["aguardando_motoboy", "preparando"].includes(d.status) && (
-                          <>
-                            <Button
-                              disabled={busy}
-                              variant="destructive"
-                              onClick={() => action(d, "reject")}
-                              className="h-11"
-                            >
-                              <XCircle className="mr-1 h-4 w-4" />
-                              Recusar
-                            </Button>
-                            <Button disabled variant="outline" className="h-11">
-                              <CalendarDays className="mr-1 h-4 w-4" />
-                              {formatCentralScheduledDate(d.scheduled_for)}
-                            </Button>
-                          </>
-                        )}
 
                       {awaitingDecision && (
                         <>
