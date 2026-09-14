@@ -54,7 +54,7 @@ export function EntregasPwaShell({ storeSlug }: Props) {
 
     const prevTheme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     const prevThemeContent = prevTheme?.getAttribute("content") ?? null;
-    if (prevTheme) prevTheme.setAttribute("content", "#18c56e");
+    if (prevTheme) prevTheme.setAttribute("content", "#08110d");
 
     const ensureMeta = (name: string, content: string) => {
       let el = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
@@ -73,7 +73,7 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     const appleTitle = ensureMeta("apple-mobile-web-app-title", "Zappfy Entregas");
     const appleCapable = ensureMeta("apple-mobile-web-app-capable", "yes");
     const mobileCapable = ensureMeta("mobile-web-app-capable", "yes");
-    const appleStatus = ensureMeta("apple-mobile-web-app-status-bar-style", "black-translucent");
+    const appleStatus = ensureMeta("apple-mobile-web-app-status-bar-style", "black");
 
     let appleIcon = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
     const appleCreated = !appleIcon;
@@ -84,6 +84,8 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     }
     const prevAppleHref = appleIcon.getAttribute("href");
     appleIcon.setAttribute("href", ENTREGAS_APPLE_ICON_URL);
+    appleIcon.setAttribute("sizes", "512x512");
+    appleIcon.setAttribute("type", "image/png");
 
     const faviconSwaps: { el: HTMLLinkElement; prev: string | null }[] = [];
     const existingFavicons = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
@@ -91,6 +93,8 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     if (existingFavicons.length === 0) {
       const favicon = document.createElement("link");
       favicon.setAttribute("rel", "icon");
+      favicon.setAttribute("type", "image/png");
+      favicon.setAttribute("sizes", "512x512");
       favicon.setAttribute("href", ENTREGAS_FAVICON_URL);
       head.appendChild(favicon);
       faviconSwaps.push({ el: favicon, prev: null });
@@ -102,6 +106,7 @@ export function EntregasPwaShell({ storeSlug }: Props) {
         if (sizes.includes("192")) href = ENTREGAS_ICON_192_URL;
         else if (sizes.includes("512")) href = ENTREGAS_ICON_512_URL;
         else if (el.getAttribute("type") === "image/png") href = ENTREGAS_ICON_192_URL;
+        el.setAttribute("type", "image/png");
         el.setAttribute("href", href);
         faviconSwaps.push({ el, prev });
       });
