@@ -1,18 +1,16 @@
 // ZappFy Service Worker — push notifications + offline cache for Central Entregas.
 
-const ENTREGAS_CACHE = "entregas-zappfy-v7";
+const ENTREGAS_CACHE = "entregas-zappfy-v8";
+const ENTREGAS_ICON = "/zappfy-entregas-icon.svg?v=6";
 const ENTREGAS_PRECACHE = [
   "/entregas-zappfy/",
-  "/entregas-icon-192.png?v=5",
-  "/entregas-icon-512.png?v=5",
-  "/entregas-maskable-icon.png?v=5",
-  "/entregas-apple-touch-icon.png?v=5",
-  "/entregas-favicon.ico?v=5",
+  ENTREGAS_ICON,
+  "/manifest-entregas.json?v=6",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(ENTREGAS_CACHE).then((c) => c.addAll(ENTREGAS_PRECACHE).catch(() => {})),
+    caches.open(ENTREGAS_CACHE).then((cache) => cache.addAll(ENTREGAS_PRECACHE).catch(() => {})),
   );
   self.skipWaiting();
 });
@@ -23,8 +21,8 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((k) => k.startsWith("entregas-zappfy-") && k !== ENTREGAS_CACHE)
-          .map((k) => caches.delete(k)),
+          .filter((key) => key.startsWith("entregas-zappfy-") && key !== ENTREGAS_CACHE)
+          .map((key) => caches.delete(key)),
       );
       await self.clients.claim();
     })(),
@@ -35,56 +33,66 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
-// NetworkFirst for /entregas-zappfy navigations, CacheFirst for its hashed assets.
+// NetworkFirst for navigations and per-store manifests; CacheFirst for static assets.
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
+
   let url;
-  try { url = new URL(req.url); } catch { return; }
+  try {
+    url = new URL(req.url);
+  } catch {
+    return;
+  }
   if (url.origin !== self.location.origin) return;
 
-  const isEntregasNav =
-    req.mode === "navigate" && url.pathname.startsWith("/entregas-zappfy");
+  const isEntregasNav = req.mode === "navigate" && url.pathname.startsWith("/entregas-zappfy");
+  const isDynamicManifest = url.pathname.startsWith("/api/public/entregas-manifest/");
   const isEntregasAsset =
     url.pathname.startsWith("/entregas-zappfy") ||
     url.pathname.startsWith("/entregas-") ||
+    url.pathname === "/zappfy-entregas-icon.svg" ||
     url.pathname === "/manifest-entregas.json" ||
     url.pathname === "/entregas-manifest.webmanifest";
 
   const isCachableAsset =
     isEntregasAsset && /\.(?:png|jpg|jpeg|svg|webp|woff2?|ico|json|webmanifest)$/.test(url.pathname);
 
-  if (isEntregasNav) {
-    event.respondWith((async () => {
-      try {
-        const fresh = await fetch(req);
-        const cache = await caches.open(ENTREGAS_CACHE);
-        cache.put(req, fresh.clone()).catch(() => {});
-        return fresh;
-      } catch {
-        const cache = await caches.open(ENTREGAS_CACHE);
-        return (await cache.match(req)) || (await cache.match("/entregas-zappfy/")) || Response.error();
-      }
-    })());
+  if (isEntregasNav || isDynamicManifest) {
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(req);
+          const cache = await caches.open(ENTREGAS_CACHE);
+          if (fresh && fresh.ok) cache.put(req, fresh.clone()).catch(() => {});
+          return fresh;
+        } catch {
+          const cache = await caches.open(ENTREGAS_CACHE);
+          if (isDynamicManifest) return (await cache.match(req)) || Response.error();
+          return (await cache.match(req)) || (await cache.match("/entregas-zappfy/")) || Response.error();
+        }
+      })(),
+    );
     return;
   }
 
   if (isCachableAsset) {
-    event.respondWith((async () => {
-      const cache = await caches.open(ENTREGAS_CACHE);
-      const cached = await cache.match(req);
-      if (cached) return cached;
-      try {
-        const fresh = await fetch(req);
-        if (fresh && fresh.ok) cache.put(req, fresh.clone()).catch(() => {});
-        return fresh;
-      } catch {
-        return cached || Response.error();
-      }
-    })());
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(ENTREGAS_CACHE);
+        const cached = await cache.match(req);
+        if (cached) return cached;
+        try {
+          const fresh = await fetch(req);
+          if (fresh && fresh.ok) cache.put(req, fresh.clone()).catch(() => {});
+          return fresh;
+        } catch {
+          return cached || Response.error();
+        }
+      })(),
+    );
   }
 });
-
 
 self.addEventListener("push", (event) => {
   let payload = {};
@@ -92,7 +100,7 @@ self.addEventListener("push", (event) => {
     payload = event.data ? event.data.json() : {};
   } catch (_) {
     try {
-      payload = { title: "ZappFy", body: event.data && event.data.text() };
+      payload = { title: "Zappfy", body: event.data && event.data.text() };
     } catch (__) {
       payload = {};
     }
@@ -102,8 +110,8 @@ self.addEventListener("push", (event) => {
   const soundUrl = (payload.data && payload.data.sound) || payload.sound || "/cash-register.mp3";
   const options = {
     body: payload.body || "",
-    icon: payload.icon || "/entregas-icon-192.png?v=5",
-    badge: payload.badge || "/entregas-icon-192.png?v=5",
+    icon: payload.icon || ENTREGAS_ICON,
+    badge: payload.badge || ENTREGAS_ICON,
     image: payload.image,
     tag: payload.tag || "zappfy-sale",
     renotify: true,
@@ -117,15 +125,19 @@ self.addEventListener("push", (event) => {
     },
   };
 
-  event.waitUntil((async () => {
-    await self.registration.showNotification(title, options);
-    try {
-      const clientsArr = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      for (const c of clientsArr) {
-        try { c.postMessage({ type: "PLAY_SOUND", url: soundUrl }); } catch (_) {}
-      }
-    } catch (_) {}
-  })());
+  event.waitUntil(
+    (async () => {
+      await self.registration.showNotification(title, options);
+      try {
+        const clientsArr = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+        for (const client of clientsArr) {
+          try {
+            client.postMessage({ type: "PLAY_SOUND", url: soundUrl });
+          } catch (_) {}
+        }
+      } catch (_) {}
+    })(),
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -141,15 +153,15 @@ self.addEventListener("notificationclick", (event) => {
           if (url.origin === self.location.origin) {
             await client.focus();
             if ("navigate" in client) {
-              try { await client.navigate(targetUrl); } catch (_) {}
+              try {
+                await client.navigate(targetUrl);
+              } catch (_) {}
             }
             return;
           }
         } catch (_) {}
       }
-      if (self.clients.openWindow) {
-        await self.clients.openWindow(targetUrl);
-      }
+      if (self.clients.openWindow) await self.clients.openWindow(targetUrl);
     })(),
   );
 });
