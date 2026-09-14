@@ -1,0 +1,111 @@
+name: Temp return to central after delivery
+
+on:
+  push:
+    branches:
+      - fix/voltar-central-apos-entrega
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/voltar-central-apos-entrega
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add return-to-central flow
+        shell: python
+        run: |
+          from pathlib import Path
+
+          central = Path('src/routes/entregas-zappfy.$storeSlug.index.tsx')
+          text = central.read_text()
+          old = '      navigate({ to: "/entrega/$courierToken", params: { courierToken: d.courier_token } });'
+          new = '''      const centralReturnUrl = `/entregas-zappfy/${storeSlug}/`;
+      window.location.assign(
+        `/entrega/${encodeURIComponent(d.courier_token)}?returnTo=${encodeURIComponent(centralReturnUrl)}`,
+      );'''
+          if old not in text:
+              raise SystemExit('Central navigation snippet not found')
+          central.write_text(text.replace(old, new, 1))
+
+          delivery = Path('src/routes/entrega.$courierToken.tsx')
+          text = delivery.read_text()
+
+          old_import = '  AlertTriangle,\n  Banknote,'
+          new_import = '  AlertTriangle,\n  ArrowLeft,\n  Banknote,'
+          if old_import not in text:
+              raise SystemExit('Icon import snippet not found')
+          text = text.replace(old_import, new_import, 1)
+
+          old_status = '  const info = STATUS_INFO[data.status];\n  const isFailed = data.status === "nao_entregue";'
+          new_status = '''  const info = STATUS_INFO[data.status];
+  const centralReturnUrl = (() => {
+    if (typeof window === "undefined") return null;
+    const candidate = new URLSearchParams(window.location.search).get("returnTo");
+    return candidate && /^\\/entregas-zappfy\\/[^/]+\\/?$/.test(candidate) ? candidate : null;
+  })();
+  const isFailed = data.status === "nao_entregue";'''
+          if old_status not in text:
+              raise SystemExit('Status snippet not found')
+          text = text.replace(old_status, new_status, 1)
+
+          old_finalize = '      stopWatch();\n      await load();\n      toast.success("Entrega finalizada e pedido marcado como entregue! 🎉");'
+          new_finalize = '''      stopWatch();
+      await load();
+      toast.success("Entrega finalizada e pedido marcado como entregue! 🎉");
+      window.setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      }, 80);'''
+          if old_finalize not in text:
+              raise SystemExit('Finalize snippet not found')
+          text = text.replace(old_finalize, new_finalize, 1)
+
+          old_finished_tail = '''            {proofUrl && <div className="text-xs opacity-75">✓ Comprovante de pagamento anexado</div>}
+            {signatureUrl && <div className="text-xs opacity-75">✓ Assinatura do cliente registrada</div>}
+          </section>'''
+          new_finished_tail = '''            {proofUrl && <div className="text-xs opacity-75">✓ Comprovante de pagamento anexado</div>}
+            {signatureUrl && <div className="text-xs opacity-75">✓ Assinatura do cliente registrada</div>}
+
+            {centralReturnUrl && (
+              <div className="pt-2 space-y-2">
+                <div className="text-xs opacity-70">
+                  {data.status === "entregue"
+                    ? "Entrega concluída. Volte para a Central para continuar com os próximos pedidos."
+                    : "Volte para a Central de Entregas para continuar o atendimento."}
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => window.location.assign(centralReturnUrl)}
+                  className="w-full h-12 text-base font-semibold"
+                  style={{ background: t.button_color, color: "#fff" }}
+                >
+                  <ArrowLeft className="h-5 w-5 mr-2" />
+                  Voltar para Central de Entregas
+                </Button>
+              </div>
+            )}
+          </section>'''
+          if old_finished_tail not in text:
+              raise SystemExit('Finished card snippet not found')
+          delivery.write_text(text.replace(old_finished_tail, new_finished_tail, 1))
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit changes and remove temporary workflow
+        run: |
+          rm .github/workflows/temp-return-central.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/entregas-zappfy.'$storeSlug'.index.tsx src/routes/entrega.'$courierToken'.tsx .github/workflows/temp-return-central.yml
+          git commit -m "fix: adicionar retorno à Central após finalizar entrega"
+          git push origin HEAD:fix/voltar-central-apos-entrega
