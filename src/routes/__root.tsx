@@ -4,10 +4,12 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { ArrowLeft } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -16,6 +18,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { DynamicFavicon } from "@/components/DynamicFavicon";
+import { getRememberedEntregasSlug } from "@/lib/entregas-pwa";
 
 function NotFoundComponent() {
   return (
@@ -157,6 +160,30 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function CourierCentralBackButton() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isCourierDelivery = pathname.startsWith("/entrega/");
+
+  if (!isCourierDelivery || typeof window === "undefined") return null;
+
+  const storeSlug = getRememberedEntregasSlug();
+  const centralUrl = storeSlug
+    ? `/entregas-zappfy/${encodeURIComponent(storeSlug)}/`
+    : "/entregas-zappfy";
+
+  return (
+    <button
+      type="button"
+      onClick={() => window.location.assign(centralUrl)}
+      className="fixed bottom-[max(16px,env(safe-area-inset-bottom))] left-1/2 z-40 inline-flex min-h-12 -translate-x-1/2 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-emerald-500 px-5 py-3 text-sm font-extrabold text-white shadow-2xl ring-2 ring-white/90 transition hover:bg-emerald-600 active:scale-[0.98]"
+      aria-label="Voltar para Central de Entregas"
+    >
+      <ArrowLeft className="h-5 w-5" />
+      Voltar para Central de Entregas
+    </button>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -203,6 +230,7 @@ function RootComponent() {
         <StoreProvider>
           <DynamicFavicon scope="dashboard" />
           <Outlet />
+          <CourierCentralBackButton />
           <InstallPrompt />
           <Toaster position="top-right" />
         </StoreProvider>
