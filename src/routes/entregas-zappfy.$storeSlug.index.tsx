@@ -17,6 +17,7 @@ import {
   Package,
   Phone,
   Power,
+  Printer,
   RefreshCw,
   Store,
   Undo2,
@@ -29,6 +30,7 @@ import { normalizePaymentBreakdown, paymentMethodLabel } from "@/lib/order-payme
 import { clearCourierSession, getCourierSession } from "@/lib/courier-session";
 import { rememberEntregasPwa } from "@/lib/entregas-pwa";
 import { CourierDeliveryMap } from "@/components/CourierDeliveryMap";
+import { openShippingLabels } from "@/lib/shipping-labels";
 
 export const Route = createFileRoute("/entregas-zappfy/$storeSlug/")({
   ssr: false,
@@ -91,6 +93,7 @@ type Me = {
   online_updated_at?: string | null;
   store_id: string;
   store_name: string;
+  store_logo_url: string | null;
   slug: string;
 };
 
@@ -344,6 +347,42 @@ function CentralPage() {
     });
   }
 
+  function printMyDeliveryLabels() {
+    if (!me) return;
+    const pending = available.filter((delivery) => isMapPendingDelivery(delivery.status));
+    if (!pending.length) {
+      toast.error("Você não possui pedidos pendentes para imprimir");
+      return;
+    }
+
+    const opened = openShippingLabels({
+      storeName: me.store_name || "Loja",
+      logoUrl: me.store_logo_url || null,
+      orders: pending.map((delivery) => {
+        const parts = normalizePaymentBreakdown(delivery.order);
+        const paymentLabel = parts.length
+          ? parts.map((part) => `${paymentMethodLabel(part.method)} ${brl(part.amount)}`).join(" + ")
+          : paymentMethodLabel(delivery.order.payment);
+        return {
+          id: delivery.order.id,
+          customer: delivery.order.customer,
+          phone: delivery.order.phone,
+          address: delivery.order.address,
+          district: delivery.order.district,
+          city: delivery.order.city,
+          total: Number(delivery.order.total || 0),
+          notes: delivery.order.notes || delivery.notes,
+          paymentLabel,
+          items: (delivery.order.items || []).map((item) => ({ name: item.name, qty: Number(item.qty || 0) })),
+          courierName: me.name,
+          scheduledFor: delivery.scheduled_for,
+        };
+      }),
+    });
+
+    if (!opened) toast.error("Permita pop-ups para gerar as etiquetas 10x15");
+  }
+
   const cardStyle: React.CSSProperties = {
     background: theme.card_color,
     border: `1px solid ${theme.card_border_color}`,
@@ -504,6 +543,22 @@ function CentralPage() {
               <div className="text-xs opacity-70">{label}</div>
             </div>
           ))}
+        </section>
+
+        <section className="space-y-2 p-3" style={cardStyle}>
+          <Button
+            type="button"
+            className="h-12 w-full text-sm font-semibold"
+            disabled={mapCount === 0}
+            onClick={printMyDeliveryLabels}
+            style={{ background: theme.button_color, color: theme.button_text_color }}
+          >
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimir etiquetas 10x15 ({mapCount})
+          </Button>
+          <div className="text-center text-[11px] opacity-65">
+            Gera todas as etiquetas dos pedidos pendentes em um único documento, 1 etiqueta por página.
+          </div>
         </section>
 
         <section

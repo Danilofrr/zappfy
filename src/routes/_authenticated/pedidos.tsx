@@ -82,6 +82,7 @@ import { whatsappLink } from "@/lib/tracking";
 import { buildPublicUrl } from "@/lib/public-url";
 import { usePublicBaseUrl } from "@/hooks/use-public-base-url";
 import { useActiveStore } from "@/lib/active-store";
+import { openShippingLabels } from "@/lib/shipping-labels";
 import { supabase } from "@/integrations/supabase/client";
 import type { DeliveryAssignment } from "@/lib/delivery-load";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -669,6 +670,38 @@ function PedidosPage() {
     w.document.close();
   }
 
+  function printLabels10x15(orders: Order[]) {
+    if (!orders.length) {
+      toast.error("Selecione ao menos um pedido para imprimir");
+      return;
+    }
+
+    const opened = openShippingLabels({
+      storeName: state.settings.storeName || "Loja",
+      logoUrl: state.settings.checkoutLogoUrl || null,
+      orders: orders.map((order) => {
+        const assignment = assignmentByOrder.get(order.id);
+        return {
+          id: order.id,
+          customer: order.customer,
+          phone: order.phone,
+          address: order.address,
+          district: order.district,
+          city: order.city,
+          total: Number(order.total || 0),
+          date: order.date,
+          notes: order.notes,
+          paymentLabel: formatPaymentBreakdown(order),
+          items: (order.items || []).map((item) => ({ name: item.name, qty: Number(item.qty || 0) })),
+          courierName: assignment?.courier_name || null,
+          scheduledFor: assignment?.scheduled_for || null,
+        };
+      }),
+    });
+
+    if (!opened) toast.error("Permita pop-ups para gerar as etiquetas 10x15");
+  }
+
   function handleStatusChange(o: Order, status: OrderStatus) {
     updateOrderStatus(o.id, status);
     if (status === "entrega" && o.status !== "entrega") {
@@ -898,6 +931,15 @@ function PedidosPage() {
             Atribuir ao motoboy ({selected.size})
           </Button>
         )}
+        {selected.size > 0 && (
+          <Button
+            variant="outline"
+            onClick={() => printLabels10x15(state.orders.filter((order) => selected.has(order.id)))}
+          >
+            <Tag className="mr-2 h-4 w-4" />
+            Imprimir etiquetas 10x15 ({selected.size})
+          </Button>
+        )}
       </div>
 
       {(() => {
@@ -920,8 +962,8 @@ function PedidosPage() {
               <Receipt className="h-4 w-4" />
             </button>
             <button
-              onClick={() => printLabel(o)}
-              title="Gerar etiqueta de envio"
+              onClick={() => printLabels10x15([o])}
+              title="Gerar etiqueta térmica 10x15"
               className="text-muted-foreground hover:text-primary p-0.5"
             >
               <Tag className="h-4 w-4" />
