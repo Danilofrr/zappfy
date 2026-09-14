@@ -13,6 +13,19 @@ export const ENTREGAS_COLOR_MODE_KEY = "zappfy-entregas-color-mode";
 
 const COURIER_SESSION_PREFIX = "zappfy:courier-session:";
 
+// A Central de Entregas abre em modo claro por padrão no desktop e no mobile.
+// Se o usuário escolher o modo escuro, a preferência já salva é respeitada.
+if (typeof window !== "undefined") {
+  try {
+    const savedColorMode = window.localStorage.getItem(ENTREGAS_COLOR_MODE_KEY);
+    if (savedColorMode !== "light" && savedColorMode !== "dark") {
+      window.localStorage.setItem(ENTREGAS_COLOR_MODE_KEY, "light");
+    }
+  } catch {
+    // LocalStorage pode estar indisponível em modo privado/restrito.
+  }
+}
+
 export function getEntregasManifestUrl(storeSlug?: string | null) {
   const clean = String(storeSlug || "").trim().toLowerCase();
   if (!clean) return ENTREGAS_MANIFEST_URL;
