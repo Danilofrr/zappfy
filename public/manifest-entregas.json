@@ -1,6 +1,6 @@
 {
   "name": "Zappfy Entregas",
-  "short_name": "Entregas",
+  "short_name": "Zappfy Entregas",
   "description": "Central de Entregas Zappfy",
   "id": "/entregas-zappfy/",
   "start_url": "/entregas-zappfy/",
@@ -8,13 +8,12 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait-primary",
-  "theme_color": "#18c56e",
+  "theme_color": "#08110d",
   "background_color": "#08110d",
   "lang": "pt-BR",
   "categories": ["business", "productivity"],
   "icons": [
-    { "src": "/zappfy-entregas-icon.svg?v=6", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/zappfy-entregas-icon.svg?v=6", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/zappfy-entregas-icon.svg?v=6", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
+    { "src": "/entregas-icon-512.png?v=9", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/entregas-icon-512.png?v=9", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
