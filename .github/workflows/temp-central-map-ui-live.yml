@@ -1,0 +1,137 @@
+name: Temp central map UI live update
+
+on:
+  push:
+    branches:
+      - fix/central-map-ui-live-deliveries
+    paths:
+      - .github/workflows/temp-central-map-ui-live.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/central-map-ui-live-deliveries
+          fetch-depth: 0
+
+      - name: Improve map UI and live pending count
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f"Anchor not found: {label}")
+              return text.replace(old, new, 1)
+
+          map_path = Path('src/components/CourierDeliveryMapClient.tsx')
+          text = map_path.read_text()
+
+          text = replace_once(
+              text,
+              'const FINAL_STATUSES = new Set(["entregue", "devolvido", "cancelado"]);\n',
+              '''const FINAL_STATUSES = new Set(["entregue", "devolvido", "cancelado"]);\n\nfunction normalizeDeliveryStatus(value: string | null | undefined) {\n  return String(value || "").trim().toLowerCase();\n}\n\nfunction isFinalDeliveryStatus(value: string | null | undefined) {\n  return FINAL_STATUSES.has(normalizeDeliveryStatus(value));\n}\n''',
+              'normalized status helper',
+          )
+
+          text = replace_once(
+              text,
+              '    () => deliveries.filter((delivery) => !FINAL_STATUSES.has(delivery.status)),\n',
+              '    () => deliveries.filter((delivery) => !isFinalDeliveryStatus(delivery.status)),\n',
+              'map final status filter',
+          )
+
+          text = replace_once(
+              text,
+              '''  const routeColor = safeColor(theme.buttonColor, "#10b981");\n  const unresolvedCount = Math.max(0, mapDeliveries.length - resolved.length);\n''',
+              '''  const routeColor = safeColor(theme.buttonColor, "#10b981");\n  const secondaryButtonStyle = {\n    background: theme.cardColor,\n    color: theme.titleColor,\n    borderColor: theme.cardBorderColor,\n    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12)",\n  };\n  const unresolvedCount = Math.max(0, mapDeliveries.length - resolved.length);\n''',
+              'secondary button style',
+          )
+
+          text = replace_once(
+              text,
+              '''          <Button\n            type="button"\n            variant="outline"\n            size="sm"\n            onClick={() => locateCourier(true)}\n            disabled={locating}\n          >''',
+              '''          <Button\n            type="button"\n            variant="outline"\n            size="sm"\n            onClick={() => locateCourier(true)}\n            disabled={locating}\n            className="font-semibold shadow-sm"\n            style={secondaryButtonStyle}\n          >''',
+              'location button contrast',
+          )
+
+          text = replace_once(
+              text,
+              '''        {unresolvedCount > 0 && !geocoding && (\n          <div\n            className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs"\n            style={{ borderColor: theme.cardBorderColor }}\n          >\n            <span className="flex items-center gap-2">\n              <AlertTriangle className="h-4 w-4" />\n              {unresolvedCount} endereço(s) não puderam ser posicionados. Confira se cidade ou endereço estão preenchidos.\n            </span>\n            <button\n              type="button"\n              onClick={() => setRetryNonce((value) => value + 1)}\n              className="font-semibold underline underline-offset-2"\n            >\n              Tentar novamente\n            </button>\n          </div>\n        )}\n      </div>\n\n      <div className="overflow-hidden border" style={{ ...mapCardStyle, height: 430 }}>''',
+              '''        {unresolvedCount > 0 && !geocoding && (\n          <div\n            className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs"\n            style={{ borderColor: theme.cardBorderColor }}\n          >\n            <span className="flex items-center gap-2">\n              <AlertTriangle className="h-4 w-4" />\n              {unresolvedCount} endereço(s) não puderam ser posicionados. Confira se cidade ou endereço estão preenchidos.\n            </span>\n            <button\n              type="button"\n              onClick={() => setRetryNonce((value) => value + 1)}\n              className="rounded-md border px-2.5 py-1.5 font-semibold"\n              style={secondaryButtonStyle}\n            >\n              Tentar novamente\n            </button>\n          </div>\n        )}\n\n        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">\n          <span\n            className="rounded-full border px-2.5 py-1 font-semibold"\n            style={{ borderColor: theme.cardBorderColor, color: theme.titleColor }}\n          >\n            {mapDeliveries.length} {mapDeliveries.length === 1 ? "entrega restante" : "entregas restantes"}\n          </span>\n          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1" style={{ borderColor: theme.cardBorderColor }}>\n            <span className="h-2.5 w-2.5 rounded-full" style={{ background: routeColor }} /> Exato\n          </span>\n          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1" style={{ borderColor: theme.cardBorderColor }}>\n            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> Aproximado\n          </span>\n          {currentLocation && (\n            <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1" style={{ borderColor: theme.cardBorderColor }}>\n              <span className="h-2.5 w-2.5 rounded-full bg-blue-600" /> Você\n            </span>\n          )}\n        </div>\n      </div>\n\n      <div className="h-[380px] overflow-hidden border shadow-sm sm:h-[480px]" style={mapCardStyle}>''',
+              'map legend and responsive height',
+          )
+
+          text = replace_once(
+              text,
+              '''          <Button\n            type="button"\n            disabled={ordered.length === 0}\n            onClick={openCompleteRoute}\n            style={{ background: theme.buttonColor, color: theme.buttonTextColor }}\n          >''',
+              '''          <Button\n            type="button"\n            disabled={ordered.length === 0}\n            onClick={openCompleteRoute}\n            className="font-semibold shadow-sm"\n            style={{ background: theme.buttonColor, color: theme.buttonTextColor }}\n          >''',
+              'primary route button',
+          )
+
+          text = replace_once(
+              text,
+              '''          {onOpenDeliveries && (\n            <Button type="button" variant="outline" onClick={onOpenDeliveries}>\n              Ver detalhes dos pedidos\n            </Button>\n          )}''',
+              '''          {onOpenDeliveries && (\n            <Button\n              type="button"\n              variant="outline"\n              onClick={onOpenDeliveries}\n              className="font-semibold shadow-sm"\n              style={secondaryButtonStyle}\n            >\n              Ver detalhes dos pedidos\n            </Button>\n          )}''',
+              'details button contrast',
+          )
+
+          map_path.write_text(text)
+
+          central_path = Path('src/routes/entregas-zappfy.$storeSlug.index.tsx')
+          central = central_path.read_text()
+
+          central = replace_once(
+              central,
+              '''function formatCentralScheduledDate(value: string | null | undefined) {\n  if (!value) return "";\n  return new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR");\n}\n''',
+              '''function formatCentralScheduledDate(value: string | null | undefined) {\n  if (!value) return "";\n  return new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR");\n}\n\nfunction normalizeDeliveryStatus(value: string | null | undefined) {\n  return String(value || "").trim().toLowerCase();\n}\n\nfunction isMapPendingDelivery(value: string | null | undefined) {\n  return !["entregue", "devolvido", "cancelado"].includes(normalizeDeliveryStatus(value));\n}\n''',
+              'central status helper',
+          )
+
+          central = replace_once(
+              central,
+              '''  }, [me?.store_id]);\n\n  async function action(d: Delivery, actionName: string) {''',
+              '''  }, [me?.store_id]);\n\n  useEffect(() => {\n    if (!me || activeView !== "map") return;\n\n    void loadDeliveries();\n    const refreshVisibleMap = () => void loadDeliveries();\n    const refreshWhenVisible = () => {\n      if (document.visibilityState === "visible") void loadDeliveries();\n    };\n\n    window.addEventListener("focus", refreshVisibleMap);\n    document.addEventListener("visibilitychange", refreshWhenVisible);\n    return () => {\n      window.removeEventListener("focus", refreshVisibleMap);\n      document.removeEventListener("visibilitychange", refreshWhenVisible);\n    };\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [activeView, me?.store_id]);\n\n  async function action(d: Delivery, actionName: string) {''',
+              'refresh map on focus',
+          )
+
+          central = replace_once(
+              central,
+              '  const mapCount = available.filter((d) => !["entregue", "devolvido", "cancelado"].includes(d.status)).length;\n',
+              '  const mapCount = available.filter((d) => isMapPendingDelivery(d.status)).length;\n',
+              'normalized map count',
+          )
+
+          central = replace_once(
+              central,
+              '        .filter((d) => !["entregue", "devolvido", "cancelado"].includes(d.status))\n',
+              '        .filter((d) => isMapPendingDelivery(d.status))\n',
+              'normalized products in possession',
+          )
+
+          central_path.write_text(central)
+          PY
+
+      - name: Format and validate
+        run: |
+          npx prettier --write src/components/CourierDeliveryMapClient.tsx 'src/routes/entregas-zappfy.$storeSlug.index.tsx'
+          npx prettier --check src/components/CourierDeliveryMapClient.tsx 'src/routes/entregas-zappfy.$storeSlug.index.tsx'
+          git diff --check
+          grep -q 'entregas restantes' src/components/CourierDeliveryMapClient.tsx
+          grep -q 'style={secondaryButtonStyle}' src/components/CourierDeliveryMapClient.tsx
+          grep -q 'isMapPendingDelivery' 'src/routes/entregas-zappfy.$storeSlug.index.tsx'
+
+      - name: Remove temporary workflow and commit
+        run: |
+          rm .github/workflows/temp-central-map-ui-live.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: improve central map controls and live pending count"
+          git push origin HEAD:fix/central-map-ui-live-deliveries
