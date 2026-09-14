@@ -5,6 +5,7 @@ export type DeliveryAssignment = {
   courier_name: string | null;
   status: string;
   assigned_at: string | null;
+  scheduled_for: string | null;
 };
 
 export type CourierLoad = {
