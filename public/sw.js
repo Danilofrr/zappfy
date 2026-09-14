@@ -2,9 +2,11 @@
 
 const ENTREGAS_CACHE = "entregas-zappfy-v9";
 const ENTREGAS_ICON = "/entregas-icon-512.png?v=9";
+const ENTREGAS_ICON_192 = "/entregas-icon-192.png?v=9";
 const ENTREGAS_PRECACHE = [
   "/entregas-zappfy/",
   ENTREGAS_ICON,
+  ENTREGAS_ICON_192,
   "/manifest-entregas.json?v=9",
 ];
 
@@ -111,7 +113,7 @@ self.addEventListener("push", (event) => {
   const options = {
     body: payload.body || "",
     icon: payload.icon || ENTREGAS_ICON,
-    badge: payload.badge || ENTREGAS_ICON,
+    badge: payload.badge || ENTREGAS_ICON_192,
     image: payload.image,
     tag: payload.tag || "zappfy-sale",
     renotify: true,
