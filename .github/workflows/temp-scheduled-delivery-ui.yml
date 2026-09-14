@@ -28,7 +28,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Format
-        run: bunx prettier --write src/routes/_authenticated/pedidos.tsx 'src/routes/entregas-zappfy.$storeSlug.index.tsx' src/lib/delivery-load.ts supabase/migrations/20260913210000_schedule_courier_deliveries.sql
+        run: bunx prettier --write src/routes/_authenticated/pedidos.tsx 'src/routes/entregas-zappfy.$storeSlug.index.tsx' src/lib/delivery-load.ts
 
       - name: Build
         run: bun run build
