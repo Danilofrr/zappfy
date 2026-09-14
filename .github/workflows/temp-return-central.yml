@@ -10,18 +10,17 @@ permissions:
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: fix/voltar-central-apos-entrega
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add return-to-central flow
-        shell: python
+        shell: bash
         run: |
+          python <<'PY'
           from pathlib import Path
 
           central = Path('src/routes/entregas-zappfy.$storeSlug.index.tsx')
@@ -95,6 +94,7 @@ jobs:
           if old_finished_tail not in text:
               raise SystemExit('Finished card snippet not found')
           delivery.write_text(text.replace(old_finished_tail, new_finished_tail, 1))
+          PY
 
       - name: Install and build
         run: |
@@ -106,6 +106,6 @@ jobs:
           rm .github/workflows/temp-return-central.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/routes/entregas-zappfy.'$storeSlug'.index.tsx src/routes/entrega.'$courierToken'.tsx .github/workflows/temp-return-central.yml
+          git add -A
           git commit -m "fix: adicionar retorno à Central após finalizar entrega"
           git push origin HEAD:fix/voltar-central-apos-entrega
