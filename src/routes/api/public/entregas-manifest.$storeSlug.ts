@@ -14,25 +14,24 @@ export const Route = createFileRoute("/api/public/entregas-manifest/$storeSlug")
         }
 
         const encodedSlug = encodeURIComponent(storeSlug);
-        const icon = "/zappfy-entregas-icon.svg?v=6";
+        const icon = "/entregas-icon-512.png?v=9";
         const manifest = {
           name: "Zappfy Entregas",
-          short_name: "Entregas",
+          short_name: "Zappfy Entregas",
           description: "Central de Entregas Zappfy",
-          id: "/entregas-zappfy/",
+          id: `/entregas-zappfy/${encodedSlug}/`,
           start_url: `/entregas-zappfy/${encodedSlug}/login?source=pwa`,
           scope: "/entregas-zappfy/",
           display: "standalone",
           display_override: ["window-controls-overlay", "standalone"],
           orientation: "portrait-primary",
           background_color: "#08110d",
-          theme_color: "#18c56e",
+          theme_color: "#08110d",
           lang: "pt-BR",
           categories: ["business", "productivity"],
           icons: [
-            { src: icon, sizes: "192x192", type: "image/svg+xml", purpose: "any" },
-            { src: icon, sizes: "512x512", type: "image/svg+xml", purpose: "any" },
-            { src: icon, sizes: "512x512", type: "image/svg+xml", purpose: "maskable" },
+            { src: icon, sizes: "512x512", type: "image/png", purpose: "any" },
+            { src: icon, sizes: "512x512", type: "image/png", purpose: "maskable" },
           ],
         };
 
@@ -40,7 +39,7 @@ export const Route = createFileRoute("/api/public/entregas-manifest/$storeSlug")
           status: 200,
           headers: {
             "Content-Type": "application/manifest+json; charset=utf-8",
-            "Cache-Control": "public, max-age=300",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
           },
         });
       },
