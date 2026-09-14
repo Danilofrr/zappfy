@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Zappfy Entregas">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#092015"/>
+      <stop offset="1" stop-color="#06110c"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#28df83"/>
+      <stop offset="1" stop-color="#16b964"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="118" fill="url(#bg)"/>
+  <rect x="91" y="82" width="330" height="330" rx="92" fill="#18c56e" opacity=".20" filter="url(#glow)"/>
+  <rect x="98" y="89" width="316" height="316" rx="86" fill="url(#green)" stroke="#6ff2ad" stroke-width="6"/>
+  <g fill="none" stroke="#062516" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M221 174c0 36-43 83-43 83s-43-47-43-83a43 43 0 1 1 86 0Z"/>
+    <circle cx="178" cy="174" r="13" fill="#062516" stroke="none"/>
+    <path d="M151 314 260 287 340 345"/>
+  </g>
+  <circle cx="151" cy="314" r="16" fill="#062516"/>
+  <circle cx="340" cy="345" r="16" fill="#062516"/>
+  <rect x="299" y="150" width="48" height="48" rx="12" fill="#062516"/>
+  <circle cx="385" cy="386" r="69" fill="#06110c"/>
+  <circle cx="385" cy="386" r="58" fill="#fff"/>
+  <path d="m354 411 76-70-27 82-17-30-32 18Z" fill="#071d12"/>
+</svg>
