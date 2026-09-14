@@ -1,3 +1,5 @@
+import { getSenderInfo } from "@/lib/sender-info";
+
 export type ShippingLabelItem = {
   name: string;
   qty: number;
@@ -40,13 +42,6 @@ function escapeHtml(value: unknown) {
   );
 }
 
-function money(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(Number(value || 0));
-}
-
 function shortOrderNumber(id: string) {
   return String(id || "").replace(/-/g, "").slice(0, 8).toUpperCase() || "PEDIDO";
 }
@@ -69,13 +64,61 @@ function cleanNotes(notes?: string | null) {
   if (!notes) return "";
   return notes
     .split(/\r?\n/)
-    .filter(
-      (line) =>
-        line.trim() &&
-        !/^\s*\*?\s*(CEP|Ponto de refer[êe]ncia|CPF|CPF\/CNPJ|E-?mail)\s*:/i.test(line),
-    )
+    .filter((line) => {
+      const value = line.trim();
+      if (!value) return false;
+      if (/^\s*\*?\s*(CEP|Ponto de refer[êe]ncia|CPF|CPF\/CNPJ|E-?mail)\s*:/i.test(value))
+        return false;
+      if (/^\s*(Entrega|Taxa|Cart[ãa]o|Valor l[ií]quido recebido|Segundo pagamento|Desconto)\s*:/i.test(value))
+        return false;
+      return true;
+    })
     .join("\n")
     .trim();
+}
+
+function hashText(value: string) {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function fictitiousLogistics(order: ShippingLabelOrder) {
+  const seed = hashText(order.id || shortOrderNumber(order.id));
+  const quantity = Math.max(
+    1,
+    (order.items || []).reduce((sum, item) => sum + Number(item.qty || 0), 0),
+  );
+  const nfc = String(100000000 + (seed % 900000000)).padStart(9, "0");
+  const weight = 0.18 + quantity * 0.12 + (seed % 90) / 1000;
+  const length = 16 + (seed % 5);
+  const width = 11 + ((seed >>> 4) % 4);
+  const height = 8 + Math.min(6, quantity + ((seed >>> 8) % 3));
+
+  return {
+    nfc,
+    volume: "1/1",
+    weight: `${weight.toFixed(3).replace(".", ",")} kg`,
+    dimensions: `${length} × ${width} × ${height} cm`,
+  };
+}
+
+function barcodeBars(value: string) {
+  let state = hashText(value);
+  const bars: string[] = [];
+  for (let i = 0; i < 62; i += 1) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    const width = 1 + (state % 3);
+    const gap = 1 + ((state >>> 5) % 2);
+    const height = 16 + ((state >>> 8) % 9);
+    bars.push(
+      `<i style="width:${width}px;margin-right:${gap}px;height:${height}mm"></i>`,
+    );
+  }
+  return bars.join("");
 }
 
 function labelPage(order: ShippingLabelOrder, storeName: string, logoUrl?: string | null) {
@@ -86,6 +129,13 @@ function labelPage(order: ShippingLabelOrder, storeName: string, logoUrl?: strin
   );
   const notes = cleanNotes(order.notes);
   const orderNo = shortOrderNumber(order.id);
+  const barcodeCode = `PED-${orderNo}`;
+  const logistics = fictitiousLogistics(order);
+  const sender = getSenderInfo();
+  const senderName = sender.name || storeName;
+  const senderAddress = [sender.address, sender.district].filter(Boolean).join(" · ");
+  const senderCity = [sender.city, sender.cep ? `CEP ${sender.cep}` : ""].filter(Boolean).join(" · ");
+  const senderDocument = sender.cnpj ? `CNPJ/CPF: ${sender.cnpj}` : "";
   const quantity = (order.items || []).reduce((sum, item) => sum + Number(item.qty || 0), 0);
   const manyItems = (order.items || []).length > 5;
   const items = (order.items || [])
@@ -115,6 +165,19 @@ function labelPage(order: ShippingLabelOrder, storeName: string, logoUrl?: strin
         </div>
       </header>
 
+      <section class="barcode-block" aria-label="Código de barras interno ${escapeHtml(barcodeCode)}">
+        <div class="barcode-bars">${barcodeBars(barcodeCode)}</div>
+        <div class="barcode-code">${escapeHtml(barcodeCode)}</div>
+      </section>
+
+      <section class="sender-block">
+        <div class="section-kicker">REMETENTE</div>
+        <div class="sender-name">${escapeHtml(senderName)}</div>
+        ${senderAddress ? `<div>${escapeHtml(senderAddress)}</div>` : ""}
+        ${senderCity ? `<div>${escapeHtml(senderCity)}</div>` : ""}
+        ${senderDocument ? `<div>${escapeHtml(senderDocument)}</div>` : ""}
+      </section>
+
       <section class="destination">
         <div class="section-kicker">DESTINATÁRIO</div>
         <div class="customer">${escapeHtml(order.customer)}</div>
@@ -137,25 +200,13 @@ function labelPage(order: ShippingLabelOrder, storeName: string, logoUrl?: strin
         <div class="items-list">${items || '<div class="empty">Sem itens informados</div>'}</div>
       </section>
 
-      <section class="payment-grid">
-        <div>
-          <span class="mini-label">PAGAMENTO</span>
-          <strong>${escapeHtml(order.paymentLabel || "Não informado")}</strong>
-        </div>
-        <div class="total-box">
-          <span class="mini-label">TOTAL</span>
-          <strong>${escapeHtml(money(order.total))}</strong>
-        </div>
-      </section>
-
-      <section class="operation-grid">
-        <div>
-          <span class="mini-label">MOTOBOY</span>
-          <strong>${escapeHtml(order.courierName || "Não atribuído")}</strong>
-        </div>
-        <div>
-          <span class="mini-label">ENTREGA PROGRAMADA</span>
-          <strong>${escapeHtml(formatDate(order.scheduledFor) || "Hoje / conforme rota")}</strong>
+      <section class="logistics-block">
+        <div class="section-kicker">DADOS LOGÍSTICOS</div>
+        <div class="logistics-grid">
+          <div><span>NFC-e</span><strong>${escapeHtml(logistics.nfc)}</strong></div>
+          <div><span>Volume</span><strong>${escapeHtml(logistics.volume)}</strong></div>
+          <div><span>Peso</span><strong>${escapeHtml(logistics.weight)}</strong></div>
+          <div><span>Dimensões</span><strong>${escapeHtml(logistics.dimensions)}</strong></div>
         </div>
       </section>
 
@@ -169,12 +220,6 @@ function labelPage(order: ShippingLabelOrder, storeName: string, logoUrl?: strin
         <div><span>Recebido por</span><i></i></div>
         <div><span>Assinatura</span><i></i></div>
       </section>
-
-      <footer class="label-footer">
-        <strong>${escapeHtml(storeName)}</strong>
-        <span>Etiqueta de entrega · 10 × 15 cm</span>
-        <b>#${escapeHtml(orderNo)}</b>
-      </footer>
     </article>`;
 }
 
@@ -190,7 +235,8 @@ export function openShippingLabels({
   if (!popup) return false;
 
   const pages = orders.map((order) => labelPage(order, storeName || "Loja", logoUrl)).join("");
-  const title = orders.length === 1 ? `Etiqueta #${shortOrderNumber(orders[0].id)}` : `${orders.length} etiquetas`;
+  const title =
+    orders.length === 1 ? `Etiqueta #${shortOrderNumber(orders[0].id)}` : `${orders.length} etiquetas`;
 
   popup.document.open();
   popup.document.write(`<!doctype html>
@@ -211,49 +257,55 @@ export function openShippingLabels({
 
     .label-page { width: 100mm; height: 150mm; margin: 0 auto 14px; padding: 4mm; background: #fff; border: 1px solid #bbb; overflow: hidden; display: flex; flex-direction: column; break-after: page; page-break-after: always; }
     .label-page:last-child { break-after: auto; page-break-after: auto; }
-    .label-header { min-height: 20mm; display: flex; align-items: center; justify-content: space-between; gap: 4mm; padding-bottom: 2.5mm; border-bottom: 1.2mm solid #000; }
+    .label-header { min-height: 18mm; display: flex; align-items: center; justify-content: space-between; gap: 4mm; padding-bottom: 2mm; border-bottom: 1mm solid #000; }
     .store-brand { flex: 1; min-width: 0; display: flex; align-items: center; }
-    .store-brand img { max-width: 47mm; max-height: 16mm; object-fit: contain; object-position: left center; }
+    .store-brand img { max-width: 47mm; max-height: 15mm; object-fit: contain; object-position: left center; }
     .store-name { font-size: 18pt; font-weight: 900; line-height: 1; text-transform: uppercase; }
     .order-code { min-width: 31mm; text-align: right; line-height: 1.05; }
     .order-code span { display: block; font-size: 7.5pt; font-weight: 800; letter-spacing: .8px; }
     .order-code strong { display: block; font-size: 17pt; font-family: 'Courier New', monospace; letter-spacing: .4px; }
-    .order-code small { display: block; margin-top: 1mm; font-size: 7.5pt; }
+    .order-code small { display: block; margin-top: .8mm; font-size: 7pt; }
+
+    .barcode-block { padding: 2mm 0 1.5mm; border-bottom: .7mm solid #000; text-align: center; }
+    .barcode-bars { height: 17mm; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; white-space: nowrap; }
+    .barcode-bars i { display: block; background: #000; flex: 0 0 auto; }
+    .barcode-code { margin-top: .8mm; font: 800 8pt/1 'Courier New', monospace; letter-spacing: 1.5px; }
 
     .section-kicker, .mini-label { display: block; font-size: 7pt; line-height: 1; font-weight: 900; letter-spacing: .7px; color: #333; }
-    .destination { padding: 3mm 0; border-bottom: .7mm solid #000; }
-    .customer { margin-top: 1.2mm; font-size: 15pt; font-weight: 900; line-height: 1.05; text-transform: uppercase; }
-    .phone { margin-top: 1mm; font-size: 8.5pt; font-weight: 700; }
-    .address-main { margin-top: 2mm; font-size: 12pt; font-weight: 900; line-height: 1.15; }
-    .address-secondary, .cep, .reference { margin-top: 1mm; font-size: 8.5pt; line-height: 1.2; }
-    .reference { padding: 1mm 1.5mm; background: #f0f0f0; border-left: 1mm solid #000; }
+    .sender-block { padding: 2mm 0; border-bottom: .55mm solid #000; font-size: 7.5pt; line-height: 1.25; }
+    .sender-name { margin-top: 1mm; font-size: 9pt; font-weight: 900; text-transform: uppercase; }
 
-    .items-block { padding: 2.5mm 0; border-bottom: .7mm solid #000; }
+    .destination { padding: 2.5mm 0; border-bottom: .7mm solid #000; }
+    .customer { margin-top: 1.2mm; font-size: 14pt; font-weight: 900; line-height: 1.05; text-transform: uppercase; }
+    .phone { margin-top: .8mm; font-size: 8pt; font-weight: 700; }
+    .address-main { margin-top: 1.5mm; font-size: 11pt; font-weight: 900; line-height: 1.12; }
+    .address-secondary, .cep, .reference { margin-top: .8mm; font-size: 8pt; line-height: 1.2; }
+    .reference { padding: .8mm 1.2mm; background: #f0f0f0; border-left: .8mm solid #000; }
+
+    .items-block { padding: 2mm 0; border-bottom: .7mm solid #000; }
     .section-title { display: flex; align-items: center; justify-content: space-between; gap: 2mm; font-size: 7pt; font-weight: 900; letter-spacing: .5px; }
     .section-title strong { font-size: 8pt; white-space: nowrap; }
-    .items-list { margin-top: 1.5mm; display: grid; gap: .8mm; }
-    .item-row { display: grid; grid-template-columns: 10mm 1fr; gap: 1mm; align-items: start; font-size: 9pt; line-height: 1.15; }
+    .items-list { margin-top: 1.2mm; display: grid; gap: .7mm; }
+    .item-row { display: grid; grid-template-columns: 9mm 1fr; gap: 1mm; align-items: start; font-size: 8.5pt; line-height: 1.12; }
     .item-qty { font-weight: 900; }
     .item-name { font-weight: 700; }
-    .many-items .item-row { font-size: 7.5pt; line-height: 1.05; }
-    .many-items .items-list { gap: .45mm; }
+    .many-items .item-row { font-size: 7pt; line-height: 1.02; }
+    .many-items .items-list { gap: .4mm; }
     .empty { font-size: 8pt; color: #555; }
 
-    .payment-grid, .operation-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: .55mm solid #000; }
-    .payment-grid > div, .operation-grid > div { min-height: 13mm; padding: 2mm 1.5mm; }
-    .payment-grid > div + div, .operation-grid > div + div { border-left: .45mm solid #000; }
-    .payment-grid strong, .operation-grid strong { display: block; margin-top: 1.2mm; font-size: 9pt; line-height: 1.15; }
-    .payment-grid .total-box strong { font-size: 13pt; }
+    .logistics-block { padding: 2mm 0; border-bottom: .55mm solid #000; }
+    .logistics-grid { margin-top: 1.3mm; display: grid; grid-template-columns: 1fr 1fr; border: .35mm solid #000; }
+    .logistics-grid > div { min-height: 10mm; padding: 1.4mm; }
+    .logistics-grid > div:nth-child(odd) { border-right: .35mm solid #000; }
+    .logistics-grid > div:nth-child(-n+2) { border-bottom: .35mm solid #000; }
+    .logistics-grid span { display: block; font-size: 6.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; }
+    .logistics-grid strong { display: block; margin-top: .8mm; font-size: 9pt; font-family: 'Courier New', monospace; }
 
-    .notes { padding: 1.8mm 0; border-bottom: .45mm solid #000; font-size: 7.5pt; line-height: 1.15; }
-    .notes div { margin-top: 1mm; }
-    .receiver { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; padding: 2mm 0; margin-top: auto; }
+    .notes { padding: 1.6mm 0; border-bottom: .45mm solid #000; font-size: 7pt; line-height: 1.15; }
+    .notes div { margin-top: .8mm; }
+    .receiver { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; padding: 2mm 0 1mm; margin-top: auto; }
     .receiver div { display: flex; align-items: flex-end; gap: 2mm; font-size: 7pt; font-weight: 800; }
     .receiver i { flex: 1; height: 5mm; border-bottom: .4mm solid #000; }
-    .label-footer { min-height: 9mm; border-top: .8mm solid #000; padding-top: 1.5mm; display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 2mm; }
-    .label-footer strong { font-size: 8pt; text-transform: uppercase; }
-    .label-footer span { grid-column: 1; font-size: 6.5pt; color: #555; }
-    .label-footer b { grid-column: 2; grid-row: 1 / span 2; font-size: 10pt; font-family: 'Courier New', monospace; }
 
     @page { size: 100mm 150mm; margin: 0; }
     @media print {
