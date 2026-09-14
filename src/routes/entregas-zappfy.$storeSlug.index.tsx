@@ -128,6 +128,16 @@ function formatCentralScheduledDate(value: string | null | undefined) {
   return new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR");
 }
 
+function normalizeDeliveryStatus(value: string | null | undefined) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function isMapPendingDelivery(value: string | null | undefined) {
+  return !["entregue", "devolvido", "cancelado"].includes(normalizeDeliveryStatus(value));
+}
+
 function CentralPage() {
   const { storeSlug } = Route.useParams();
   const navigate = useNavigate();
@@ -249,6 +259,24 @@ function CentralPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.store_id]);
 
+  useEffect(() => {
+    if (!me || activeView !== "map") return;
+
+    void loadDeliveries();
+    const refreshVisibleMap = () => void loadDeliveries();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadDeliveries();
+    };
+
+    window.addEventListener("focus", refreshVisibleMap);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("focus", refreshVisibleMap);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView, me?.store_id]);
+
   async function action(d: Delivery, actionName: string) {
     const session = getCourierSession(storeSlug);
     if (!session) return;
@@ -336,7 +364,7 @@ function CentralPage() {
   }
 
   const todayKey = brazilDateKey();
-  const mapCount = available.filter((d) => !["entregue", "devolvido", "cancelado"].includes(d.status)).length;
+  const mapCount = available.filter((d) => isMapPendingDelivery(d.status)).length;
   const summary = [
     [
       "Para entregar",
@@ -363,7 +391,7 @@ function CentralPage() {
     [
       "Produtos em posse",
       available
-        .filter((d) => !["entregue", "devolvido", "cancelado"].includes(d.status))
+        .filter((d) => isMapPendingDelivery(d.status))
         .reduce((n, d) => n + (d.order.items || []).reduce((s, i) => s + Number(i.qty), 0), 0),
     ],
   ] as const;
@@ -478,7 +506,10 @@ function CentralPage() {
           ))}
         </section>
 
-        <section className="grid grid-cols-2 gap-2 rounded-xl border p-1" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
+        <section
+          className="grid grid-cols-2 gap-2 rounded-xl border p-1"
+          style={{ borderColor: theme.card_border_color, background: theme.card_color }}
+        >
           <button
             type="button"
             onClick={() => setActiveView("deliveries")}
@@ -551,7 +582,9 @@ function CentralPage() {
                     .join(", ");
                   const busy = busyTrackingCode === d.tracking_code;
                   const paymentParts = normalizePaymentBreakdown(d.order);
-                  const isScheduledForFuture = Boolean(d.scheduled_for && d.scheduled_for > todayKey);
+                  const isScheduledForFuture = Boolean(
+                    d.scheduled_for && d.scheduled_for > todayKey,
+                  );
                   const awaitingDecision =
                     !d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status);
 
@@ -596,7 +629,8 @@ function CentralPage() {
                           </div>
                           {isScheduledForFuture && (
                             <div className="mt-1 opacity-70">
-                              Data planejada. Você pode aceitar agora e adiantar a entrega, se quiser.
+                              Data planejada. Você pode aceitar agora e adiantar a entrega, se
+                              quiser.
                             </div>
                           )}
                         </div>
@@ -632,8 +666,8 @@ function CentralPage() {
                       >
                         {(d.order.items || []).map((i) => `${i.qty}x ${i.name}`).join(" · ")}
                         <div className="mt-1 font-semibold">
-                          {(d.order.items || []).reduce((n, i) => n + Number(i.qty), 0)} produtos · R${" "}
-                          {Number(d.order.total).toFixed(2)}
+                          {(d.order.items || []).reduce((n, i) => n + Number(i.qty), 0)} produtos ·
+                          R$ {Number(d.order.total).toFixed(2)}
                         </div>
                       </div>
 
@@ -722,18 +756,22 @@ function CentralPage() {
                           </>
                         )}
 
-                        {d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status) && (
-                          <Button disabled={busy} onClick={() => action(d, "start")}>
-                            <Bike className="mr-1 h-4 w-4" />
-                            Iniciar entrega
-                          </Button>
-                        )}
+                        {d.accepted_at &&
+                          ["aguardando_motoboy", "preparando"].includes(d.status) && (
+                            <Button disabled={busy} onClick={() => action(d, "start")}>
+                              <Bike className="mr-1 h-4 w-4" />
+                              Iniciar entrega
+                            </Button>
+                          )}
 
                         {["saiu_para_entrega", "chegando", "nao_entregue"].includes(d.status) && (
                           <Button
                             disabled={busy}
                             onClick={() => action(d, "deliver")}
-                            style={{ background: theme.button_color, color: theme.button_text_color }}
+                            style={{
+                              background: theme.button_color,
+                              color: theme.button_text_color,
+                            }}
                           >
                             <CheckCircle2 className="mr-1 h-4 w-4" />
                             Entregue
