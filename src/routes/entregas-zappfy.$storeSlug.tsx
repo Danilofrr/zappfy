@@ -4,7 +4,6 @@ import { EntregasPwaShell } from "@/components/EntregasPwaShell";
 import {
   ENTREGAS_APPLE_ICON_URL,
   ENTREGAS_FAVICON_URL,
-  ENTREGAS_ICON_192_URL,
   getEntregasManifestUrl,
 } from "@/lib/entregas-pwa";
 
@@ -22,9 +21,8 @@ export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
     ],
     links: [
       { rel: "manifest", href: getEntregasManifestUrl(params.storeSlug) },
-      { rel: "icon", type: "image/x-icon", href: ENTREGAS_FAVICON_URL },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: ENTREGAS_ICON_192_URL },
-      { rel: "apple-touch-icon", sizes: "180x180", href: ENTREGAS_APPLE_ICON_URL },
+      { rel: "icon", type: "image/svg+xml", sizes: "any", href: ENTREGAS_FAVICON_URL },
+      { rel: "apple-touch-icon", href: ENTREGAS_APPLE_ICON_URL },
     ],
   }),
   component: EntregasLayout,
