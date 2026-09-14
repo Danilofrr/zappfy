@@ -15,10 +15,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getCourierSession } from "@/lib/courier-session";
 import { orderShortNumber } from "@/lib/tracking";
-import type {
-  CourierDeliveryMapProps,
-  CourierMapDelivery,
-} from "@/components/CourierDeliveryMap";
+import type { CourierDeliveryMapProps, CourierMapDelivery } from "@/components/CourierDeliveryMap";
 
 type Precision = "exact" | "street" | "district" | "city";
 
@@ -40,6 +37,16 @@ type ProviderResult = {
 };
 
 const FINAL_STATUSES = new Set(["entregue", "devolvido", "cancelado"]);
+
+function normalizeDeliveryStatus(value: string | null | undefined) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function isFinalDeliveryStatus(value: string | null | undefined) {
+  return FINAL_STATUSES.has(normalizeDeliveryStatus(value));
+}
 const PRECISION_RANK: Record<Precision, number> = {
   exact: 0,
   street: 1,
@@ -314,9 +321,10 @@ async function resolveDeliveryPoint(delivery: CourierMapDelivery): Promise<GeoPo
   const candidates = buildGeocodeCandidates(delivery);
 
   for (const candidate of candidates) {
-    const providers = candidate.precision === "exact" || candidate.precision === "street"
-      ? [searchArcGis, searchNominatim]
-      : [searchNominatim, searchArcGis];
+    const providers =
+      candidate.precision === "exact" || candidate.precision === "street"
+        ? [searchArcGis, searchNominatim]
+        : [searchNominatim, searchArcGis];
 
     for (const provider of providers) {
       try {
@@ -352,9 +360,7 @@ function haversineKm(a: CurrentLocation, b: CurrentLocation) {
   const dLng = toRad(b.lng - a.lng);
   const lat1 = toRad(a.lat);
   const lat2 = toRad(b.lat);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return earthKm * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
@@ -420,7 +426,7 @@ export function CourierDeliveryMapClient({
   onOpenDeliveries,
 }: CourierDeliveryMapProps) {
   const mapDeliveries = useMemo(
-    () => deliveries.filter((delivery) => !FINAL_STATUSES.has(delivery.status)),
+    () => deliveries.filter((delivery) => !isFinalDeliveryStatus(delivery.status)),
     [deliveries],
   );
   const deliveryKey = useMemo(
@@ -573,7 +579,11 @@ export function CourierDeliveryMapClient({
           .join("|"),
       );
     }
-    window.open(`https://www.google.com/maps/dir/?${params.toString()}`, "_blank", "noopener,noreferrer");
+    window.open(
+      `https://www.google.com/maps/dir/?${params.toString()}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   }
 
   const mapCardStyle = {
@@ -583,6 +593,12 @@ export function CourierDeliveryMapClient({
     color: theme.textColor,
   };
   const routeColor = safeColor(theme.buttonColor, "#10b981");
+  const secondaryButtonStyle = {
+    background: theme.cardColor,
+    color: theme.titleColor,
+    borderColor: theme.cardBorderColor,
+    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12)",
+  };
   const unresolvedCount = Math.max(0, mapDeliveries.length - resolved.length);
   const approximateCount = resolved.filter(({ point }) => point.precision !== "exact").length;
 
@@ -619,6 +635,8 @@ export function CourierDeliveryMapClient({
             size="sm"
             onClick={() => locateCourier(true)}
             disabled={locating}
+            className="font-semibold shadow-sm"
+            style={secondaryButtonStyle}
           >
             {locating ? (
               <Loader2 className="mr-1 h-4 w-4 animate-spin" />
@@ -635,7 +653,8 @@ export function CourierDeliveryMapClient({
             style={{ borderColor: theme.cardBorderColor }}
           >
             <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.iconColor }} />
-            Localizando endereços. Se o número exato não existir no mapa, vou usar rua, bairro ou região como referência.
+            Localizando endereços. Se o número exato não existir no mapa, vou usar rua, bairro ou
+            região como referência.
           </div>
         )}
 
@@ -646,7 +665,9 @@ export function CourierDeliveryMapClient({
           >
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#f59e0b" }} />
             <span>
-              {approximateCount} endereço(s) aparecem com pino aproximado. O pino laranja serve como referência quando o número ou a rua exata não é encontrada; ao abrir no Google Maps, o endereço escrito é enviado para ele tentar localizar com mais precisão.
+              {approximateCount} endereço(s) aparecem com pino aproximado. O pino laranja serve como
+              referência quando o número ou a rua exata não é encontrada; ao abrir no Google Maps, o
+              endereço escrito é enviado para ele tentar localizar com mais precisão.
             </span>
           </div>
         )}
@@ -658,20 +679,52 @@ export function CourierDeliveryMapClient({
           >
             <span className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              {unresolvedCount} endereço(s) não puderam ser posicionados. Confira se cidade ou endereço estão preenchidos.
+              {unresolvedCount} endereço(s) não puderam ser posicionados. Confira se cidade ou
+              endereço estão preenchidos.
             </span>
             <button
               type="button"
               onClick={() => setRetryNonce((value) => value + 1)}
-              className="font-semibold underline underline-offset-2"
+              className="rounded-md border px-2.5 py-1.5 font-semibold"
+              style={secondaryButtonStyle}
             >
               Tentar novamente
             </button>
           </div>
         )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+          <span
+            className="rounded-full border px-2.5 py-1 font-semibold"
+            style={{ borderColor: theme.cardBorderColor, color: theme.titleColor }}
+          >
+            {mapDeliveries.length}{" "}
+            {mapDeliveries.length === 1 ? "entrega restante" : "entregas restantes"}
+          </span>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
+            style={{ borderColor: theme.cardBorderColor }}
+          >
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: routeColor }} /> Exato
+          </span>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
+            style={{ borderColor: theme.cardBorderColor }}
+          >
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> Aproximado
+          </span>
+          {currentLocation && (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
+              style={{ borderColor: theme.cardBorderColor }}
+            >
+              <span className="h-2.5 w-2.5 rounded-full bg-blue-600" /> Você
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="overflow-hidden border" style={{ ...mapCardStyle, height: 430 }}>
+      <div className="h-[380px] overflow-hidden border shadow-sm sm:h-[480px]" style={mapCardStyle}>
         <MapContainer
           center={(positions[0] || [-8.0476, -34.877]) as [number, number]}
           zoom={12}
@@ -729,7 +782,10 @@ export function CourierDeliveryMapClient({
           ))}
 
           {positions.length > 1 && (
-            <Polyline positions={positions} pathOptions={{ color: routeColor, weight: 4, opacity: 0.72 }} />
+            <Polyline
+              positions={positions}
+              pathOptions={{ color: routeColor, weight: 4, opacity: 0.72 }}
+            />
           )}
         </MapContainer>
       </div>
@@ -824,13 +880,20 @@ export function CourierDeliveryMapClient({
             type="button"
             disabled={ordered.length === 0}
             onClick={openCompleteRoute}
+            className="font-semibold shadow-sm"
             style={{ background: theme.buttonColor, color: theme.buttonTextColor }}
           >
             <Navigation className="mr-2 h-4 w-4" />
             Abrir rota completa no Google Maps
           </Button>
           {onOpenDeliveries && (
-            <Button type="button" variant="outline" onClick={onOpenDeliveries}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onOpenDeliveries}
+              className="font-semibold shadow-sm"
+              style={secondaryButtonStyle}
+            >
               Ver detalhes dos pedidos
             </Button>
           )}
@@ -838,12 +901,14 @@ export function CourierDeliveryMapClient({
 
         {ordered.length > 10 && (
           <div className="mt-2 text-[11px] opacity-60">
-            O Google Maps será aberto com os 10 primeiros destinos da sequência. Os demais continuam visíveis aqui no mapa.
+            O Google Maps será aberto com os 10 primeiros destinos da sequência. Os demais continuam
+            visíveis aqui no mapa.
           </div>
         )}
         {currentLocation && ordered.length > 1 && (
           <div className="mt-2 text-[11px] opacity-60">
-            A sugestão usa proximidade geográfica para organizar a sequência. Pinos laranja são aproximados; o Google Maps recebe o endereço escrito para tentar refinar a rota.
+            A sugestão usa proximidade geográfica para organizar a sequência. Pinos laranja são
+            aproximados; o Google Maps recebe o endereço escrito para tentar refinar a rota.
           </div>
         )}
       </div>
