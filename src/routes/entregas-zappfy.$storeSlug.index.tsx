@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   AlertTriangle,
   Bike,
+  CalendarDays,
   CheckCircle2,
   Loader2,
   LogOut,
@@ -56,6 +57,7 @@ type Delivery = {
   tracking_code: string;
   courier_token: string;
   status: string;
+  scheduled_for: string | null;
   accepted_at: string | null;
   created_at: string;
   notes: string | null;
@@ -101,6 +103,20 @@ const DEFAULT_THEME: CentralTheme = {
   footer_text: "Powered by Zappfy",
   brand_name: "Entregas Zappfy",
 };
+
+function brazilDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function formatCentralScheduledDate(value: string | null | undefined) {
+  if (!value) return "";
+  return new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR");
+}
 
 function CentralPage() {
   const { storeSlug } = Route.useParams();
@@ -281,10 +297,23 @@ function CentralPage() {
     );
   }
 
+  const todayKey = brazilDateKey();
   const summary = [
     [
       "Para entregar",
-      available.filter((d) => ["aguardando_motoboy", "preparando"].includes(d.status)).length,
+      available.filter(
+        (d) =>
+          ["aguardando_motoboy", "preparando"].includes(d.status) &&
+          (!d.scheduled_for || d.scheduled_for <= todayKey),
+      ).length,
+    ],
+    [
+      "Agendadas",
+      available.filter(
+        (d) =>
+          ["aguardando_motoboy", "preparando"].includes(d.status) &&
+          Boolean(d.scheduled_for && d.scheduled_for > todayKey),
+      ).length,
     ],
     [
       "Em rota",
@@ -394,8 +423,11 @@ function CentralPage() {
                   .join(", ");
                 const busy = busyTrackingCode === d.tracking_code;
                 const paymentParts = normalizePaymentBreakdown(d.order);
+                const isScheduledForFuture = Boolean(d.scheduled_for && d.scheduled_for > todayKey);
                 const awaitingDecision =
-                  !d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status);
+                  !isScheduledForFuture &&
+                  !d.accepted_at &&
+                  ["aguardando_motoboy", "preparando"].includes(d.status);
 
                 return (
                   <div key={d.tracking_code} className="p-4 space-y-3" style={cardStyle}>
@@ -412,6 +444,37 @@ function CentralPage() {
                         {formatRelative(d.created_at)}
                       </div>
                     </div>
+
+                    {d.scheduled_for && (
+                      <div
+                        className="rounded-lg border px-3 py-2 text-xs"
+                        style={{
+                          borderColor: isScheduledForFuture
+                            ? `${theme.button_color}88`
+                            : theme.card_border_color,
+                          background: isScheduledForFuture
+                            ? `${theme.button_color}14`
+                            : `${theme.card_border_color}22`,
+                        }}
+                      >
+                        <div
+                          className="flex items-center gap-2 font-semibold"
+                          style={{
+                            color: isScheduledForFuture ? theme.button_color : theme.title_color,
+                          }}
+                        >
+                          <CalendarDays className="h-4 w-4" />
+                          {isScheduledForFuture
+                            ? `Agendada para ${formatCentralScheduledDate(d.scheduled_for)}`
+                            : "Entrega programada para hoje"}
+                        </div>
+                        {isScheduledForFuture && (
+                          <div className="mt-1 opacity-70">
+                            O botão Aceitar será liberado no dia programado.
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex items-start gap-2 text-sm">
                       <MapPin
@@ -448,16 +511,31 @@ function CentralPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border p-3 text-xs space-y-1.5" style={{ borderColor: `${theme.button_color}55`, background: `${theme.button_color}10` }}>
-                      <div className="font-semibold" style={{ color: theme.title_color }}>Pagamento do cliente</div>
+                    <div
+                      className="rounded-lg border p-3 text-xs space-y-1.5"
+                      style={{
+                        borderColor: `${theme.button_color}55`,
+                        background: `${theme.button_color}10`,
+                      }}
+                    >
+                      <div className="font-semibold" style={{ color: theme.title_color }}>
+                        Pagamento do cliente
+                      </div>
                       {paymentParts.map((part, index) => (
-                        <div key={`${part.method}-${index}`} className="flex items-center justify-between gap-3">
+                        <div
+                          key={`${part.method}-${index}`}
+                          className="flex items-center justify-between gap-3"
+                        >
                           <span>{paymentMethodLabel(part.method)}</span>
                           <strong style={{ color: theme.title_color }}>{brl(part.amount)}</strong>
                         </div>
                       ))}
-                      <div className="flex items-center justify-between gap-3 border-t pt-1.5 font-semibold" style={{ borderColor: theme.card_border_color }}>
-                        <span>Total do pedido</span><span>{brl(d.order.total)}</span>
+                      <div
+                        className="flex items-center justify-between gap-3 border-t pt-1.5 font-semibold"
+                        style={{ borderColor: theme.card_border_color }}
+                      >
+                        <span>Total do pedido</span>
+                        <span>{brl(d.order.total)}</span>
                       </div>
                     </div>
 
@@ -485,12 +563,32 @@ function CentralPage() {
                       <a
                         href={`tel:${d.order.phone}`}
                         className={`inline-flex h-11 items-center justify-center rounded-md border text-sm ${
-                          awaitingDecision ? "col-span-2" : ""
+                          awaitingDecision || isScheduledForFuture ? "col-span-2" : ""
                         }`}
                       >
                         <Phone className="mr-1 h-4 w-4" />
                         Ligar
                       </a>
+
+                      {isScheduledForFuture &&
+                        !d.accepted_at &&
+                        ["aguardando_motoboy", "preparando"].includes(d.status) && (
+                          <>
+                            <Button
+                              disabled={busy}
+                              variant="destructive"
+                              onClick={() => action(d, "reject")}
+                              className="h-11"
+                            >
+                              <XCircle className="mr-1 h-4 w-4" />
+                              Recusar
+                            </Button>
+                            <Button disabled variant="outline" className="h-11">
+                              <CalendarDays className="mr-1 h-4 w-4" />
+                              {formatCentralScheduledDate(d.scheduled_for)}
+                            </Button>
+                          </>
+                        )}
 
                       {awaitingDecision && (
                         <>
@@ -507,7 +605,10 @@ function CentralPage() {
                             disabled={busy}
                             onClick={() => action(d, "accept")}
                             className="h-11"
-                            style={{ background: theme.button_color, color: theme.button_text_color }}
+                            style={{
+                              background: theme.button_color,
+                              color: theme.button_text_color,
+                            }}
                           >
                             <Bike className="mr-1 h-4 w-4" />
                             Aceitar
@@ -534,7 +635,11 @@ function CentralPage() {
                       )}
 
                       {["saiu_para_entrega", "chegando"].includes(d.status) && (
-                        <Button disabled={busy} variant="destructive" onClick={() => action(d, "fail")}>
+                        <Button
+                          disabled={busy}
+                          variant="destructive"
+                          onClick={() => action(d, "fail")}
+                        >
                           <AlertTriangle className="mr-1 h-4 w-4" />
                           Não entregue
                         </Button>

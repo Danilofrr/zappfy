@@ -305,6 +305,7 @@ BEGIN
         'courier_token', t.courier_token,
         'status', t.status,
         'scheduled_for', t.scheduled_for,
+        'created_at', t.created_at,
         'assigned_at', t.assigned_at,
         'accepted_at', t.accepted_at,
         'started_at', t.started_at,

@@ -150,6 +150,28 @@ function applyTemplate(tpl: string, vars: Record<string, string>) {
   return Object.entries(vars).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, v), tpl);
 }
 
+function deliveryDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function deliveryDatePlusDays(days: number) {
+  return deliveryDateKey(new Date(Date.now() + days * 24 * 60 * 60 * 1000));
+}
+
+function formatScheduledDeliveryDate(value: string | null | undefined) {
+  if (!value) return "";
+  const today = deliveryDateKey();
+  const tomorrow = deliveryDatePlusDays(1);
+  if (value === today) return "Hoje";
+  if (value === tomorrow) return "Amanhã";
+  return new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR");
+}
+
 function PedidosPage() {
   const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
   const { activeStoreId } = useActiveStore();
@@ -161,6 +183,7 @@ function PedidosPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assignOpen, setAssignOpen] = useState(false);
   const [targetCourier, setTargetCourier] = useState("");
+  const [assignmentDate, setAssignmentDate] = useState(() => deliveryDateKey());
   const [courierFilter, setCourierFilter] = useState("all");
 
   async function loadDeliveryAssignments() {
@@ -201,6 +224,10 @@ function PedidosPage() {
 
   async function assignSelected() {
     if (!activeStoreId || !targetCourier || selected.size === 0) return;
+    if (!assignmentDate || assignmentDate < deliveryDateKey()) {
+      toast.error("Escolha hoje ou uma data futura para a entrega");
+      return;
+    }
     const target = couriers.find((c) => c.id === targetCourier);
     const transfers = [...selected]
       .map((id) => assignmentByOrder.get(id))
@@ -212,13 +239,16 @@ function PedidosPage() {
       )
     )
       return;
-    const { error } = await (supabase as any).rpc("assign_orders_to_courier", {
+    const { error } = await (supabase as any).rpc("assign_orders_to_courier_scheduled", {
       _store_id: activeStoreId,
       _order_ids: [...selected],
       _courier_id: targetCourier,
+      _scheduled_for: assignmentDate,
     });
     if (error) return toast.error(error.message);
-    toast.success(`${selected.size} pedido(s) atribuído(s) a ${target?.name}`);
+    toast.success(
+      `${selected.size} pedido(s) atribuído(s) a ${target?.name} para ${formatScheduledDeliveryDate(assignmentDate)}`,
+    );
     setSelected(new Set());
     setAssignOpen(false);
     setTargetCourier("");
@@ -858,7 +888,12 @@ function PedidosPage() {
           </SelectContent>
         </Select>
         {selected.size > 0 && (
-          <Button onClick={() => setAssignOpen(true)}>
+          <Button
+            onClick={() => {
+              setAssignmentDate(deliveryDateKey());
+              setAssignOpen(true);
+            }}
+          >
             <Users className="mr-2 h-4 w-4" />
             Atribuir ao motoboy ({selected.size})
           </Button>
@@ -1014,6 +1049,13 @@ function PedidosPage() {
                     <div className="mt-1 text-xs">
                       <Bike className="mr-1 inline h-3.5 w-3.5" />
                       {assignmentByOrder.get(o.id)?.courier_name || "Não atribuído"}
+                      {assignmentByOrder.get(o.id)?.scheduled_for && (
+                        <span className="ml-2 inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          Entrega:{" "}
+                          {formatScheduledDeliveryDate(assignmentByOrder.get(o.id)?.scheduled_for)}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-3">{renderStatus(o, true)}</div>
                     <div className="mt-3 border-t border-border pt-2">{renderActions(o, true)}</div>
@@ -1120,8 +1162,17 @@ function PedidosPage() {
                             </div>
                           </td>
                           <td className="px-2 py-3 truncate">{o.district}</td>
-                          <td className="px-2 py-3 truncate text-xs">
-                            {assignmentByOrder.get(o.id)?.courier_name || "Não atribuído"}
+                          <td className="px-2 py-3 text-xs">
+                            <div className="truncate">
+                              {assignmentByOrder.get(o.id)?.courier_name || "Não atribuído"}
+                            </div>
+                            {assignmentByOrder.get(o.id)?.scheduled_for && (
+                              <div className="mt-0.5 truncate text-[10px] font-medium text-primary">
+                                {formatScheduledDeliveryDate(
+                                  assignmentByOrder.get(o.id)?.scheduled_for,
+                                )}
+                              </div>
+                            )}
                           </td>
                           <td className="px-2 py-3 text-muted-foreground text-xs whitespace-nowrap">
                             {fmtDate(o.date)}
@@ -1216,26 +1267,67 @@ function PedidosPage() {
           <DialogHeader>
             <DialogTitle>Atribuir ao motoboy</DialogTitle>
             <DialogDescription>
-              Os pedidos entrarão imediatamente na carga do motoboy selecionado.
+              Escolha quem fará a entrega e em qual dia o pedido deve entrar na rota do motoboy.
             </DialogDescription>
           </DialogHeader>
-          <Select value={targetCourier} onValueChange={setTargetCourier}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um motoboy ativo" />
-            </SelectTrigger>
-            <SelectContent>
-              {couriers.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Motoboy</Label>
+              <Select value={targetCourier} onValueChange={setTargetCourier}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um motoboy ativo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {couriers.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="rounded-2xl border bg-muted/20 p-4">
+              <div className="mb-3 flex items-center gap-2 font-medium">
+                <CalendarIcon className="h-4 w-4 text-primary" />
+                Dia planejado da entrega
+              </div>
+              <div className="mb-3 grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={assignmentDate === deliveryDateKey() ? "default" : "outline"}
+                  onClick={() => setAssignmentDate(deliveryDateKey())}
+                >
+                  Hoje
+                </Button>
+                <Button
+                  type="button"
+                  variant={assignmentDate === deliveryDatePlusDays(1) ? "default" : "outline"}
+                  onClick={() => setAssignmentDate(deliveryDatePlusDays(1))}
+                >
+                  Amanhã
+                </Button>
+              </div>
+              <Label htmlFor="courier-delivery-date">Escolher outra data</Label>
+              <Input
+                id="courier-delivery-date"
+                type="date"
+                min={deliveryDateKey()}
+                value={assignmentDate}
+                onChange={(event) => setAssignmentDate(event.target.value)}
+                className="mt-1.5"
+              />
+              <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
+                <span className="text-muted-foreground">Entrega planejada:</span>{" "}
+                <b className="text-primary">{formatScheduledDeliveryDate(assignmentDate)}</b>
+              </div>
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignOpen(false)}>
               Cancelar
             </Button>
-            <Button disabled={!targetCourier} onClick={assignSelected}>
+            <Button disabled={!targetCourier || !assignmentDate} onClick={assignSelected}>
               Confirmar atribuição
             </Button>
           </DialogFooter>
@@ -1537,7 +1629,9 @@ function EditOrderDialog({
               <div className="grid grid-cols-[1fr_150px] gap-2">
                 <Field label="2ª FORMA">
                   <Select value={secondPayment} onValueChange={setSecondPayment}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">— Nenhum —</SelectItem>
                       <SelectItem value="pix">PIX</SelectItem>
@@ -1548,12 +1642,24 @@ function EditOrderDialog({
                   </Select>
                 </Field>
                 <Field label="VALOR DA 2ª PARTE">
-                  <Input type="number" min={0} step="0.01" value={secondPaymentValue} disabled={secondPayment === "none"} onChange={(e) => setSecondPaymentValue(Math.max(0, Number(e.target.value) || 0))} />
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={secondPaymentValue}
+                    disabled={secondPayment === "none"}
+                    onChange={(e) =>
+                      setSecondPaymentValue(Math.max(0, Number(e.target.value) || 0))
+                    }
+                  />
                 </Field>
               </div>
               {secondPayment !== "none" && secondPaymentValue > 0 && (
                 <div className="text-xs text-muted-foreground">
-                  {paymentMethodLabel(form.payment)}: <b className="text-foreground">{brl(Math.max(0, total - secondPaymentValue))}</b> · {paymentMethodLabel(secondPayment)}: <b className="text-foreground">{brl(secondPaymentValue)}</b>
+                  {paymentMethodLabel(form.payment)}:{" "}
+                  <b className="text-foreground">{brl(Math.max(0, total - secondPaymentValue))}</b>{" "}
+                  · {paymentMethodLabel(secondPayment)}:{" "}
+                  <b className="text-foreground">{brl(secondPaymentValue)}</b>
                 </div>
               )}
             </div>
@@ -1606,7 +1712,9 @@ function EditOrderDialog({
                   return;
                 }
                 if (secondPaymentValue <= 0 || secondPaymentValue >= total) {
-                  toast.error("No pagamento dividido, informe um valor da 2ª parte maior que zero e menor que o total.");
+                  toast.error(
+                    "No pagamento dividido, informe um valor da 2ª parte maior que zero e menor que o total.",
+                  );
                   return;
                 }
               }
@@ -2392,9 +2500,17 @@ function NewOrderDialog({
               {secondPayment !== "none" && secondPaymentValue > 0 && (
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-xs">
                   <div className="font-semibold text-foreground mb-1">Divisão do pagamento</div>
-                  <div className="flex justify-between"><span>{paymentMethodLabel(form.payment)}</span><b>{brl(Math.max(0, total - secondPaymentValue))}</b></div>
-                  <div className="flex justify-between"><span>{paymentMethodLabel(secondPayment)}</span><b>{brl(secondPaymentValue)}</b></div>
-                  <div className="mt-1 text-[10px] text-muted-foreground">A 1ª forma recebe automaticamente o restante do total.</div>
+                  <div className="flex justify-between">
+                    <span>{paymentMethodLabel(form.payment)}</span>
+                    <b>{brl(Math.max(0, total - secondPaymentValue))}</b>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{paymentMethodLabel(secondPayment)}</span>
+                    <b>{brl(secondPaymentValue)}</b>
+                  </div>
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    A 1ª forma recebe automaticamente o restante do total.
+                  </div>
                 </div>
               )}
 
@@ -2488,7 +2604,9 @@ function NewOrderDialog({
                   return;
                 }
                 if (secondPaymentValue <= 0 || secondPaymentValue >= total) {
-                  toast.error("No pagamento dividido, o valor da 2ª parte precisa ser maior que zero e menor que o total.");
+                  toast.error(
+                    "No pagamento dividido, o valor da 2ª parte precisa ser maior que zero e menor que o total.",
+                  );
                   return;
                 }
               }
@@ -2514,12 +2632,10 @@ function NewOrderDialog({
                     })
                   : null;
               let items = attachFeeMetaToItems(rawItems as any[], feeMeta);
-              items = attachPaymentBreakdownToItems(items, buildPaymentBreakdown(
-                form.payment,
-                total,
-                secondPayment,
-                secondPaymentValue,
-              ));
+              items = attachPaymentBreakdownToItems(
+                items,
+                buildPaymentBreakdown(form.payment, total, secondPayment, secondPaymentValue),
+              );
               const extraNotesLines: string[] = [];
               if (shippingValue > 0) extraNotesLines.push(`Entrega: ${brl(shippingValue)}`);
               if (feeValue > 0) extraNotesLines.push(`${feeLabel || "Taxa"}: ${brl(feeValue)}`);
