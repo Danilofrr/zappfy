@@ -16,6 +16,7 @@ import {
   MapPin,
   MapPinned,
   MessageCircle,
+  Moon,
   Navigation,
   Package,
   Phone,
@@ -24,6 +25,7 @@ import {
   RefreshCw,
   Route as RouteIcon,
   Store,
+  Sun,
   Undo2,
   UserRound,
   WalletCards,
@@ -45,6 +47,8 @@ export const Route = createFileRoute("/entregas-zappfy/$storeSlug/")({
   head: () => ({ meta: [{ title: "Entregas Zappfy — Central de Entregas" }] }),
   component: CentralPage,
 });
+
+type ColorMode = "light" | "dark";
 
 type CentralTheme = {
   id: string;
@@ -151,16 +155,16 @@ function statusMeta(status: string) {
   const normalized = normalizeDeliveryStatus(status);
   if (normalized === "entregue") return { label: "Entregue", fg: "#22c55e", bg: "#22c55e18" };
   if (["saiu_para_entrega", "chegando"].includes(normalized))
-    return { label: normalized === "chegando" ? "Chegando" : "Em rota", fg: "#60a5fa", bg: "#3b82f618" };
-  if (normalized === "nao_entregue") return { label: "Não entregue", fg: "#fb923c", bg: "#f9731618" };
-  if (normalized === "retornando") return { label: "Retornando", fg: "#c084fc", bg: "#a855f718" };
-  if (normalized === "devolvido") return { label: "Devolvido", fg: "#94a3b8", bg: "#64748b18" };
-  if (normalized === "cancelado") return { label: "Cancelado", fg: "#f87171", bg: "#ef444418" };
-  if (normalized === "preparando") return { label: "Preparando", fg: "#fbbf24", bg: "#f59e0b18" };
-  return { label: "Aguardando", fg: "#facc15", bg: "#eab30818" };
+    return { label: normalized === "chegando" ? "Chegando" : "Em rota", fg: "#3b82f6", bg: "#3b82f618" };
+  if (normalized === "nao_entregue") return { label: "Não entregue", fg: "#ea580c", bg: "#f9731618" };
+  if (normalized === "retornando") return { label: "Retornando", fg: "#a855f7", bg: "#a855f718" };
+  if (normalized === "devolvido") return { label: "Devolvido", fg: "#64748b", bg: "#64748b18" };
+  if (normalized === "cancelado") return { label: "Cancelado", fg: "#dc2626", bg: "#ef444418" };
+  if (normalized === "preparando") return { label: "Preparando", fg: "#d97706", bg: "#f59e0b18" };
+  return { label: "Aguardando", fg: "#ca8a04", bg: "#eab30818" };
 }
 
-function CentralBrand({ color, accent }: { color: string; accent: string }) {
+function CentralBrand({ color, accent, surface }: { color: string; accent: string; surface: string }) {
   return (
     <div className="flex items-center gap-3 min-w-0">
       <div
@@ -173,7 +177,10 @@ function CentralBrand({ color, accent }: { color: string; accent: string }) {
         }}
       >
         <MapPinned className="h-6 w-6" strokeWidth={2.3} />
-        <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border-2 border-[#07120d] bg-white text-[#07120d]">
+        <span
+          className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border-2 bg-white text-[#07120d]"
+          style={{ borderColor: surface }}
+        >
           <Navigation className="h-3 w-3" fill="currentColor" />
         </span>
       </div>
@@ -192,13 +199,66 @@ function CentralBrand({ color, accent }: { color: string; accent: string }) {
 function CentralPage() {
   const { storeSlug } = Route.useParams();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState<CentralTheme>(DEFAULT_THEME);
+  const [configuredTheme, setConfiguredTheme] = useState<CentralTheme>(DEFAULT_THEME);
+  const [colorMode, setColorMode] = useState<ColorMode>(() => {
+    if (typeof window === "undefined") return "dark";
+    const saved = window.localStorage.getItem("zappfy-entregas-color-mode");
+    if (saved === "light" || saved === "dark") return saved;
+    return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  });
   const [me, setMe] = useState<Me | null>(null);
   const [available, setAvailable] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyTrackingCode, setBusyTrackingCode] = useState<string | null>(null);
   const [statusBusy, setStatusBusy] = useState(false);
   const [activeView, setActiveView] = useState<"deliveries" | "map">("deliveries");
+
+  const theme = useMemo<CentralTheme>(() => {
+    const accent = configuredTheme.button_color || DEFAULT_THEME.button_color;
+    const radius = configuredTheme.card_radius || DEFAULT_THEME.card_radius;
+
+    if (colorMode === "light") {
+      return {
+        ...configuredTheme,
+        header_color: "#ffffff",
+        header_text_color: "#14251b",
+        background_color: "#f3f7f4",
+        card_color: "#ffffff",
+        card_border_color: "#dce7df",
+        card_shadow_color: "#8ba697",
+        card_radius: radius,
+        text_color: "#41544a",
+        title_color: "#13241b",
+        button_color: accent,
+        button_text_color: "#052013",
+        icon_color: accent,
+      };
+    }
+
+    return {
+      ...configuredTheme,
+      header_color: "#0a120e",
+      header_text_color: "#f8faf9",
+      background_color: "#08110d",
+      card_color: "#0f1913",
+      card_border_color: "#243229",
+      card_shadow_color: "#000000",
+      card_radius: radius,
+      text_color: "#d5e2da",
+      title_color: "#ffffff",
+      button_color: accent,
+      button_text_color: "#04140b",
+      icon_color: configuredTheme.icon_color || accent,
+    };
+  }, [configuredTheme, colorMode]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("zappfy-entregas-color-mode", colorMode);
+    } catch {
+      // LocalStorage pode estar indisponível em modo privado/restrito.
+    }
+  }, [colorMode]);
 
   useEffect(() => {
     let alive = true;
@@ -218,7 +278,7 @@ function CentralPage() {
       ]);
 
       if (!alive) return;
-      if (themeRes) setTheme({ ...DEFAULT_THEME, ...(themeRes as CentralTheme) });
+      if (themeRes) setConfiguredTheme({ ...DEFAULT_THEME, ...(themeRes as CentralTheme) });
 
       if (meErr || !meRes) {
         clearCourierSession(storeSlug);
@@ -413,7 +473,7 @@ function CentralPage() {
 
   if (loading || !me) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: theme.background_color, color: theme.text_color }}>
+      <div className="min-h-screen flex items-center justify-center transition-colors duration-300" style={{ background: theme.background_color, color: theme.text_color, colorScheme: colorMode }}>
         <div className="flex flex-col items-center gap-3">
           <div className="grid h-14 w-14 place-items-center rounded-2xl border" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
             <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.button_color }} />
@@ -425,70 +485,140 @@ function CentralPage() {
   }
 
   const summaryCards = [
-    { label: "Para entregar", value: metrics.ready, icon: Package, tone: "#fbbf24" },
-    { label: "Agendadas", value: metrics.scheduled, icon: CalendarDays, tone: "#a78bfa" },
-    { label: "Em rota", value: metrics.onRoute, icon: RouteIcon, tone: "#60a5fa" },
-    { label: "Entregues", value: metrics.delivered, icon: CheckCircle2, tone: "#22c55e" },
+    { label: "Para entregar", value: metrics.ready, icon: Package, tone: "#d99b00" },
+    { label: "Agendadas", value: metrics.scheduled, icon: CalendarDays, tone: "#8b5cf6" },
+    { label: "Em rota", value: metrics.onRoute, icon: RouteIcon, tone: "#3b82f6" },
+    { label: "Entregues", value: metrics.delivered, icon: CheckCircle2, tone: "#16a34a" },
     { label: "Produtos em posse", value: metrics.possession, icon: Boxes, tone: theme.button_color },
   ];
 
+  const headerButtonStyle: React.CSSProperties = {
+    borderColor: theme.card_border_color,
+    background: colorMode === "light" ? "#f5f8f6" : "#142019",
+    color: theme.header_text_color,
+    boxShadow: colorMode === "light" ? "0 4px 14px -10px #1b4332" : "0 8px 24px -18px #000000",
+  };
+
   return (
     <div
-      className="min-h-screen pb-8"
+      className="min-h-screen pb-8 transition-colors duration-300"
       style={{
-        background: `radial-gradient(900px 420px at 15% -80px, ${theme.button_color}18, transparent 68%), ${theme.background_color}`,
+        background: `radial-gradient(900px 420px at 15% -80px, ${theme.button_color}${colorMode === "light" ? "12" : "18"}, transparent 68%), ${theme.background_color}`,
         color: theme.text_color,
+        colorScheme: colorMode,
       }}
     >
       <header
-        className="sticky top-0 z-40 w-full border-b backdrop-blur-xl"
+        className="sticky top-0 z-40 w-full border-b backdrop-blur-xl transition-colors duration-300"
         style={{
-          background: `color-mix(in oklab, ${theme.header_color} 88%, transparent)`,
+          background: `color-mix(in oklab, ${theme.header_color} 94%, transparent)`,
           color: theme.header_text_color,
           borderColor: theme.card_border_color,
+          boxShadow: colorMode === "light" ? "0 6px 30px -24px #315b45" : "0 8px 34px -26px #000000",
         }}
       >
         <div className="mx-auto flex h-[72px] w-full max-w-[1440px] items-center gap-3 px-4 sm:px-6 lg:px-8">
-          <CentralBrand color={theme.header_text_color} accent={theme.button_color} />
+          <CentralBrand color={theme.header_text_color} accent={theme.button_color} surface={theme.header_color} />
 
           <div className="ml-auto hidden items-center gap-2 lg:flex">
-            <div className="mr-2 flex items-center gap-2 rounded-full border px-3 py-2 text-xs" style={{ borderColor: theme.card_border_color, background: `${theme.card_color}aa` }}>
+            <div
+              className="mr-1 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs"
+              style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f7faf8" : "#121d16", color: theme.text_color }}
+            >
               <Store className="h-3.5 w-3.5" style={{ color: theme.icon_color }} />
               <span className="opacity-65">Loja</span>
               <strong className="max-w-44 truncate" style={{ color: theme.title_color }}>{me.store_name}</strong>
             </div>
+
+            <div
+              className="flex items-center gap-1 rounded-xl border p-1"
+              style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f3f7f4" : "#101b14" }}
+              aria-label="Escolher aparência"
+            >
+              <button
+                type="button"
+                onClick={() => setColorMode("light")}
+                aria-pressed={colorMode === "light"}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold transition"
+                style={
+                  colorMode === "light"
+                    ? { background: "#ffffff", color: "#173622", boxShadow: "0 2px 10px -6px #173622" }
+                    : { color: theme.text_color }
+                }
+              >
+                <Sun className="h-3.5 w-3.5" /> Claro
+              </button>
+              <button
+                type="button"
+                onClick={() => setColorMode("dark")}
+                aria-pressed={colorMode === "dark"}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold transition"
+                style={
+                  colorMode === "dark"
+                    ? { background: "#223128", color: "#ffffff", boxShadow: "0 2px 10px -6px #000000" }
+                    : { color: theme.text_color }
+                }
+              >
+                <Moon className="h-3.5 w-3.5" /> Escuro
+              </button>
+            </div>
+
             <button
               onClick={loadDeliveries}
-              className="grid h-10 w-10 place-items-center rounded-xl border transition hover:-translate-y-0.5"
-              style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.header_text_color }}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold transition hover:-translate-y-0.5 active:scale-[0.98]"
+              style={headerButtonStyle}
               aria-label="Atualizar entregas"
+              title="Atualizar entregas"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" style={{ color: theme.icon_color }} />
+              Atualizar
             </button>
             <button
               onClick={logout}
-              className="grid h-10 w-10 place-items-center rounded-xl border transition hover:-translate-y-0.5"
-              style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.header_text_color }}
-              aria-label="Sair"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold transition hover:-translate-y-0.5 active:scale-[0.98]"
+              style={{
+                borderColor: colorMode === "light" ? "#fecaca" : "#4d2929",
+                background: colorMode === "light" ? "#fff7f7" : "#211515",
+                color: colorMode === "light" ? "#b42318" : "#fecaca",
+              }}
+              aria-label="Sair da Central"
+              title="Sair da Central"
             >
               <LogOut className="h-4 w-4" />
+              Sair
             </button>
           </div>
 
           <div className="ml-auto flex items-center gap-2 lg:hidden">
             <button
-              onClick={loadDeliveries}
-              className="grid h-9 w-9 place-items-center rounded-xl border"
-              style={{ borderColor: `${theme.header_text_color}22`, color: theme.header_text_color }}
-              aria-label="Atualizar"
+              type="button"
+              onClick={() => setColorMode((current) => (current === "dark" ? "light" : "dark"))}
+              className="grid h-9 w-9 place-items-center rounded-xl border transition active:scale-95"
+              style={headerButtonStyle}
+              aria-label={colorMode === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+              title={colorMode === "dark" ? "Modo claro" : "Modo escuro"}
             >
-              <RefreshCw className="h-4 w-4" />
+              {colorMode === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={loadDeliveries}
+              className="grid h-9 w-9 place-items-center rounded-xl border transition active:scale-95"
+              style={headerButtonStyle}
+              aria-label="Atualizar"
+              title="Atualizar"
+            >
+              <RefreshCw className="h-4 w-4" style={{ color: theme.icon_color }} />
             </button>
             <button
               onClick={logout}
-              className="grid h-9 w-9 place-items-center rounded-xl border"
-              style={{ borderColor: `${theme.header_text_color}22`, color: theme.header_text_color }}
+              className="grid h-9 w-9 place-items-center rounded-xl border transition active:scale-95"
+              style={{
+                borderColor: colorMode === "light" ? "#fecaca" : "#4d2929",
+                background: colorMode === "light" ? "#fff7f7" : "#211515",
+                color: colorMode === "light" ? "#b42318" : "#fecaca",
+              }}
               aria-label="Sair"
+              title="Sair"
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -503,7 +633,7 @@ function CentralPage() {
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ borderColor: `${theme.button_color}44`, background: `${theme.button_color}10`, color: theme.button_color }}>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ borderColor: `${theme.button_color}44`, background: `${theme.button_color}10`, color: colorMode === "light" ? "#087a3c" : theme.button_color }}>
                     <Bike className="h-3.5 w-3.5" /> Painel do motoboy
                   </span>
                   <span className="text-xs opacity-55">Atualização automática</span>
@@ -516,14 +646,14 @@ function CentralPage() {
                 </p>
               </div>
 
-              <div className="flex min-w-[240px] items-center justify-between gap-3 rounded-2xl border p-3" style={{ borderColor: theme.card_border_color, background: `${theme.background_color}88` }}>
+              <div className="flex min-w-[240px] items-center justify-between gap-3 rounded-2xl border p-3" style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f7faf8" : `${theme.background_color}88` }}>
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: me.is_online ? `${theme.button_color}18` : `${theme.card_border_color}77`, color: me.is_online ? theme.button_color : theme.text_color }}>
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: me.is_online ? `${theme.button_color}18` : `${theme.card_border_color}77`, color: me.is_online ? (colorMode === "light" ? "#087a3c" : theme.button_color) : theme.text_color }}>
                     {me.is_online ? <Wifi className="h-5 w-5" /> : <WifiOff className="h-5 w-5" />}
                   </div>
                   <div className="min-w-0">
                     <div className="text-[10px] font-bold uppercase tracking-[0.11em] opacity-50">Status</div>
-                    <div className="truncate text-sm font-bold" style={{ color: me.is_online ? theme.button_color : theme.title_color }}>
+                    <div className="truncate text-sm font-bold" style={{ color: me.is_online ? (colorMode === "light" ? "#087a3c" : theme.button_color) : theme.title_color }}>
                       {me.is_online ? "Ativo para entregas" : "Offline"}
                     </div>
                   </div>
@@ -533,7 +663,11 @@ function CentralPage() {
                   disabled={statusBusy}
                   onClick={toggleOnlineStatus}
                   className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition active:scale-95"
-                  style={{ borderColor: me.is_online ? `${theme.button_color}55` : theme.card_border_color, color: me.is_online ? theme.button_color : theme.title_color }}
+                  style={{
+                    borderColor: me.is_online ? `${theme.button_color}55` : theme.card_border_color,
+                    background: colorMode === "light" ? "#ffffff" : "#121d16",
+                    color: me.is_online ? (colorMode === "light" ? "#087a3c" : theme.button_color) : theme.title_color,
+                  }}
                   aria-label={me.is_online ? "Ficar offline" : "Ficar ativo"}
                 >
                   {statusBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
@@ -638,12 +772,17 @@ function CentralPage() {
 
             {available.length === 0 ? (
               <div className="flex min-h-[300px] flex-col items-center justify-center p-8 text-center" style={cardStyle}>
-                <div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl" style={{ background: `${theme.button_color}12`, color: theme.button_color }}>
+                <div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl" style={{ background: `${theme.button_color}12`, color: colorMode === "light" ? "#087a3c" : theme.button_color }}>
                   <Package className="h-7 w-7" />
                 </div>
                 <div className="text-base font-bold" style={{ color: theme.title_color }}>Nenhuma entrega atribuída</div>
                 <div className="mt-1 max-w-sm text-sm opacity-60">Quando a loja atribuir um pedido a você, ele aparecerá aqui automaticamente.</div>
-                <Button className="mt-5 rounded-xl" variant="outline" onClick={loadDeliveries} style={{ borderColor: theme.card_border_color, color: theme.title_color }}>
+                <Button
+                  className="mt-5 rounded-xl"
+                  variant="outline"
+                  onClick={loadDeliveries}
+                  style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.title_color }}
+                >
                   <RefreshCw className="mr-2 h-4 w-4" /> Atualizar agora
                 </Button>
               </div>
@@ -675,8 +814,8 @@ function CentralPage() {
                         </div>
 
                         {d.scheduled_for && (
-                          <div className="mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-xs" style={{ borderColor: isScheduledForFuture ? `${theme.button_color}55` : theme.card_border_color, background: isScheduledForFuture ? `${theme.button_color}0f` : `${theme.background_color}55` }}>
-                            <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" style={{ color: isScheduledForFuture ? theme.button_color : theme.icon_color }} />
+                          <div className="mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-xs" style={{ borderColor: isScheduledForFuture ? `${theme.button_color}55` : theme.card_border_color, background: isScheduledForFuture ? `${theme.button_color}0f` : (colorMode === "light" ? "#f7faf8" : `${theme.background_color}55`) }}>
+                            <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" style={{ color: isScheduledForFuture ? (colorMode === "light" ? "#087a3c" : theme.button_color) : theme.icon_color }} />
                             <div>
                               <div className="font-bold" style={{ color: theme.title_color }}>
                                 {isScheduledForFuture ? `Agendada para ${formatCentralScheduledDate(d.scheduled_for)}` : "Entrega programada para hoje"}
@@ -689,7 +828,7 @@ function CentralPage() {
                         <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
                           <div className="space-y-2.5">
                             <div className="flex items-start gap-2.5 text-sm">
-                              <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: `${theme.icon_color}12`, color: theme.icon_color }}><MapPin className="h-3.5 w-3.5" /></div>
+                              <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: `${theme.icon_color}12`, color: colorMode === "light" ? "#087a3c" : theme.icon_color }}><MapPin className="h-3.5 w-3.5" /></div>
                               <div className="min-w-0 leading-snug">
                                 <div className="font-semibold" style={{ color: theme.title_color }}>{addr || "Endereço não informado"}</div>
                                 <div className="mt-0.5 text-[11px] opacity-45">Destino da entrega</div>
@@ -698,27 +837,27 @@ function CentralPage() {
 
                             {d.order.phone && (
                               <div className="flex items-center gap-2.5 text-sm">
-                                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: `${theme.icon_color}12`, color: theme.icon_color }}><Phone className="h-3.5 w-3.5" /></div>
+                                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: `${theme.icon_color}12`, color: colorMode === "light" ? "#087a3c" : theme.icon_color }}><Phone className="h-3.5 w-3.5" /></div>
                                 <span className="font-medium opacity-80">{d.order.phone}</span>
                               </div>
                             )}
                           </div>
 
-                          <div className="rounded-2xl border px-3 py-2.5 sm:min-w-[135px]" style={{ borderColor: theme.card_border_color, background: `${theme.background_color}66` }}>
+                          <div className="rounded-2xl border px-3 py-2.5 sm:min-w-[135px]" style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f7faf8" : `${theme.background_color}66` }}>
                             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-45"><WalletCards className="h-3.5 w-3.5" /> Total</div>
                             <div className="mt-1 text-lg font-black" style={{ color: theme.title_color }}>{brl(d.order.total)}</div>
                             <div className="text-[11px] opacity-50">{itemCount} {itemCount === 1 ? "produto" : "produtos"}</div>
                           </div>
                         </div>
 
-                        <div className="mt-4 rounded-2xl border p-3" style={{ borderColor: theme.card_border_color, background: `${theme.background_color}44` }}>
+                        <div className="mt-4 rounded-2xl border p-3" style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f8faf9" : `${theme.background_color}44` }}>
                           <div className="mb-2 flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-45"><Boxes className="h-3.5 w-3.5" /> Produtos</div>
                             <span className="text-[11px] opacity-45">{itemCount} un.</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
                             {(d.order.items || []).map((i, index) => (
-                              <span key={`${i.name}-${index}`} className="rounded-lg border px-2 py-1 text-[11px] font-semibold" style={{ borderColor: theme.card_border_color, color: theme.title_color }}>
+                              <span key={`${i.name}-${index}`} className="rounded-lg border px-2 py-1 text-[11px] font-semibold" style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.title_color }}>
                                 {i.qty}x {i.name}
                               </span>
                             ))}
@@ -738,20 +877,27 @@ function CentralPage() {
                         </div>
 
                         {(d.notes || d.order.notes) && (
-                          <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: "#f59e0b33", background: "#f59e0b0d", color: "#fcd34d" }}>
+                          <div
+                            className="mt-3 rounded-xl border px-3 py-2 text-xs"
+                            style={{
+                              borderColor: colorMode === "light" ? "#f1c36d" : "#f59e0b33",
+                              background: colorMode === "light" ? "#fff8e8" : "#f59e0b0d",
+                              color: colorMode === "light" ? "#7a4b00" : "#fcd34d",
+                            }}
+                          >
                             <strong>Observação:</strong> {d.notes || d.order.notes}
                           </div>
                         )}
                       </div>
 
-                      <div className="border-t p-3 sm:p-4" style={{ borderColor: theme.card_border_color, background: `${theme.background_color}42` }}>
+                      <div className="border-t p-3 sm:p-4" style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f8faf9" : `${theme.background_color}42` }}>
                         <div className="grid grid-cols-3 gap-2">
                           <a
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition hover:-translate-y-0.5"
-                            style={{ borderColor: theme.card_border_color, color: theme.title_color }}
+                            style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.title_color }}
                           >
                             <Navigation className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Rota</span><span className="sm:hidden">Mapa</span>
                           </a>
@@ -760,14 +906,14 @@ function CentralPage() {
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition hover:-translate-y-0.5"
-                            style={{ borderColor: theme.card_border_color, color: theme.title_color }}
+                            style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.title_color }}
                           >
                             <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                           </a>
                           <a
                             href={`tel:${d.order.phone}`}
                             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition hover:-translate-y-0.5"
-                            style={{ borderColor: theme.card_border_color, color: theme.title_color }}
+                            style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.title_color }}
                           >
                             <Phone className="h-3.5 w-3.5" /> Ligar
                           </a>
@@ -810,7 +956,13 @@ function CentralPage() {
                           )}
 
                           {d.status === "retornando" && (
-                            <Button disabled={busy} variant="outline" onClick={() => action(d, "returned")} className="h-11 rounded-xl font-bold" style={{ borderColor: theme.card_border_color, color: theme.title_color }}>
+                            <Button
+                              disabled={busy}
+                              variant="outline"
+                              onClick={() => action(d, "returned")}
+                              className="h-11 rounded-xl font-bold"
+                              style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.title_color }}
+                            >
                               <Package className="mr-1.5 h-4 w-4" /> Devolvido à loja
                             </Button>
                           )}
