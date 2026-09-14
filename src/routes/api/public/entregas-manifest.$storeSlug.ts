@@ -14,7 +14,8 @@ export const Route = createFileRoute("/api/public/entregas-manifest/$storeSlug")
         }
 
         const encodedSlug = encodeURIComponent(storeSlug);
-        const icon = "/entregas-icon-512.png?v=9";
+        const icon192 = "/entregas-icon-192.png?v=9";
+        const icon512 = "/entregas-icon-512.png?v=9";
         const manifest = {
           name: "Zappfy Entregas",
           short_name: "Zappfy Entregas",
@@ -30,8 +31,9 @@ export const Route = createFileRoute("/api/public/entregas-manifest/$storeSlug")
           lang: "pt-BR",
           categories: ["business", "productivity"],
           icons: [
-            { src: icon, sizes: "512x512", type: "image/png", purpose: "any" },
-            { src: icon, sizes: "512x512", type: "image/png", purpose: "maskable" },
+            { src: icon192, sizes: "192x192", type: "image/png", purpose: "any" },
+            { src: icon512, sizes: "512x512", type: "image/png", purpose: "any" },
+            { src: icon512, sizes: "512x512", type: "image/png", purpose: "maskable" },
           ],
         };
 
