@@ -14,15 +14,16 @@ export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
   head: ({ params }) => ({
     meta: [
       { title: "Zappfy Entregas — Central de Entregas" },
-      { name: "theme-color", content: "#18c56e" },
+      { name: "theme-color", content: "#08110d" },
       { name: "apple-mobile-web-app-title", content: "Zappfy Entregas" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black" },
     ],
     links: [
       { rel: "manifest", href: getEntregasManifestUrl(params.storeSlug) },
-      { rel: "icon", type: "image/svg+xml", sizes: "any", href: ENTREGAS_FAVICON_URL },
-      { rel: "apple-touch-icon", href: ENTREGAS_APPLE_ICON_URL },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: ENTREGAS_FAVICON_URL },
+      { rel: "apple-touch-icon", sizes: "512x512", href: ENTREGAS_APPLE_ICON_URL },
     ],
   }),
   component: EntregasLayout,
@@ -48,7 +49,32 @@ function EntregasLayout() {
   return (
     <>
       <EntregasPwaShell storeSlug={storeSlug} />
-      <Outlet />
+      <style>{`
+        [data-entregas-central] {
+          min-height: 100dvh;
+          background: #08110d;
+        }
+
+        @supports (padding-top: env(safe-area-inset-top)) {
+          [data-entregas-central] header {
+            padding-top: env(safe-area-inset-top);
+          }
+        }
+
+        @media (max-width: 1023px) {
+          [data-entregas-central] header > div {
+            height: 68px !important;
+            min-height: 68px;
+          }
+
+          [data-entregas-central] header button {
+            touch-action: manipulation;
+          }
+        }
+      `}</style>
+      <div data-entregas-central>
+        <Outlet />
+      </div>
     </>
   );
 }
