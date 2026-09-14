@@ -12,6 +12,12 @@ export const ENTREGAS_COLOR_MODE_KEY = "zappfy-entregas-color-mode";
 
 const COURIER_SESSION_PREFIX = "zappfy:courier-session:";
 
+export function getEntregasManifestUrl(storeSlug?: string | null) {
+  const clean = String(storeSlug || "").trim().toLowerCase();
+  if (!clean) return ENTREGAS_MANIFEST_URL;
+  return `/api/public/entregas-manifest/${encodeURIComponent(clean)}?${ENTREGAS_ICON_VERSION}`;
+}
+
 export function rememberEntregasPwa(storeSlug?: string | null) {
   if (typeof window === "undefined") return;
   try {
