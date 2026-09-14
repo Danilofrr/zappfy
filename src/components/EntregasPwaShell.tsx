@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { Download, WifiOff, RefreshCw, X } from "lucide-react";
-import { ENTREGAS_APPLE_ICON_URL, ENTREGAS_FAVICON_URL, ENTREGAS_ICON_192_URL, ENTREGAS_ICON_512_URL, ENTREGAS_MANIFEST_URL, rememberEntregasPwa } from "@/lib/entregas-pwa";
+import {
+  ENTREGAS_APPLE_ICON_URL,
+  ENTREGAS_FAVICON_URL,
+  ENTREGAS_ICON_192_URL,
+  ENTREGAS_ICON_512_URL,
+  getEntregasManifestUrl,
+  rememberEntregasPwa,
+} from "@/lib/entregas-pwa";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -13,11 +20,11 @@ type Props = { storeSlug?: string };
 
 /**
  * Mounts on every Central Entregas page:
-  *  - swaps the document's manifest + theme-color to the Entregas PWA manifest
+ *  - swaps the document manifest + theme-color to the store-specific Entregas PWA manifest
  *  - registers the service worker and surfaces update notifications
  *  - shows an install button when the browser allows it (Android/Chrome)
  *  - shows an offline banner when the device loses internet
- *  - remembers the last store slug so the installed app re-opens on it
+ *  - remembers the last store slug so old installations also re-open on it
  */
 export function EntregasPwaShell({ storeSlug }: Props) {
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
@@ -28,25 +35,27 @@ export function EntregasPwaShell({ storeSlug }: Props) {
   );
   const [updateReady, setUpdateReady] = useState<ServiceWorkerRegistration | null>(null);
 
-  // Persist last slug so /entregas-zappfy can redirect on reopen.
   useEffect(() => {
     if (!storeSlug) return;
     rememberEntregasPwa(storeSlug);
   }, [storeSlug]);
 
-  // Swap the manifest + theme-color + Apple PWA meta in the live document head.
   useEffect(() => {
     const head = document.head;
-    const prevManifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
-    const prevHref = prevManifest?.getAttribute("href") ?? null;
-    if (prevManifest) prevManifest.setAttribute("href", ENTREGAS_MANIFEST_URL);
+    let manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const manifestCreated = !manifest;
+    if (!manifest) {
+      manifest = document.createElement("link");
+      manifest.setAttribute("rel", "manifest");
+      head.appendChild(manifest);
+    }
+    const prevHref = manifest.getAttribute("href");
+    manifest.setAttribute("href", getEntregasManifestUrl(storeSlug));
 
-    // --- theme-color ---
     const prevTheme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     const prevThemeContent = prevTheme?.getAttribute("content") ?? null;
-    if (prevTheme) prevTheme.setAttribute("content", "#22c55e");
+    if (prevTheme) prevTheme.setAttribute("content", "#18c56e");
 
-    // --- Apple PWA tags (iOS uses these for Add to Home Screen) ---
     const ensureMeta = (name: string, content: string) => {
       let el = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
       let created = false;
@@ -60,42 +69,64 @@ export function EntregasPwaShell({ storeSlug }: Props) {
       el.setAttribute("content", content);
       return { el, prev, created };
     };
-    const appleTitle = ensureMeta("apple-mobile-web-app-title", "Entregas Zappfy");
+
+    const appleTitle = ensureMeta("apple-mobile-web-app-title", "Zappfy Entregas");
     const appleCapable = ensureMeta("apple-mobile-web-app-capable", "yes");
     const mobileCapable = ensureMeta("mobile-web-app-capable", "yes");
     const appleStatus = ensureMeta("apple-mobile-web-app-status-bar-style", "black-translucent");
 
-    // --- apple-touch-icon override (Central Entregas icon) ---
-    const prevApple = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
-    const prevAppleHref = prevApple?.getAttribute("href") ?? null;
-    if (prevApple) prevApple.setAttribute("href", ENTREGAS_APPLE_ICON_URL);
+    let appleIcon = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+    const appleCreated = !appleIcon;
+    if (!appleIcon) {
+      appleIcon = document.createElement("link");
+      appleIcon.setAttribute("rel", "apple-touch-icon");
+      head.appendChild(appleIcon);
+    }
+    const prevAppleHref = appleIcon.getAttribute("href");
+    appleIcon.setAttribute("href", ENTREGAS_APPLE_ICON_URL);
 
-    // --- favicon override (separa da dashboard) ---
-    const faviconSwaps: { el: HTMLLinkElement; prev: string | null; href: string }[] = [];
-    document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]').forEach((el) => {
-      const prev = el.getAttribute("href");
-      const sizes = el.getAttribute("sizes") || "";
-      let href = ENTREGAS_FAVICON_URL;
-      if (sizes.includes("192")) href = ENTREGAS_ICON_192_URL;
-      else if (sizes.includes("512")) href = ENTREGAS_ICON_512_URL;
-      else if (el.getAttribute("type") === "image/png") href = ENTREGAS_ICON_192_URL;
-      el.setAttribute("href", href);
-      faviconSwaps.push({ el, prev, href });
-    });
+    const faviconSwaps: { el: HTMLLinkElement; prev: string | null }[] = [];
+    const existingFavicons = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
+
+    if (existingFavicons.length === 0) {
+      const favicon = document.createElement("link");
+      favicon.setAttribute("rel", "icon");
+      favicon.setAttribute("href", ENTREGAS_FAVICON_URL);
+      head.appendChild(favicon);
+      faviconSwaps.push({ el: favicon, prev: null });
+    } else {
+      existingFavicons.forEach((el) => {
+        const prev = el.getAttribute("href");
+        const sizes = el.getAttribute("sizes") || "";
+        let href = ENTREGAS_FAVICON_URL;
+        if (sizes.includes("192")) href = ENTREGAS_ICON_192_URL;
+        else if (sizes.includes("512")) href = ENTREGAS_ICON_512_URL;
+        else if (el.getAttribute("type") === "image/png") href = ENTREGAS_ICON_192_URL;
+        el.setAttribute("href", href);
+        faviconSwaps.push({ el, prev });
+      });
+    }
 
     return () => {
-      if (prevManifest && prevHref) prevManifest.setAttribute("href", prevHref);
+      if (manifestCreated) manifest?.remove();
+      else if (manifest && prevHref) manifest.setAttribute("href", prevHref);
+
       if (prevTheme && prevThemeContent) prevTheme.setAttribute("content", prevThemeContent);
       for (const m of [appleTitle, appleCapable, mobileCapable, appleStatus]) {
         if (m.created) m.el.remove();
         else if (m.prev !== null) m.el.setAttribute("content", m.prev);
       }
-      if (prevApple && prevAppleHref) prevApple.setAttribute("href", prevAppleHref);
-      for (const f of faviconSwaps) if (f.prev) f.el.setAttribute("href", f.prev);
+
+      if (appleCreated) appleIcon?.remove();
+      else if (appleIcon && prevAppleHref) appleIcon.setAttribute("href", prevAppleHref);
+
+      for (const f of faviconSwaps) {
+        if (f.prev) f.el.setAttribute("href", f.prev);
+        else f.el.remove();
+      }
     };
   }, [storeSlug]);
 
-  // Online/offline indicator.
   useEffect(() => {
     const on = () => setOffline(false);
     const off = () => setOffline(true);
@@ -107,14 +138,17 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     };
   }, []);
 
-  // beforeinstallprompt (Chrome/Edge/Android). Safari iOS has no event.
   useEffect(() => {
-    try { setDismissed(localStorage.getItem(DISMISS_KEY) === "1"); } catch {}
+    try {
+      setDismissed(localStorage.getItem(DISMISS_KEY) === "1");
+    } catch {}
+
     setInstalled(
       window.matchMedia("(display-mode: standalone)").matches ||
         // @ts-ignore iOS Safari
         window.navigator.standalone === true,
     );
+
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BIPEvent);
@@ -123,6 +157,7 @@ export function EntregasPwaShell({ storeSlug }: Props) {
       setInstalled(true);
       setDeferred(null);
     };
+
     window.addEventListener("beforeinstallprompt", onPrompt as any);
     window.addEventListener("appinstalled", onInstalled);
     return () => {
@@ -131,10 +166,10 @@ export function EntregasPwaShell({ storeSlug }: Props) {
     };
   }, []);
 
-  // SW registration + update detection.
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     let reg: ServiceWorkerRegistration | null = null;
+
     (async () => {
       try {
         reg = await navigator.serviceWorker.register("/sw.js");
@@ -150,6 +185,7 @@ export function EntregasPwaShell({ storeSlug }: Props) {
         });
       } catch {}
     })();
+
     const onCtrlChange = () => window.location.reload();
     navigator.serviceWorker.addEventListener("controllerchange", onCtrlChange);
     return () => navigator.serviceWorker.removeEventListener("controllerchange", onCtrlChange);
@@ -166,7 +202,9 @@ export function EntregasPwaShell({ storeSlug }: Props) {
 
   function dismissInstall() {
     setDismissed(true);
-    try { localStorage.setItem(DISMISS_KEY, "1"); } catch {}
+    try {
+      localStorage.setItem(DISMISS_KEY, "1");
+    } catch {}
   }
 
   function applyUpdate() {
@@ -180,31 +218,31 @@ export function EntregasPwaShell({ storeSlug }: Props) {
   return (
     <>
       {offline && (
-        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[9999] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg bg-amber-500/95 text-black flex items-center gap-1.5">
+        <div className="fixed left-1/2 top-2 z-[9999] flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-amber-500/95 px-3 py-1.5 text-xs font-medium text-black shadow-lg">
           <WifiOff className="h-3.5 w-3.5" />
           Sem conexão. Aguardando internet para atualizar.
         </div>
       )}
 
       {showInstall && (
-        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[9998] w-[calc(100%-1.5rem)] max-w-sm rounded-2xl border border-emerald-500/40 bg-[#0b1220]/95 backdrop-blur shadow-2xl p-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-500/15 grid place-items-center text-emerald-400 shrink-0">
+        <div className="fixed bottom-3 left-1/2 z-[9998] flex w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 items-center gap-3 rounded-2xl border border-emerald-500/40 bg-[#0b1220]/95 p-3 shadow-2xl backdrop-blur">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/15 text-emerald-400">
             <Download className="h-5 w-5" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-white">Instalar Aplicativo</div>
-            <div className="text-[11px] text-white/60">Adicione a Central Entregas à tela inicial.</div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-white">Instalar Zappfy Entregas</div>
+            <div className="text-[11px] text-white/60">Adicione a Central à tela inicial deste celular.</div>
           </div>
           <button
             onClick={install}
-            className="h-9 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold"
+            className="h-9 rounded-lg bg-emerald-500 px-3 text-sm font-semibold text-black hover:bg-emerald-400"
           >
             Instalar
           </button>
           <button
             onClick={dismissInstall}
             aria-label="Dispensar"
-            className="h-9 w-9 grid place-items-center rounded-lg text-white/50 hover:text-white"
+            className="grid h-9 w-9 place-items-center rounded-lg text-white/50 hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>
@@ -212,17 +250,17 @@ export function EntregasPwaShell({ storeSlug }: Props) {
       )}
 
       {updateReady && (
-        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[9999] w-[calc(100%-1.5rem)] max-w-sm rounded-2xl border border-emerald-500/40 bg-[#0b1220]/95 backdrop-blur shadow-2xl p-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-500/15 grid place-items-center text-emerald-400 shrink-0">
+        <div className="fixed bottom-3 left-1/2 z-[9999] flex w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 items-center gap-3 rounded-2xl border border-emerald-500/40 bg-[#0b1220]/95 p-3 shadow-2xl backdrop-blur">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/15 text-emerald-400">
             <RefreshCw className="h-5 w-5" />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-white">Nova versão disponível</div>
             <div className="text-[11px] text-white/60">Atualize para receber as melhorias.</div>
           </div>
           <button
             onClick={applyUpdate}
-            className="h-9 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold"
+            className="h-9 rounded-lg bg-emerald-500 px-3 text-sm font-semibold text-black hover:bg-emerald-400"
           >
             Atualizar
           </button>
