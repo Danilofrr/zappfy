@@ -1,0 +1,150 @@
+name: Apply scheduled courier delivery migration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/apply-scheduled-courier-delivery.yml"
+      - "supabase/migrations/20260913210000_schedule_courier_deliveries.sql"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-courier-delivery-production
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Apply and verify scheduled courier delivery
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      MIGRATION_VERSION: "20260913210000"
+      MIGRATION_FILE: "supabase/migrations/20260913210000_schedule_courier_deliveries.sql"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_ACCESS_TOKEN:?Missing SUPABASE_ACCESS_TOKEN secret}"
+          : "${SUPABASE_DB_PASSWORD:?Missing SUPABASE_DB_PASSWORD secret}"
+          : "${SUPABASE_PROJECT_ID:?Missing SUPABASE_PROJECT_ID secret}"
+          test -s "$MIGRATION_FILE"
+
+      - name: Apply migration SQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib, urllib.request, urllib.error
+
+          project = os.environ["SUPABASE_PROJECT_ID"]
+          token = os.environ["SUPABASE_ACCESS_TOKEN"]
+          sql = pathlib.Path(os.environ["MIGRATION_FILE"]).read_text()
+          req = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{project}/database/query",
+              data=json.dumps({"query": sql, "read_only": False}).encode(),
+              headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+              method="POST",
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=180) as response:
+                  response.read()
+          except urllib.error.HTTPError as exc:
+              body = exc.read().decode(errors="replace")
+              raise SystemExit(f"Supabase Management API returned HTTP {exc.code}: {body[:4000]}")
+          print("Scheduled courier delivery migration applied successfully.")
+          PY
+
+      - name: Verify scheduling objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          project = os.environ["SUPABASE_PROJECT_ID"]
+          token = os.environ["SUPABASE_ACCESS_TOKEN"]
+          query = """
+          select
+            exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public'
+                and table_name = 'delivery_tracking'
+                and column_name = 'scheduled_for'
+                and is_nullable = 'NO'
+            ) as scheduled_for_column,
+            to_regprocedure('public.assign_orders_to_courier_scheduled(uuid,uuid[],uuid,date)') is not null as scheduled_rpc,
+            to_regprocedure('public.assign_orders_to_courier(uuid,uuid[],uuid)') is not null as compatibility_rpc,
+            to_regprocedure('public.list_order_assignments(uuid)') is not null as list_assignments,
+            to_regprocedure('public.list_my_delivery_load(text)') is not null as courier_load;
+          """
+          req = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{project}/database/query",
+              data=json.dumps({"query": query, "read_only": True}).encode(),
+              headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req, timeout=60) as response:
+              payload = json.loads(response.read().decode())
+          rows = payload if isinstance(payload, list) else payload.get("result", payload)
+          row = rows[0] if isinstance(rows, list) and rows else rows
+          required = ["scheduled_for_column", "scheduled_rpc", "compatibility_rpc", "list_assignments", "courier_load"]
+          missing = [key for key in required if not (isinstance(row, dict) and row.get(key))]
+          if missing:
+              raise SystemExit("Scheduled delivery verification failed. Missing: " + ", ".join(missing))
+          print("Scheduled courier delivery objects verified.")
+          PY
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Register exact migration version
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$SUPABASE_PROJECT_ID"
+          supabase migration list --linked | tee migration-history.txt
+
+          remote_version="$(awk -F '|' -v wanted="$MIGRATION_VERSION" '
+            function clean(v) { gsub(/`/, "", v); gsub(/[[:space:]]/, "", v); return v }
+            { local=clean($1); remote=clean($2); if (local==wanted) print remote }
+          ' migration-history.txt | tail -n1)"
+
+          if [[ "$remote_version" != "$MIGRATION_VERSION" ]]; then
+            supabase migration repair --linked --status applied "$MIGRATION_VERSION"
+          else
+            echo "Migration $MIGRATION_VERSION is already registered remotely."
+          fi
+
+      - name: Reload PostgREST schema cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+          project = os.environ["SUPABASE_PROJECT_ID"]
+          token = os.environ["SUPABASE_ACCESS_TOKEN"]
+          req = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{project}/database/query",
+              data=json.dumps({"query": "NOTIFY pgrst, 'reload schema';", "read_only": False}).encode(),
+              headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req, timeout=60) as response:
+              response.read()
+          print("PostgREST schema cache reload requested.")
+          PY
