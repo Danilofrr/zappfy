@@ -1,12 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   AlertTriangle,
   Bike,
+  Boxes,
   CalendarDays,
   CheckCircle2,
+  ChevronRight,
+  Clock3,
   ListChecks,
   Loader2,
   LogOut,
@@ -19,8 +22,13 @@ import {
   Power,
   Printer,
   RefreshCw,
+  Route as RouteIcon,
   Store,
   Undo2,
+  UserRound,
+  WalletCards,
+  Wifi,
+  WifiOff,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -101,20 +109,20 @@ const DEFAULT_THEME: CentralTheme = {
   id: "",
   logo_url: null,
   logo_size: 48,
-  header_color: "#0f172a",
+  header_color: "#07120d",
   header_text_color: "#ffffff",
-  background_color: "#0b1220",
-  card_color: "#0f172a",
-  card_border_color: "#1e293b",
+  background_color: "#08110d",
+  card_color: "#0d1812",
+  card_border_color: "#1c2d23",
   card_shadow_color: "#000000",
-  card_radius: 16,
-  text_color: "#e5e7eb",
+  card_radius: 20,
+  text_color: "#d9e6de",
   title_color: "#ffffff",
-  button_color: "#10b981",
-  button_text_color: "#ffffff",
-  icon_color: "#10b981",
+  button_color: "#18c56e",
+  button_text_color: "#04140b",
+  icon_color: "#23d57a",
   footer_text: "Powered by Zappfy",
-  brand_name: "Entregas Zappfy",
+  brand_name: "Zappfy Entregas",
 };
 
 function brazilDateKey(date = new Date()) {
@@ -132,13 +140,53 @@ function formatCentralScheduledDate(value: string | null | undefined) {
 }
 
 function normalizeDeliveryStatus(value: string | null | undefined) {
-  return String(value || "")
-    .trim()
-    .toLowerCase();
+  return String(value || "").trim().toLowerCase();
 }
 
 function isMapPendingDelivery(value: string | null | undefined) {
   return !["entregue", "devolvido", "cancelado"].includes(normalizeDeliveryStatus(value));
+}
+
+function statusMeta(status: string) {
+  const normalized = normalizeDeliveryStatus(status);
+  if (normalized === "entregue") return { label: "Entregue", fg: "#22c55e", bg: "#22c55e18" };
+  if (["saiu_para_entrega", "chegando"].includes(normalized))
+    return { label: normalized === "chegando" ? "Chegando" : "Em rota", fg: "#60a5fa", bg: "#3b82f618" };
+  if (normalized === "nao_entregue") return { label: "Não entregue", fg: "#fb923c", bg: "#f9731618" };
+  if (normalized === "retornando") return { label: "Retornando", fg: "#c084fc", bg: "#a855f718" };
+  if (normalized === "devolvido") return { label: "Devolvido", fg: "#94a3b8", bg: "#64748b18" };
+  if (normalized === "cancelado") return { label: "Cancelado", fg: "#f87171", bg: "#ef444418" };
+  if (normalized === "preparando") return { label: "Preparando", fg: "#fbbf24", bg: "#f59e0b18" };
+  return { label: "Aguardando", fg: "#facc15", bg: "#eab30818" };
+}
+
+function CentralBrand({ color, accent }: { color: string; accent: string }) {
+  return (
+    <div className="flex items-center gap-3 min-w-0">
+      <div
+        className="relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl border"
+        style={{
+          background: `linear-gradient(145deg, ${accent}, color-mix(in oklab, ${accent} 68%, #052e16))`,
+          borderColor: `${accent}66`,
+          boxShadow: `0 10px 28px -12px ${accent}`,
+          color: "#04140b",
+        }}
+      >
+        <MapPinned className="h-6 w-6" strokeWidth={2.3} />
+        <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border-2 border-[#07120d] bg-white text-[#07120d]">
+          <Navigation className="h-3 w-3" fill="currentColor" />
+        </span>
+      </div>
+      <div className="min-w-0 leading-tight">
+        <div className="truncate text-[17px] font-black tracking-[-0.03em]" style={{ color }}>
+          Zappfy
+        </div>
+        <div className="truncate text-[11px] font-semibold uppercase tracking-[0.16em] opacity-65">
+          Central de Entregas
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function CentralPage() {
@@ -160,11 +208,7 @@ function CentralPage() {
       setLoading(true);
       const session = getCourierSession(storeSlug);
       if (!session) {
-        navigate({
-          to: "/entregas-zappfy/$storeSlug/login",
-          params: { storeSlug },
-          replace: true,
-        });
+        navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
         return;
       }
 
@@ -178,11 +222,7 @@ function CentralPage() {
 
       if (meErr || !meRes) {
         clearCourierSession(storeSlug);
-        navigate({
-          to: "/entregas-zappfy/$storeSlug/login",
-          params: { storeSlug },
-          replace: true,
-        });
+        navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
         return;
       }
 
@@ -198,7 +238,6 @@ function CentralPage() {
   async function toggleOnlineStatus() {
     const session = getCourierSession(storeSlug);
     if (!session || !me) return;
-
     const nextOnline = !me.is_online;
     setStatusBusy(true);
     const { error } = await (supabase as any).rpc("courier_set_online", {
@@ -206,16 +245,12 @@ function CentralPage() {
       _online: nextOnline,
     });
     setStatusBusy(false);
-
     if (error) {
       toast.error(error.message);
       return;
     }
-
     setMe((current) =>
-      current
-        ? { ...current, is_online: nextOnline, online_updated_at: new Date().toISOString() }
-        : current,
+      current ? { ...current, is_online: nextOnline, online_updated_at: new Date().toISOString() } : current,
     );
     toast.success(nextOnline ? "Você está ativo para entregas" : "Você está offline");
   }
@@ -223,38 +258,28 @@ function CentralPage() {
   async function loadDeliveries() {
     const session = getCourierSession(storeSlug);
     if (!session) return;
-
     const { data: deliveries, error } = await (supabase as any).rpc("list_my_delivery_load", {
       _session: session,
     });
-
     if (error) {
       console.error(error);
       return;
     }
-
     if (Array.isArray(deliveries)) setAvailable(deliveries as Delivery[]);
   }
 
   useEffect(() => {
     if (!me) return;
-
     loadDeliveries();
     const interval = setInterval(loadDeliveries, 15000);
     const channel = supabase
       .channel(`central_${me.store_id}`)
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "delivery_tracking",
-          filter: `store_id=eq.${me.store_id}`,
-        },
+        { event: "*", schema: "public", table: "delivery_tracking", filter: `store_id=eq.${me.store_id}` },
         () => loadDeliveries(),
       )
       .subscribe();
-
     return () => {
       clearInterval(interval);
       supabase.removeChannel(channel);
@@ -264,13 +289,11 @@ function CentralPage() {
 
   useEffect(() => {
     if (!me || activeView !== "map") return;
-
     void loadDeliveries();
     const refreshVisibleMap = () => void loadDeliveries();
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") void loadDeliveries();
     };
-
     window.addEventListener("focus", refreshVisibleMap);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
@@ -283,9 +306,7 @@ function CentralPage() {
   async function action(d: Delivery, actionName: string) {
     const session = getCourierSession(storeSlug);
     if (!session) return;
-
     let reason: string | null = null;
-
     if (actionName === "reject") {
       const confirmed = confirm(
         "Recusar esta entrega? O pedido deixará sua Central e voltará para o administrador atribuir a outro motoboy.",
@@ -293,46 +314,34 @@ function CentralPage() {
       if (!confirmed) return;
       reason = "Recusada pelo motoboy";
     }
-
     if (actionName === "fail") {
-      reason =
-        prompt(
-          "Motivo: cliente ausente, recusou, endereço não encontrado, não respondeu, pagamento ou outro",
-        )?.trim() || null;
+      reason = prompt("Motivo: cliente ausente, recusou, endereço não encontrado, não respondeu, pagamento ou outro")?.trim() || null;
     }
-
     if (actionName === "deliver" && !confirm("Confirmar que este pedido foi entregue?")) return;
 
     setBusyTrackingCode(d.tracking_code);
-
     const { error } = await (supabase as any).rpc("courier_delivery_action", {
       _session: session,
       _tracking_id: d.id,
       _action: actionName,
       _reason: reason,
     });
-
     setBusyTrackingCode(null);
-
     if (error) {
       toast.error(error.message);
       return;
     }
-
     if (actionName === "reject") {
       toast.success("Entrega recusada. O pedido voltou para o administrador.");
       await loadDeliveries();
       return;
     }
-
     toast.success("Entrega atualizada");
-
     if (actionName === "accept" || actionName === "start") {
       setMe((current) => (current ? { ...current, is_online: true } : current));
       navigate({ to: "/entrega/$courierToken", params: { courierToken: d.courier_token } });
       return;
     }
-
     await loadDeliveries();
   }
 
@@ -340,11 +349,7 @@ function CentralPage() {
     const session = getCourierSession(storeSlug);
     if (session) (supabase as any).rpc("courier_logout", { _session: session });
     clearCourierSession(storeSlug);
-    navigate({
-      to: "/entregas-zappfy/$storeSlug/login",
-      params: { storeSlug },
-      replace: true,
-    });
+    navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
   }
 
   function printMyDeliveryLabels() {
@@ -354,7 +359,6 @@ function CentralPage() {
       toast.error("Você não possui pedidos pendentes para imprimir");
       return;
     }
-
     const opened = openShippingLabels({
       storeName: me.store_name || "Loja",
       logoUrl: me.store_logo_url || null,
@@ -379,490 +383,440 @@ function CentralPage() {
         };
       }),
     });
-
     if (!opened) toast.error("Permita pop-ups para gerar as etiquetas 10x15");
   }
 
+  const todayKey = brazilDateKey();
+  const mapCount = available.filter((d) => isMapPendingDelivery(d.status)).length;
+  const metrics = useMemo(() => {
+    const ready = available.filter(
+      (d) => ["aguardando_motoboy", "preparando"].includes(d.status) && (!d.scheduled_for || d.scheduled_for <= todayKey),
+    ).length;
+    const scheduled = available.filter(
+      (d) => ["aguardando_motoboy", "preparando"].includes(d.status) && Boolean(d.scheduled_for && d.scheduled_for > todayKey),
+    ).length;
+    const onRoute = available.filter((d) => ["saiu_para_entrega", "chegando"].includes(d.status)).length;
+    const delivered = available.filter((d) => d.status === "entregue").length;
+    const possession = available
+      .filter((d) => isMapPendingDelivery(d.status))
+      .reduce((n, d) => n + (d.order.items || []).reduce((s, i) => s + Number(i.qty), 0), 0);
+    return { ready, scheduled, onRoute, delivered, possession };
+  }, [available, todayKey]);
+
   const cardStyle: React.CSSProperties = {
-    background: theme.card_color,
+    background: `linear-gradient(145deg, color-mix(in oklab, ${theme.card_color} 97%, white), ${theme.card_color})`,
     border: `1px solid ${theme.card_border_color}`,
-    boxShadow: `0 10px 26px -12px ${theme.card_shadow_color}88`,
-    borderRadius: theme.card_radius,
+    boxShadow: `0 18px 45px -28px ${theme.card_shadow_color}cc`,
+    borderRadius: Math.max(theme.card_radius, 18),
     color: theme.text_color,
   };
 
   if (loading || !me) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: theme.background_color, color: theme.text_color }}
-      >
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: theme.background_color, color: theme.text_color }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl border" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.button_color }} />
+          </div>
+          <span className="text-xs opacity-60">Carregando sua central…</span>
+        </div>
       </div>
     );
   }
 
-  const todayKey = brazilDateKey();
-  const mapCount = available.filter((d) => isMapPendingDelivery(d.status)).length;
-  const summary = [
-    [
-      "Para entregar",
-      available.filter(
-        (d) =>
-          ["aguardando_motoboy", "preparando"].includes(d.status) &&
-          (!d.scheduled_for || d.scheduled_for <= todayKey),
-      ).length,
-    ],
-    [
-      "Agendadas",
-      available.filter(
-        (d) =>
-          ["aguardando_motoboy", "preparando"].includes(d.status) &&
-          Boolean(d.scheduled_for && d.scheduled_for > todayKey),
-      ).length,
-    ],
-    [
-      "Em rota",
-      available.filter((d) => ["saiu_para_entrega", "chegando"].includes(d.status)).length,
-    ],
-    ["Entregues", available.filter((d) => d.status === "entregue").length],
-    ["Não entregues", available.filter((d) => d.status === "nao_entregue").length],
-    [
-      "Produtos em posse",
-      available
-        .filter((d) => isMapPendingDelivery(d.status))
-        .reduce((n, d) => n + (d.order.items || []).reduce((s, i) => s + Number(i.qty), 0), 0),
-    ],
-  ] as const;
+  const summaryCards = [
+    { label: "Para entregar", value: metrics.ready, icon: Package, tone: "#fbbf24" },
+    { label: "Agendadas", value: metrics.scheduled, icon: CalendarDays, tone: "#a78bfa" },
+    { label: "Em rota", value: metrics.onRoute, icon: RouteIcon, tone: "#60a5fa" },
+    { label: "Entregues", value: metrics.delivered, icon: CheckCircle2, tone: "#22c55e" },
+    { label: "Produtos em posse", value: metrics.possession, icon: Boxes, tone: theme.button_color },
+  ];
 
   return (
     <div
-      className="min-h-screen pb-16"
-      style={{ background: theme.background_color, color: theme.text_color }}
+      className="min-h-screen pb-8"
+      style={{
+        background: `radial-gradient(900px 420px at 15% -80px, ${theme.button_color}18, transparent 68%), ${theme.background_color}`,
+        color: theme.text_color,
+      }}
     >
       <header
-        className="entregas-mobile-header w-full px-5 py-5 flex items-center gap-3"
-        style={{ background: theme.header_color, color: theme.header_text_color }}
+        className="sticky top-0 z-40 w-full border-b backdrop-blur-xl"
+        style={{
+          background: `color-mix(in oklab, ${theme.header_color} 88%, transparent)`,
+          color: theme.header_text_color,
+          borderColor: theme.card_border_color,
+        }}
       >
-        {theme.logo_url ? (
-          <img
-            src={theme.logo_url}
-            alt={theme.brand_name}
-            style={{ height: theme.logo_size, width: "auto" }}
-            className="object-contain"
-          />
-        ) : (
-          <div
-            className="grid h-10 w-10 place-items-center rounded-xl"
-            style={{ background: theme.button_color, color: theme.button_text_color }}
-          >
-            <Bike className="h-5 w-5" />
+        <div className="mx-auto flex h-[72px] w-full max-w-[1440px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <CentralBrand color={theme.header_text_color} accent={theme.button_color} />
+
+          <div className="ml-auto hidden items-center gap-2 lg:flex">
+            <div className="mr-2 flex items-center gap-2 rounded-full border px-3 py-2 text-xs" style={{ borderColor: theme.card_border_color, background: `${theme.card_color}aa` }}>
+              <Store className="h-3.5 w-3.5" style={{ color: theme.icon_color }} />
+              <span className="opacity-65">Loja</span>
+              <strong className="max-w-44 truncate" style={{ color: theme.title_color }}>{me.store_name}</strong>
+            </div>
+            <button
+              onClick={loadDeliveries}
+              className="grid h-10 w-10 place-items-center rounded-xl border transition hover:-translate-y-0.5"
+              style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.header_text_color }}
+              aria-label="Atualizar entregas"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+            <button
+              onClick={logout}
+              className="grid h-10 w-10 place-items-center rounded-xl border transition hover:-translate-y-0.5"
+              style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.header_text_color }}
+              aria-label="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
-        )}
 
-        <div className="leading-tight min-w-0">
-          <div className="text-lg font-extrabold truncate">{theme.brand_name}</div>
-          <div className="text-xs opacity-80 truncate">Olá, {me.name}</div>
+          <div className="ml-auto flex items-center gap-2 lg:hidden">
+            <button
+              onClick={loadDeliveries}
+              className="grid h-9 w-9 place-items-center rounded-xl border"
+              style={{ borderColor: `${theme.header_text_color}22`, color: theme.header_text_color }}
+              aria-label="Atualizar"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+            <button
+              onClick={logout}
+              className="grid h-9 w-9 place-items-center rounded-xl border"
+              style={{ borderColor: `${theme.header_text_color}22`, color: theme.header_text_color }}
+              aria-label="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-
-        <button
-          onClick={loadDeliveries}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border"
-          style={{ borderColor: `${theme.header_text_color}33`, color: theme.header_text_color }}
-          aria-label="Atualizar"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </button>
-
-        <button
-          onClick={logout}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border"
-          style={{ borderColor: `${theme.header_text_color}33`, color: theme.header_text_color }}
-          aria-label="Sair"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-        </button>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 mt-5 space-y-5">
-        <section className="flex items-center gap-2 text-sm">
-          <Store className="h-4 w-4" style={{ color: theme.icon_color }} />
-          <span className="opacity-70">Loja:</span>
-          <strong style={{ color: theme.title_color }}>{me.store_name}</strong>
-        </section>
+      <main className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+        <section className="mb-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="relative overflow-hidden p-5 sm:p-6" style={cardStyle}>
+            <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full blur-3xl" style={{ background: `${theme.button_color}1f` }} />
+            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ borderColor: `${theme.button_color}44`, background: `${theme.button_color}10`, color: theme.button_color }}>
+                    <Bike className="h-3.5 w-3.5" /> Painel do motoboy
+                  </span>
+                  <span className="text-xs opacity-55">Atualização automática</span>
+                </div>
+                <h1 className="text-2xl font-black tracking-[-0.035em] sm:text-3xl" style={{ color: theme.title_color }}>
+                  Olá, {me.name.split(" ")[0]} 👋
+                </h1>
+                <p className="mt-1 max-w-xl text-sm opacity-65">
+                  Acompanhe seus pedidos, rotas e produtos em posse em um único lugar.
+                </p>
+              </div>
 
-        <section className="flex items-center justify-between gap-3 p-3" style={cardStyle}>
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
-              style={{
-                background: me.is_online
-                  ? `${theme.button_color}22`
-                  : `${theme.card_border_color}66`,
-                color: me.is_online ? theme.button_color : theme.text_color,
-              }}
-            >
-              <Power className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs opacity-65">Seu status de trabalho</div>
-              <div
-                className="font-semibold"
-                style={{ color: me.is_online ? theme.button_color : theme.title_color }}
-              >
-                {me.is_online ? "Ativo agora" : "Offline"}
+              <div className="flex min-w-[240px] items-center justify-between gap-3 rounded-2xl border p-3" style={{ borderColor: theme.card_border_color, background: `${theme.background_color}88` }}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: me.is_online ? `${theme.button_color}18` : `${theme.card_border_color}77`, color: me.is_online ? theme.button_color : theme.text_color }}>
+                    {me.is_online ? <Wifi className="h-5 w-5" /> : <WifiOff className="h-5 w-5" />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.11em] opacity-50">Status</div>
+                    <div className="truncate text-sm font-bold" style={{ color: me.is_online ? theme.button_color : theme.title_color }}>
+                      {me.is_online ? "Ativo para entregas" : "Offline"}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={statusBusy}
+                  onClick={toggleOnlineStatus}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition active:scale-95"
+                  style={{ borderColor: me.is_online ? `${theme.button_color}55` : theme.card_border_color, color: me.is_online ? theme.button_color : theme.title_color }}
+                  aria-label={me.is_online ? "Ficar offline" : "Ficar ativo"}
+                >
+                  {statusBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
+                </button>
               </div>
             </div>
           </div>
-          <Button
-            type="button"
-            variant={me.is_online ? "outline" : "default"}
-            disabled={statusBusy}
-            onClick={toggleOnlineStatus}
-            style={
-              me.is_online
-                ? { borderColor: `${theme.button_color}88`, color: theme.button_color }
-                : { background: theme.button_color, color: theme.button_text_color }
-            }
-          >
-            {statusBusy ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-            ) : (
-              <Power className="mr-1 h-4 w-4" />
-            )}
-            {me.is_online ? "Ficar offline" : "Ficar ativo"}
-          </Button>
+
+          <div className="flex items-center gap-4 p-4 sm:p-5" style={cardStyle}>
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl" style={{ background: `${theme.icon_color}15`, color: theme.icon_color }}>
+              {me.store_logo_url ? (
+                <img src={me.store_logo_url} alt={me.store_name} className="h-10 w-10 rounded-xl object-contain" />
+              ) : (
+                <Store className="h-5 w-5" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-bold uppercase tracking-[0.12em] opacity-45">Loja vinculada</div>
+              <div className="truncate text-base font-bold" style={{ color: theme.title_color }}>{me.store_name}</div>
+              <div className="mt-1 flex items-center gap-1.5 text-[11px] opacity-55">
+                <Clock3 className="h-3.5 w-3.5" /> Central sincronizada em tempo real
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {summary.map(([label, value]) => (
-            <div key={label} className="p-3 text-center" style={cardStyle}>
-              <div className="text-xl font-bold" style={{ color: theme.title_color }}>
-                {value}
+        <section className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          {summaryCards.map(({ label, value, icon: Icon, tone }) => (
+            <div key={label} className="group p-4 transition duration-200 hover:-translate-y-0.5" style={cardStyle}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-2xl font-black tracking-[-0.04em] sm:text-3xl" style={{ color: theme.title_color }}>{value}</div>
+                  <div className="mt-1 text-[11px] font-semibold leading-tight opacity-60 sm:text-xs">{label}</div>
+                </div>
+                <div className="grid h-9 w-9 place-items-center rounded-xl" style={{ background: `${tone}18`, color: tone }}>
+                  <Icon className="h-4 w-4" />
+                </div>
               </div>
-              <div className="text-xs opacity-70">{label}</div>
             </div>
           ))}
         </section>
 
-        <section className="space-y-2 p-3" style={cardStyle}>
+        <section className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="grid grid-cols-2 gap-1.5 rounded-2xl border p-1.5" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
+            <button
+              type="button"
+              onClick={() => setActiveView("deliveries")}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold transition"
+              style={activeView === "deliveries" ? { background: theme.button_color, color: theme.button_text_color, boxShadow: `0 8px 24px -14px ${theme.button_color}` } : { color: theme.text_color }}
+            >
+              <ListChecks className="h-4 w-4" /> Pedidos <span className="opacity-70">{available.length}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView("map")}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold transition"
+              style={activeView === "map" ? { background: theme.button_color, color: theme.button_text_color, boxShadow: `0 8px 24px -14px ${theme.button_color}` } : { color: theme.text_color }}
+            >
+              <MapPinned className="h-4 w-4" /> Mapa <span className="opacity-70">{mapCount}</span>
+            </button>
+          </div>
+
           <Button
             type="button"
-            className="h-12 w-full text-sm font-semibold"
             disabled={mapCount === 0}
             onClick={printMyDeliveryLabels}
+            className="h-12 rounded-2xl px-5 font-bold"
             style={{ background: theme.button_color, color: theme.button_text_color }}
           >
             <Printer className="mr-2 h-4 w-4" />
-            Imprimir etiquetas 10x15 ({mapCount})
+            Imprimir etiquetas ({mapCount})
           </Button>
-          <div className="text-center text-[11px] opacity-65">
-            Gera todas as etiquetas dos pedidos pendentes em um único documento, 1 etiqueta por página.
-          </div>
-        </section>
-
-        <section
-          className="grid grid-cols-2 gap-2 rounded-xl border p-1"
-          style={{ borderColor: theme.card_border_color, background: theme.card_color }}
-        >
-          <button
-            type="button"
-            onClick={() => setActiveView("deliveries")}
-            className="flex h-12 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition"
-            style={
-              activeView === "deliveries"
-                ? { background: theme.button_color, color: theme.button_text_color }
-                : { color: theme.text_color }
-            }
-          >
-            <ListChecks className="h-4 w-4" />
-            Pedidos ({available.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveView("map")}
-            className="flex h-12 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition"
-            style={
-              activeView === "map"
-                ? { background: theme.button_color, color: theme.button_text_color }
-                : { color: theme.text_color }
-            }
-          >
-            <MapPinned className="h-4 w-4" />
-            Mapa / Rotas ({mapCount})
-          </button>
         </section>
 
         {activeView === "map" ? (
-          <CourierDeliveryMap
-            deliveries={available}
-            storeSlug={storeSlug}
-            onOpenDeliveries={() => setActiveView("deliveries")}
-            theme={{
-              cardColor: theme.card_color,
-              cardBorderColor: theme.card_border_color,
-              titleColor: theme.title_color,
-              textColor: theme.text_color,
-              buttonColor: theme.button_color,
-              buttonTextColor: theme.button_text_color,
-              iconColor: theme.icon_color,
-              radius: theme.card_radius,
-            }}
-          />
+          <div className="overflow-hidden rounded-3xl border p-2 sm:p-3" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
+            <CourierDeliveryMap
+              deliveries={available}
+              storeSlug={storeSlug}
+              onOpenDeliveries={() => setActiveView("deliveries")}
+              theme={{
+                cardColor: theme.card_color,
+                cardBorderColor: theme.card_border_color,
+                titleColor: theme.title_color,
+                textColor: theme.text_color,
+                buttonColor: theme.button_color,
+                buttonTextColor: theme.button_text_color,
+                iconColor: theme.icon_color,
+                radius: Math.max(theme.card_radius, 18),
+              }}
+            />
+          </div>
         ) : (
           <section>
-            <h2 className="text-sm font-semibold mb-2 opacity-80">
-              Minhas entregas{" "}
-              {available.length > 0 && <span className="opacity-60">({available.length})</span>}
-            </h2>
+            <div className="mb-3 flex items-end justify-between gap-4">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-45">Operação</div>
+                <h2 className="text-lg font-black tracking-tight" style={{ color: theme.title_color }}>Minhas entregas</h2>
+              </div>
+              <div className="text-xs opacity-50">{available.length} {available.length === 1 ? "pedido" : "pedidos"}</div>
+            </div>
 
             {available.length === 0 ? (
-              <div className="p-6 text-center" style={cardStyle}>
-                <Package
-                  className="h-8 w-8 mx-auto mb-2 opacity-50"
-                  style={{ color: theme.icon_color }}
-                />
-                <div className="text-sm font-medium" style={{ color: theme.title_color }}>
-                  Nenhuma entrega atribuída
+              <div className="flex min-h-[300px] flex-col items-center justify-center p-8 text-center" style={cardStyle}>
+                <div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl" style={{ background: `${theme.button_color}12`, color: theme.button_color }}>
+                  <Package className="h-7 w-7" />
                 </div>
-                <div className="text-xs opacity-70 mt-1">
-                  Quando a loja atribuir um pedido a você, ele aparecerá automaticamente.
-                </div>
+                <div className="text-base font-bold" style={{ color: theme.title_color }}>Nenhuma entrega atribuída</div>
+                <div className="mt-1 max-w-sm text-sm opacity-60">Quando a loja atribuir um pedido a você, ele aparecerá aqui automaticamente.</div>
+                <Button className="mt-5 rounded-xl" variant="outline" onClick={loadDeliveries} style={{ borderColor: theme.card_border_color, color: theme.title_color }}>
+                  <RefreshCw className="mr-2 h-4 w-4" /> Atualizar agora
+                </Button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid gap-3 xl:grid-cols-2">
                 {available.map((d) => {
-                  const addr = [d.order.address, d.order.district, d.order.city]
-                    .filter(Boolean)
-                    .join(", ");
+                  const addr = [d.order.address, d.order.district, d.order.city].filter(Boolean).join(", ");
                   const busy = busyTrackingCode === d.tracking_code;
                   const paymentParts = normalizePaymentBreakdown(d.order);
-                  const isScheduledForFuture = Boolean(
-                    d.scheduled_for && d.scheduled_for > todayKey,
-                  );
-                  const awaitingDecision =
-                    !d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status);
+                  const isScheduledForFuture = Boolean(d.scheduled_for && d.scheduled_for > todayKey);
+                  const awaitingDecision = !d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status);
+                  const status = statusMeta(d.status);
+                  const itemCount = (d.order.items || []).reduce((n, i) => n + Number(i.qty), 0);
 
                   return (
-                    <div key={d.tracking_code} className="p-4 space-y-3" style={cardStyle}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="text-xs opacity-70">
-                            Pedido #{orderShortNumber(d.order.id)}
-                          </div>
-                          <div className="font-semibold" style={{ color: theme.title_color }}>
-                            {d.order.customer}
-                          </div>
-                        </div>
-                        <div className="text-[11px] opacity-70 text-right">
-                          {formatRelative(d.created_at)}
-                        </div>
-                      </div>
-
-                      {d.scheduled_for && (
-                        <div
-                          className="rounded-lg border px-3 py-2 text-xs"
-                          style={{
-                            borderColor: isScheduledForFuture
-                              ? `${theme.button_color}88`
-                              : theme.card_border_color,
-                            background: isScheduledForFuture
-                              ? `${theme.button_color}14`
-                              : `${theme.card_border_color}22`,
-                          }}
-                        >
-                          <div
-                            className="flex items-center gap-2 font-semibold"
-                            style={{
-                              color: isScheduledForFuture ? theme.button_color : theme.title_color,
-                            }}
-                          >
-                            <CalendarDays className="h-4 w-4" />
-                            {isScheduledForFuture
-                              ? `Agendada para ${formatCentralScheduledDate(d.scheduled_for)}`
-                              : "Entrega programada para hoje"}
-                          </div>
-                          {isScheduledForFuture && (
-                            <div className="mt-1 opacity-70">
-                              Data planejada. Você pode aceitar agora e adiantar a entrega, se
-                              quiser.
+                    <article key={d.tracking_code} className="overflow-hidden" style={cardStyle}>
+                      <div className="p-4 sm:p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                              <span className="text-[11px] font-bold uppercase tracking-[0.12em] opacity-45">Pedido #{orderShortNumber(d.order.id)}</span>
+                              <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em]" style={{ background: status.bg, color: status.fg }}>
+                                <span className="h-1.5 w-1.5 rounded-full" style={{ background: status.fg }} /> {status.label}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="flex items-start gap-2 text-sm">
-                        <MapPin
-                          className="h-4 w-4 mt-0.5 shrink-0"
-                          style={{ color: theme.icon_color }}
-                        />
-                        <div className="flex-1">{addr || "Endereço não informado"}</div>
-                      </div>
-
-                      {d.order.phone && (
-                        <div className="flex items-center gap-2 text-xs opacity-80">
-                          <Phone className="h-3.5 w-3.5" style={{ color: theme.icon_color }} />
-                          {d.order.phone}
-                        </div>
-                      )}
-
-                      {d.notes && (
-                        <div
-                          className="text-xs italic opacity-80 pt-1 border-t"
-                          style={{ borderColor: theme.card_border_color }}
-                        >
-                          Obs: {d.notes}
-                        </div>
-                      )}
-
-                      <div
-                        className="rounded-lg p-2 text-xs"
-                        style={{ background: `${theme.button_color}18` }}
-                      >
-                        {(d.order.items || []).map((i) => `${i.qty}x ${i.name}`).join(" · ")}
-                        <div className="mt-1 font-semibold">
-                          {(d.order.items || []).reduce((n, i) => n + Number(i.qty), 0)} produtos ·
-                          R$ {Number(d.order.total).toFixed(2)}
-                        </div>
-                      </div>
-
-                      <div
-                        className="rounded-lg border p-3 text-xs space-y-1.5"
-                        style={{
-                          borderColor: `${theme.button_color}55`,
-                          background: `${theme.button_color}10`,
-                        }}
-                      >
-                        <div className="font-semibold" style={{ color: theme.title_color }}>
-                          Pagamento do cliente
-                        </div>
-                        {paymentParts.map((part, index) => (
-                          <div
-                            key={`${part.method}-${index}`}
-                            className="flex items-center justify-between gap-3"
-                          >
-                            <span>{paymentMethodLabel(part.method)}</span>
-                            <strong style={{ color: theme.title_color }}>{brl(part.amount)}</strong>
+                            <h3 className="truncate text-lg font-black tracking-tight" style={{ color: theme.title_color }}>{d.order.customer}</h3>
                           </div>
-                        ))}
-                        <div
-                          className="flex items-center justify-between gap-3 border-t pt-1.5 font-semibold"
-                          style={{ borderColor: theme.card_border_color }}
-                        >
-                          <span>Total do pedido</span>
-                          <span>{brl(d.order.total)}</span>
+                          <div className="shrink-0 text-right text-[11px] opacity-45">{formatRelative(d.created_at)}</div>
                         </div>
-                      </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex h-11 items-center justify-center rounded-md border text-sm"
-                        >
-                          <Navigation className="mr-1 h-4 w-4" />
-                          Abrir rota
-                        </a>
-
-                        <a
-                          href={`https://wa.me/${String(d.order.phone || "").replace(/\D/g, "")}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex h-11 items-center justify-center rounded-md border text-sm"
-                        >
-                          <MessageCircle className="mr-1 h-4 w-4" />
-                          WhatsApp
-                        </a>
-
-                        <a
-                          href={`tel:${d.order.phone}`}
-                          className={`inline-flex h-11 items-center justify-center rounded-md border text-sm ${
-                            awaitingDecision ? "col-span-2" : ""
-                          }`}
-                        >
-                          <Phone className="mr-1 h-4 w-4" />
-                          Ligar
-                        </a>
-
-                        {awaitingDecision && (
-                          <>
-                            <Button
-                              disabled={busy}
-                              variant="destructive"
-                              onClick={() => action(d, "reject")}
-                              className="h-11"
-                            >
-                              <XCircle className="mr-1 h-4 w-4" />
-                              Recusar
-                            </Button>
-                            <Button
-                              disabled={busy}
-                              onClick={() => action(d, "accept")}
-                              className="h-11"
-                              style={{
-                                background: theme.button_color,
-                                color: theme.button_text_color,
-                              }}
-                            >
-                              <Bike className="mr-1 h-4 w-4" />
-                              Aceitar
-                            </Button>
-                          </>
+                        {d.scheduled_for && (
+                          <div className="mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-xs" style={{ borderColor: isScheduledForFuture ? `${theme.button_color}55` : theme.card_border_color, background: isScheduledForFuture ? `${theme.button_color}0f` : `${theme.background_color}55` }}>
+                            <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" style={{ color: isScheduledForFuture ? theme.button_color : theme.icon_color }} />
+                            <div>
+                              <div className="font-bold" style={{ color: theme.title_color }}>
+                                {isScheduledForFuture ? `Agendada para ${formatCentralScheduledDate(d.scheduled_for)}` : "Entrega programada para hoje"}
+                              </div>
+                              {isScheduledForFuture && <div className="mt-0.5 opacity-55">Você pode aceitar agora e adiantar a entrega.</div>}
+                            </div>
+                          </div>
                         )}
 
-                        {d.accepted_at &&
-                          ["aguardando_motoboy", "preparando"].includes(d.status) && (
-                            <Button disabled={busy} onClick={() => action(d, "start")}>
-                              <Bike className="mr-1 h-4 w-4" />
-                              Iniciar entrega
+                        <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                          <div className="space-y-2.5">
+                            <div className="flex items-start gap-2.5 text-sm">
+                              <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: `${theme.icon_color}12`, color: theme.icon_color }}><MapPin className="h-3.5 w-3.5" /></div>
+                              <div className="min-w-0 leading-snug">
+                                <div className="font-semibold" style={{ color: theme.title_color }}>{addr || "Endereço não informado"}</div>
+                                <div className="mt-0.5 text-[11px] opacity-45">Destino da entrega</div>
+                              </div>
+                            </div>
+
+                            {d.order.phone && (
+                              <div className="flex items-center gap-2.5 text-sm">
+                                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: `${theme.icon_color}12`, color: theme.icon_color }}><Phone className="h-3.5 w-3.5" /></div>
+                                <span className="font-medium opacity-80">{d.order.phone}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="rounded-2xl border px-3 py-2.5 sm:min-w-[135px]" style={{ borderColor: theme.card_border_color, background: `${theme.background_color}66` }}>
+                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-45"><WalletCards className="h-3.5 w-3.5" /> Total</div>
+                            <div className="mt-1 text-lg font-black" style={{ color: theme.title_color }}>{brl(d.order.total)}</div>
+                            <div className="text-[11px] opacity-50">{itemCount} {itemCount === 1 ? "produto" : "produtos"}</div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 rounded-2xl border p-3" style={{ borderColor: theme.card_border_color, background: `${theme.background_color}44` }}>
+                          <div className="mb-2 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-45"><Boxes className="h-3.5 w-3.5" /> Produtos</div>
+                            <span className="text-[11px] opacity-45">{itemCount} un.</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(d.order.items || []).map((i, index) => (
+                              <span key={`${i.name}-${index}`} className="rounded-lg border px-2 py-1 text-[11px] font-semibold" style={{ borderColor: theme.card_border_color, color: theme.title_color }}>
+                                {i.qty}x {i.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="mt-3 rounded-2xl border p-3" style={{ borderColor: `${theme.button_color}35`, background: `${theme.button_color}09` }}>
+                          <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-50">Pagamento do cliente</div>
+                          <div className="space-y-1.5 text-xs">
+                            {paymentParts.map((part, index) => (
+                              <div key={`${part.method}-${index}`} className="flex items-center justify-between gap-3">
+                                <span className="opacity-70">{paymentMethodLabel(part.method)}</span>
+                                <strong style={{ color: theme.title_color }}>{brl(part.amount)}</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {(d.notes || d.order.notes) && (
+                          <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: "#f59e0b33", background: "#f59e0b0d", color: "#fcd34d" }}>
+                            <strong>Observação:</strong> {d.notes || d.order.notes}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border-t p-3 sm:p-4" style={{ borderColor: theme.card_border_color, background: `${theme.background_color}42` }}>
+                        <div className="grid grid-cols-3 gap-2">
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition hover:-translate-y-0.5"
+                            style={{ borderColor: theme.card_border_color, color: theme.title_color }}
+                          >
+                            <Navigation className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Rota</span><span className="sm:hidden">Mapa</span>
+                          </a>
+                          <a
+                            href={`https://wa.me/${String(d.order.phone || "").replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition hover:-translate-y-0.5"
+                            style={{ borderColor: theme.card_border_color, color: theme.title_color }}
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                          </a>
+                          <a
+                            href={`tel:${d.order.phone}`}
+                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition hover:-translate-y-0.5"
+                            style={{ borderColor: theme.card_border_color, color: theme.title_color }}
+                          >
+                            <Phone className="h-3.5 w-3.5" /> Ligar
+                          </a>
+                        </div>
+
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          {awaitingDecision && (
+                            <>
+                              <Button disabled={busy} variant="destructive" onClick={() => action(d, "reject")} className="h-11 rounded-xl font-bold">
+                                <XCircle className="mr-1.5 h-4 w-4" /> Recusar
+                              </Button>
+                              <Button disabled={busy} onClick={() => action(d, "accept")} className="h-11 rounded-xl font-bold" style={{ background: theme.button_color, color: theme.button_text_color }}>
+                                {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Bike className="mr-1.5 h-4 w-4" />} Aceitar
+                              </Button>
+                            </>
+                          )}
+
+                          {d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status) && (
+                            <Button disabled={busy} onClick={() => action(d, "start")} className="col-span-2 h-11 rounded-xl font-bold" style={{ background: theme.button_color, color: theme.button_text_color }}>
+                              {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Bike className="mr-1.5 h-4 w-4" />} Iniciar entrega <ChevronRight className="ml-1 h-4 w-4" />
                             </Button>
                           )}
 
-                        {["saiu_para_entrega", "chegando", "nao_entregue"].includes(d.status) && (
-                          <Button
-                            disabled={busy}
-                            onClick={() => action(d, "deliver")}
-                            style={{
-                              background: theme.button_color,
-                              color: theme.button_text_color,
-                            }}
-                          >
-                            <CheckCircle2 className="mr-1 h-4 w-4" />
-                            Entregue
-                          </Button>
-                        )}
+                          {["saiu_para_entrega", "chegando", "nao_entregue"].includes(d.status) && (
+                            <Button disabled={busy} onClick={() => action(d, "deliver")} className="h-11 rounded-xl font-bold" style={{ background: theme.button_color, color: theme.button_text_color }}>
+                              <CheckCircle2 className="mr-1.5 h-4 w-4" /> Entregue
+                            </Button>
+                          )}
 
-                        {["saiu_para_entrega", "chegando"].includes(d.status) && (
-                          <Button
-                            disabled={busy}
-                            variant="destructive"
-                            onClick={() => action(d, "fail")}
-                          >
-                            <AlertTriangle className="mr-1 h-4 w-4" />
-                            Não entregue
-                          </Button>
-                        )}
+                          {["saiu_para_entrega", "chegando"].includes(d.status) && (
+                            <Button disabled={busy} variant="destructive" onClick={() => action(d, "fail")} className="h-11 rounded-xl font-bold">
+                              <AlertTriangle className="mr-1.5 h-4 w-4" /> Não entregue
+                            </Button>
+                          )}
 
-                        {d.status === "nao_entregue" && (
-                          <Button disabled={busy} onClick={() => action(d, "return")}>
-                            <Undo2 className="mr-1 h-4 w-4" />
-                            Retornando
-                          </Button>
-                        )}
+                          {d.status === "nao_entregue" && (
+                            <Button disabled={busy} onClick={() => action(d, "return")} className="h-11 rounded-xl font-bold">
+                              <Undo2 className="mr-1.5 h-4 w-4" /> Retornando
+                            </Button>
+                          )}
 
-                        {d.status === "retornando" && (
-                          <Button
-                            disabled={busy}
-                            variant="outline"
-                            onClick={() => action(d, "returned")}
-                          >
-                            <Package className="mr-1 h-4 w-4" />
-                            Devolvido à loja
-                          </Button>
-                        )}
+                          {d.status === "retornando" && (
+                            <Button disabled={busy} variant="outline" onClick={() => action(d, "returned")} className="h-11 rounded-xl font-bold" style={{ borderColor: theme.card_border_color, color: theme.title_color }}>
+                              <Package className="mr-1.5 h-4 w-4" /> Devolvido à loja
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </article>
                   );
                 })}
               </div>
@@ -871,7 +825,9 @@ function CentralPage() {
         )}
       </main>
 
-      <footer className="text-center text-[11px] opacity-50 mt-10">{theme.footer_text}</footer>
+      <footer className="mx-auto mt-5 flex max-w-[1440px] items-center justify-center gap-2 px-4 text-center text-[10px] uppercase tracking-[0.12em] opacity-35">
+        <UserRound className="h-3 w-3" /> {theme.footer_text}
+      </footer>
     </div>
   );
 }
