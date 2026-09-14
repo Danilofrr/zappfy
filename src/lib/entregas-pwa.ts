@@ -10,16 +10,24 @@ export const ENTREGAS_FAVICON_URL = `/entregas-icon-192.png?${ENTREGAS_ICON_VERS
 export const ENTREGAS_LAST_SLUG_KEY = "zappfy:entregas:last-slug";
 export const ENTREGAS_PWA_MARKER_KEY = "zappfy:entregas:pwa";
 export const ENTREGAS_COLOR_MODE_KEY = "zappfy-entregas-color-mode";
+const ENTREGAS_LIGHT_DEFAULT_MIGRATION_KEY = "zappfy:entregas:light-default-v1";
 
 const COURIER_SESSION_PREFIX = "zappfy:courier-session:";
 
-// A Central de Entregas abre em modo claro por padrão no desktop e no mobile.
-// Se o usuário escolher o modo escuro, a preferência já salva é respeitada.
+// A Central de Entregas passa a abrir em modo claro por padrão no desktop e no mobile.
+// Esta migração roda uma única vez também para aparelhos que receberam o antigo padrão escuro.
+// Depois dela, qualquer escolha manual de claro/escuro continua salva normalmente.
 if (typeof window !== "undefined") {
   try {
-    const savedColorMode = window.localStorage.getItem(ENTREGAS_COLOR_MODE_KEY);
-    if (savedColorMode !== "light" && savedColorMode !== "dark") {
+    const migrated = window.localStorage.getItem(ENTREGAS_LIGHT_DEFAULT_MIGRATION_KEY) === "1";
+    if (!migrated) {
       window.localStorage.setItem(ENTREGAS_COLOR_MODE_KEY, "light");
+      window.localStorage.setItem(ENTREGAS_LIGHT_DEFAULT_MIGRATION_KEY, "1");
+    } else {
+      const savedColorMode = window.localStorage.getItem(ENTREGAS_COLOR_MODE_KEY);
+      if (savedColorMode !== "light" && savedColorMode !== "dark") {
+        window.localStorage.setItem(ENTREGAS_COLOR_MODE_KEY, "light");
+      }
     }
   } catch {
     // LocalStorage pode estar indisponível em modo privado/restrito.
