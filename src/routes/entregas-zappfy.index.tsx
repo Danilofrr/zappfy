@@ -4,7 +4,6 @@ import { Loader2, MapPinned, Navigation, RefreshCw, Smartphone } from "lucide-re
 import {
   ENTREGAS_APPLE_ICON_URL,
   ENTREGAS_FAVICON_URL,
-  ENTREGAS_ICON_192_URL,
   getRememberedEntregasSlug,
   rememberEntregasPwa,
 } from "@/lib/entregas-pwa";
@@ -17,9 +16,8 @@ export const Route = createFileRoute("/entregas-zappfy/")({
       { name: "theme-color", content: "#18c56e" },
     ],
     links: [
-      { rel: "icon", type: "image/x-icon", href: ENTREGAS_FAVICON_URL },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: ENTREGAS_ICON_192_URL },
-      { rel: "apple-touch-icon", sizes: "180x180", href: ENTREGAS_APPLE_ICON_URL },
+      { rel: "icon", type: "image/svg+xml", sizes: "any", href: ENTREGAS_FAVICON_URL },
+      { rel: "apple-touch-icon", href: ENTREGAS_APPLE_ICON_URL },
     ],
   }),
   component: EntregasRootPage,
@@ -31,7 +29,6 @@ function EntregasRootPage() {
 
   function resolveStore() {
     setResolving(true);
-
     let slug = getRememberedEntregasSlug();
 
     if (!slug && typeof window !== "undefined") {
@@ -91,7 +88,7 @@ function EntregasRootPage() {
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-10">
         <div className="w-full rounded-[28px] border border-[#223229] bg-[#0d1711]/95 p-6 text-center shadow-2xl sm:p-8">
-          <div className="mx-auto relative grid h-[72px] w-[72px] place-items-center rounded-[23px] border border-emerald-300/40 bg-gradient-to-br from-emerald-400 to-emerald-600 text-[#04140b] shadow-[0_18px_48px_-18px_rgba(24,197,110,.9)]">
+          <div className="relative mx-auto grid h-[72px] w-[72px] place-items-center rounded-[23px] border border-emerald-300/40 bg-gradient-to-br from-emerald-400 to-emerald-600 text-[#04140b] shadow-[0_18px_48px_-18px_rgba(24,197,110,.9)]">
             <MapPinned className="h-9 w-9" strokeWidth={2.35} />
             <span className="absolute -bottom-1.5 -right-1.5 grid h-7 w-7 place-items-center rounded-full border-[3px] border-[#0d1711] bg-white text-[#07120d] shadow-lg">
               <Navigation className="h-3.5 w-3.5" fill="currentColor" />
