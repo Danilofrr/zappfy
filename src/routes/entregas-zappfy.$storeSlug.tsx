@@ -39,7 +39,7 @@ function normalizeUiText(value: string | null | undefined) {
 
 function DeliveryListOrganizer() {
   useEffect(() => {
-    type ListMode = "active" | "delivered" | "map";
+    type ListMode = "active" | "scheduled" | "delivered" | "map";
     let mode: ListMode = "active";
     let raf = 0;
     let applying = false;
@@ -52,6 +52,20 @@ function DeliveryListOrganizer() {
     const isDeliveredArticle = (article: HTMLElement) => {
       const spans = Array.from(article.querySelectorAll("span"));
       return spans.some((span) => normalizeUiText(span.textContent) === "entregue");
+    };
+
+    const isScheduledArticle = (article: HTMLElement) => {
+      if (isDeliveredArticle(article)) return false;
+      const text = normalizeUiText(article.textContent);
+      return text.includes("agendada para");
+    };
+
+    const getScheduledTimestamp = (article: HTMLElement) => {
+      const text = article.textContent || "";
+      const match = text.match(/Agendada para\s+(\d{2})\/(\d{2})\/(\d{4})/i);
+      if (!match) return Number.MAX_SAFE_INTEGER;
+      const [, day, month, year] = match;
+      return new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0).getTime();
     };
 
     const isAwaitingDecision = (article: HTMLElement) => {
@@ -69,7 +83,7 @@ function DeliveryListOrganizer() {
     const ensureEmptyState = (
       grid: HTMLElement,
       visibleCount: number,
-      deliveredMode: boolean,
+      emptyMode: "active" | "scheduled" | "delivered",
       titleColor: string,
     ) => {
       const parent = grid.parentElement;
@@ -98,12 +112,15 @@ function DeliveryListOrganizer() {
         parent.appendChild(empty);
       }
 
-      const emptyMode = deliveredMode ? "delivered" : "active";
       if (empty.dataset.mode !== emptyMode) {
         empty.dataset.mode = emptyMode;
-        empty.innerHTML = deliveredMode
-          ? `<div style="font-size:32px;margin-bottom:10px">✓</div><strong style="font-size:15px;color:${titleColor}">Nenhuma entrega concluída</strong><span style="margin-top:5px;font-size:12px;opacity:.62">Os pedidos entregues aparecerão aqui.</span>`
-          : `<div style="font-size:32px;margin-bottom:10px">📦</div><strong style="font-size:15px;color:${titleColor}">Nenhum pedido pendente</strong><span style="margin-top:5px;font-size:12px;opacity:.62">Quando houver uma nova entrega para aceitar, ela aparecerá aqui automaticamente.</span>`;
+        if (emptyMode === "delivered") {
+          empty.innerHTML = `<div style="font-size:32px;margin-bottom:10px">✓</div><strong style="font-size:15px;color:${titleColor}">Nenhuma entrega concluída</strong><span style="margin-top:5px;font-size:12px;opacity:.62">Os pedidos entregues aparecerão aqui.</span>`;
+        } else if (emptyMode === "scheduled") {
+          empty.innerHTML = `<div style="font-size:32px;margin-bottom:10px">📅</div><strong style="font-size:15px;color:${titleColor}">Nenhuma entrega agendada</strong><span style="margin-top:5px;font-size:12px;opacity:.62">Os pedidos programados para datas futuras aparecerão aqui.</span>`;
+        } else {
+          empty.innerHTML = `<div style="font-size:32px;margin-bottom:10px">📦</div><strong style="font-size:15px;color:${titleColor}">Nenhum pedido pendente</strong><span style="margin-top:5px;font-size:12px;opacity:.62">Quando houver uma nova entrega para aceitar, ela aparecerá aqui automaticamente.</span>`;
+        }
       }
     };
 
@@ -122,7 +139,8 @@ function DeliveryListOrganizer() {
         if (!pedidosButton || !mapaButton || pedidosButton.parentElement !== mapaButton.parentElement) return;
 
         const tabBar = pedidosButton.parentElement as HTMLElement;
-        tabBar.style.gridTemplateColumns = "repeat(3, minmax(0, 1fr))";
+        tabBar.setAttribute("data-entregas-tabs", "1");
+        tabBar.style.gridTemplateColumns = "repeat(4, minmax(0, 1fr))";
 
         if (!pedidosButton.dataset.entregasOrganizerBound) {
           pedidosButton.dataset.entregasOrganizerBound = "1";
@@ -138,6 +156,28 @@ function DeliveryListOrganizer() {
             mode = "map";
             schedule();
           });
+        }
+
+        let scheduledButton = tabBar.querySelector<HTMLButtonElement>("[data-entregas-scheduled-tab]");
+        if (!scheduledButton) {
+          scheduledButton = document.createElement("button");
+          scheduledButton.type = "button";
+          scheduledButton.setAttribute("data-entregas-scheduled-tab", "1");
+          scheduledButton.className = "flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold transition";
+          scheduledButton.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
+            </svg>
+            <span>Agendadas</span>
+            <span data-entregas-scheduled-count style="opacity:.7">0</span>
+          `;
+          scheduledButton.addEventListener("click", () => {
+            mode = "scheduled";
+            pedidosButton.click();
+            mode = "scheduled";
+            schedule();
+          });
+          tabBar.insertBefore(scheduledButton, mapaButton);
         }
 
         let deliveredButton = tabBar.querySelector<HTMLButtonElement>("[data-entregas-delivered-tab]");
@@ -162,6 +202,14 @@ function DeliveryListOrganizer() {
           tabBar.insertBefore(deliveredButton, mapaButton);
         }
 
+        // Garante a ordem: Pedidos | Agendadas | Entregues | Mapa.
+        if (scheduledButton.nextElementSibling !== deliveredButton) {
+          tabBar.insertBefore(scheduledButton, deliveredButton);
+        }
+        if (deliveredButton.nextElementSibling !== mapaButton) {
+          tabBar.insertBefore(deliveredButton, mapaButton);
+        }
+
         const articles = Array.from(root.querySelectorAll<HTMLElement>("main article"));
 
         // Se voltamos do mapa pelo próprio componente, reassume a lista ativa.
@@ -170,24 +218,43 @@ function DeliveryListOrganizer() {
           if (!mapLooksActive) mode = "active";
         }
 
-        const activeArticles = articles.filter((article) => !isDeliveredArticle(article));
         const deliveredArticles = articles.filter(isDeliveredArticle);
+        const scheduledArticles = articles
+          .filter((article) => !isDeliveredArticle(article) && isScheduledArticle(article))
+          .sort((a, b) => getScheduledTimestamp(a) - getScheduledTimestamp(b));
+        const activeArticles = articles.filter(
+          (article) => !isDeliveredArticle(article) && !isScheduledArticle(article),
+        );
+
+        const scheduledOrder = new Map(scheduledArticles.map((article, index) => [article, index]));
 
         for (const article of articles) {
           const delivered = isDeliveredArticle(article);
-          const awaiting = !delivered && isAwaitingDecision(article);
+          const scheduled = !delivered && isScheduledArticle(article);
+          const awaiting = !delivered && !scheduled && isAwaitingDecision(article);
 
-          const nextOrder = awaiting ? "0" : delivered ? "2" : "1";
+          const nextOrder = scheduled
+            ? String(scheduledOrder.get(article) ?? 0)
+            : awaiting
+              ? "0"
+              : delivered
+                ? "2"
+                : "1";
+
           const nextDisplay =
             mode === "delivered"
               ? delivered
                 ? ""
                 : "none"
-              : mode === "active"
-                ? delivered
-                  ? "none"
-                  : ""
-                : "";
+              : mode === "scheduled"
+                ? scheduled
+                  ? ""
+                  : "none"
+                : mode === "active"
+                  ? delivered || scheduled
+                    ? "none"
+                    : ""
+                  : "";
 
           if (article.style.order !== nextOrder) article.style.order = nextOrder;
           if (article.style.display !== nextDisplay) article.style.display = nextDisplay;
@@ -197,35 +264,60 @@ function DeliveryListOrganizer() {
         const activeCountText = String(activeArticles.length);
         if (pedidosCount && pedidosCount.textContent !== activeCountText) pedidosCount.textContent = activeCountText;
 
+        const scheduledCount = scheduledButton.querySelector<HTMLElement>("[data-entregas-scheduled-count]");
+        const scheduledCountText = String(scheduledArticles.length);
+        if (scheduledCount && scheduledCount.textContent !== scheduledCountText) scheduledCount.textContent = scheduledCountText;
+
         const deliveredCount = deliveredButton.querySelector<HTMLElement>("[data-entregas-delivered-count]");
         const deliveredCountText = String(deliveredArticles.length);
         if (deliveredCount && deliveredCount.textContent !== deliveredCountText) deliveredCount.textContent = deliveredCountText;
 
         if (mode === "active") {
           setButtonVisual(pedidosButton, true);
+          setButtonVisual(scheduledButton, false);
+          setButtonVisual(deliveredButton, false);
+          setButtonVisual(mapaButton, false);
+        } else if (mode === "scheduled") {
+          setButtonVisual(pedidosButton, false);
+          setButtonVisual(scheduledButton, true);
           setButtonVisual(deliveredButton, false);
           setButtonVisual(mapaButton, false);
         } else if (mode === "delivered") {
           setButtonVisual(pedidosButton, false);
+          setButtonVisual(scheduledButton, false);
           setButtonVisual(deliveredButton, true);
           setButtonVisual(mapaButton, false);
         } else {
           setButtonVisual(pedidosButton, false);
+          setButtonVisual(scheduledButton, false);
           setButtonVisual(deliveredButton, false);
           setButtonVisual(mapaButton, true);
         }
 
         const heading = Array.from(root.querySelectorAll<HTMLHeadingElement>("h2")).find(
-          (el) => ["minhas entregas", "pedidos para entregar", "entregas concluidas"].includes(normalizeUiText(el.textContent)),
+          (el) =>
+            ["minhas entregas", "pedidos para entregar", "entregas agendadas", "entregas concluidas"].includes(
+              normalizeUiText(el.textContent),
+            ),
         );
         if (heading && mode !== "map") {
-          const nextHeading = mode === "delivered" ? "Entregas concluídas" : "Pedidos para entregar";
+          const nextHeading =
+            mode === "delivered"
+              ? "Entregas concluídas"
+              : mode === "scheduled"
+                ? "Entregas agendadas"
+                : "Pedidos para entregar";
           if (heading.textContent !== nextHeading) heading.textContent = nextHeading;
 
           const headingRow = heading.parentElement?.parentElement;
           const countLabel = headingRow?.lastElementChild as HTMLElement | null;
           if (countLabel) {
-            const count = mode === "delivered" ? deliveredArticles.length : activeArticles.length;
+            const count =
+              mode === "delivered"
+                ? deliveredArticles.length
+                : mode === "scheduled"
+                  ? scheduledArticles.length
+                  : activeArticles.length;
             const nextLabel = `${count} ${count === 1 ? "pedido" : "pedidos"}`;
             if (countLabel.textContent !== nextLabel) countLabel.textContent = nextLabel;
           }
@@ -233,9 +325,14 @@ function DeliveryListOrganizer() {
 
         const grid = articles[0]?.parentElement as HTMLElement | undefined;
         if (grid && mode !== "map") {
-          const visibleCount = mode === "delivered" ? deliveredArticles.length : activeArticles.length;
+          const visibleCount =
+            mode === "delivered"
+              ? deliveredArticles.length
+              : mode === "scheduled"
+                ? scheduledArticles.length
+                : activeArticles.length;
           const titleColor = getComputedStyle(root).color || "#13241b";
-          ensureEmptyState(grid, visibleCount, mode === "delivered", titleColor);
+          ensureEmptyState(grid, visibleCount, mode, titleColor);
         }
       } finally {
         applying = false;
@@ -298,9 +395,29 @@ function EntregasLayout() {
             touch-action: manipulation;
           }
 
-          [data-entregas-delivered-tab] {
-            font-size: 12px !important;
-            gap: 5px !important;
+          [data-entregas-tabs] button {
+            min-width: 0;
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+            font-size: 11px !important;
+            gap: 4px !important;
+          }
+
+          [data-entregas-tabs] button svg {
+            width: 14px !important;
+            height: 14px !important;
+            flex-shrink: 0;
+          }
+        }
+
+        @media (max-width: 390px) {
+          [data-entregas-tabs] button {
+            font-size: 10px !important;
+            gap: 3px !important;
+          }
+
+          [data-entregas-tabs] button svg {
+            display: none;
           }
         }
       `}</style>
