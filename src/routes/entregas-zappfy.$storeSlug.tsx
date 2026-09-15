@@ -22,7 +22,7 @@ export const Route = createFileRoute("/entregas-zappfy/$storeSlug")({
     ],
     links: [
       { rel: "manifest", href: getEntregasManifestUrl(params.storeSlug) },
-      { rel: "icon", type: "image/png", sizes: "512x512", href: ENTREGAS_FAVICON_URL },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: ENTREGAS_FAVICON_URL },
       { rel: "apple-touch-icon", sizes: "512x512", href: ENTREGAS_APPLE_ICON_URL },
     ],
   }),
