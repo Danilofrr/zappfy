@@ -98,9 +98,13 @@ function DeliveryListOrganizer() {
         parent.appendChild(empty);
       }
 
-      empty.innerHTML = deliveredMode
-        ? `<div style="font-size:32px;margin-bottom:10px">✓</div><strong style="font-size:15px;color:${titleColor}">Nenhuma entrega concluída</strong><span style="margin-top:5px;font-size:12px;opacity:.62">Os pedidos entregues aparecerão aqui.</span>`
-        : `<div style="font-size:32px;margin-bottom:10px">📦</div><strong style="font-size:15px;color:${titleColor}">Nenhum pedido pendente</strong><span style="margin-top:5px;font-size:12px;opacity:.62">Quando houver uma nova entrega para aceitar, ela aparecerá aqui automaticamente.</span>`;
+      const emptyMode = deliveredMode ? "delivered" : "active";
+      if (empty.dataset.mode !== emptyMode) {
+        empty.dataset.mode = emptyMode;
+        empty.innerHTML = deliveredMode
+          ? `<div style="font-size:32px;margin-bottom:10px">✓</div><strong style="font-size:15px;color:${titleColor}">Nenhuma entrega concluída</strong><span style="margin-top:5px;font-size:12px;opacity:.62">Os pedidos entregues aparecerão aqui.</span>`
+          : `<div style="font-size:32px;margin-bottom:10px">📦</div><strong style="font-size:15px;color:${titleColor}">Nenhum pedido pendente</strong><span style="margin-top:5px;font-size:12px;opacity:.62">Quando houver uma nova entrega para aceitar, ela aparecerá aqui automaticamente.</span>`;
+      }
     };
 
     function apply() {
@@ -173,8 +177,8 @@ function DeliveryListOrganizer() {
           const delivered = isDeliveredArticle(article);
           const awaiting = !delivered && isAwaitingDecision(article);
 
-          article.style.order = awaiting ? "0" : delivered ? "2" : "1";
-          article.style.display =
+          const nextOrder = awaiting ? "0" : delivered ? "2" : "1";
+          const nextDisplay =
             mode === "delivered"
               ? delivered
                 ? ""
@@ -184,12 +188,18 @@ function DeliveryListOrganizer() {
                   ? "none"
                   : ""
                 : "";
+
+          if (article.style.order !== nextOrder) article.style.order = nextOrder;
+          if (article.style.display !== nextDisplay) article.style.display = nextDisplay;
         }
 
         const pedidosCount = pedidosButton.querySelector("span");
-        if (pedidosCount) pedidosCount.textContent = String(activeArticles.length);
+        const activeCountText = String(activeArticles.length);
+        if (pedidosCount && pedidosCount.textContent !== activeCountText) pedidosCount.textContent = activeCountText;
+
         const deliveredCount = deliveredButton.querySelector<HTMLElement>("[data-entregas-delivered-count]");
-        if (deliveredCount) deliveredCount.textContent = String(deliveredArticles.length);
+        const deliveredCountText = String(deliveredArticles.length);
+        if (deliveredCount && deliveredCount.textContent !== deliveredCountText) deliveredCount.textContent = deliveredCountText;
 
         if (mode === "active") {
           setButtonVisual(pedidosButton, true);
@@ -209,12 +219,15 @@ function DeliveryListOrganizer() {
           (el) => ["minhas entregas", "pedidos para entregar", "entregas concluidas"].includes(normalizeUiText(el.textContent)),
         );
         if (heading && mode !== "map") {
-          heading.textContent = mode === "delivered" ? "Entregas concluídas" : "Pedidos para entregar";
+          const nextHeading = mode === "delivered" ? "Entregas concluídas" : "Pedidos para entregar";
+          if (heading.textContent !== nextHeading) heading.textContent = nextHeading;
+
           const headingRow = heading.parentElement?.parentElement;
           const countLabel = headingRow?.lastElementChild as HTMLElement | null;
           if (countLabel) {
             const count = mode === "delivered" ? deliveredArticles.length : activeArticles.length;
-            countLabel.textContent = `${count} ${count === 1 ? "pedido" : "pedidos"}`;
+            const nextLabel = `${count} ${count === 1 ? "pedido" : "pedidos"}`;
+            if (countLabel.textContent !== nextLabel) countLabel.textContent = nextLabel;
           }
         }
 
