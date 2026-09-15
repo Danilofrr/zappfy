@@ -4,7 +4,7 @@ export const ENTREGAS_MANIFEST_URL = `/manifest-entregas.json?${ENTREGAS_ICON_VE
 export const ENTREGAS_VECTOR_ICON_URL = `/zappfy-entregas-icon.svg?${ENTREGAS_ICON_VERSION}`;
 export const ENTREGAS_ICON_192_URL = `/entregas-icon-192.png?${ENTREGAS_ICON_VERSION}`;
 export const ENTREGAS_ICON_512_URL = `/entregas-icon-512.png?${ENTREGAS_ICON_VERSION}`;
-export const ENTREGAS_APPLE_ICON_URL = `/entregas-icon-512.png?${ENTREGAS_ICON_VERSION}`;
+export const ENTREGAS_APPLE_ICON_URL = `/entregas-apple-touch-icon.png?${ENTREGAS_ICON_VERSION}`;
 export const ENTREGAS_FAVICON_URL = `/entregas-icon-192.png?${ENTREGAS_ICON_VERSION}`;
 
 export const ENTREGAS_LAST_SLUG_KEY = "zappfy:entregas:last-slug";
