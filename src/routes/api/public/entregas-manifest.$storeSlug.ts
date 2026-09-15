@@ -14,8 +14,8 @@ export const Route = createFileRoute("/api/public/entregas-manifest/$storeSlug")
         }
 
         const encodedSlug = encodeURIComponent(storeSlug);
-        const icon192 = "/entregas-icon-192.png?v=9";
-        const icon512 = "/entregas-icon-512.png?v=9";
+        const icon192 = "/entregas-icon-192.png?v=10";
+        const icon512 = "/entregas-icon-512.png?v=10";
         const manifest = {
           name: "Zappfy Entregas",
           short_name: "Zappfy Entregas",
