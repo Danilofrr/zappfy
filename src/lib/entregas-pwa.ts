@@ -1,4 +1,4 @@
-export const ENTREGAS_ICON_VERSION = "v=9";
+export const ENTREGAS_ICON_VERSION = "v=10";
 
 export const ENTREGAS_MANIFEST_URL = `/manifest-entregas.json?${ENTREGAS_ICON_VERSION}`;
 export const ENTREGAS_VECTOR_ICON_URL = `/zappfy-entregas-icon.svg?${ENTREGAS_ICON_VERSION}`;
