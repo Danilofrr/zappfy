@@ -12,7 +12,6 @@ import {
   RefreshCw,
   Search,
   Truck,
-  UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -113,7 +112,7 @@ export function PedidosSchedulingEnhancer() {
   const [editDate, setEditDate] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const isPedidos = pathname === "/pedidos" || pathname.startsWith("/pedidos?");
+  const isPedidos = pathname === "/pedidos";
 
   const loadAssignments = useCallback(async () => {
     if (!activeStoreId || !isPedidos) return;
@@ -182,7 +181,7 @@ export function PedidosSchedulingEnhancer() {
       const scheduled = assignment.scheduled_for || "";
       if (dateFilter === "tomorrow" && scheduled !== tomorrow) return false;
       if (dateFilter === "week" && (scheduled < tomorrow || scheduled > weekEnd)) return false;
-      if (dateFilter === "custom" && customDate && scheduled !== customDate) return false;
+      if (dateFilter === "custom" && (!customDate || scheduled !== customDate)) return false;
       if (!q) return true;
       return normalizeText(
         `${order.customer} ${order.phone} ${order.address} ${order.district} ${order.city} ${order.items
@@ -266,7 +265,7 @@ export function PedidosSchedulingEnhancer() {
             nextTabHost.style.display = "contents";
             statusRow.appendChild(nextTabHost);
           }
-          if (nextTabHost !== tabHost) setTabHost(nextTabHost);
+          setTabHost((current) => (current === nextTabHost ? current : nextTabHost));
 
           const parent = statusRow.parentElement;
           if (parent) {
@@ -276,7 +275,7 @@ export function PedidosSchedulingEnhancer() {
               nextPanelHost.dataset.zappfyScheduledPanelHost = "1";
               statusRow.insertAdjacentElement("afterend", nextPanelHost);
             }
-            if (nextPanelHost !== panelHost) setPanelHost(nextPanelHost);
+            setPanelHost((current) => (current === nextPanelHost ? current : nextPanelHost));
           }
 
           if (!statusRow.dataset.zappfyScheduledClickBound) {
@@ -305,7 +304,7 @@ export function PedidosSchedulingEnhancer() {
         node.remove(),
       );
     };
-  }, [isPedidos, panelHost, tabHost]);
+  }, [isPedidos]);
 
   useEffect(() => {
     const statusRow = tabHost?.parentElement;
