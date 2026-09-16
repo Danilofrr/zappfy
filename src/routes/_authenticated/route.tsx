@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getEntregasStandaloneRedirectSlug } from "@/lib/entregas-pwa";
 import { ActiveStoreProvider } from "@/lib/active-store";
+import { PedidosSchedulingEnhancer } from "@/components/PedidosSchedulingEnhancer";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -56,6 +57,7 @@ export const Route = createFileRoute("/_authenticated")({
   head: () => ({ links: [{ rel: "manifest", href: "/manifest.webmanifest" }] }),
   component: () => (
     <ActiveStoreProvider>
+      <PedidosSchedulingEnhancer />
       <Outlet />
     </ActiveStoreProvider>
   ),
