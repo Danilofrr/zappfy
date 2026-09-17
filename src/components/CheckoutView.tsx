@@ -67,23 +67,32 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
     setCart((prev) => prev.map((l, i) => i === idx ? { ...l, ...patch } : l));
   }
 
-
   async function lookupCep(raw: string) {
     const cep = raw.replace(/\D/g, "");
-    if (cep.length !== 8) { setAddressReady(false); return; }
+    if (cep.length !== 8) {
+      setAddressReady(false);
+      return;
+    }
     setCepLoading(true);
     try {
       const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
       const data = await r.json();
-      if (data.erro) { toast.error("CEP não encontrado"); setAddressReady(false); return; }
+      if (data.erro) {
+        setForm((f) => ({ ...f, address: "", reference: "", district: "", city: "" }));
+        toast.error("CEP não encontrado");
+        setAddressReady(false);
+        return;
+      }
       setForm((f) => ({
         ...f,
-        address: f.address || [data.logradouro, data.complemento].filter(Boolean).join(", "),
-        district: f.district || data.bairro || "",
-        city: f.city || (data.localidade && data.uf ? `${data.localidade}/${data.uf}` : data.localidade || ""),
+        address: [data.logradouro, data.complemento].filter(Boolean).join(", "),
+        district: data.bairro || "",
+        city: data.localidade && data.uf ? `${data.localidade}/${data.uf}` : data.localidade || "",
       }));
       setAddressReady(true);
     } catch {
+      setForm((f) => ({ ...f, address: "", reference: "", district: "", city: "" }));
+      setAddressReady(false);
       toast.error("Erro ao consultar CEP");
     } finally {
       setCepLoading(false);
@@ -171,9 +180,7 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
       date: new Date().toISOString(),
     };
 
-
     // não logar PII do cliente (nome, telefone, endereço) no console
-
 
     setSubmitting(true);
     try {
@@ -454,7 +461,19 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                 <Field label="CEP">
                   <Input
                     value={form.cep}
-                    onChange={(e) => { setForm({...form, cep: e.target.value}); setAddressReady(false); setShippingId(""); }}
+                    onChange={(e) => {
+                      const nextCep = e.target.value;
+                      setForm((f) => ({
+                        ...f,
+                        cep: nextCep,
+                        address: "",
+                        reference: "",
+                        district: "",
+                        city: "",
+                      }));
+                      setAddressReady(false);
+                      setShippingId("");
+                    }}
                     onBlur={(e) => lookupCep(e.target.value)}
                     placeholder="00000-000"
                     inputMode="numeric"
@@ -656,7 +675,6 @@ export function CheckoutView({ products, settings, onSubmit, showBackToPanel = f
                   ou <span className="font-semibold" style={{ color: neonColor }}>{cardInstallments}x de {brl(installmentValue)}</span> no {cardBrand}
                 </div>
               )}
-
             </div>
           </aside>
         </div>
