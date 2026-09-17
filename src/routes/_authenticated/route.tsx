@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getEntregasStandaloneRedirectSlug } from "@/lib/entregas-pwa";
 import { ActiveStoreProvider } from "@/lib/active-store";
 import { PedidosSchedulingEnhancer } from "@/components/PedidosSchedulingEnhancer";
+import { PedidosMelhorEnvioEnhancer } from "@/components/PedidosMelhorEnvioEnhancer";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -58,6 +59,7 @@ export const Route = createFileRoute("/_authenticated")({
   component: () => (
     <ActiveStoreProvider>
       <PedidosSchedulingEnhancer />
+      <PedidosMelhorEnvioEnhancer />
       <Outlet />
     </ActiveStoreProvider>
   ),
