@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const GRAPH_VERSION = "v21.0";
 const META_INSIGHTS_FIELDS = "spend,impressions,clicks,date_start,date_stop";
+const BRAZIL_TIME_ZONE = "America/Sao_Paulo";
 
 function normalizeAdAccountId(value: string) {
   const raw = String(value ?? "").trim().replace(/^['"]|['"]$/g, "");
@@ -26,7 +27,8 @@ function safeMetaLog(label: string, params: { url: string; adAccountId?: string;
     console.log(label, {
       endpoint: parsed.pathname,
       fields: parsed.searchParams.get("fields") ?? null,
-      datePreset: parsed.searchParams.get("date_preset") ?? null,
+      timeRange: parsed.searchParams.get("time_range") ?? null,
+      timeIncrement: parsed.searchParams.get("time_increment") ?? null,
       adAccountId: params.adAccountId ?? null,
       tokenExists: token.length > 0,
       tokenLength: token.length,
@@ -78,79 +80,103 @@ function fbErrorMessage(json: any, status: number) {
   return parts.join(" — ");
 }
 
+function brazilDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: BRAZIL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function shiftDateKey(dateKey: string, days: number) {
+  const d = new Date(`${dateKey}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function insightsUrl(base: string, since: string, until: string) {
+  const range = encodeURIComponent(JSON.stringify({ since, until }));
+  return `${base}&time_range=${range}&time_increment=1`;
+}
+
+type InsightRow = {
+  date_start?: string;
+  date_stop?: string;
+  spend?: string;
+  impressions?: string;
+  clicks?: string;
+};
+
 async function syncStore(
   supabaseAdmin: any,
   store: { store_id: string; fb_access_token: string; fb_ad_account_id: string; fb_last_sync_at: string | null },
 ) {
-  // Primeiro acesso (sem histórico): puxa o mês atual.
-  // Depois: apenas o dia de hoje, todos os dias.
   const isFirstSync = !store.fb_last_sync_at;
-  const tzNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  const todayStr = fmt(tzNow);
-  const fields = META_INSIGHTS_FIELDS;
+  const todayStr = brazilDateKey();
+  const yesterdayStr = shiftDateKey(todayStr, -1);
+  const monthStartStr = `${todayStr.slice(0, 8)}01`;
   const adAccountId = normalizeAdAccountId(store.fb_ad_account_id);
-  const base = `https://graph.facebook.com/${GRAPH_VERSION}/${adAccountId}/insights?fields=${fields}`;
+  const base = `https://graph.facebook.com/${GRAPH_VERSION}/${adAccountId}/insights?fields=${META_INSIGHTS_FIELDS}`;
 
-  let rows: Array<{ date_start?: string; date_stop?: string; spend?: string; impressions?: string; clicks?: string }> = [];
+  // No primeiro sync importamos o mês atual por dia. Nos próximos, sempre
+  // revisamos HOJE + ONTEM. Assim o cron das 00:15 corrige qualquer ajuste
+  // tardio da Meta referente ao fechamento do dia anterior.
+  const since = isFirstSync ? monthStartStr : yesterdayStr;
+  const until = todayStr;
+  const { res, json } = await fbFetch(insightsUrl(base, since, until), store.fb_access_token);
 
-  if (isFirstSync) {
-    const { res, json } = await fbFetch(`${base}&date_preset=this_month`, store.fb_access_token);
-    if (!res.ok || json?.error) {
-      const msg = fbErrorMessage(json, res.status);
-      await supabaseAdmin
-        .from("settings")
-        .update({ fb_last_sync_status: "error", fb_last_sync_error: msg, fb_last_sync_at: new Date().toISOString() })
-        .eq("store_id", store.store_id);
-      return { store_id: store.store_id, ok: false, error: msg };
-    }
-    rows = json?.data ?? [];
-    if (rows.length === 0) {
-      rows.push({ date_start: `${todayStr.slice(0, 8)}01`, date_stop: todayStr, spend: "0", impressions: "0", clicks: "0" });
-    }
-  }
-
-  // Sempre busca o dia atual com date_preset=today (fuso da conta), garante linha de hoje.
-  const { res: todayRes, json: todayJson } = await fbFetch(`${base}&date_preset=today`, store.fb_access_token);
-  if (!todayRes.ok || todayJson?.error) {
-    const msg = fbErrorMessage(todayJson, todayRes.status);
+  if (!res.ok || json?.error) {
+    const msg = fbErrorMessage(json, res.status);
     await supabaseAdmin
       .from("settings")
-      .update({ fb_last_sync_status: "error", fb_last_sync_error: msg, fb_last_sync_at: new Date().toISOString() })
+      .update({
+        fb_last_sync_status: "error",
+        fb_last_sync_error: msg,
+        fb_last_sync_at: new Date().toISOString(),
+      })
       .eq("store_id", store.store_id);
     return { store_id: store.store_id, ok: false, error: msg };
   }
-  const todayRow = (todayJson?.data ?? [])[0];
-  if (todayRow) {
-    const normalized = { ...todayRow, date_start: todayRow.date_start || todayStr };
-    const idx = rows.findIndex((r) => r.date_start === normalized.date_start);
-    if (idx >= 0) rows[idx] = normalized;
-    else rows.push(normalized);
-  } else if (!rows.find((r) => r.date_start === todayStr)) {
-    rows.push({ date_start: todayStr, spend: "0" });
+
+  const rows: InsightRow[] = Array.isArray(json?.data) ? [...json.data] : [];
+
+  // A Meta normalmente omite dias sem gasto. Mantemos hoje e ontem explícitos
+  // para que o dashboard não carregue valor antigo quando o gasto for zero.
+  for (const requiredDate of [yesterdayStr, todayStr]) {
+    if (!rows.some((row) => (row.date_start || row.date_stop) === requiredDate)) {
+      rows.push({ date_start: requiredDate, date_stop: requiredDate, spend: "0", impressions: "0", clicks: "0" });
+    }
   }
 
+  rows.sort((a, b) => String(a.date_start || a.date_stop || "").localeCompare(String(b.date_start || b.date_stop || "")));
+
   let imported = 0;
-  for (const r of rows) {
-    const date = r.date_start || r.date_stop || todayStr;
-    const invested = Number(r.spend ?? 0) || 0;
+  const syncedDates: string[] = [];
+
+  for (const row of rows) {
+    const date = row.date_start || row.date_stop;
+    if (!date) continue;
+
+    const invested = Number(row.spend ?? 0) || 0;
     let purchases = 0;
     let revenue = 0;
 
-    if (revenue <= 0 || purchases <= 0) {
-      const dayStart = `${date}T00:00:00`;
-      const dayEnd = `${date}T23:59:59.999`;
-      const { data: dayOrders } = await supabaseAdmin
-        .from("orders")
-        .select("total,status,date,created_at")
-        .eq("user_id", store.store_id)
-        .or(`and(date.gte.${dayStart},date.lte.${dayEnd}),and(date.is.null,created_at.gte.${dayStart},created_at.lte.${dayEnd})`);
-      const valid = (dayOrders ?? []).filter(
-        (o: any) => !["cancelado", "cancelada"].includes(String(o.status ?? "").toLowerCase()),
-      );
-      if (revenue <= 0) revenue = valid.reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
-      if (purchases <= 0) purchases = valid.length;
-    }
+    // Quando o Pixel não fornece compras/faturamento, usamos os pedidos reais
+    // da loja para manter ROAS e CPA do Zappfy consistentes.
+    const dayStart = `${date}T00:00:00`;
+    const dayEnd = `${date}T23:59:59.999`;
+    const { data: dayOrders } = await supabaseAdmin
+      .from("orders")
+      .select("total,status,date,created_at")
+      .eq("store_id", store.store_id)
+      .or(`and(date.gte.${dayStart},date.lte.${dayEnd}),and(date.is.null,created_at.gte.${dayStart},created_at.lte.${dayEnd})`);
+
+    const valid = (dayOrders ?? []).filter(
+      (o: any) => !["cancelado", "cancelada"].includes(String(o.status ?? "").toLowerCase()),
+    );
+    revenue = valid.reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
+    purchases = valid.length;
 
     const { data: existing } = await supabaseAdmin
       .from("ads")
@@ -158,13 +184,23 @@ async function syncStore(
       .eq("user_id", store.store_id)
       .eq("date", date)
       .maybeSingle();
+
     if (existing?.id) {
       await supabaseAdmin.from("ads").update({ invested, purchases, revenue }).eq("id", existing.id);
     } else {
-      await supabaseAdmin.from("ads").insert({ user_id: store.store_id, date, invested, purchases, revenue });
+      await supabaseAdmin.from("ads").insert({
+        user_id: store.store_id,
+        date,
+        invested,
+        purchases,
+        revenue,
+      });
     }
+
     imported += 1;
+    syncedDates.push(date);
   }
+
   await supabaseAdmin
     .from("settings")
     .update({
@@ -173,9 +209,15 @@ async function syncStore(
       fb_last_sync_error: null,
     })
     .eq("store_id", store.store_id);
-  return { store_id: store.store_id, ok: true, imported, mode: isFirstSync ? "backfill" : "today" };
-}
 
+  return {
+    store_id: store.store_id,
+    ok: true,
+    imported,
+    mode: isFirstSync ? "month_daily_backfill" : "today_and_yesterday",
+    synced_dates: syncedDates,
+  };
+}
 
 export const Route = createFileRoute("/api/public/hooks/sync-facebook-ads")({
   server: {
@@ -189,21 +231,46 @@ export const Route = createFileRoute("/api/public/hooks/sync-facebook-ads")({
           .not("fb_ad_account_id", "is", null);
 
         if (error) {
-          return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500 });
+          return new Response(JSON.stringify({ ok: false, error: error.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
+
         const results: any[] = [];
-        for (const s of stores ?? []) {
+        for (const store of stores ?? []) {
           try {
-            results.push(await syncStore(supabaseAdmin, s as any));
+            results.push(await syncStore(supabaseAdmin, store as any));
           } catch (e: any) {
-            results.push({ store_id: (s as any).store_id, ok: false, error: e?.message });
+            results.push({ store_id: (store as any).store_id, ok: false, error: e?.message });
           }
         }
-        return new Response(JSON.stringify({ ok: true, count: results.length, results }), {
-          headers: { "Content-Type": "application/json" },
-        });
+
+        const failed = results.filter((result) => !result.ok).length;
+        return new Response(
+          JSON.stringify({
+            ok: failed === 0,
+            count: results.length,
+            failed,
+            synced_at: new Date().toISOString(),
+            results,
+          }),
+          {
+            status: failed === results.length && results.length > 0 ? 502 : 200,
+            headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+          },
+        );
       },
-      GET: async () => new Response("ok"),
+      GET: async () =>
+        new Response(
+          JSON.stringify({
+            ok: true,
+            service: "meta-ads-nightly-sync",
+            schedule_brazil: ["23:59", "00:15"],
+            time_zone: BRAZIL_TIME_ZONE,
+          }),
+          { headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } },
+        ),
     },
   },
 });
