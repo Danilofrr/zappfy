@@ -147,6 +147,33 @@ function normalizeDeliveryStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase();
 }
 
+function normalizeBrazilWhatsAppPhone(value: string | null | undefined) {
+  let digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+
+  // Remove prefixo internacional 00, quando existir.
+  if (digits.startsWith("00")) digits = digits.slice(2);
+
+  // Já está no formato brasileiro internacional: 55 + DDD + telefone.
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    return digits;
+  }
+
+  // Alguns cadastros podem vir com um zero nacional antes do DDD.
+  if (digits.startsWith("0") && (digits.length === 11 || digits.length === 12)) {
+    digits = digits.slice(1);
+  }
+
+  // Telefone brasileiro salvo somente como DDD + número.
+  // Ex.: 81 98641-3993 -> 5581986413993.
+  if (digits.length === 10 || digits.length === 11) {
+    return `55${digits}`;
+  }
+
+  // Mantém números internacionais já completos que não sejam brasileiros.
+  return digits;
+}
+
 function isMapPendingDelivery(value: string | null | undefined) {
   return !["entregue", "devolvido", "cancelado"].includes(normalizeDeliveryStatus(value));
 }
@@ -902,7 +929,7 @@ function CentralPage() {
                             <Navigation className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Rota</span><span className="sm:hidden">Mapa</span>
                           </a>
                           <a
-                            href={`https://wa.me/${String(d.order.phone || "").replace(/\D/g, "")}`}
+                            href={`https://wa.me/${normalizeBrazilWhatsAppPhone(d.order.phone)}`}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition hover:-translate-y-0.5"
@@ -911,7 +938,7 @@ function CentralPage() {
                             <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                           </a>
                           <a
-                            href={`tel:${d.order.phone}`}
+                            href={`tel:+${normalizeBrazilWhatsAppPhone(d.order.phone)}`}
                             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition hover:-translate-y-0.5"
                             style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.title_color }}
                           >
