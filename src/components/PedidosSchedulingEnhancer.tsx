@@ -107,6 +107,7 @@ export function PedidosSchedulingEnhancer() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [customDate, setCustomDate] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedCourierId, setSelectedCourierId] = useState("all");
   const [editing, setEditing] = useState<ScheduledEntry | null>(null);
   const [editCourier, setEditCourier] = useState("");
   const [editDate, setEditDate] = useState("");
@@ -172,16 +173,36 @@ export function PedidosSchedulingEnhancer() {
       });
   }, [assignments, isPedidos, state.orders]);
 
-  const visibleScheduled = useMemo(() => {
-    const q = normalizeText(search);
+  const dateFilteredScheduled = useMemo(() => {
     const tomorrow = deliveryDatePlusDays(1);
     const weekEnd = deliveryDatePlusDays(7);
 
-    return scheduledEntries.filter(({ order, assignment }) => {
+    return scheduledEntries.filter(({ assignment }) => {
       const scheduled = assignment.scheduled_for || "";
       if (dateFilter === "tomorrow" && scheduled !== tomorrow) return false;
       if (dateFilter === "week" && (scheduled < tomorrow || scheduled > weekEnd)) return false;
       if (dateFilter === "custom" && (!customDate || scheduled !== customDate)) return false;
+      return true;
+    });
+  }, [customDate, dateFilter, scheduledEntries]);
+
+  const courierStats = useMemo(() => {
+    const stats = new Map<string, { id: string; name: string; count: number }>();
+    for (const { assignment } of dateFilteredScheduled) {
+      const id = assignment.courier_id || "unassigned";
+      const name = assignment.courier_name || "Não atribuído";
+      const current = stats.get(id);
+      if (current) current.count += 1;
+      else stats.set(id, { id, name, count: 1 });
+    }
+    return [...stats.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [dateFilteredScheduled]);
+
+  const visibleScheduled = useMemo(() => {
+    const q = normalizeText(search);
+
+    return dateFilteredScheduled.filter(({ order, assignment }) => {
+      if (selectedCourierId !== "all" && assignment.courier_id !== selectedCourierId) return false;
       if (!q) return true;
       return normalizeText(
         `${order.customer} ${order.phone} ${order.address} ${order.district} ${order.city} ${order.items
@@ -189,7 +210,12 @@ export function PedidosSchedulingEnhancer() {
           .join(" ")} ${assignment.courier_name || ""}`,
       ).includes(q);
     });
-  }, [customDate, dateFilter, scheduledEntries, search]);
+  }, [dateFilteredScheduled, search, selectedCourierId]);
+
+  const selectedCourier = useMemo(
+    () => courierStats.find((courier) => courier.id === selectedCourierId) ?? null,
+    [courierStats, selectedCourierId],
+  );
 
   const grouped = useMemo(() => {
     const groups = new Map<string, ScheduledEntry[]>();
@@ -461,6 +487,89 @@ export function PedidosSchedulingEnhancer() {
                   className="h-9 pl-9"
                 />
               </div>
+            </div>
+
+            <div className="mt-5 border-t border-primary/10 pt-4">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2 text-sm font-bold">
+                    <Bike className="h-4 w-4 text-primary" /> Carga agendada por motoboy
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Selecione um motoboy para ver somente os pedidos dele e não misturar as rotas.
+                  </p>
+                </div>
+                {selectedCourier && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCourierId("all")}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    Limpar filtro
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCourierId("all")}
+                  className={`min-w-[150px] shrink-0 rounded-xl border px-3 py-3 text-left transition-all ${
+                    selectedCourierId === "all"
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-primary/[0.03]"
+                  }`}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-70">Todos os motoboys</div>
+                  <div className="mt-1 text-xl font-black">{dateFilteredScheduled.length}</div>
+                  <div className="text-[11px] opacity-75">
+                    {dateFilteredScheduled.length === 1 ? "pedido agendado" : "pedidos agendados"}
+                  </div>
+                </button>
+
+                {courierStats.map((courier) => {
+                  const active = selectedCourierId === courier.id;
+                  return (
+                    <button
+                      key={courier.id}
+                      type="button"
+                      onClick={() => setSelectedCourierId(courier.id)}
+                      className={`min-w-[180px] shrink-0 rounded-xl border px-3 py-3 text-left transition-all ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                          : "border-border bg-card hover:border-primary/40 hover:bg-primary/[0.03]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
+                            active ? "bg-white/15" : "bg-primary/10 text-primary"
+                          }`}
+                        >
+                          <Bike className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <div className="truncate text-xs font-bold">{courier.name}</div>
+                          <div className="mt-0.5 text-[11px] opacity-75">
+                            {courier.count} {courier.count === 1 ? "pedido" : "pedidos"}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedCourier && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs">
+                  <Bike className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Mostrando somente:</span>
+                  <strong className="text-foreground">{selectedCourier.name}</strong>
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 font-bold text-primary">
+                    {visibleScheduled.length} {visibleScheduled.length === 1 ? "pedido" : "pedidos"}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
