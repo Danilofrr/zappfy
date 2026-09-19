@@ -174,16 +174,16 @@ function Dashboard() {
     return { ...best, imageUrl: product?.imageUrl, share };
   }, [state.orders, state.products]);
 
-  // Produtos vendidos hoje (ranking com foto)
-  const dayProducts = useMemo(() => {
-    const start = startOfDay(new Date());
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+  // Ranking de produtos seguindo exatamente o período selecionado na Dashboard.
+  const periodProducts = useMemo(() => {
     const agg = new Map<string, { name: string; qty: number; revenue: number; profit: number }>();
     let totalQty = 0;
+
     for (const o of state.orders) {
       const d = new Date(o.date);
-      if (d < start || d >= end || o.status === "cancelado") continue;
+      const status = String(o.status || "").trim().toLowerCase();
+      if (d < range.start || d >= range.end || ["cancelado", "cancelada"].includes(status)) continue;
+
       for (const it of o.items) {
         const cur = agg.get(it.productId) ?? { name: it.name, qty: 0, revenue: 0, profit: 0 };
         cur.qty += it.qty;
@@ -193,6 +193,7 @@ function Dashboard() {
         totalQty += it.qty;
       }
     }
+
     const list = Array.from(agg.entries())
       .map(([id, v]) => ({
         id,
@@ -201,8 +202,24 @@ function Dashboard() {
         share: totalQty > 0 ? (v.qty / totalQty) * 100 : 0,
       }))
       .sort((a, b) => b.qty - a.qty || b.revenue - a.revenue);
+
     return { list, totalQty };
-  }, [state.orders, state.products]);
+  }, [range.start, range.end, state.orders, state.products]);
+
+  const productsPeriodLabel =
+    period === "today"
+      ? "Hoje"
+      : period === "yesterday"
+        ? "Ontem"
+        : period === "7d"
+          ? "Últimos 7 dias"
+          : period === "30d"
+            ? "Últimos 30 dias"
+            : period === "month"
+              ? "Este mês"
+              : customStart && customEnd
+                ? `${dateOnlyToLocalDate(customStart).toLocaleDateString("pt-BR")} a ${dateOnlyToLocalDate(customEnd).toLocaleDateString("pt-BR")}`
+                : "Período personalizado";
 
 
 
@@ -853,7 +870,7 @@ function Dashboard() {
       </Block>
 
       <Block id="produtos-dia">
-      {/* Produtos vendidos hoje */}
+      {/* Ranking de produtos do período selecionado */}
       <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-elegant">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -861,22 +878,22 @@ function Dashboard() {
               <Package className="h-4 w-4 text-primary" />
             </span>
             <div>
-              <div className="text-sm font-semibold">Produtos vendidos hoje</div>
-              <div className="text-xs text-muted-foreground">Ranking do dia por unidades vendidas</div>
+              <div className="text-sm font-semibold">Produtos mais vendidos</div>
+              <div className="text-xs text-muted-foreground">Ranking por unidades vendidas · {productsPeriodLabel}</div>
             </div>
           </div>
           <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2.5 py-1">
-            {dayProducts.totalQty} un. hoje
+            {periodProducts.totalQty} un. · {productsPeriodLabel}
           </span>
         </div>
 
-        {dayProducts.list.length === 0 ? (
+        {periodProducts.list.length === 0 ? (
           <div className="text-sm text-muted-foreground py-6 text-center">
-            Nenhum produto vendido hoje ainda.
+            Nenhum produto vendido no período selecionado.
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {dayProducts.list.map((p, i) => (
+            {periodProducts.list.map((p, i) => (
               <div
                 key={p.id}
                 className={`flex items-center gap-3 rounded-xl border p-2.5 ${
@@ -905,7 +922,7 @@ function Dashboard() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold">{p.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {p.qty} {p.qty === 1 ? "unidade" : "unidades"} · {pct(p.share)} do dia
+                    {p.qty} {p.qty === 1 ? "unidade" : "unidades"} · {pct(p.share)} do período
                   </div>
                   <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                     <div
