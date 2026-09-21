@@ -110,52 +110,29 @@ function Checkout() {
       setLoading(true);
       setError(null);
 
-      let settingsRow: any = null;
-      if (loja) {
-        const { data, error: sErr } = await (supabase as any)
-          .from("settings_public")
-          .select("*")
-          .ilike("slug", loja.toLowerCase())
-          .maybeSingle();
-        if (sErr) {
-          if (!cancelled) { setError("Não foi possível carregar a loja."); setLoading(false); }
-          return;
-        }
-        settingsRow = data;
-      } else {
-        // No slug provided: load the first store with a public slug (single-tenant convenience).
-        const { data, error: sErr } = await (supabase as any)
-          .from("settings_public")
-          .select("*")
-          .limit(1)
-          .maybeSingle();
-        if (sErr) {
-          if (!cancelled) { setError("Não foi possível carregar a loja."); setLoading(false); }
-          return;
-        }
-        settingsRow = data;
-      }
+      const { data: payload, error: loadError } = await (supabase as any).rpc("get_public_checkout_payload", {
+        _slug: loja || null,
+      });
 
       if (cancelled) return;
+
+      if (loadError) {
+        setError("Não foi possível carregar a loja.");
+        setLoading(false);
+        return;
+      }
+
+      const settingsRow = payload?.settings ?? null;
+      const productRows = Array.isArray(payload?.products) ? payload.products : [];
+
       if (!settingsRow) {
         setError("Nenhuma loja pública configurada ainda.");
         setLoading(false);
         return;
       }
 
-      const { data: productRows, error: pErr } = await (supabase as any)
-        .from("products_public")
-        .select("*")
-        .eq("user_id", settingsRow.user_id)
-        .order("created_at", { ascending: false });
-      if (cancelled) return;
-      if (pErr) {
-        setError("Não foi possível carregar os produtos.");
-        setLoading(false);
-        return;
-      }
       setSettings(toSettings(settingsRow));
-      setProducts((productRows ?? []).map(toProduct));
+      setProducts(productRows.map(toProduct));
       setLoading(false);
     })();
     return () => { cancelled = true; };
