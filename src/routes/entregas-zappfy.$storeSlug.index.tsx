@@ -109,6 +109,33 @@ type Me = {
   slug: string;
 };
 
+type CourierInventoryItem = {
+  id: string;
+  product_id: string;
+  product_name: string;
+  variant_label: string;
+  quantity: number;
+  notes?: string | null;
+  unit_price?: number;
+  image_url?: string | null;
+  updated_at?: string | null;
+};
+
+type CourierInventoryProduct = {
+  id: string;
+  name: string;
+  category?: string;
+  price?: number;
+  stock?: number;
+  image_url?: string | null;
+};
+
+type CourierInventorySnapshot = {
+  items?: CourierInventoryItem[];
+  products?: CourierInventoryProduct[];
+  total_quantity?: number;
+};
+
 const DEFAULT_THEME: CentralTheme = {
   id: "",
   logo_url: null,
@@ -239,6 +266,14 @@ function CentralPage() {
   const [busyTrackingCode, setBusyTrackingCode] = useState<string | null>(null);
   const [statusBusy, setStatusBusy] = useState(false);
   const [activeView, setActiveView] = useState<"deliveries" | "map">("deliveries");
+  const [extraLoadOpen, setExtraLoadOpen] = useState(false);
+  const [inventoryItems, setInventoryItems] = useState<CourierInventoryItem[]>([]);
+  const [inventoryProducts, setInventoryProducts] = useState<CourierInventoryProduct[]>([]);
+  const [inventoryProductId, setInventoryProductId] = useState("");
+  const [inventoryVariant, setInventoryVariant] = useState("");
+  const [inventoryQuantity, setInventoryQuantity] = useState("1");
+  const [inventoryNotes, setInventoryNotes] = useState("");
+  const [inventoryBusy, setInventoryBusy] = useState(false);
 
   const theme = useMemo<CentralTheme>(() => {
     const accent = configuredTheme.button_color || DEFAULT_THEME.button_color;
@@ -299,21 +334,26 @@ function CentralPage() {
         return;
       }
 
-      const [{ data: themeRes }, { data: meRes, error: meErr }] = await Promise.all([
+      const [{ data: themeRes }, { data: bootstrapRes, error: bootstrapErr }] = await Promise.all([
         (supabase as any).rpc("get_zappfy_central_settings"),
-        (supabase as any).rpc("courier_me", { _session: session }),
+        (supabase as any).rpc("courier_central_bootstrap", { _session: session }),
       ]);
 
       if (!alive) return;
       if (themeRes) setConfiguredTheme({ ...DEFAULT_THEME, ...(themeRes as CentralTheme) });
 
-      if (meErr || !meRes) {
+      const meRes = bootstrapRes?.me ?? null;
+      if (bootstrapErr || !meRes) {
         clearCourierSession(storeSlug);
         navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
         return;
       }
 
       setMe(meRes as Me);
+      if (Array.isArray(bootstrapRes?.deliveries)) setAvailable(bootstrapRes.deliveries as Delivery[]);
+      const inventory = (bootstrapRes?.inventory ?? {}) as CourierInventorySnapshot;
+      setInventoryItems(Array.isArray(inventory.items) ? inventory.items : []);
+      setInventoryProducts(Array.isArray(inventory.products) ? inventory.products : []);
       setLoading(false);
     })();
 
@@ -355,40 +395,121 @@ function CentralPage() {
     if (Array.isArray(deliveries)) setAvailable(deliveries as Delivery[]);
   }
 
+  async function loadInventory() {
+    const session = getCourierSession(storeSlug);
+    if (!session) return;
+    const { data, error } = await (supabase as any).rpc("courier_inventory_snapshot", {
+      _session: session,
+    });
+    if (error) {
+      console.error(error);
+      return;
+    }
+    const snapshot = (data ?? {}) as CourierInventorySnapshot;
+    setInventoryItems(Array.isArray(snapshot.items) ? snapshot.items : []);
+    setInventoryProducts(Array.isArray(snapshot.products) ? snapshot.products : []);
+  }
+
+  async function adjustOwnInventory(
+    productId: string,
+    variantLabel: string,
+    delta: number,
+    notes?: string,
+  ) {
+    const session = getCourierSession(storeSlug);
+    if (!session || !productId || !Number.isFinite(delta) || delta === 0) return;
+    setInventoryBusy(true);
+    try {
+      const { error } = await (supabase as any).rpc("courier_adjust_own_inventory", {
+        _session: session,
+        _product_id: productId,
+        _variant_label: variantLabel || "",
+        _delta: Math.trunc(delta),
+        _notes: notes?.trim() || null,
+      });
+      if (error) throw error;
+      await loadInventory();
+      toast.success(delta > 0 ? "Mercadoria adicionada à sua carga" : "Carga extra atualizada");
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível atualizar sua carga extra");
+    } finally {
+      setInventoryBusy(false);
+    }
+  }
+
+  async function addExtraInventory() {
+    const qty = Math.max(1, Math.trunc(Number(inventoryQuantity) || 1));
+    if (!inventoryProductId) {
+      toast.error("Selecione o produto que está levando");
+      return;
+    }
+    await adjustOwnInventory(inventoryProductId, inventoryVariant, qty, inventoryNotes);
+    setInventoryQuantity("1");
+    setInventoryVariant("");
+    setInventoryNotes("");
+  }
+
   useEffect(() => {
     if (!me) return;
-    loadDeliveries();
-    const interval = setInterval(loadDeliveries, 15000);
+
+    let deliveryTimer: ReturnType<typeof setTimeout> | null = null;
+    let inventoryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleDeliveryRefresh = () => {
+      if (deliveryTimer) clearTimeout(deliveryTimer);
+      deliveryTimer = setTimeout(() => void loadDeliveries(), 250);
+    };
+    const scheduleInventoryRefresh = () => {
+      if (inventoryTimer) clearTimeout(inventoryTimer);
+      inventoryTimer = setTimeout(() => void loadInventory(), 250);
+    };
+
+    // Realtime é a fonte principal. O intervalo é apenas fallback para redes móveis
+    // que suspendem o websocket em segundo plano.
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") void loadDeliveries();
+    }, 60000);
+
     const channel = supabase
-      .channel(`central_${me.store_id}`)
+      .channel(`central_${me.store_id}_${me.courier_id}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "delivery_tracking", filter: `store_id=eq.${me.store_id}` },
-        () => loadDeliveries(),
+        scheduleDeliveryRefresh,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "courier_inventory", filter: `courier_id=eq.${me.courier_id}` },
+        scheduleInventoryRefresh,
       )
       .subscribe();
+
     return () => {
+      if (deliveryTimer) clearTimeout(deliveryTimer);
+      if (inventoryTimer) clearTimeout(inventoryTimer);
       clearInterval(interval);
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me?.store_id]);
+  }, [me?.store_id, me?.courier_id]);
 
   useEffect(() => {
-    if (!me || activeView !== "map") return;
-    void loadDeliveries();
-    const refreshVisibleMap = () => void loadDeliveries();
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === "visible") void loadDeliveries();
+    if (!me) return;
+    const refreshVisibleCentral = () => {
+      void loadDeliveries();
+      void loadInventory();
     };
-    window.addEventListener("focus", refreshVisibleMap);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refreshVisibleCentral();
+    };
+    window.addEventListener("focus", refreshVisibleCentral);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
-      window.removeEventListener("focus", refreshVisibleMap);
+      window.removeEventListener("focus", refreshVisibleCentral);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView, me?.store_id]);
+  }, [me?.store_id]);
 
   async function action(d: Delivery, actionName: string) {
     const session = getCourierSession(storeSlug);
@@ -475,6 +596,11 @@ function CentralPage() {
 
   const todayKey = brazilDateKey();
   const mapCount = available.filter((d) => isMapPendingDelivery(d.status)).length;
+  const extraLoadQuantity = useMemo(
+    () => inventoryItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+    [inventoryItems],
+  );
+
   const metrics = useMemo(() => {
     const ready = available.filter(
       (d) => ["aguardando_motoboy", "preparando"].includes(d.status) && (!d.scheduled_for || d.scheduled_for <= todayKey),
@@ -484,11 +610,12 @@ function CentralPage() {
     ).length;
     const onRoute = available.filter((d) => ["saiu_para_entrega", "chegando"].includes(d.status)).length;
     const delivered = available.filter((d) => d.status === "entregue").length;
-    const possession = available
+    const orderItemsInPossession = available
       .filter((d) => isMapPendingDelivery(d.status))
       .reduce((n, d) => n + (d.order.items || []).reduce((s, i) => s + Number(i.qty), 0), 0);
-    return { ready, scheduled, onRoute, delivered, possession };
-  }, [available, todayKey]);
+    const possession = orderItemsInPossession + extraLoadQuantity;
+    return { ready, scheduled, onRoute, delivered, possession, orderItemsInPossession };
+  }, [available, extraLoadQuantity, todayKey]);
 
   const cardStyle: React.CSSProperties = {
     background: `linear-gradient(145deg, color-mix(in oklab, ${theme.card_color} 97%, white), ${theme.card_color})`,
@@ -735,6 +862,153 @@ function CentralPage() {
               </div>
             </div>
           ))}
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
+          <button
+            type="button"
+            onClick={() => setExtraLoadOpen((open) => !open)}
+            className="flex w-full items-center gap-3 px-4 py-4 text-left sm:px-5"
+          >
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: `${theme.button_color}16`, color: theme.button_color }}>
+              <Boxes className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-black" style={{ color: theme.title_color }}>Minha carga extra</span>
+              <span className="mt-0.5 block text-[11px] opacity-60">
+                Informe as mercadorias que você está levando além dos pedidos já atribuídos.
+              </span>
+            </span>
+            <span className="rounded-full px-2.5 py-1 text-xs font-black" style={{ background: `${theme.button_color}14`, color: theme.button_color }}>
+              {extraLoadQuantity} un.
+            </span>
+            <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${extraLoadOpen ? "rotate-90" : ""}`} />
+          </button>
+
+          {extraLoadOpen && (
+            <div className="border-t px-4 py-4 sm:px-5" style={{ borderColor: theme.card_border_color }}>
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-black uppercase tracking-[0.12em] opacity-55">Produtos que estou levando</div>
+                      <div className="mt-1 text-[11px] opacity-55">
+                        Esses itens aparecem automaticamente em Motoboys → Carga e histórico.
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold" style={{ color: theme.button_color }}>{extraLoadQuantity} unidade(s)</span>
+                  </div>
+
+                  {inventoryItems.length === 0 ? (
+                    <div className="rounded-xl border border-dashed px-4 py-6 text-center text-xs opacity-55" style={{ borderColor: theme.card_border_color }}>
+                      Nenhuma mercadoria extra informada.
+                    </div>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {inventoryItems.map((item) => (
+                        <div key={item.id} className="flex items-center gap-3 rounded-xl border p-3" style={{ borderColor: theme.card_border_color, background: theme.background_color }}>
+                          {item.image_url ? (
+                            <img src={item.image_url} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" loading="lazy" />
+                          ) : (
+                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: `${theme.button_color}12`, color: theme.button_color }}>
+                              <Package className="h-4 w-4" />
+                            </span>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-xs font-bold" style={{ color: theme.title_color }}>{item.product_name}</div>
+                            {item.variant_label && <div className="truncate text-[10px] opacity-55">{item.variant_label}</div>}
+                            <div className="mt-0.5 text-[10px] opacity-55">{item.quantity} unidade(s) na carga extra</div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              disabled={inventoryBusy}
+                              onClick={() => void adjustOwnInventory(item.product_id, item.variant_label || "", -1)}
+                              className="grid h-8 w-8 place-items-center rounded-lg border text-base font-black disabled:opacity-40"
+                              style={{ borderColor: theme.card_border_color }}
+                              aria-label="Retirar uma unidade"
+                            >
+                              −
+                            </button>
+                            <span className="min-w-7 text-center text-sm font-black" style={{ color: theme.title_color }}>{item.quantity}</span>
+                            <button
+                              type="button"
+                              disabled={inventoryBusy}
+                              onClick={() => void adjustOwnInventory(item.product_id, item.variant_label || "", 1)}
+                              className="grid h-8 w-8 place-items-center rounded-lg border text-base font-black disabled:opacity-40"
+                              style={{ borderColor: theme.button_color, color: theme.button_color }}
+                              aria-label="Adicionar uma unidade"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-xl border p-3 sm:p-4" style={{ borderColor: theme.card_border_color, background: theme.background_color }}>
+                  <div className="text-xs font-black" style={{ color: theme.title_color }}>Adicionar mercadoria extra</div>
+                  <div className="mt-3 space-y-2.5">
+                    <select
+                      value={inventoryProductId}
+                      onChange={(event) => setInventoryProductId(event.target.value)}
+                      className="h-11 w-full rounded-xl border bg-transparent px-3 text-sm outline-none"
+                      style={{ borderColor: theme.card_border_color, color: theme.title_color, backgroundColor: theme.card_color }}
+                    >
+                      <option value="">Selecione o produto</option>
+                      {inventoryProducts.map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.name}{Number.isFinite(Number(product.stock)) ? ` · estoque loja: ${product.stock}` : ""}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={999}
+                        inputMode="numeric"
+                        value={inventoryQuantity}
+                        onChange={(event) => setInventoryQuantity(event.target.value)}
+                        className="h-11 rounded-xl border bg-transparent px-3 text-sm outline-none"
+                        style={{ borderColor: theme.card_border_color, color: theme.title_color }}
+                        placeholder="Qtd."
+                      />
+                      <input
+                        value={inventoryVariant}
+                        onChange={(event) => setInventoryVariant(event.target.value)}
+                        className="h-11 rounded-xl border bg-transparent px-3 text-sm outline-none"
+                        style={{ borderColor: theme.card_border_color, color: theme.title_color }}
+                        placeholder="Cor/variação (opcional)"
+                      />
+                    </div>
+
+                    <input
+                      value={inventoryNotes}
+                      onChange={(event) => setInventoryNotes(event.target.value)}
+                      className="h-11 w-full rounded-xl border bg-transparent px-3 text-sm outline-none"
+                      style={{ borderColor: theme.card_border_color, color: theme.title_color }}
+                      placeholder="Observação (opcional)"
+                    />
+
+                    <Button
+                      type="button"
+                      disabled={inventoryBusy || !inventoryProductId}
+                      onClick={() => void addExtraInventory()}
+                      className="h-11 w-full rounded-xl font-black"
+                      style={{ background: theme.button_color, color: theme.button_text_color }}
+                    >
+                      {inventoryBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Boxes className="mr-2 h-4 w-4" />}
+                      Adicionar à minha carga
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
