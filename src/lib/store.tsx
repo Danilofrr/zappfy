@@ -505,11 +505,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       const sid = storeId ?? userId;
       const [products, orders, expenses, ads, movements, settings] = await Promise.all([
-        supabase.from("products").select("*").eq("store_id", sid).order("created_at", { ascending: false }),
-        supabase.from("orders").select("*").eq("store_id", sid).order("date", { ascending: false }),
-        supabase.from("expenses").select("*").eq("store_id", sid).order("date", { ascending: false }),
-        supabase.from("ads").select("*").eq("user_id", userId).order("date", { ascending: true }),
-        supabase.from("stock_movements").select("*").eq("user_id", userId).order("occurred_at", { ascending: false }),
+        supabase
+          .from("products")
+          .select("id,name,category,cost,price,stock,min_stock,description,image_url")
+          .eq("store_id", sid)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("orders")
+          .select("id,customer,phone,address,district,city,items,total,payment,status,notes,date")
+          .eq("store_id", sid)
+          .order("date", { ascending: false }),
+        supabase
+          .from("expenses")
+          .select("id,description,category,amount,date")
+          .eq("store_id", sid)
+          .order("date", { ascending: false }),
+        supabase
+          .from("ads")
+          .select("id,date,invested,purchases,revenue")
+          .eq("user_id", userId)
+          .order("date", { ascending: true }),
+        supabase
+          .from("stock_movements")
+          .select("id,product_id,product_name,purchase_order_id,type,quantity,unit_cost,total,supplier_name,payment_method,notes,occurred_at,created_at")
+          .eq("store_id", sid)
+          .order("occurred_at", { ascending: false }),
         supabase.from("settings").select("*").eq("store_id", sid).maybeSingle(),
       ]);
 
@@ -550,12 +570,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getUser().then(async ({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return;
-      setUser(data.user ?? null);
-      if (data.user) {
-        await loadForUser(data.user.id, activeStoreIdRef.current ?? readActiveStoreId());
-      } else if (!data.user) {
+      const sessionUser = data.session?.user ?? null;
+      setUser(sessionUser);
+      if (sessionUser) {
+        await loadForUser(sessionUser.id, activeStoreIdRef.current ?? readActiveStoreId());
+      } else {
         setLoading(false);
       }
     });
