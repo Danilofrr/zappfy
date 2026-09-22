@@ -5,6 +5,7 @@ import { ActiveStoreProvider } from "@/lib/active-store";
 import { PedidosSchedulingEnhancer } from "@/components/PedidosSchedulingEnhancer";
 import { PedidosMelhorEnvioEnhancer } from "@/components/PedidosMelhorEnvioEnhancer";
 import { firstAllowedPath, permissionForPath } from "@/lib/team-permissions";
+import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -96,11 +97,20 @@ export const Route = createFileRoute("/_authenticated")({
     return { user: data.user, isAdmin, subscriptionStatus: sub?.status ?? null };
   },
   head: () => ({ links: [{ rel: "manifest", href: "/manifest.webmanifest" }] }),
-  component: () => (
+  component: AuthenticatedContent,
+});
+
+
+function AuthenticatedContent() {
+  const { access, hasPermission } = useStore();
+  const isOwner = access?.isOwner === true;
+  const canScheduleCouriers = isOwner || (hasPermission("orders") && hasPermission("couriers"));
+
+  return (
     <ActiveStoreProvider>
-      <PedidosSchedulingEnhancer />
-      <PedidosMelhorEnvioEnhancer />
+      {canScheduleCouriers && <PedidosSchedulingEnhancer />}
+      {isOwner && <PedidosMelhorEnvioEnhancer />}
       <Outlet />
     </ActiveStoreProvider>
-  ),
-});
+  );
+}
