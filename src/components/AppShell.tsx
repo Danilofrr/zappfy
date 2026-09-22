@@ -91,12 +91,14 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
     { to: "/financeiro", label: "Financeiro", icon: Wallet },
   ].filter((item) => {
     const permission = permissionForPath(item.to);
-    if (!access || access.isOwner) return true;
+    if (!access) return false;
+    if (access.isOwner) return true;
     return permission !== "owner" && (permission === null || hasPermission(permission));
   });
 
   const canSeeNavItem = (to: string) => {
-    if (!access || access.isOwner) return true;
+    if (!access) return false;
+    if (access.isOwner) return true;
     const permission = permissionForPath(to);
     if (permission === "owner") return false;
     return permission === null || hasPermission(permission);
@@ -190,7 +192,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             </nav>
 
             <div className="border-t border-sidebar-border p-3 space-y-2 mt-4">
-              {access?.isOwner !== false && <SubscriptionStatusCard variant="sidebar" />}
+              {access?.isOwner === true && <SubscriptionStatusCard variant="sidebar" />}
               <StoreSwitcher />
               {access?.isOwner === false && (
                 <div className="rounded-md border border-primary/20 bg-primary/5 px-2.5 py-2 text-[10px] text-primary">
