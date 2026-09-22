@@ -4,6 +4,7 @@ import { getEntregasStandaloneRedirectSlug } from "@/lib/entregas-pwa";
 import { ActiveStoreProvider } from "@/lib/active-store";
 import { PedidosSchedulingEnhancer } from "@/components/PedidosSchedulingEnhancer";
 import { PedidosMelhorEnvioEnhancer } from "@/components/PedidosMelhorEnvioEnhancer";
+import { firstAllowedPath, permissionForPath } from "@/lib/team-permissions";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -30,6 +31,42 @@ export const Route = createFileRoute("/_authenticated")({
         .maybeSingle(),
     ]);
     const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
+
+    // Resolve loja e permissões quando o login pertence a um funcionário.
+    // O bloqueio acontece antes de renderizar a rota, não apenas escondendo o menu.
+    if (!isAdmin) {
+      const { data: accessibleStores } = await (supabase as any).rpc("list_my_accessible_stores");
+      if (Array.isArray(accessibleStores) && accessibleStores.length) {
+        let remembered: string | null = null;
+        try {
+          if (typeof window !== "undefined") remembered = localStorage.getItem("zappfy.active_store_id");
+        } catch {}
+
+        const selected =
+          accessibleStores.find((store: any) => store.id === remembered) ??
+          accessibleStores.find((store: any) => store.is_default) ??
+          accessibleStores[0];
+
+        if (selected?.id) {
+          try {
+            if (typeof window !== "undefined") localStorage.setItem("zappfy.active_store_id", selected.id);
+          } catch {}
+
+          if (selected.is_owner === false) {
+            const permissions = Array.isArray(selected.permissions) ? selected.permissions : [];
+            const required = permissionForPath(location.pathname);
+            const allowed =
+              required === null ||
+              (required !== "owner" && permissions.includes(required));
+
+            if (!allowed) {
+              const to = firstAllowedPath(permissions);
+              if (location.pathname !== to) throw redirect({ to: to as any });
+            }
+          }
+        }
+      }
+    }
 
     // Admin nunca acessa telas de cliente — sempre redireciona para o painel admin
     // Exceções: páginas de personalização que o admin master também precisa acessar
