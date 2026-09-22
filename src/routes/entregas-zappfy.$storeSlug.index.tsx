@@ -352,7 +352,7 @@ function CentralPage() {
       setLoading(false);
 
       void Promise.allSettled([
-        (supabase as any).rpc("get_zappfy_central_settings").then(({ data: themeRes }: any) => {
+        (supabase as any).rpc("get_zappfy_central_theme_light").then(({ data: themeRes }: any) => {
           if (alive && themeRes) setConfiguredTheme({ ...DEFAULT_THEME, ...(themeRes as CentralTheme) });
         }),
         loadDeliveries(),
