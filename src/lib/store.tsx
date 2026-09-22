@@ -387,10 +387,20 @@ const toSettings = (r: any): Settings => ({
 });
 
 
+export type StoreAccess = {
+  storeId: string;
+  ownerId: string;
+  isOwner: boolean;
+  role: string;
+  permissions: string[];
+};
+
 type Ctx = {
   state: State;
   loading: boolean;
   user: User | null;
+  access: StoreAccess | null;
+  hasPermission: (permission: string) => boolean;
   addProduct: (p: Omit<Product, "id">) => Promise<void>;
   updateProduct: (id: string, p: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -468,6 +478,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(emptyState);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [access, setAccess] = useState<StoreAccess | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(() => readActiveStoreId());
   const activeStoreIdRef = useRef<string | null>(activeStoreId);
   const loadedFor = useRef<string | null>(null);
@@ -477,22 +488,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     activeStoreIdRef.current = activeStoreId;
   }, [activeStoreId]);
 
-  const resolveStoreId = useCallback(async (userId: string, preferredStoreId: string | null) => {
-    const { data, error } = await supabase
-      .from("stores")
-      .select("id,is_default")
-      .eq("owner_id", userId)
-      .order("is_default", { ascending: false })
-      .order("created_at", { ascending: true });
+  const resolveStoreId = useCallback(async (_userId: string, preferredStoreId: string | null) => {
+    const { data, error } = await (supabase as any).rpc("list_my_accessible_stores");
 
-    if (error || !data?.length) return preferredStoreId ?? userId;
+    if (error || !Array.isArray(data) || !data.length) {
+      setAccess(null);
+      return preferredStoreId;
+    }
 
-    const validPreferred = preferredStoreId ? data.find((store) => store.id === preferredStoreId) : null;
-    const resolved = validPreferred?.id ?? data.find((store) => store.is_default)?.id ?? data[0]?.id ?? userId;
+    const validPreferred = preferredStoreId ? data.find((store: any) => store.id === preferredStoreId) : null;
+    const fallback = data.find((store: any) => store.is_default) ?? data[0];
+    const selected = validPreferred ?? fallback;
+    const resolved = selected?.id ?? preferredStoreId;
+
+    if (resolved) {
+      setAccess({
+        storeId: resolved,
+        ownerId: selected.owner_id,
+        isOwner: Boolean(selected.is_owner),
+        role: selected.member_role || (selected.is_owner ? "owner" : "employee"),
+        permissions: Array.isArray(selected.permissions) ? selected.permissions : [],
+      });
+    } else {
+      setAccess(null);
+    }
 
     if (typeof window !== "undefined" && resolved !== preferredStoreId) {
       try {
-        localStorage.setItem(ACTIVE_STORE_KEY, resolved);
+        if (resolved) localStorage.setItem(ACTIVE_STORE_KEY, resolved);
       } catch {}
     }
 
@@ -504,6 +527,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const sid = storeId ?? userId;
+      const { data: accessData, error: accessError } = await (supabase as any).rpc("get_my_store_access", {
+        _store_id: sid,
+      });
+      if (accessError || !accessData) {
+        if (seq === loadSeq.current) {
+          setAccess(null);
+          setState(emptyState);
+        }
+        return;
+      }
+
+      const nextAccess: StoreAccess = {
+        storeId: accessData.store_id,
+        ownerId: accessData.owner_id,
+        isOwner: Boolean(accessData.is_owner),
+        role: accessData.role || (accessData.is_owner ? "owner" : "employee"),
+        permissions: Array.isArray(accessData.permissions) ? accessData.permissions : [],
+      };
+      if (seq === loadSeq.current) setAccess(nextAccess);
+
+      if (!nextAccess.isOwner) {
+        const { data: snapshot, error: snapshotError } = await (supabase as any).rpc("team_store_snapshot", {
+          _store_id: sid,
+        });
+        if (snapshotError) throw snapshotError;
+        if (seq !== loadSeq.current) return;
+
+        setState({
+          products: (snapshot?.products ?? []).map(toProduct),
+          orders: (snapshot?.orders ?? []).map(toOrder),
+          expenses: (snapshot?.expenses ?? []).map(toExpense),
+          ads: (snapshot?.ads ?? []).map(toAd),
+          stockMovements: (snapshot?.stock_movements ?? []).map(toMovement),
+          settings: snapshot?.settings ? toSettings(snapshot.settings) : emptySettings,
+        });
+        return;
+      }
+
       const [products, orders, expenses, ads, movements, settings] = await Promise.all([
         supabase
           .from("products")
@@ -523,7 +584,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         supabase
           .from("ads")
           .select("id,date,invested,purchases,revenue")
-          .eq("user_id", userId)
+          .eq("user_id", nextAccess.ownerId || userId)
           .order("date", { ascending: true }),
         supabase
           .from("stock_movements")
@@ -585,6 +646,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setUser((prev) => {
         if (prev && u && prev.id !== u.id) {
           loadedFor.current = null;
+          setAccess(null);
           setState(emptyState);
         }
         return u;
@@ -595,6 +657,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_OUT") {
         loadSeq.current += 1;
         loadedFor.current = null;
+        setAccess(null);
         setState(emptyState);
       }
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED" || event === "PASSWORD_RECOVERY") {
@@ -643,7 +706,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Realtime: novos pedidos do checkout público entram direto na dashboard
   useEffect(() => {
-    if (!user) return;
+    if (!user || !access?.isOwner) return;
     const sid = activeStoreId ?? user.id;
     const channel = supabase
       .channel(`orders-${sid}`)
@@ -700,11 +763,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user, activeStoreId]);
+  }, [user, activeStoreId, access?.isOwner]);
 
+  useEffect(() => {
+    if (!user || !access || access.isOwner) return;
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void loadAll(user.id, activeStoreIdRef.current);
+      }
+    }, 30000);
+    return () => window.clearInterval(interval);
+  }, [user, access?.isOwner, access?.storeId, loadAll]);
 
   const value: Ctx = useMemo(() => ({
-    state, loading, user,
+    state, loading, user, access,
+    hasPermission(permission: string) {
+      return Boolean(access?.isOwner || access?.permissions.includes(permission));
+    },
     async addProduct(p) {
       if (!user) return;
       const sid = activeStoreId ?? user.id;
@@ -734,6 +809,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     async addOrder(o) {
       if (!user) return;
       const sid = activeStoreId ?? user.id;
+      if (access && !access.isOwner) {
+        if (!access.permissions.includes("orders")) {
+          toast.error("Você não tem permissão para criar pedidos");
+          return;
+        }
+        const { data, error } = await (supabase as any).rpc("team_create_order", {
+          _store_id: sid,
+          _order: fromOrder(o),
+        });
+        if (error) {
+          toast.error(error.message || "Erro ao criar pedido");
+          throw error;
+        }
+        setState((s) => ({ ...s, orders: [toOrder(data), ...s.orders] }));
+        await loadAll(user.id, sid);
+        return;
+      }
       const { data, error } = await supabase.from("orders").insert({ user_id: user.id, store_id: sid, ...fromOrder(o) }).select().single();
       if (error) {
         toast.error(error.message || "Erro ao criar pedido");
@@ -766,6 +858,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     },
     async updateOrder(id, patch) {
+      const sid = activeStoreId ?? user?.id;
+      if (access && !access.isOwner) {
+        if (!sid || !access.permissions.includes("orders")) {
+          toast.error("Você não tem permissão para editar pedidos");
+          return;
+        }
+        const body: any = {};
+        if (patch.customer !== undefined) body.customer = patch.customer;
+        if (patch.phone !== undefined) body.phone = patch.phone;
+        if (patch.address !== undefined) body.address = patch.address;
+        if (patch.district !== undefined) body.district = patch.district;
+        if (patch.city !== undefined) body.city = patch.city;
+        if (patch.notes !== undefined) body.notes = patch.notes;
+        if (patch.payment !== undefined) body.payment = patch.payment;
+        if (patch.items !== undefined) body.items = patch.items;
+        if (patch.total !== undefined) body.total = patch.total;
+        if ((patch as any).date !== undefined) body.date = (patch as any).date;
+        const { data, error } = await (supabase as any).rpc("team_update_order", {
+          _store_id: sid,
+          _order_id: id,
+          _patch: body,
+        });
+        if (error) { toast.error(error.message); return; }
+        setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
+        return;
+      }
       const body: any = {};
       if (patch.customer !== undefined) body.customer = patch.customer;
       if (patch.phone !== undefined) body.phone = patch.phone;
@@ -783,6 +901,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
     },
     async updateOrderStatus(id, status) {
+      const sid = activeStoreId ?? user?.id;
+      if (access && !access.isOwner) {
+        if (!sid || !access.permissions.includes("orders")) {
+          toast.error("Você não tem permissão para atualizar pedidos");
+          return;
+        }
+        const { data, error } = await (supabase as any).rpc("team_update_order_status", {
+          _store_id: sid,
+          _order_id: id,
+          _status: status,
+        });
+        if (error) { toast.error(error.message); return; }
+        setState((s) => ({ ...s, orders: s.orders.map((x) => x.id === id ? toOrder(data) : x) }));
+        await loadAll(user!.id, sid);
+        return;
+      }
       const prev = state.orders.find((o) => o.id === id);
       const { data, error } = await supabase.from("orders").update({ status }).eq("id", id).select().single();
       if (error) { toast.error(error.message); return; }
@@ -817,6 +951,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
 
     async deleteOrder(id) {
+      const sid = activeStoreId ?? user?.id;
+      if (access && !access.isOwner) {
+        if (!sid || !access.permissions.includes("orders")) {
+          toast.error("Você não tem permissão para excluir pedidos");
+          return;
+        }
+        const { error } = await (supabase as any).rpc("team_delete_order", {
+          _store_id: sid,
+          _order_id: id,
+        });
+        if (error) { toast.error(error.message); return; }
+        setState((s) => ({ ...s, orders: s.orders.filter((x) => x.id !== id) }));
+        await loadAll(user!.id, sid);
+        return;
+      }
       const order = state.orders.find((o) => o.id === id);
       const { error } = await supabase.from("orders").delete().eq("id", id);
       if (error) { toast.error(error.message); return; }
