@@ -191,31 +191,50 @@ function normalizeReceivedParts(parts: PaymentBreakdownItem[] | null | undefined
 
 async function imageFileToDataUrl(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) throw new Error("Envie uma imagem do comprovante.");
-  if (file.size > 3 * 1024 * 1024) throw new Error("A imagem deve ter no máximo 3 MB.");
+  // Fotos atuais de celular facilmente passam de 3 MB. O limite deve ser aplicado
+  // depois da compressão, não antes dela.
+  if (file.size > 15 * 1024 * 1024) {
+    throw new Error("A foto é muito grande. Escolha uma imagem de até 15 MB.");
+  }
 
-  const raw = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
-    reader.readAsDataURL(file);
-  });
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const next = new Image();
+      next.onload = () => resolve(next);
+      next.onerror = () => reject(new Error("Não foi possível abrir esta imagem. Tente outra foto."));
+      next.src = objectUrl;
+    });
 
-  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const next = new Image();
-    next.onload = () => resolve(next);
-    next.onerror = () => reject(new Error("Imagem inválida."));
-    next.src = raw;
-  });
+    const render = (maxDimension: number, quality: number) => {
+      const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Não foi possível preparar a imagem para envio.");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", quality);
+    };
 
-  const max = 1400;
-  const scale = Math.min(1, max / Math.max(img.width, img.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(img.width * scale));
-  canvas.height = Math.max(1, Math.round(img.height * scale));
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return raw;
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.82);
+    // Primeiro tenta manter boa nitidez. Se a foto ainda ficar pesada, reduz mais
+    // antes de mandar pela rede móvel.
+    let compressed = render(1280, 0.74);
+    if (compressed.length > 900_000) compressed = render(1080, 0.64);
+    if (compressed.length > 1_300_000) compressed = render(900, 0.56);
+
+    if (compressed.length > 2_000_000) {
+      throw new Error("Não foi possível reduzir a foto o suficiente. Tente fotografar novamente.");
+    }
+
+    return compressed;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function CourierPage() {
@@ -384,16 +403,26 @@ function CourierPage() {
     clearSignature?: boolean;
   }) {
     setEvidenceSaving(true);
+    let lastError: any = null;
+
     try {
-      const { error } = await (supabase as any).rpc("save_courier_delivery_evidence", {
-        _token: courierToken,
-        _proof_url: options.proofUrl ?? null,
-        _signature_url: options.signatureUrl ?? null,
-        _clear_proof: options.clearProof ?? false,
-        _clear_signature: options.clearSignature ?? false,
-      });
-      if (error) throw error;
-      return true;
+      // Em 4G/5G pode acontecer uma queda curta justamente durante o upload.
+      // A operação é idempotente, então uma segunda tentativa é segura.
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const { data: result, error } = await (supabase as any).rpc("save_courier_delivery_evidence", {
+          _token: courierToken,
+          _proof_url: options.proofUrl ?? null,
+          _signature_url: options.signatureUrl ?? null,
+          _clear_proof: options.clearProof ?? false,
+          _clear_signature: options.clearSignature ?? false,
+        });
+
+        if (!error && result?.saved !== false) return true;
+        lastError = error || new Error("O servidor não confirmou o salvamento.");
+        if (attempt === 0) await wait(700);
+      }
+
+      throw lastError;
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível salvar a comprovação da entrega.");
       return false;
@@ -408,8 +437,11 @@ function CourierPage() {
       const url = await imageFileToDataUrl(file);
       const saved = await persistEvidence({ proofUrl: url });
       if (!saved) return;
+
+      // Só mostramos sucesso depois de a RPC confirmar o UPDATE no banco.
       setProofUrl(url);
-      toast.success("Comprovante salvo na entrega.");
+      setData((current) => current ? { ...current, proof_url: url } : current);
+      toast.success("Comprovante salvo e vinculado ao pedido.");
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível anexar o comprovante.");
     }
