@@ -961,7 +961,7 @@ function PedidosPage() {
         const renderActions = (o: (typeof filtered)[number], compact = false) => {
           if (isEmployeeMode) {
             return (
-              <div className={`flex items-center ${compact ? "flex-wrap gap-2" : "justify-end gap-1.5"}`}>
+              <div className={`flex items-center ${compact ? "flex-wrap gap-2" : "flex-nowrap justify-end gap-1.5"}`}>
                 <button
                   onClick={() => setEditing(o)}
                   title="Editar pedido"
@@ -1089,7 +1089,13 @@ function PedidosPage() {
         const renderStatus = (o: (typeof filtered)[number], full = false) => (
           <Select value={o.status} onValueChange={(v) => handleStatusChange(o, v as OrderStatus)}>
             <SelectTrigger
-              className={`${isEmployeeMode ? "h-9 rounded-lg border border-border/50 px-2.5 font-semibold shadow-none" : "h-8 border-0 px-2"} ${full ? "w-full" : "w-full max-w-[156px] truncate"} text-xs ${statusMap[o.status]?.color ?? ""}`}
+              className={
+                full
+                  ? `w-full ${isEmployeeMode ? "h-9 rounded-lg border border-border/50 px-2.5 font-semibold shadow-none" : "h-8 border-0 px-2"} text-xs ${statusMap[o.status]?.color ?? ""}`
+                  : isEmployeeMode
+                    ? `h-9 w-full max-w-[128px] rounded-lg border border-border/50 px-2.5 font-semibold shadow-none text-xs truncate ${statusMap[o.status]?.color ?? ""}`
+                    : `h-8 w-full max-w-[156px] truncate border-0 px-2 text-xs ${statusMap[o.status]?.color ?? ""}`
+              }
             >
               <SelectValue />
             </SelectTrigger>
@@ -1217,14 +1223,14 @@ function PedidosPage() {
                   ) : (
                     <>
                       <col className="w-[3%]" />
-                      <col className="w-[14%]" />
-                      <col className="w-[18%]" />
-                      <col className="w-[9%]" />
-                      <col className="w-[12%]" />
+                      <col className="w-[13%]" />
+                      <col className="w-[17%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[11%]" />
                       <col className="w-[8%]" />
                       <col className="w-[9%]" />
-                      <col className="w-[10%]" />
-                      <col className="w-[17%]" />
+                      <col className="w-[9%]" />
+                      <col className="w-[22%]" />
                     </>
                   )}
                 </colgroup>
@@ -1323,9 +1329,15 @@ function PedidosPage() {
                               </div>
                             </td>
                           )}
-                          <td className={`${isEmployeeMode ? "px-2.5 py-3.5" : "px-2 py-3"} overflow-hidden`}>{renderStatus(o)}</td>
-                          <td className={`${isEmployeeMode ? "px-2.5 py-3.5" : "px-1 py-3"} text-right overflow-visible`}>
-                            {renderActions(o)}
+                          <td className={`${isEmployeeMode ? "px-2.5 py-3.5" : "px-2 py-3"} overflow-hidden align-middle`}>
+                            <div className={isEmployeeMode ? "flex min-w-0 justify-start" : ""}>
+                              {renderStatus(o)}
+                            </div>
+                          </td>
+                          <td className={`${isEmployeeMode ? "px-3 py-3.5" : "px-1 py-3"} text-right overflow-hidden align-middle`}>
+                            <div className="flex min-w-0 justify-end">
+                              {renderActions(o)}
+                            </div>
                           </td>
                         </tr>
                         {trackingOpen === o.id && (
