@@ -114,43 +114,45 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT
-    s.id,
-    s.owner_id,
-    s.name,
-    s.slug,
-    s.is_default,
-    s.created_at,
-    s.updated_at,
-    true,
-    ARRAY[
-      'dashboard','orders','tracking','inventory','returns','couriers',
-      'reports','finance','ads','checkout','integrations','settings','team','subscription'
-    ]::text[],
-    'owner'::text
-  FROM public.stores s
-  WHERE s.owner_id = auth.uid()
+  SELECT *
+  FROM (
+    SELECT
+      s.id,
+      s.owner_id,
+      s.name,
+      s.slug,
+      s.is_default,
+      s.created_at,
+      s.updated_at,
+      true AS is_owner,
+      ARRAY[
+        'dashboard','orders','tracking','inventory','returns','couriers',
+        'reports','finance','ads','checkout','integrations','settings','team','subscription'
+      ]::text[] AS permissions,
+      'owner'::text AS member_role
+    FROM public.stores s
+    WHERE s.owner_id = auth.uid()
 
-  UNION ALL
+    UNION ALL
 
-  SELECT
-    s.id,
-    s.owner_id,
-    s.name,
-    s.slug,
-    s.is_default,
-    s.created_at,
-    s.updated_at,
-    false,
-    tm.permissions,
-    tm.role
-  FROM public.team_members tm
-  JOIN public.stores s ON s.id = tm.store_id
-  WHERE tm.member_user_id = auth.uid()
-    AND tm.active = true
-    AND s.owner_id <> auth.uid()
-
-  ORDER BY is_owner DESC, is_default DESC, created_at ASC;
+    SELECT
+      s.id,
+      s.owner_id,
+      s.name,
+      s.slug,
+      s.is_default,
+      s.created_at,
+      s.updated_at,
+      false AS is_owner,
+      tm.permissions,
+      tm.role AS member_role
+    FROM public.team_members tm
+    JOIN public.stores s ON s.id = tm.store_id
+    WHERE tm.member_user_id = auth.uid()
+      AND tm.active = true
+      AND s.owner_id <> auth.uid()
+  ) q
+  ORDER BY q.is_owner DESC, q.is_default DESC, q.created_at ASC;
 $$;
 
 CREATE OR REPLACE FUNCTION public.get_my_store_access(_store_id uuid)
@@ -447,23 +449,33 @@ FOR UPDATE TO authenticated
 USING (public.team_has_permission(store_id, 'couriers'))
 WITH CHECK (public.team_has_permission(store_id, 'couriers'));
 
+CREATE OR REPLACE FUNCTION public.team_can_access_order(_order_id uuid, _permission text DEFAULT 'orders')
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.orders o
+    WHERE o.id = _order_id
+      AND public.team_has_permission(o.store_id, _permission)
+  );
+$;
+
 -- Comprovantes podem ser visualizados por funcionário com Pedidos.
 DROP POLICY IF EXISTS "Team orders can view receipts" ON public.order_receipts;
 CREATE POLICY "Team orders can view receipts"
 ON public.order_receipts
 FOR SELECT TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM public.orders o
-    WHERE o.id = order_receipts.order_id
-      AND public.team_has_permission(o.store_id, 'orders')
-  )
-);
+USING (public.team_can_access_order(order_id, 'orders'));
 
 GRANT EXECUTE ON FUNCTION public.team_can_access_store(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.team_has_permission(uuid,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_my_accessible_stores() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_my_store_access(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.team_store_snapshot(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.team_can_access_order(uuid,text) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
