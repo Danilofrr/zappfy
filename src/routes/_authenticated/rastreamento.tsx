@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Bike, Palette, Search, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 import { STATUS_INFO, type DeliveryStatus } from "@/lib/tracking";
+import { useActiveStore } from "@/lib/active-store";
 
 export const Route = createFileRoute("/_authenticated/rastreamento")({
   head: () => ({ meta: [{ title: "Rastreamento — ZappFy" }] }),
@@ -26,6 +27,7 @@ type Filter = "ativos" | "sem" | "concluidos" | "todos";
 
 function RastreamentoPage() {
   const { state } = useStore();
+  const { activeStoreId } = useActiveStore();
   const [trackings, setTrackings] = useState<Record<string, TrackingRow>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("ativos");
@@ -34,13 +36,11 @@ function RastreamentoPage() {
 
   async function load() {
     setLoading(true);
-    const { data: u } = await supabase.auth.getUser();
-    const uid = u.user?.id;
-    if (!uid) { setLoading(false); return; }
+    if (!activeStoreId) { setLoading(false); return; }
     const { data } = await supabase
       .from("delivery_tracking")
       .select("order_id,status,courier_name,last_updated_at,created_at")
-      .eq("store_id", uid)
+      .eq("store_id", activeStoreId)
       .order("created_at", { ascending: false });
     const map: Record<string, TrackingRow> = {};
     (data ?? []).forEach((r: any) => { if (!map[r.order_id]) map[r.order_id] = r; });
@@ -55,7 +55,7 @@ function RastreamentoPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "delivery_tracking" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [activeStoreId]);
 
   const orders = useMemo(() => {
     const term = search.trim().toLowerCase();
