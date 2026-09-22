@@ -36,7 +36,7 @@ export const TEAM_PERMISSION_OPTIONS: Array<{
 export function permissionForPath(pathname: string): TeamPermission | "owner" | null {
   if (pathname === "/") return "dashboard";
   if (pathname.startsWith("/pedidos")) return "orders";
-  if (pathname.startsWith("/rastreamento")) return "tracking";
+  if (pathname.startsWith("/rastreamento") || pathname.startsWith("/personalizar-rastreamento")) return "tracking";
   if (pathname.startsWith("/produtos") || pathname.startsWith("/compras")) return "inventory";
   if (pathname.startsWith("/trocas")) return "returns";
   if (pathname.startsWith("/motoboys")) return "couriers";
