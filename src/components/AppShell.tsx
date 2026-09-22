@@ -83,6 +83,10 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
 
   const { state, signOut, user, access, hasPermission } = useStore();
   const { sidebarLogo } = usePlatformLogo();
+  const employeeName =
+    (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+    user?.email?.split("@")[0] ||
+    "Funcionário";
 
   const primaryMobile = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -157,52 +161,75 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             </div>
 
             <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-4">
-              {navGroups.map((group) => (
-                <div key={group.label} className="space-y-1">
-                  <div className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45 whitespace-nowrap">
-                    {group.label}
+              {navGroups.map((group) => {
+                const visibleItems = group.items.filter((item) => canSeeNavItem(item.to));
+                if (visibleItems.length === 0) return null;
+
+                return (
+                  <div key={group.label} className="space-y-1">
+                    <div className="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45 whitespace-nowrap">
+                      {group.label}
+                    </div>
+
+                    {visibleItems.map((item) => {
+                      const Icon = item.icon;
+                      const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          onClick={() => setOpen(false)}
+                          title={item.label}
+                          className={cn(
+                            "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                            active
+                              ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(34,197,94,0.55),0_0_4px_rgba(34,197,94,0.9)_inset] ring-1 ring-primary/60"
+                              : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                          )}
+                        >
+                          <Icon className={cn("h-5 w-5 shrink-0", active && "text-primary-foreground drop-shadow-[0_0_6px_rgba(34,197,94,0.9)]")} />
+                          <span className="truncate whitespace-nowrap">{item.label}</span>
+                        </Link>
+                      );
+                    })}
                   </div>
-
-                  {group.items.filter((item) => canSeeNavItem(item.to)).map((item) => {
-                    const Icon = item.icon;
-                    const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
-                    return (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        onClick={() => setOpen(false)}
-                        title={item.label}
-                        className={cn(
-                          "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                          active
-                            ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(34,197,94,0.55),0_0_4px_rgba(34,197,94,0.9)_inset] ring-1 ring-primary/60"
-                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                        )}
-                      >
-                        <Icon className={cn("h-5 w-5 shrink-0", active && "text-primary-foreground drop-shadow-[0_0_6px_rgba(34,197,94,0.9)]")} />
-                        <span className="truncate whitespace-nowrap">
-                          {item.label}
-                        </span>
-
-                      </Link>
-                    );
-                  })}
-                </div>
-              ))}
+                );
+              })}
             </nav>
 
             <div className="border-t border-sidebar-border p-3 space-y-2 mt-4">
               {access?.isOwner === true && <SubscriptionStatusCard variant="sidebar" />}
               <StoreSwitcher />
-              {access?.isOwner === false && (
-                <div className="rounded-md border border-primary/20 bg-primary/5 px-2.5 py-2 text-[10px] text-primary">
-                  Acesso de funcionário · permissões limitadas
+              {access?.isOwner === false ? (
+                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/25">
+                      <UsersRound className="h-4.5 w-4.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-bold text-sidebar-foreground">
+                        {employeeName}
+                      </div>
+                      <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-primary">
+                        Funcionário
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 rounded-lg border border-primary/10 bg-background/30 px-2 py-1.5 text-[9px] leading-relaxed text-muted-foreground">
+                    Acesso limitado aos módulos liberados pelo responsável.
+                  </div>
+                  {user?.email && (
+                    <div className="mt-1.5 truncate px-0.5 text-[9px] text-muted-foreground">
+                      {user.email}
+                    </div>
+                  )}
                 </div>
-              )}
-              {user?.email && (
-                <div className="text-[10px] text-muted-foreground truncate px-1">
-                  {user.email}
-                </div>
+              ) : (
+                user?.email && (
+                  <div className="text-[10px] text-muted-foreground truncate px-1">
+                    {user.email}
+                  </div>
+                )
               )}
               <button
                 onClick={() => signOut()}
@@ -246,7 +273,10 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="grid grid-cols-5 h-16">
+        <div
+          className="grid h-16"
+          style={{ gridTemplateColumns: `repeat(${Math.max(1, primaryMobile.length + 1)}, minmax(0, 1fr))` }}
+        >
           {primaryMobile.map((item) => {
             const Icon = item.icon;
             const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
