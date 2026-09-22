@@ -41,6 +41,7 @@ import { usePlatformLogo } from "@/lib/usePlatformLogo";
 import { SupportWhatsBubble } from "@/components/SupportWhatsBubble";
 import { ActiveStoreProvider } from "@/lib/active-store";
 import { StoreSwitcher } from "@/components/StoreSwitcher";
+import { permissionForPath } from "@/lib/team-permissions";
 
 const navGroups: { label: string; items: { to: string; label: string; icon: any }[] }[] = [
   {
@@ -75,6 +76,7 @@ const navGroups: { label: string; items: { to: string; label: string; icon: any 
       { to: "/personalizar-checkout", label: "Checkout", icon: Palette },
       { to: "/integracoes", label: "Integrações", icon: Plug },
       { to: "/minha-assinatura", label: "Assinatura", icon: CreditCard },
+      { to: "/equipe", label: "Equipe", icon: UsersRound },
       { to: "/configuracoes", label: "Configurações", icon: Cog },
     ],
   },
@@ -85,7 +87,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
 
-  const { state, signOut, user } = useStore();
+  const { state, signOut, user, access, hasPermission } = useStore();
   const { sidebarLogo } = usePlatformLogo();
 
   const primaryMobile = [
@@ -93,7 +95,18 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
     { to: "/pedidos", label: "Pedidos", icon: ShoppingCart },
     { to: "/produtos", label: "Estoque", icon: Boxes },
     { to: "/financeiro", label: "Financeiro", icon: Wallet },
-  ];
+  ].filter((item) => {
+    const permission = permissionForPath(item.to);
+    if (!access || access.isOwner) return true;
+    return permission !== "owner" && (permission === null || hasPermission(permission));
+  });
+
+  const canSeeNavItem = (to: string) => {
+    if (!access || access.isOwner) return true;
+    const permission = permissionForPath(to);
+    if (permission === "owner") return false;
+    return permission === null || hasPermission(permission);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -154,7 +167,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                     {group.label}
                   </div>
 
-                  {group.items.map((item) => {
+                  {group.items.filter((item) => canSeeNavItem(item.to)).map((item) => {
                     const Icon = item.icon;
                     const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
                     return (
@@ -183,8 +196,13 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
             </nav>
 
             <div className="border-t border-sidebar-border p-3 space-y-2 mt-4">
-              <SubscriptionStatusCard variant="sidebar" />
+              {access?.isOwner !== false && <SubscriptionStatusCard variant="sidebar" />}
               <StoreSwitcher />
+              {access?.isOwner === false && (
+                <div className="rounded-md border border-primary/20 bg-primary/5 px-2.5 py-2 text-[10px] text-primary">
+                  Acesso de funcionário · permissões limitadas
+                </div>
+              )}
               {user?.email && (
                 <div className="text-[10px] text-muted-foreground truncate px-1">
                   {user.email}
