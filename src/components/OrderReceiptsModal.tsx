@@ -76,17 +76,33 @@ export function OrderReceiptsModal({
           .order("created_at", { ascending: false }),
         supabase
           .from("delivery_tracking")
-          .select("proof_url,signature_url,completed_at,courier_name")
+          .select("proof_url,signature_url,completed_at,courier_name,created_at")
           .eq("order_id", order.id)
           .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
+          .limit(20),
       ]);
 
       if (receiptsRes.error) throw receiptsRes.error;
       setReceipts((receiptsRes.data as OrderReceipt[]) || []);
-      if (!deliveryRes.error && deliveryRes.data) {
-        setDeliveryEvidence(deliveryRes.data as DeliveryEvidence);
+
+      if (!deliveryRes.error && Array.isArray(deliveryRes.data)) {
+        const rows = deliveryRes.data as Array<DeliveryEvidence & { created_at?: string | null }>;
+        // Um pedido pode ter sido recusado, reatribuído ou ter mais de uma tentativa de
+        // entrega. O comprovante pode estar em uma tentativa anterior, então não podemos
+        // olhar somente a linha mais recente.
+        const proofRow = rows.find((row) => !!row.proof_url);
+        const signatureRow = rows.find((row) => !!row.signature_url);
+
+        if (proofRow || signatureRow) {
+          setDeliveryEvidence({
+            proof_url: proofRow?.proof_url || null,
+            signature_url: signatureRow?.signature_url || null,
+            completed_at: proofRow?.completed_at || signatureRow?.completed_at || null,
+            courier_name: proofRow?.courier_name || signatureRow?.courier_name || null,
+          });
+        } else {
+          setDeliveryEvidence(null);
+        }
       } else {
         setDeliveryEvidence(null);
       }
