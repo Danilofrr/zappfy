@@ -154,40 +154,46 @@ function PublicCheckout() {
     (async () => {
       setLoading(true);
       setError(null);
-      const normalized = slug.toLowerCase();
-      const { data: settingsRow, error: sErr } = await (supabase as any)
-        .from("settings_public")
-        .select("*")
-        .ilike("slug", normalized)
-        .maybeSingle();
+
+      const normalized = slug.trim().toLowerCase();
+      const { data: payload, error: loadError } = await (supabase as any).rpc(
+        "get_public_checkout_payload",
+        { _slug: normalized },
+      );
+
       if (cancelled) return;
-      if (sErr || !settingsRow) {
+
+      if (loadError) {
+        console.error("[checkout] erro ao carregar loja", loadError);
+        setError("Não foi possível carregar a loja.");
+        setLoading(false);
+        return;
+      }
+
+      const settingsRow = payload?.settings ?? null;
+      const productRows = Array.isArray(payload?.products) ? payload.products : [];
+
+      if (!settingsRow) {
         setError("Loja não encontrada");
         setLoading(false);
         return;
       }
-      const { data: productRows, error: pErr } = await (supabase as any)
-        .from("products_public")
-        .select("*")
-        .eq("user_id", settingsRow.user_id)
-        .order("created_at", { ascending: false });
-      if (cancelled) return;
-      if (pErr) {
-        setError("Não foi possível carregar os produtos.");
-        setLoading(false);
-        return;
-      }
+
       setSettings(toSettings(settingsRow));
-      setProducts((productRows ?? []).map(toProduct));
+      setProducts(productRows.map(toProduct));
       setLoading(false);
     })();
+
     return () => { cancelled = true; };
   }, [slug]);
 
   if (loading) {
     return (
-      <div className="min-h-screen grid place-items-center bg-background text-foreground">
-        <div className="text-sm opacity-70">Carregando loja...</div>
+      <div className="min-h-screen grid place-items-center bg-[#080808] text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-9 w-9 animate-spin rounded-full border-2 border-white/15 border-t-emerald-500" />
+          <div className="text-sm font-medium text-white/65">Preparando seu checkout...</div>
+        </div>
       </div>
     );
   }
