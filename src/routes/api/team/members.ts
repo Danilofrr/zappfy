@@ -137,7 +137,10 @@ export const Route = createFileRoute("/api/team/members")({
             .select("id,store_id,member_user_id,name,email,role,permissions,active,created_at,updated_at")
             .single();
 
-          if (error) throw error;
+          if (error) {
+            await admin.auth.admin.deleteUser(memberUser.id).catch(() => {});
+            throw error;
+          }
           return Response.json({ member: data });
         } catch (error: any) {
           console.error("[team] create member failed", error);
