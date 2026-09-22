@@ -190,7 +190,9 @@ function normalizeReceivedParts(parts: PaymentBreakdownItem[] | null | undefined
 }
 
 async function imageFileToDataUrl(file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) throw new Error("Envie uma imagem do comprovante.");
+  const looksLikeImage =
+    file.type.startsWith("image/") || /\.(png|jpe?g|webp)$/i.test(file.name || "");
+  if (!looksLikeImage) throw new Error("Envie uma imagem do comprovante.");
   // Fotos atuais de celular facilmente passam de 3 MB. O limite deve ser aplicado
   // depois da compressão, não antes dela.
   if (file.size > 15 * 1024 * 1024) {
@@ -417,7 +419,7 @@ function CourierPage() {
           _clear_signature: options.clearSignature ?? false,
         });
 
-        if (!error && result?.saved !== false) return true;
+        if (!error && result?.saved === true) return true;
         lastError = error || new Error("O servidor não confirmou o salvamento.");
         if (attempt === 0) await wait(700);
       }
