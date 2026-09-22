@@ -334,27 +334,30 @@ function CentralPage() {
         return;
       }
 
-      const [{ data: themeRes }, { data: bootstrapRes, error: bootstrapErr }] = await Promise.all([
-        (supabase as any).rpc("get_zappfy_central_settings"),
-        (supabase as any).rpc("courier_central_bootstrap", { _session: session }),
-      ]);
+      // Abertura rápida: primeiro valida apenas a sessão e os dados mínimos do motoboy.
+      // Pedidos, carga extra e tema são carregados logo depois sem bloquear a interface.
+      const { data: meRes, error: meErr } = await (supabase as any).rpc("courier_me", {
+        _session: session,
+      });
 
       if (!alive) return;
-      if (themeRes) setConfiguredTheme({ ...DEFAULT_THEME, ...(themeRes as CentralTheme) });
 
-      const meRes = bootstrapRes?.me ?? null;
-      if (bootstrapErr || !meRes) {
+      if (meErr || !meRes) {
         clearCourierSession(storeSlug);
         navigate({ to: "/entregas-zappfy/$storeSlug/login", params: { storeSlug }, replace: true });
         return;
       }
 
       setMe(meRes as Me);
-      if (Array.isArray(bootstrapRes?.deliveries)) setAvailable(bootstrapRes.deliveries as Delivery[]);
-      const inventory = (bootstrapRes?.inventory ?? {}) as CourierInventorySnapshot;
-      setInventoryItems(Array.isArray(inventory.items) ? inventory.items : []);
-      setInventoryProducts(Array.isArray(inventory.products) ? inventory.products : []);
       setLoading(false);
+
+      void Promise.allSettled([
+        (supabase as any).rpc("get_zappfy_central_settings").then(({ data: themeRes }: any) => {
+          if (alive && themeRes) setConfiguredTheme({ ...DEFAULT_THEME, ...(themeRes as CentralTheme) });
+        }),
+        loadDeliveries(),
+        loadInventory(),
+      ]);
     })();
 
     return () => {
