@@ -174,8 +174,9 @@ function formatScheduledDeliveryDate(value: string | null | undefined) {
 }
 
 function PedidosPage() {
-  const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder } = useStore();
+  const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder, hasPermission } = useStore();
   const { activeStoreId } = useActiveStore();
+  const canViewFinancial = hasPermission("finance");
   const publicBaseUrl = usePublicBaseUrl();
   const [editing, setEditing] = useState<Order | null>(null);
   const [motoboyFor, setMotoboyFor] = useState<Order | null>(null);
@@ -1071,11 +1072,13 @@ function PedidosPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <div className="font-semibold">{brl(o.total)}</div>
-                        <div
-                          className={`text-xs font-semibold ${profit >= 0 ? "text-emerald-500" : "text-destructive"}`}
-                        >
-                          {brl(profit)} · {margin.toFixed(1)}%
-                        </div>
+                        {canViewFinancial && (
+                          <div
+                            className={`text-xs font-semibold ${profit >= 0 ? "text-emerald-500" : "text-destructive"}`}
+                          >
+                            {brl(profit)} · {margin.toFixed(1)}%
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="mt-2 text-sm break-words">
@@ -1157,7 +1160,7 @@ function PedidosPage() {
                     <th className="text-left px-2 py-3 font-medium">Motoboy</th>
                     <th className="text-left px-2 py-3 font-medium">Data</th>
                     <th className="text-right px-2 py-3 font-medium">Valor</th>
-                    <th className="text-right px-2 py-3 font-medium">Lucro</th>
+                    {canViewFinancial && <th className="text-right px-2 py-3 font-medium">Lucro</th>}
                     <th className="text-left px-2 py-3 font-medium">Status</th>
                     <th className="text-right px-2 py-3 font-medium">Ações</th>
                   </tr>
@@ -1165,7 +1168,7 @@ function PedidosPage() {
                 <tbody>
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
+                      <td colSpan={canViewFinancial ? 10 : 9} className="px-4 py-10 text-center text-muted-foreground">
                         Nenhum pedido encontrado.
                       </td>
                     </tr>
@@ -1222,16 +1225,18 @@ function PedidosPage() {
                           <td className="px-2 py-3 text-right font-semibold whitespace-nowrap">
                             {brl(o.total)}
                           </td>
-                          <td className="px-2 py-3 text-right whitespace-nowrap">
-                            <div
-                              className={`font-semibold ${profit >= 0 ? "text-emerald-500" : "text-destructive"}`}
-                            >
-                              {brl(profit)}
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {margin.toFixed(1)}%
-                            </div>
-                          </td>
+                          {canViewFinancial && (
+                            <td className="px-2 py-3 text-right whitespace-nowrap">
+                              <div
+                                className={`font-semibold ${profit >= 0 ? "text-emerald-500" : "text-destructive"}`}
+                              >
+                                {brl(profit)}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground">
+                                {margin.toFixed(1)}%
+                              </div>
+                            </td>
+                          )}
                           <td className="px-2 py-3 overflow-hidden">{renderStatus(o)}</td>
                           <td className="px-1 py-3 text-right overflow-hidden">
                             {renderActions(o)}
@@ -1239,7 +1244,7 @@ function PedidosPage() {
                         </tr>
                         {trackingOpen === o.id && (
                           <tr className="border-t border-border bg-secondary/10">
-                            <td colSpan={10} className="px-4 py-4">
+                            <td colSpan={canViewFinancial ? 10 : 9} className="px-4 py-4">
                               <DeliveryTrackingPanel
                                 orderId={o.id}
                                 customerPhone={o.phone}
