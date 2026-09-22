@@ -26,7 +26,7 @@ type TrackingRow = {
 type Filter = "ativos" | "sem" | "concluidos" | "todos";
 
 function RastreamentoPage() {
-  const { state } = useStore();
+  const { state, access } = useStore();
   const { activeStoreId } = useActiveStore();
   const [trackings, setTrackings] = useState<Record<string, TrackingRow>>({});
   const [loading, setLoading] = useState(true);
@@ -92,9 +92,11 @@ function RastreamentoPage() {
       title="Rastreamento"
       subtitle="Acompanhe e gerencie todas as entregas em tempo real"
       actions={
-        <Link to="/personalizar-rastreamento">
-          <Button variant="outline" size="sm"><Palette className="h-4 w-4 mr-1.5" /> Personalizar</Button>
-        </Link>
+        access?.isOwner ? (
+          <Link to="/personalizar-rastreamento">
+            <Button variant="outline" size="sm"><Palette className="h-4 w-4 mr-1.5" /> Personalizar</Button>
+          </Link>
+        ) : null
       }
     >
       <div className="space-y-4">
