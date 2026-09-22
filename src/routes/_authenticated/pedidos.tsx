@@ -62,6 +62,7 @@ import {
   X,
   Paperclip,
   Users,
+  MoreHorizontal,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -86,6 +87,13 @@ import { openShippingLabels } from "@/lib/shipping-labels";
 import { supabase } from "@/integrations/supabase/client";
 import type { DeliveryAssignment } from "@/lib/delivery-load";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   attachFeeMetaToItems,
   buildOrderFeeMeta,
@@ -174,9 +182,10 @@ function formatScheduledDeliveryDate(value: string | null | undefined) {
 }
 
 function PedidosPage() {
-  const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder, hasPermission } = useStore();
+  const { state, addOrder, updateOrder, updateOrderStatus, deleteOrder, hasPermission, access } = useStore();
   const { activeStoreId } = useActiveStore();
   const canViewFinancial = hasPermission("finance");
+  const isEmployeeMode = access?.isOwner === false;
   const publicBaseUrl = usePublicBaseUrl();
   const [editing, setEditing] = useState<Order | null>(null);
   const [motoboyFor, setMotoboyFor] = useState<Order | null>(null);
@@ -944,82 +953,141 @@ function PedidosPage() {
       </div>
 
       {(() => {
-        const renderActions = (o: (typeof filtered)[number], compact = false) => (
-          <div
-            className={`flex items-center flex-wrap ${compact ? "gap-1" : "justify-end gap-0.5"}`}
-          >
-            <button
-              onClick={() => setEditing(o)}
-              title="Editar pedido"
-              className="text-muted-foreground hover:text-primary p-0.5"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => printReceipt(o)}
-              title="Gerar recibo e imprimir"
-              className="text-muted-foreground hover:text-primary p-0.5"
-            >
-              <Receipt className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => printLabels10x15([o])}
-              title="Gerar etiqueta térmica 10x15"
-              className="text-muted-foreground hover:text-primary p-0.5"
-            >
-              <Tag className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setMotoboyFor(o)}
-              title="Enviar endereço para o motoboy no WhatsApp"
-              className="text-muted-foreground hover:text-blue-500 p-0.5"
-            >
-              <Bike className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setReceiptsOrder(o)}
-              title="Comprovantes do pedido"
-              className="text-muted-foreground hover:text-primary p-0.5"
-            >
-              <Paperclip className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => openCustomerWhatsApp(o)}
-              title="Falar com o cliente no WhatsApp"
-              className="text-muted-foreground hover:text-green-500 p-0.5"
-            >
-              <Phone className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => notifyDelivery(o)}
-              title="Avisar cliente no WhatsApp que o pedido saiu para entrega"
-              className="text-muted-foreground hover:text-green-500 p-0.5"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setTrackingOpen(trackingOpen === o.id ? null : o.id)}
-              title="Rastreamento da entrega em tempo real"
-              className={`p-0.5 ${trackingOpen === o.id ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
-            >
-              <MapPin className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => {
-                if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id);
-              }}
-              title="Excluir pedido"
-              className="text-muted-foreground hover:text-destructive p-0.5"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        );
+        const actionButtonClass =
+          "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-background/40 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary";
+
+        const renderActions = (o: (typeof filtered)[number], compact = false) => {
+          if (isEmployeeMode) {
+            return (
+              <div className={`flex items-center ${compact ? "flex-wrap gap-2" : "justify-end gap-1.5"}`}>
+                <button
+                  onClick={() => setEditing(o)}
+                  title="Editar pedido"
+                  aria-label="Editar pedido"
+                  className={actionButtonClass}
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setMotoboyFor(o)}
+                  title="Enviar para o motoboy"
+                  aria-label="Enviar para o motoboy"
+                  className={actionButtonClass}
+                >
+                  <Bike className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => openCustomerWhatsApp(o)}
+                  title="Falar com o cliente no WhatsApp"
+                  aria-label="Falar com o cliente no WhatsApp"
+                  className={`${actionButtonClass} hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-500`}
+                >
+                  <Phone className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setReceiptsOrder(o)}
+                  title="Comprovantes do pedido"
+                  aria-label="Comprovantes do pedido"
+                  className={actionButtonClass}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setTrackingOpen(trackingOpen === o.id ? null : o.id)}
+                  title="Rastreamento da entrega"
+                  aria-label="Rastreamento da entrega"
+                  className={`${actionButtonClass} ${trackingOpen === o.id ? "border-primary/50 bg-primary/10 text-primary" : ""}`}
+                >
+                  <MapPin className="h-4 w-4" />
+                </button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      title="Mais ações"
+                      aria-label="Mais ações"
+                      className={actionButtonClass}
+                    >
+                      <MoreHorizontal className="h-4.5 w-4.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem onClick={() => printReceipt(o)} className="gap-2">
+                      <Receipt className="h-4 w-4" />
+                      Gerar recibo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => printLabels10x15([o])} className="gap-2">
+                      <Tag className="h-4 w-4" />
+                      Imprimir etiqueta 10x15
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => notifyDelivery(o)} className="gap-2">
+                      <MessageCircle className="h-4 w-4" />
+                      Avisar saída para entrega
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id);
+                      }}
+                      className="gap-2 text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Excluir pedido
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            );
+          }
+
+          return (
+            <div className={`flex items-center flex-wrap ${compact ? "gap-1.5" : "justify-end gap-1"}`}>
+              <button onClick={() => setEditing(o)} title="Editar pedido" className={actionButtonClass}>
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button onClick={() => printReceipt(o)} title="Gerar recibo e imprimir" className={actionButtonClass}>
+                <Receipt className="h-4 w-4" />
+              </button>
+              <button onClick={() => printLabels10x15([o])} title="Gerar etiqueta térmica 10x15" className={actionButtonClass}>
+                <Tag className="h-4 w-4" />
+              </button>
+              <button onClick={() => setMotoboyFor(o)} title="Enviar endereço para o motoboy no WhatsApp" className={actionButtonClass}>
+                <Bike className="h-4 w-4" />
+              </button>
+              <button onClick={() => setReceiptsOrder(o)} title="Comprovantes do pedido" className={actionButtonClass}>
+                <Paperclip className="h-4 w-4" />
+              </button>
+              <button onClick={() => openCustomerWhatsApp(o)} title="Falar com o cliente no WhatsApp" className={actionButtonClass}>
+                <Phone className="h-4 w-4" />
+              </button>
+              <button onClick={() => notifyDelivery(o)} title="Avisar cliente no WhatsApp que o pedido saiu para entrega" className={actionButtonClass}>
+                <MessageCircle className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setTrackingOpen(trackingOpen === o.id ? null : o.id)}
+                title="Rastreamento da entrega em tempo real"
+                className={`${actionButtonClass} ${trackingOpen === o.id ? "border-primary/50 bg-primary/10 text-primary" : ""}`}
+              >
+                <MapPin className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id);
+                }}
+                title="Excluir pedido"
+                className={`${actionButtonClass} hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          );
+        };
 
         const renderStatus = (o: (typeof filtered)[number], full = false) => (
           <Select value={o.status} onValueChange={(v) => handleStatusChange(o, v as OrderStatus)}>
             <SelectTrigger
-              className={`h-8 ${full ? "w-full" : "w-full max-w-[150px] truncate"} border-0 text-xs px-2 ${statusMap[o.status]?.color ?? ""}`}
+              className={`${isEmployeeMode ? "h-9 rounded-lg border border-border/50 px-2.5 font-semibold shadow-none" : "h-8 border-0 px-2"} ${full ? "w-full" : "w-full max-w-[156px] truncate"} text-xs ${statusMap[o.status]?.color ?? ""}`}
             >
               <SelectValue />
             </SelectTrigger>
@@ -1049,7 +1117,7 @@ function PedidosPage() {
                 return (
                   <div
                     key={o.id}
-                    className="rounded-2xl border border-border bg-card p-4 shadow-elegant"
+                    className={`rounded-2xl border bg-card p-4 shadow-elegant transition-colors ${isEmployeeMode ? "border-border/80 hover:border-primary/25" : "border-border"}`}
                   >
                     <div className="mb-2 flex items-center gap-2">
                       <Checkbox
@@ -1131,18 +1199,34 @@ function PedidosPage() {
             <div className="hidden lg:block w-full max-w-full rounded-2xl border border-border bg-card overflow-hidden shadow-elegant">
               <table className="w-full table-fixed text-sm box-border">
                 <colgroup>
-                  <col className="w-[4%]" />
-                  <col className="w-[13%]" />
-                  <col className="w-[17%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                  <col className="w-[17%]" />
-                  <col className="w-[16%]" />
+                  {canViewFinancial ? (
+                    <>
+                      <col className="w-[3%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[9%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[18%]" />
+                    </>
+                  ) : (
+                    <>
+                      <col className="w-[3%]" />
+                      <col className="w-[13%]" />
+                      <col className="w-[17%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[9%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[18%]" />
+                    </>
+                  )}
                 </colgroup>
-                <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-secondary/40">
+                <thead className={`text-[11px] uppercase tracking-[0.08em] text-muted-foreground ${isEmployeeMode ? "bg-secondary/55" : "bg-secondary/40"}`}>
                   <tr>
                     <th className="px-2 py-3">
                       <Checkbox
@@ -1179,7 +1263,7 @@ function PedidosPage() {
                     const margin = revenueBase > 0 ? (profit / revenueBase) * 100 : 0;
                     return (
                       <Fragment key={o.id}>
-                        <tr className="border-t border-border hover:bg-secondary/30 align-middle">
+                        <tr className={`border-t border-border align-middle transition-colors ${isEmployeeMode ? "hover:bg-primary/[0.035]" : "hover:bg-secondary/30"}`}>
                           <td className="px-2 py-3">
                             <Checkbox
                               checked={selected.has(o.id)}
@@ -1237,8 +1321,8 @@ function PedidosPage() {
                               </div>
                             </td>
                           )}
-                          <td className="px-2 py-3 overflow-hidden">{renderStatus(o)}</td>
-                          <td className="px-1 py-3 text-right overflow-hidden">
+                          <td className={`${isEmployeeMode ? "px-2.5 py-3.5" : "px-2 py-3"} overflow-hidden`}>{renderStatus(o)}</td>
+                          <td className={`${isEmployeeMode ? "px-2.5 py-3.5" : "px-1 py-3"} text-right overflow-visible`}>
                             {renderActions(o)}
                           </td>
                         </tr>
