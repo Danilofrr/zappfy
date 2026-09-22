@@ -113,7 +113,7 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
       await q.refetch();
       return data as unknown as Store;
     },
-    [q],
+    [q, stores, activeStoreId],
   );
 
   const deleteStore = useCallback(
