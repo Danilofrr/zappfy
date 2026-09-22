@@ -943,16 +943,7 @@ function CentralPage() {
                 <div className="mt-1 text-xl font-black tracking-[-0.04em] sm:text-2xl" style={{ color: colorMode === "light" ? "#087a3c" : theme.button_color }}>
                   {brl(todayPerformance.deliveryRevenue)}
                 </div>
-                <div className="mt-0.5 text-[10px] opacity-55">
-                  {todayPerformance.configuredMotoboyFee > 0
-                    ? `${brl(todayPerformance.configuredMotoboyFee)} por entrega`
-                    : "taxas de entrega hoje"}
-                </div>
-                {todayPerformance.storeComplement > 0 && (
-                  <div className="mt-1 text-[10px] font-semibold" style={{ color: colorMode === "light" ? "#087a3c" : theme.button_color }}>
-                    Cliente {brl(todayPerformance.customerShippingTotal)} + loja {brl(todayPerformance.storeComplement)}
-                  </div>
-                )}
+                <div className="mt-0.5 text-[10px] opacity-55">total apurado hoje</div>
               </div>
 
               <div
