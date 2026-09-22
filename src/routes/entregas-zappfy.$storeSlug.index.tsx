@@ -108,6 +108,7 @@ type Me = {
   store_name: string;
   store_logo_url: string | null;
   slug: string;
+  motoboy_fee?: number;
 };
 
 type CourierInventoryItem = {
@@ -648,18 +649,31 @@ function CentralPage() {
       return brazilDateKey(new Date(delivery.completed_at)) === todayKey;
     });
 
-    const deliveryRevenue = completedToday.reduce(
+    const customerShippingTotal = completedToday.reduce(
       (sum, delivery) => sum + deliveryFeeFromOrder(delivery.order),
       0,
     );
+
+    const configuredMotoboyFee = Math.max(0, Number(me?.motoboy_fee || 0));
+    const deliveryRevenue = completedToday.reduce((sum, delivery) => {
+      // Se a loja configurou uma taxa do motoboy, esse é o valor total devido
+      // por entrega (cliente + complemento da loja). Sem configuração, mantém
+      // compatibilidade usando o frete cobrado do cliente.
+      return sum + (configuredMotoboyFee > 0 ? configuredMotoboyFee : deliveryFeeFromOrder(delivery.order));
+    }, 0);
+
+    const storeComplement = Math.max(0, deliveryRevenue - customerShippingTotal);
     const average = completedToday.length > 0 ? deliveryRevenue / completedToday.length : 0;
 
     return {
       deliveries: completedToday.length,
       deliveryRevenue,
+      customerShippingTotal,
+      storeComplement,
       average,
+      configuredMotoboyFee,
     };
-  }, [available, todayKey]);
+  }, [available, me?.motoboy_fee, todayKey]);
 
   const cardStyle: React.CSSProperties = {
     background: `linear-gradient(145deg, color-mix(in oklab, ${theme.card_color} 97%, white), ${theme.card_color})`,
@@ -929,7 +943,16 @@ function CentralPage() {
                 <div className="mt-1 text-xl font-black tracking-[-0.04em] sm:text-2xl" style={{ color: colorMode === "light" ? "#087a3c" : theme.button_color }}>
                   {brl(todayPerformance.deliveryRevenue)}
                 </div>
-                <div className="mt-0.5 text-[10px] opacity-55">taxas de entrega hoje</div>
+                <div className="mt-0.5 text-[10px] opacity-55">
+                  {todayPerformance.configuredMotoboyFee > 0
+                    ? `${brl(todayPerformance.configuredMotoboyFee)} por entrega`
+                    : "taxas de entrega hoje"}
+                </div>
+                {todayPerformance.storeComplement > 0 && (
+                  <div className="mt-1 text-[10px] font-semibold" style={{ color: colorMode === "light" ? "#087a3c" : theme.button_color }}>
+                    Cliente {brl(todayPerformance.customerShippingTotal)} + loja {brl(todayPerformance.storeComplement)}
+                  </div>
+                )}
               </div>
 
               <div
