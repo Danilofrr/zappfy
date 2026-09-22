@@ -1235,7 +1235,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (p.cardMachineFees !== undefined) patch.card_machine_fees = p.cardMachineFees as any;
       if (p.cardFeeMode !== undefined) patch.card_fee_mode = p.cardFeeMode;
       if (p.slug !== undefined) patch.slug = p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || null : null;
-      const { data, error } = await supabase.from("settings").update(patch).eq("store_id", activeStoreId ?? user.id).select().single();
+
+      const sid = activeStoreId ?? user.id;
+      if (access && !access.isOwner) {
+        if (!access.permissions.includes("checkout") && !access.permissions.includes("settings")) {
+          toast.error("Você não tem permissão para alterar o checkout");
+          return;
+        }
+        const { data, error } = await (supabase as any).rpc("team_update_checkout_settings", {
+          _store_id: sid,
+          _patch: patch,
+        });
+        if (error) { toast.error(error.message); return; }
+        setState((s) => ({ ...s, settings: data ? toSettings(data) : s.settings }));
+        return;
+      }
+
+      const { data, error } = await supabase.from("settings").update(patch).eq("store_id", sid).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, settings: toSettings(data) }));
     },
