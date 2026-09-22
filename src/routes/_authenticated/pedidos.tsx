@@ -955,6 +955,8 @@ function PedidosPage() {
       {(() => {
         const actionButtonClass =
           "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-background/40 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary";
+        const ownerActionButtonClass =
+          "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/30 text-muted-foreground transition-colors hover:border-primary/35 hover:bg-primary/10 hover:text-primary";
 
         const renderActions = (o: (typeof filtered)[number], compact = false) => {
           if (isEmployeeMode) {
@@ -1009,7 +1011,7 @@ function PedidosPage() {
                       aria-label="Mais ações"
                       className={actionButtonClass}
                     >
-                      <MoreHorizontal className="h-4.5 w-4.5" />
+                      <MoreHorizontal className="h-[18px] w-[18px]" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -1043,31 +1045,31 @@ function PedidosPage() {
 
           return (
             <div className={`flex items-center flex-wrap ${compact ? "gap-1.5" : "justify-end gap-1"}`}>
-              <button onClick={() => setEditing(o)} title="Editar pedido" className={actionButtonClass}>
+              <button onClick={() => setEditing(o)} title="Editar pedido" className={ownerActionButtonClass}>
                 <Pencil className="h-4 w-4" />
               </button>
-              <button onClick={() => printReceipt(o)} title="Gerar recibo e imprimir" className={actionButtonClass}>
+              <button onClick={() => printReceipt(o)} title="Gerar recibo e imprimir" className={ownerActionButtonClass}>
                 <Receipt className="h-4 w-4" />
               </button>
-              <button onClick={() => printLabels10x15([o])} title="Gerar etiqueta térmica 10x15" className={actionButtonClass}>
+              <button onClick={() => printLabels10x15([o])} title="Gerar etiqueta térmica 10x15" className={ownerActionButtonClass}>
                 <Tag className="h-4 w-4" />
               </button>
-              <button onClick={() => setMotoboyFor(o)} title="Enviar endereço para o motoboy no WhatsApp" className={actionButtonClass}>
+              <button onClick={() => setMotoboyFor(o)} title="Enviar endereço para o motoboy no WhatsApp" className={ownerActionButtonClass}>
                 <Bike className="h-4 w-4" />
               </button>
-              <button onClick={() => setReceiptsOrder(o)} title="Comprovantes do pedido" className={actionButtonClass}>
+              <button onClick={() => setReceiptsOrder(o)} title="Comprovantes do pedido" className={ownerActionButtonClass}>
                 <Paperclip className="h-4 w-4" />
               </button>
-              <button onClick={() => openCustomerWhatsApp(o)} title="Falar com o cliente no WhatsApp" className={actionButtonClass}>
+              <button onClick={() => openCustomerWhatsApp(o)} title="Falar com o cliente no WhatsApp" className={ownerActionButtonClass}>
                 <Phone className="h-4 w-4" />
               </button>
-              <button onClick={() => notifyDelivery(o)} title="Avisar cliente no WhatsApp que o pedido saiu para entrega" className={actionButtonClass}>
+              <button onClick={() => notifyDelivery(o)} title="Avisar cliente no WhatsApp que o pedido saiu para entrega" className={ownerActionButtonClass}>
                 <MessageCircle className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setTrackingOpen(trackingOpen === o.id ? null : o.id)}
                 title="Rastreamento da entrega em tempo real"
-                className={`${actionButtonClass} ${trackingOpen === o.id ? "border-primary/50 bg-primary/10 text-primary" : ""}`}
+                className={`${ownerActionButtonClass} ${trackingOpen === o.id ? "border-primary/50 bg-primary/10 text-primary" : ""}`}
               >
                 <MapPin className="h-4 w-4" />
               </button>
@@ -1076,7 +1078,7 @@ function PedidosPage() {
                   if (confirm("Excluir este pedido? O estoque será devolvido.")) deleteOrder(o.id);
                 }}
                 title="Excluir pedido"
-                className={`${actionButtonClass} hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive`}
+                className={`${ownerActionButtonClass} hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive`}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -1215,14 +1217,14 @@ function PedidosPage() {
                   ) : (
                     <>
                       <col className="w-[3%]" />
-                      <col className="w-[13%]" />
-                      <col className="w-[17%]" />
-                      <col className="w-[10%]" />
-                      <col className="w-[11%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[18%]" />
+                      <col className="w-[9%]" />
+                      <col className="w-[12%]" />
                       <col className="w-[8%]" />
                       <col className="w-[9%]" />
-                      <col className="w-[11%]" />
-                      <col className="w-[18%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[17%]" />
                     </>
                   )}
                 </colgroup>
