@@ -201,12 +201,47 @@ export const Route = createFileRoute("/api/team/members")({
           if ("error" in auth) return auth.error;
           const { admin } = auth as any;
 
+          const { data: member, error: memberError } = await (admin as any)
+            .from("team_members")
+            .select("id,member_user_id")
+            .eq("id", id)
+            .eq("store_id", storeId)
+            .maybeSingle();
+          if (memberError) throw memberError;
+          if (!member) return Response.json({ error: "Funcionário não encontrado." }, { status: 404 });
+
           const { error } = await (admin as any)
             .from("team_members")
             .delete()
             .eq("id", id)
             .eq("store_id", storeId);
           if (error) throw error;
+
+          // Se a conta foi criada exclusivamente para a Equipe e não está vinculada
+          // a outra loja, remove também o login para permitir recriação futura.
+          const [{ count: otherMemberships }, { count: ownedStores }, userResult] = await Promise.all([
+            (admin as any)
+              .from("team_members")
+              .select("id", { count: "exact", head: true })
+              .eq("member_user_id", member.member_user_id),
+            (admin as any)
+              .from("stores")
+              .select("id", { count: "exact", head: true })
+              .eq("owner_id", member.member_user_id),
+            admin.auth.admin.getUserById(member.member_user_id),
+          ]);
+
+          const dedicatedTeamAccount = Boolean(userResult.data?.user?.user_metadata?.zappfy_team_member);
+          if (
+            dedicatedTeamAccount &&
+            Number(otherMemberships || 0) === 0 &&
+            Number(ownedStores || 0) === 0
+          ) {
+            const removed = await admin.auth.admin.deleteUser(member.member_user_id);
+            if (removed.error) {
+              console.warn("[team] membership removida, mas não foi possível apagar login dedicado", removed.error);
+            }
+          }
 
           return Response.json({ ok: true });
         } catch (error: any) {
