@@ -87,6 +87,7 @@ export const Route = createFileRoute("/api/team/members")({
           const { admin, user, store } = auth as any;
 
           let memberUser = await findUserByEmail(admin, body.email);
+          const existingUser = Boolean(memberUser);
           if (memberUser?.id === user.id) {
             return Response.json({ error: "O dono da loja já possui acesso total." }, { status: 400 });
           }
@@ -125,7 +126,7 @@ export const Route = createFileRoute("/api/team/members")({
             .single();
 
           if (error) throw error;
-          return Response.json({ member: data, existingUser: Boolean(await findUserByEmail(admin, body.email)) });
+          return Response.json({ member: data, existingUser });
         } catch (error: any) {
           console.error("[team] create member failed", error);
           return Response.json({ error: error?.message || "Não foi possível criar o funcionário." }, { status: 400 });
