@@ -204,7 +204,7 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
                 <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-2.5">
                   <div className="flex items-center gap-2.5">
                     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/25">
-                      <UsersRound className="h-4.5 w-4.5" />
+                      <UsersRound className="h-[18px] w-[18px]" />
                     </div>
                     <div className="min-w-0">
                       <div className="truncate text-xs font-bold text-sidebar-foreground">
