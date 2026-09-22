@@ -19,6 +19,9 @@ export type Store = {
   is_default: boolean;
   created_at: string;
   updated_at: string;
+  is_owner?: boolean;
+  permissions?: string[];
+  member_role?: string;
 };
 
 const ACTIVE_STORE_KEY = "zappfy.active_store_id";
@@ -52,12 +55,7 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
     queryKey: ["my-stores", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stores")
-        .select("*")
-        .eq("owner_id", user!.id)
-        .order("is_default", { ascending: false })
-        .order("created_at", { ascending: true });
+      const { data, error } = await (supabase as any).rpc("list_my_accessible_stores");
       if (error) throw error;
       return (data ?? []) as Store[];
     },
@@ -103,6 +101,10 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
 
   const createStore = useCallback(
     async (name: string, slug?: string) => {
+      const current = stores.find((store) => store.id === activeStoreId);
+      if (current && current.is_owner === false) {
+        throw new Error("Funcionários não podem criar lojas.");
+      }
       const { data, error } = await supabase.rpc("create_my_store", {
         _name: name,
         _slug: slug,
