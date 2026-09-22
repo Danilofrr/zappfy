@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
