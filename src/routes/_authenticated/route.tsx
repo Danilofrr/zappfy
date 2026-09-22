@@ -36,6 +36,9 @@ export const Route = createFileRoute("/_authenticated")({
     // O bloqueio acontece antes de renderizar a rota, não apenas escondendo o menu.
     if (!isAdmin) {
       const { data: accessibleStores } = await (supabase as any).rpc("list_my_accessible_stores");
+      if (Array.isArray(accessibleStores) && accessibleStores.length === 0) {
+        if (location.pathname !== "/sem-acesso") throw redirect({ to: "/sem-acesso" });
+      }
       if (Array.isArray(accessibleStores) && accessibleStores.length) {
         let remembered: string | null = null;
         try {
