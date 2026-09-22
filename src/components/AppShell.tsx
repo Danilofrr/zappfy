@@ -24,13 +24,7 @@ import {
   CreditCard,
   Plug,
   Percent,
-
-
-
-
-
-
-
+  UsersRound,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
