@@ -1258,7 +1258,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       loadedFor.current = null;
       if (typeof window !== "undefined") window.location.href = "/auth";
     },
-  }), [state, loading, user, activeStoreId, loadAll]);
+  }), [state, loading, user, access, activeStoreId, loadAll]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
