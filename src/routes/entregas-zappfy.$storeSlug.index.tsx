@@ -77,6 +77,7 @@ type Delivery = {
   status: string;
   scheduled_for: string | null;
   accepted_at: string | null;
+  completed_at: string | null;
   created_at: string;
   notes: string | null;
   delivery_latitude?: number | null;
@@ -93,7 +94,7 @@ type Delivery = {
     total: number;
     notes: string | null;
     payment: string;
-    items: { name: string; qty: number }[];
+    items: { name: string; qty: number; price?: number; shipping?: number | string | null }[];
   };
 };
 
@@ -172,6 +173,27 @@ function formatCentralScheduledDate(value: string | null | undefined) {
 
 function normalizeDeliveryStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase();
+}
+
+function deliveryFeeFromOrder(order: Delivery["order"]) {
+  const itemFees = (order.items || [])
+    .map((item) => Number(item.shipping ?? 0))
+    .filter((value) => Number.isFinite(value) && value > 0);
+
+  // O checkout pode repetir o mesmo frete em mais de um item do pedido.
+  // A taxa é uma por pedido, então usamos o maior valor em vez de somar os itens.
+  if (itemFees.length) return Math.max(...itemFees);
+
+  const notes = String(order.notes || "");
+  const match = notes.match(/Entrega(?:\s*\([^)]+\))?\s*:?\s*R?\$?\s*([\d.,]+)/i);
+  if (!match) return 0;
+
+  const raw = match[1];
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw;
+  const value = Number(normalized);
+  return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 function normalizeBrazilWhatsAppPhone(value: string | null | undefined) {
@@ -620,6 +642,25 @@ function CentralPage() {
     return { ready, scheduled, onRoute, delivered, possession, orderItemsInPossession };
   }, [available, extraLoadQuantity, todayKey]);
 
+  const todayPerformance = useMemo(() => {
+    const completedToday = available.filter((delivery) => {
+      if (normalizeDeliveryStatus(delivery.status) !== "entregue" || !delivery.completed_at) return false;
+      return brazilDateKey(new Date(delivery.completed_at)) === todayKey;
+    });
+
+    const deliveryRevenue = completedToday.reduce(
+      (sum, delivery) => sum + deliveryFeeFromOrder(delivery.order),
+      0,
+    );
+    const average = completedToday.length > 0 ? deliveryRevenue / completedToday.length : 0;
+
+    return {
+      deliveries: completedToday.length,
+      deliveryRevenue,
+      average,
+    };
+  }, [available, todayKey]);
+
   const cardStyle: React.CSSProperties = {
     background: `linear-gradient(145deg, color-mix(in oklab, ${theme.card_color} 97%, white), ${theme.card_color})`,
     border: `1px solid ${theme.card_border_color}`,
@@ -846,6 +887,60 @@ function CentralPage() {
               <div className="truncate text-base font-bold" style={{ color: theme.title_color }}>{me.store_name}</div>
               <div className="mt-1 flex items-center gap-1.5 text-[11px] opacity-55">
                 <Clock3 className="h-3.5 w-3.5" /> Central sincronizada em tempo real
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-hidden rounded-2xl border" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
+          <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center">
+            <div className="min-w-0 lg:w-[260px]">
+              <div className="flex items-center gap-2">
+                <span
+                  className="grid h-10 w-10 place-items-center rounded-xl"
+                  style={{ background: `${theme.button_color}16`, color: theme.button_color }}
+                >
+                  <WalletCards className="h-5 w-5" />
+                </span>
+                <div>
+                  <div className="text-sm font-black" style={{ color: theme.title_color }}>Meu resultado de hoje</div>
+                  <div className="mt-0.5 text-[11px] opacity-55">Atualiza conforme você conclui as entregas</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3">
+              <div
+                className="rounded-xl border p-3 sm:p-4"
+                style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f8fbf9" : theme.background_color }}
+              >
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-50">Entregas concluídas</div>
+                <div className="mt-1 text-2xl font-black tracking-[-0.04em]" style={{ color: theme.title_color }}>
+                  {todayPerformance.deliveries}
+                </div>
+                <div className="mt-0.5 text-[10px] opacity-55">feitas hoje</div>
+              </div>
+
+              <div
+                className="rounded-xl border p-3 sm:p-4"
+                style={{ borderColor: `${theme.button_color}45`, background: `${theme.button_color}${colorMode === "light" ? "0c" : "12"}` }}
+              >
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-60">Valor apurado</div>
+                <div className="mt-1 text-xl font-black tracking-[-0.04em] sm:text-2xl" style={{ color: colorMode === "light" ? "#087a3c" : theme.button_color }}>
+                  {brl(todayPerformance.deliveryRevenue)}
+                </div>
+                <div className="mt-0.5 text-[10px] opacity-55">taxas de entrega hoje</div>
+              </div>
+
+              <div
+                className="col-span-2 rounded-xl border p-3 sm:col-span-1 sm:p-4"
+                style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f8fbf9" : theme.background_color }}
+              >
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-50">Média por entrega</div>
+                <div className="mt-1 text-xl font-black tracking-[-0.04em] sm:text-2xl" style={{ color: theme.title_color }}>
+                  {brl(todayPerformance.average)}
+                </div>
+                <div className="mt-0.5 text-[10px] opacity-55">média das concluídas</div>
               </div>
             </div>
           </div>
