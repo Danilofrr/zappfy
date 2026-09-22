@@ -76,7 +76,7 @@ export function StoreSwitcher({ compact = false }: { compact?: boolean }) {
         </PopoverTrigger>
         <PopoverContent className="w-[260px] p-1" align="start">
           <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-            Minhas lojas
+            Lojas disponíveis
           </div>
           <div className="max-h-[260px] overflow-y-auto">
             {stores.map((s) => {
@@ -106,19 +106,21 @@ export function StoreSwitcher({ compact = false }: { compact?: boolean }) {
               );
             })}
           </div>
-          <div className="border-t border-border mt-1 pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                setDialogOpen(true);
-              }}
-              className="w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Criar nova loja
-            </button>
-          </div>
+          {activeStore?.is_owner !== false && (
+            <div className="border-t border-border mt-1 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setDialogOpen(true);
+                }}
+                className="w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Criar nova loja
+              </button>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
 
