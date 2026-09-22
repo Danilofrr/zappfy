@@ -455,14 +455,14 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $team_access_order$
   SELECT EXISTS (
     SELECT 1
     FROM public.orders o
     WHERE o.id = _order_id
       AND public.team_has_permission(o.store_id, _permission)
   );
-$;
+$team_access_order$;
 
 -- Comprovantes podem ser visualizados por funcionário com Pedidos.
 DROP POLICY IF EXISTS "Team orders can view receipts" ON public.order_receipts;
