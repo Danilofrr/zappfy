@@ -87,26 +87,38 @@ export const Route = createFileRoute("/api/team/members")({
           const { admin, user, store } = auth as any;
 
           let memberUser = await findUserByEmail(admin, body.email);
-          const existingUser = Boolean(memberUser);
           if (memberUser?.id === user.id) {
             return Response.json({ error: "O dono da loja já possui acesso total." }, { status: 400 });
           }
 
-          if (!memberUser) {
-            const created = await admin.auth.admin.createUser({
-              email: body.email.trim().toLowerCase(),
-              password: body.password,
-              email_confirm: true,
-              user_metadata: { full_name: body.name, zappfy_team_member: true },
-            });
-            if (created.error || !created.data.user) throw created.error || new Error("Não foi possível criar o usuário");
-            memberUser = created.data.user;
-          } else {
-            // O usuário pode já existir no Zappfy. Não alteramos a senha automaticamente
-            // para não afetar outras lojas/contas às quais ele pertença.
-            await admin.auth.admin.updateUserById(memberUser.id, {
-              user_metadata: { ...(memberUser.user_metadata || {}), full_name: body.name, zappfy_team_member: true },
-            });
+          // Acesso de funcionário deve ser uma conta dedicada. Vincular uma conta Zappfy
+          // já existente criaria ambiguidade entre a loja própria do usuário e a loja da equipe.
+          if (memberUser) {
+            return Response.json(
+              { error: "Este e-mail já possui uma conta no Zappfy. Use outro e-mail para criar o acesso do funcionário." },
+              { status: 409 },
+            );
+          }
+
+          const created = await admin.auth.admin.createUser({
+            email: body.email.trim().toLowerCase(),
+            password: body.password,
+            email_confirm: true,
+            user_metadata: { full_name: body.name, zappfy_team_member: true },
+          });
+          if (created.error || !created.data.user) throw created.error || new Error("Não foi possível criar o usuário");
+          memberUser = created.data.user;
+
+          // O trigger padrão do Zappfy cria uma loja pessoal para todo auth.user novo.
+          // Para contas de equipe ela é removida imediatamente; os FKs da loja usam CASCADE.
+          const { error: cleanupStoreError } = await (admin as any)
+            .from("stores")
+            .delete()
+            .eq("id", memberUser.id)
+            .eq("owner_id", memberUser.id);
+          if (cleanupStoreError) {
+            await admin.auth.admin.deleteUser(memberUser.id).catch(() => {});
+            throw cleanupStoreError;
           }
 
           const { data, error } = await (admin as any)
@@ -126,7 +138,7 @@ export const Route = createFileRoute("/api/team/members")({
             .single();
 
           if (error) throw error;
-          return Response.json({ member: data, existingUser });
+          return Response.json({ member: data });
         } catch (error: any) {
           console.error("[team] create member failed", error);
           return Response.json({ error: error?.message || "Não foi possível criar o funcionário." }, { status: 400 });
