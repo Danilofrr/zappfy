@@ -301,6 +301,11 @@ function MotoboysPage() {
     return `${range.start.toLocaleDateString("pt-BR")} até ${range.end.toLocaleDateString("pt-BR")}`;
   }, [period, range]);
 
+  const courierIdsKey = useMemo(
+    () => list.map((courier) => courier.id).sort().join("|"),
+    [list],
+  );
+
   const inventoryByCourier = useMemo(() => {
     const map: Record<string, CourierInventoryItem[]> = {};
     inventoryRows.forEach((item) => {
@@ -343,7 +348,9 @@ function MotoboysPage() {
       setLoading(false);
       return;
     }
+
     if (showLoading) setLoading(true);
+
     const [
       { data, error },
       { data: loadData, error: loadError },
@@ -353,150 +360,129 @@ function MotoboysPage() {
       (supabase as any).rpc("get_courier_loads", { _store_id: activeStoreId }),
       (supabase as any).rpc("list_courier_inventory", { _store_id: activeStoreId }),
     ]);
-    const { data: feeSettings, error: feeError } = await (supabase as any)
-      .from("settings")
-      .select("motoboy_fee")
-      .eq("store_id", activeStoreId)
-      .maybeSingle();
-    if (feeError) console.error("Erro ao carregar taxa do motoboy", feeError);
-    setMotoboyFee(Number(feeSettings?.motoboy_fee || 0));
-    if (error) toast.error(error.message);
-    if (loadError) toast.error(loadError.message);
-    if (inventoryError) console.error(inventoryError);
-    setList((data as Courier[]) || []);
-    setLoads(Array.isArray(loadData) ? loadData : []);
-    setInventoryRows(Array.isArray(inventoryData) ? inventoryData : []);
+
+    if (showLoading) {
+      const { data: feeSettings, error: feeError } = await (supabase as any)
+        .from("settings")
+        .select("motoboy_fee")
+        .eq("store_id", activeStoreId)
+        .maybeSingle();
+      if (feeError) console.error("Erro ao carregar taxa do motoboy", feeError);
+      setMotoboyFee(Number(feeSettings?.motoboy_fee || 0));
+    }
+
+    if (error) {
+      console.error("Erro ao carregar motoboys", error);
+      if (showLoading) toast.error(error.message);
+    }
+    if (loadError) {
+      console.error("Erro ao carregar carga dos motoboys", loadError);
+      if (showLoading) toast.error(loadError.message);
+    }
+    if (inventoryError) console.error("Erro ao carregar estoque móvel", inventoryError);
+
+    if (!error) setList((data as Courier[]) || []);
+    if (!loadError) setLoads(Array.isArray(loadData) ? loadData : []);
+    if (!inventoryError) setInventoryRows(Array.isArray(inventoryData) ? inventoryData : []);
+
     if (showLoading) setLoading(false);
   }
 
   useEffect(() => {
     if (!activeStoreId) return;
+
+    // Realtime é a fonte principal. O polling vira apenas uma rede de segurança,
+    // evitando quatro consultas pesadas a cada 15 segundos.
     const interval = window.setInterval(() => {
-      void load(false);
-    }, 15000);
+      if (document.visibilityState === "visible") void load(false);
+    }, 60000);
+
     return () => window.clearInterval(interval);
-    // Mantém online/offline e "em rota" atualizados sem exigir refresh manual.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStoreId]);
 
-  async function loadHistory(couriers = list, showLoading = true) {
-    if (!activeStoreId || couriers.length === 0) {
+  async function loadHistory(showLoading = true) {
+    if (!activeStoreId || !courierIdsKey) {
       setHistoryByCourier({});
       return;
     }
 
     if (showLoading) setHistoryLoading(true);
+
     try {
-      const { data: receivedRows, error: receivedError } = await (supabase as any)
-        .from("delivery_tracking")
-        .select("order_id,courier_id,received_payments,received_payment_total,completed_at")
-        .eq("store_id", activeStoreId)
-        .not("completed_at", "is", null)
-        .gte("completed_at", range.start.toISOString())
-        .lte("completed_at", range.end.toISOString());
+      const { data, error } = await (supabase as any).rpc("get_courier_history_period", {
+        _store_id: activeStoreId,
+        _start: range.start.toISOString(),
+        _end: range.end.toISOString(),
+      });
+      if (error) throw error;
 
-      if (receivedError)
-        console.error("Erro ao carregar pagamentos recebidos dos motoboys", receivedError);
+      const rows = Array.isArray(data) ? data : [];
+      const result: Record<string, CourierHistory> = {};
 
-      const receivedByOrder = new Map<string, any>(
-        (Array.isArray(receivedRows) ? receivedRows : []).map((row: any) => [
-          String(row.order_id || ""),
-          row,
-        ]),
-      );
+      rows.forEach((row: any) => {
+        const orders = Array.isArray(row?.orders) ? row.orders : [];
+        const eventsInPeriod = Array.isArray(row?.events) ? row.events : [];
 
-      const results = await Promise.all(
-        couriers.map(async (courier) => {
-          const { data, error } = await (supabase as any).rpc("get_courier_load_detail", {
-            _store_id: activeStoreId,
-            _courier_id: courier.id,
+        const deliveryByOrderId = new Map<string, any>(
+          orders.map((delivery: any) => [
+            String(delivery?.order?.id || delivery?.order_id || ""),
+            delivery,
+          ]),
+        );
+
+        const failedOrders = eventsInPeriod
+          .filter((event: any) => event.event_type === "delivery_failed")
+          .map((event: any) => {
+            const orderId = String(event?.order_id || "");
+            const delivery = deliveryByOrderId.get(orderId);
+            const metadata =
+              event?.metadata && typeof event.metadata === "object" ? event.metadata : {};
+            const order = delivery?.order || {
+              id: orderId,
+              customer: metadata.customer || "Cliente não informado",
+              phone: metadata.phone || "",
+              address: metadata.address || "",
+              district: metadata.district || "",
+              city: metadata.city || "",
+              total: Number(metadata.order_total || 0),
+              payment: metadata.payment || "",
+              items: Array.isArray(metadata.items) ? metadata.items : [],
+            };
+
+            return {
+              ...event,
+              order,
+              reason: metadata.reason || delivery?.failure_reason || "Não entregue",
+              canReassign: metadata.can_reassign === true,
+              failureKind: metadata.kind || "delivery_failed",
+            };
           });
-          if (error) throw error;
 
-          const orders = Array.isArray(data?.orders) ? data.orders : [];
-          const events = Array.isArray(data?.events) ? data.events : [];
-          const deliveredOrders = orders
-            .filter(
-              (delivery: any) =>
-                delivery.status === "entregue" &&
-                isWithin(delivery.completed_at, range.start, range.end),
-            )
-            .map((delivery: any) => {
-              const orderId = String(delivery?.order?.id || delivery?.order_id || "");
-              const received = receivedByOrder.get(orderId);
-              return received
-                ? {
-                    ...delivery,
-                    received_payments: received.received_payments,
-                    received_payment_total: received.received_payment_total,
-                  }
-                : delivery;
-            });
-          const eventsInPeriod = events.filter((event: any) =>
-            isWithin(event.created_at, range.start, range.end),
-          );
+        result[String(row.courier_id)] = {
+          raw: row,
+          deliveredOrders: orders,
+          deliveredProducts: orders.reduce(
+            (sum: number, delivery: any) => sum + totalItems(delivery.order?.items),
+            0,
+          ),
+          failed: failedOrders.length,
+          failedOrders,
+          returned: eventsInPeriod.filter((event: any) => event.event_type === "returned").length,
+          transportedValue: orders.reduce(
+            (sum: number, delivery: any) => sum + Number(delivery.order?.total || 0),
+            0,
+          ),
+          eventsInPeriod,
+        };
+      });
 
-          const deliveryByOrderId = new Map<string, any>(
-            orders.map((delivery: any) => [
-              String(delivery?.order?.id || delivery?.order_id || ""),
-              delivery,
-            ]),
-          );
-          const failedOrders = eventsInPeriod
-            .filter((event: any) => event.event_type === "delivery_failed")
-            .map((event: any) => {
-              const orderId = String(event?.order_id || "");
-              const delivery = deliveryByOrderId.get(orderId);
-              const metadata =
-                event?.metadata && typeof event.metadata === "object" ? event.metadata : {};
-              const order = delivery?.order || {
-                id: orderId,
-                customer: metadata.customer || "Cliente não informado",
-                phone: metadata.phone || "",
-                address: metadata.address || "",
-                district: metadata.district || "",
-                city: metadata.city || "",
-                total: Number(metadata.order_total || 0),
-                payment: metadata.payment || "",
-                items: Array.isArray(metadata.items) ? metadata.items : [],
-              };
-
-              return {
-                ...event,
-                order,
-                reason: metadata.reason || delivery?.failure_reason || "Não entregue",
-                canReassign: metadata.can_reassign === true,
-                failureKind: metadata.kind || "delivery_failed",
-              };
-            });
-
-          return {
-            courierId: courier.id,
-            history: {
-              raw: data,
-              deliveredOrders,
-              deliveredProducts: deliveredOrders.reduce(
-                (sum: number, delivery: any) => sum + totalItems(delivery.order?.items),
-                0,
-              ),
-              failed: failedOrders.length,
-              failedOrders,
-              returned: eventsInPeriod.filter((event: any) => event.event_type === "returned")
-                .length,
-              transportedValue: deliveredOrders.reduce(
-                (sum: number, delivery: any) => sum + Number(delivery.order?.total || 0),
-                0,
-              ),
-              eventsInPeriod,
-            } satisfies CourierHistory,
-          };
-        }),
-      );
-      setHistoryByCourier(
-        Object.fromEntries(results.map((result) => [result.courierId, result.history])),
-      );
+      setHistoryByCourier(result);
     } catch (error: any) {
-      toast.error(error?.message || "Não foi possível carregar o histórico dos motoboys");
+      console.error("Erro ao carregar histórico resumido dos motoboys", error);
+      if (showLoading) {
+        toast.error(error?.message || "Não foi possível carregar o histórico dos motoboys");
+      }
     } finally {
       if (showLoading) setHistoryLoading(false);
     }
@@ -517,25 +503,32 @@ function MotoboysPage() {
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, [activeStoreId]);
 
   useEffect(() => {
-    if (activeTab !== "load" || list.length === 0) return;
-    loadHistory(list);
-  }, [activeTab, list, period, customFrom, customTo]);
+    if (activeTab !== "load" || !courierIdsKey) return;
+    void loadHistory();
+    // Só recarrega quando muda a lista real de motoboys ou o período.
+    // Atualizações de online/offline não disparam histórico completo novamente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, activeStoreId, courierIdsKey, period, customFrom, customTo]);
 
   useEffect(() => {
     if (!activeStoreId) return;
 
-    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
-    const scheduleOperationalRefresh = (includeHistory: boolean) => {
-      if (refreshTimer) clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => {
-        void load(false);
-        if (includeHistory && activeTab === "load" && list.length > 0) {
-          void loadHistory(list, false);
-        }
+    let operationalTimer: ReturnType<typeof setTimeout> | null = null;
+    let historyTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleOperationalRefresh = () => {
+      if (operationalTimer) clearTimeout(operationalTimer);
+      operationalTimer = setTimeout(() => void load(false), 350);
+    };
+
+    const scheduleHistoryRefresh = () => {
+      if (historyTimer) clearTimeout(historyTimer);
+      historyTimer = setTimeout(() => {
+        if (activeTab === "load" && courierIdsKey) void loadHistory(false);
       }, 500);
     };
 
@@ -549,7 +542,10 @@ function MotoboysPage() {
           table: "delivery_events",
           filter: `store_id=eq.${activeStoreId}`,
         },
-        () => scheduleOperationalRefresh(true),
+        () => {
+          scheduleOperationalRefresh();
+          scheduleHistoryRefresh();
+        },
       )
       .on(
         "postgres_changes",
@@ -559,17 +555,27 @@ function MotoboysPage() {
           table: "courier_inventory",
           filter: `store_id=eq.${activeStoreId}`,
         },
-        () => {
-          void loadInventory();
+        () => void loadInventory(),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "couriers",
+          filter: `store_id=eq.${activeStoreId}`,
         },
+        scheduleOperationalRefresh,
       )
       .subscribe();
 
     return () => {
-      if (refreshTimer) clearTimeout(refreshTimer);
+      if (operationalTimer) clearTimeout(operationalTimer);
+      if (historyTimer) clearTimeout(historyTimer);
       supabase.removeChannel(channel);
     };
-  }, [activeStoreId, activeTab, list, period, customFrom, customTo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStoreId, activeTab, courierIdsKey, period, customFrom, customTo]);
 
   async function openLoad(c: Courier) {
     if (!activeStoreId) return;
@@ -783,26 +789,9 @@ function MotoboysPage() {
   }
 
   const detailHistory = detailCourier ? historyByCourier[detailCourier.id] : undefined;
-  const activeDetailOrders = (detail?.orders || []).filter(
-    (delivery: any) => !["entregue", "devolvido", "cancelado"].includes(delivery.status),
-  );
-  const modalDeliveredOrders = (detail?.orders || [])
-    .filter(
-      (delivery: any) =>
-        delivery.status === "entregue" && isWithin(delivery.completed_at, range.start, range.end),
-    )
-    .map((delivery: any) => {
-      const orderId = String(delivery?.order?.id || delivery?.order_id || "");
-      return (
-        detailHistory?.deliveredOrders.find(
-          (historyDelivery: any) =>
-            String(historyDelivery?.order?.id || historyDelivery?.order_id || "") === orderId,
-        ) || delivery
-      );
-    });
-  const modalEvents = (detail?.events || []).filter((event: any) =>
-    isWithin(event.created_at, range.start, range.end),
-  );
+  const activeDetailOrders = Array.isArray(detail?.orders) ? detail.orders : [];
+  const modalDeliveredOrders = detailHistory?.deliveredOrders || [];
+  const modalEvents = detailHistory?.eventsInPeriod || [];
   const detailInventory = detailCourier ? inventoryByCourier[detailCourier.id] || [] : [];
 
   return (
