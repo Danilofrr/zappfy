@@ -265,6 +265,8 @@ function CourierPage() {
   const latestPosRef = useRef<GeolocationPosition | null>(null);
   const wakeLockRef = useRef<any>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const locationRequestRef = useRef(false);
+  const lastLocationRequestAtRef = useRef(0);
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const signatureHasInkRef = useRef(false);
@@ -293,6 +295,13 @@ function CourierPage() {
   }, [courierToken]);
 
   useEffect(() => () => stopWatch(), []);
+
+  useEffect(() => {
+    if (data && ["entregue", "cancelado", "devolvido", "nao_entregue"].includes(data.status)) {
+      stopWatch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.status]);
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -330,18 +339,34 @@ function CourierPage() {
 
   async function sendLocation(pos: GeolocationPosition) {
     latestPosRef.current = pos;
+
+    // watchPosition pode disparar várias vezes em poucos segundos.
+    // Nunca deixa duas gravações de GPS concorrentes para a mesma entrega.
+    const now = Date.now();
+    if (locationRequestRef.current || now - lastLocationRequestAtRef.current < 5000) return;
+    if (data && ["entregue", "cancelado", "devolvido", "nao_entregue"].includes(data.status)) return;
+
+    locationRequestRef.current = true;
+    lastLocationRequestAtRef.current = now;
     setSending(true);
-    const { latitude, longitude, speed, heading, accuracy } = pos.coords;
-    const { error } = await supabase.rpc("update_courier_location", {
-      _token: courierToken,
-      _lat: latitude,
-      _lng: longitude,
-      _speed: speed ?? undefined,
-      _heading: heading ?? undefined,
-      _accuracy: accuracy ?? undefined,
-    });
-    setSending(false);
-    if (!error) setLastSent(Date.now());
+
+    try {
+      const { latitude, longitude, speed, heading, accuracy } = pos.coords;
+      const { error } = await supabase.rpc("update_courier_location", {
+        _token: courierToken,
+        _lat: latitude,
+        _lng: longitude,
+        _speed: speed ?? undefined,
+        _heading: heading ?? undefined,
+        _accuracy: accuracy ?? undefined,
+      });
+
+      if (!error) setLastSent(Date.now());
+      else console.warn("[entrega] não foi possível atualizar localização", error);
+    } finally {
+      locationRequestRef.current = false;
+      setSending(false);
+    }
   }
 
   function startWatch(): Promise<GeolocationPosition> {
@@ -359,8 +384,8 @@ function CourierPage() {
             setWatching(true);
             requestWakeLock();
             heartbeatRef.current = setInterval(() => {
-              if (latestPosRef.current) sendLocation(latestPosRef.current);
-            }, 10000);
+              if (latestPosRef.current) void sendLocation(latestPosRef.current);
+            }, 15000);
             resolve(pos);
           }
         },
@@ -630,10 +655,12 @@ function CourierPage() {
         if (!paymentSaved) return;
       }
 
+      // Comprovante e assinatura já são persistidos assim que o motoboy os salva.
+      // Não reenviamos centenas de KB/MB ao finalizar a entrega.
       const { error } = await (supabase as any).rpc("finalize_courier_delivery", {
         _token: courierToken,
-        _proof_url: proofUrl,
-        _signature_url: signatureUrl,
+        _proof_url: null,
+        _signature_url: null,
       });
       if (error) throw error;
 
