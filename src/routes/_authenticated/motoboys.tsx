@@ -108,21 +108,21 @@ type CourierInventoryItem = {
   updated_at: string;
 };
 
+type InventoryReason = "load" | "return" | "delivered" | "sold" | "adjustment" | "loss";
+
 type InventoryMovement = {
   id: string;
   product_id: string | null;
   product_name: string;
   category: string;
   variant_label: string;
-  movement_type: "load" | "return" | "delivered" | "sold" | "adjustment" | "loss";
+  movement_type: InventoryReason | "assigned" | "unassigned";
   old_quantity: number;
   new_quantity: number;
   quantity_delta: number;
   notes: string | null;
   created_at: string;
 };
-
-type InventoryReason = InventoryMovement["movement_type"];
 
 const VEHICLES = [
   { v: "moto", l: "Moto" },
@@ -157,6 +157,12 @@ const INVENTORY_REASON_LABELS: Record<InventoryReason, string> = {
   sold: "Venda avulsa",
   adjustment: "Ajuste manual",
   loss: "Perda / avaria",
+};
+
+const INVENTORY_MOVEMENT_LABELS: Record<InventoryMovement["movement_type"], string> = {
+  ...INVENTORY_REASON_LABELS,
+  assigned: "Usado em pedido atribuído",
+  unassigned: "Retornado após retirada do pedido",
 };
 
 const normalizePhone = (value: string) => value.replace(/\D/g, "");
@@ -995,7 +1001,7 @@ function MotoboysPage() {
                         </div>
                         {mobileStock.length === 0 ? (
                           <p className="text-xs text-muted-foreground">
-                            Nenhum produto avulso registrado com este motoboy.
+                            Nenhum produto extra registrado com este motoboy.
                           </p>
                         ) : (
                           <div className="space-y-1.5">
@@ -1707,9 +1713,10 @@ function MotoboysPage() {
             </div>
             <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
               Este controle registra{" "}
-              <b className="text-foreground">onde a mercadoria está fisicamente</b>. Ele não faz
-              nova baixa no estoque geral, evitando baixa dupla quando depois surgir um pedido para
-              esse produto.
+              <b className="text-foreground">os produtos extras que estão com o motoboy</b>. Quando
+              um pedido do mesmo produto for atribuído a ele, a quantidade é abatida
+              automaticamente desta carga móvel. Se o pedido for retirado ou transferido antes da
+              entrega, a unidade volta para a carga.
             </div>
           </section>
 
@@ -1733,7 +1740,7 @@ function MotoboysPage() {
                         {movement.variant_label ? ` · ${movement.variant_label}` : ""}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {INVENTORY_REASON_LABELS[movement.movement_type]}
+                        {INVENTORY_MOVEMENT_LABELS[movement.movement_type] || movement.movement_type}
                         {movement.notes ? ` · ${movement.notes}` : ""}
                       </div>
                     </div>
@@ -1811,9 +1818,9 @@ function MotoboysPage() {
               <div>
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div>
-                    <h3 className="font-semibold">Estoque móvel / carga avulsa</h3>
+                    <h3 className="font-semibold">Estoque móvel / produtos extras</h3>
                     <p className="text-xs text-muted-foreground">
-                      Produtos que ele está levando mesmo sem pedido aberto.
+                      Ao atribuir um pedido do mesmo produto, a quantidade é abatida automaticamente.
                     </p>
                   </div>
                   {detailCourier && (
