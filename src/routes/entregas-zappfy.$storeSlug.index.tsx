@@ -228,6 +228,14 @@ function isMapPendingDelivery(value: string | null | undefined) {
   return !["entregue", "devolvido", "cancelado"].includes(normalizeDeliveryStatus(value));
 }
 
+function isDeliveryInProgress(value: string | null | undefined) {
+  return ["saiu_para_entrega", "chegando"].includes(normalizeDeliveryStatus(value));
+}
+
+function activeDeliveryStorageKey(storeSlug: string) {
+  return `zappfy-entregas-active-delivery:${storeSlug}`;
+}
+
 function statusMeta(status: string) {
   const normalized = normalizeDeliveryStatus(status);
   if (normalized === "entregue") return { label: "Entregue", fg: "#22c55e", bg: "#22c55e18" };
@@ -418,7 +426,28 @@ function CentralPage() {
       console.error(error);
       return;
     }
-    if (Array.isArray(deliveries)) setAvailable(deliveries as Delivery[]);
+
+    if (Array.isArray(deliveries)) {
+      const nextDeliveries = deliveries as Delivery[];
+      setAvailable(nextDeliveries);
+
+      // Mantém uma referência local da entrega em andamento. Se o navegador/PWA
+      // for suspenso e voltar pela página inicial, a Central consegue oferecer
+      // imediatamente o botão para retomar a entrega correta.
+      try {
+        const active = nextDeliveries.filter((delivery) => isDeliveryInProgress(delivery.status));
+        const key = activeDeliveryStorageKey(storeSlug);
+        const savedToken = window.localStorage.getItem(key);
+
+        if (active.length === 0) {
+          window.localStorage.removeItem(key);
+        } else if (!savedToken || !active.some((delivery) => delivery.courier_token === savedToken)) {
+          window.localStorage.setItem(key, active[0].courier_token);
+        }
+      } catch {
+        // Alguns navegadores podem restringir localStorage em modo privado.
+      }
+    }
   }
 
   async function loadInventory() {
@@ -537,6 +566,21 @@ function CentralPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.store_id]);
 
+  function openDelivery(d: Delivery, remember = true) {
+    if (remember) {
+      try {
+        window.localStorage.setItem(activeDeliveryStorageKey(storeSlug), d.courier_token);
+      } catch {
+        // A navegação continua funcionando mesmo sem persistência local.
+      }
+    }
+
+    navigate({
+      to: "/entrega/$courierToken",
+      params: { courierToken: d.courier_token },
+    });
+  }
+
   async function action(d: Delivery, actionName: string) {
     const session = getCourierSession(storeSlug);
     if (!session) return;
@@ -573,7 +617,7 @@ function CentralPage() {
     toast.success("Entrega atualizada");
     if (actionName === "accept" || actionName === "start") {
       setMe((current) => (current ? { ...current, is_online: true } : current));
-      navigate({ to: "/entrega/$courierToken", params: { courierToken: d.courier_token } });
+      openDelivery(d, actionName === "start");
       return;
     }
     await loadDeliveries();
@@ -622,6 +666,27 @@ function CentralPage() {
 
   const todayKey = brazilDateKey();
   const mapCount = available.filter((d) => isMapPendingDelivery(d.status)).length;
+
+  const deliveriesInProgress = useMemo(
+    () => available.filter((delivery) => isDeliveryInProgress(delivery.status)),
+    [available],
+  );
+
+  const displayDeliveries = useMemo(() => {
+    const priority = (delivery: Delivery) => {
+      if (isDeliveryInProgress(delivery.status)) return 0;
+      if (delivery.accepted_at && ["aguardando_motoboy", "preparando"].includes(normalizeDeliveryStatus(delivery.status))) return 1;
+      if (!delivery.accepted_at && ["aguardando_motoboy", "preparando"].includes(normalizeDeliveryStatus(delivery.status))) return 2;
+      if (normalizeDeliveryStatus(delivery.status) === "nao_entregue") return 3;
+      return 4;
+    };
+
+    return [...available].sort((a, b) => {
+      const byPriority = priority(a) - priority(b);
+      if (byPriority !== 0) return byPriority;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [available]);
   const extraLoadQuantity = useMemo(
     () => inventoryItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
     [inventoryItems],
@@ -905,6 +970,84 @@ function CentralPage() {
             </div>
           </div>
         </section>
+
+        {deliveriesInProgress.length > 0 && (
+          <section
+            className="mb-5 overflow-hidden rounded-2xl border"
+            style={{
+              borderColor: `${theme.button_color}66`,
+              background: colorMode === "light" ? `${theme.button_color}0b` : `${theme.button_color}10`,
+              boxShadow: `0 16px 40px -28px ${theme.button_color}`,
+            }}
+          >
+            <div className="flex items-center gap-3 border-b px-4 py-3 sm:px-5" style={{ borderColor: `${theme.button_color}28` }}>
+              <span
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+                style={{ background: `${theme.button_color}18`, color: colorMode === "light" ? "#087a3c" : theme.button_color }}
+              >
+                <Navigation className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-black" style={{ color: theme.title_color }}>
+                  {deliveriesInProgress.length === 1 ? "Entrega em andamento" : `${deliveriesInProgress.length} entregas em andamento`}
+                </div>
+                <div className="mt-0.5 text-[11px] opacity-60">
+                  Você pode sair do app e voltar depois. Toque em continuar para anexar comprovante, assinatura e finalizar.
+                </div>
+              </div>
+              <span
+                className="hidden rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] sm:inline-flex"
+                style={{ background: "#3b82f618", color: colorMode === "light" ? "#2563eb" : "#60a5fa" }}
+              >
+                Em rota
+              </span>
+            </div>
+
+            <div className="grid gap-2 p-3 sm:p-4">
+              {deliveriesInProgress.map((delivery) => {
+                const address = [delivery.order.address, delivery.order.district, delivery.order.city]
+                  .filter(Boolean)
+                  .join(", ");
+
+                return (
+                  <button
+                    key={delivery.id}
+                    type="button"
+                    onClick={() => openDelivery(delivery)}
+                    className="flex w-full items-center gap-3 rounded-xl border p-3 text-left transition active:scale-[0.995] sm:p-4"
+                    style={{
+                      borderColor: theme.card_border_color,
+                      background: colorMode === "light" ? "#ffffff" : theme.card_color,
+                      color: theme.text_color,
+                    }}
+                  >
+                    <span
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+                      style={{ background: "#3b82f618", color: colorMode === "light" ? "#2563eb" : "#60a5fa" }}
+                    >
+                      <Bike className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-black" style={{ color: theme.title_color }}>
+                        {delivery.order.customer}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] opacity-55">
+                        Pedido #{orderShortNumber(delivery.order.id)} · {address || "Endereço não informado"}
+                      </span>
+                    </span>
+                    <span
+                      className="hidden shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-xs font-black sm:inline-flex"
+                      style={{ background: theme.button_color, color: theme.button_text_color }}
+                    >
+                      Continuar entrega <ChevronRight className="h-4 w-4" />
+                    </span>
+                    <ChevronRight className="h-5 w-5 shrink-0 sm:hidden" style={{ color: theme.button_color }} />
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <section className="mb-5 overflow-hidden rounded-2xl border" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
           <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center">
@@ -1201,17 +1344,30 @@ function CentralPage() {
               </div>
             ) : (
               <div className="grid gap-3 xl:grid-cols-2">
-                {available.map((d) => {
+                {displayDeliveries.map((d) => {
                   const addr = [d.order.address, d.order.district, d.order.city].filter(Boolean).join(", ");
                   const busy = busyTrackingCode === d.tracking_code;
                   const paymentParts = normalizePaymentBreakdown(d.order);
                   const isScheduledForFuture = Boolean(d.scheduled_for && d.scheduled_for > todayKey);
                   const awaitingDecision = !d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status);
+                  const inProgress = isDeliveryInProgress(d.status);
                   const status = statusMeta(d.status);
                   const itemCount = (d.order.items || []).reduce((n, i) => n + Number(i.qty), 0);
 
                   return (
-                    <article key={d.tracking_code} className="overflow-hidden" style={cardStyle}>
+                    <article
+                      key={d.tracking_code}
+                      className="overflow-hidden"
+                      style={
+                        inProgress
+                          ? {
+                              ...cardStyle,
+                              borderColor: `${theme.button_color}70`,
+                              boxShadow: `0 18px 45px -28px ${theme.button_color}`,
+                            }
+                          : cardStyle
+                      }
+                    >
                       <div className="p-4 sm:p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
@@ -1350,15 +1506,28 @@ function CentralPage() {
                             </Button>
                           )}
 
-                          {["saiu_para_entrega", "chegando", "nao_entregue"].includes(d.status) && (
-                            <Button disabled={busy} onClick={() => action(d, "deliver")} className="h-11 rounded-xl font-bold" style={{ background: theme.button_color, color: theme.button_text_color }}>
-                              <CheckCircle2 className="mr-1.5 h-4 w-4" /> Entregue
+                          {inProgress && (
+                            <Button
+                              disabled={busy}
+                              onClick={() => openDelivery(d)}
+                              className="h-11 rounded-xl font-bold"
+                              style={{ background: theme.button_color, color: theme.button_text_color }}
+                            >
+                              <Navigation className="mr-1.5 h-4 w-4" />
+                              Continuar entrega
+                              <ChevronRight className="ml-1 h-4 w-4" />
                             </Button>
                           )}
 
-                          {["saiu_para_entrega", "chegando"].includes(d.status) && (
+                          {inProgress && (
                             <Button disabled={busy} variant="destructive" onClick={() => action(d, "fail")} className="h-11 rounded-xl font-bold">
                               <AlertTriangle className="mr-1.5 h-4 w-4" /> Não entregue
+                            </Button>
+                          )}
+
+                          {d.status === "nao_entregue" && (
+                            <Button disabled={busy} onClick={() => action(d, "deliver")} className="h-11 rounded-xl font-bold" style={{ background: theme.button_color, color: theme.button_text_color }}>
+                              <CheckCircle2 className="mr-1.5 h-4 w-4" /> Entregue
                             </Button>
                           )}
 
