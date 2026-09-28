@@ -92,7 +92,7 @@ type CourierView = {
     payment?: string;
     items?: { name: string; qty: number }[];
   };
-  store: { name: string; whatsapp: string; logo_url: string | null };
+  store: { name: string; slug?: string; whatsapp: string; logo_url: string | null };
   settings?: CourierTheme;
 };
 
@@ -267,6 +267,7 @@ function CourierPage() {
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const locationRequestRef = useRef(false);
   const lastLocationRequestAtRef = useRef(0);
+  const currentTokenRef = useRef(courierToken);
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const signatureHasInkRef = useRef(false);
@@ -278,8 +279,14 @@ function CourierPage() {
     setPaymentDirty(false);
   }
 
-  async function load() {
-    const { data: res, error } = await supabase.rpc("get_courier_view", { _token: courierToken });
+  async function load(token = courierToken) {
+    const requestedToken = token;
+    const { data: res, error } = await supabase.rpc("get_courier_view", { _token: requestedToken });
+
+    // Se o motoboy já abriu outro pedido enquanto a rede respondia,
+    // ignora a resposta antiga para não misturar duas entregas.
+    if (currentTokenRef.current !== requestedToken) return;
+
     if (!error && res) {
       const view = res as CourierView;
       setData(view);
@@ -291,7 +298,28 @@ function CourierPage() {
   }
 
   useEffect(() => {
-    load();
+    currentTokenRef.current = courierToken;
+
+    // Limpa completamente o pedido anterior. Isso é importante no PWA/mobile,
+    // onde o mesmo componente pode ser reaproveitado ao abrir outra entrega.
+    stopWatch();
+    setLoading(true);
+    setData(null);
+    setProofUrl(null);
+    setSignatureUrl(null);
+    setFinishConfirmOpen(false);
+    setCancelOpen(false);
+    setCancelReason("");
+    setSignatureOpen(false);
+    setEvidenceSaving(false);
+    setPaymentSaving(false);
+    setPaymentDirty(false);
+    setReceivedPayment(EMPTY_RECEIVED_PAYMENT);
+    locationRequestRef.current = false;
+    lastLocationRequestAtRef.current = 0;
+
+    void load(courierToken);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courierToken]);
 
   useEffect(() => () => stopWatch(), []);
@@ -649,24 +677,74 @@ function CourierPage() {
     setFinishConfirmOpen(false);
     setFinalizing(true);
 
+    const orderIdBeingFinalized = data.order.id;
+    const tokenBeingFinalized = courierToken;
+
     try {
-      if (paymentDirty || !data.received_payment_updated_at) {
-        const paymentSaved = await saveReceivedPayment(true);
-        if (!paymentSaved) return;
+      const parts = buildReceivedPaymentParts();
+      const total = roundMoney(parts.reduce((sum, part) => sum + Number(part.amount || 0), 0));
+      const orderTotal = roundMoney(data.order.total);
+
+      if (Math.abs(total - orderTotal) > 0.01) {
+        toast.error(
+          total < orderTotal
+            ? `Falta informar ${brl(orderTotal - total)} do pagamento recebido.`
+            : `Os valores informados excedem o pedido em ${brl(total - orderTotal)}.`,
+        );
+        return;
       }
 
-      // Comprovante e assinatura já são persistidos assim que o motoboy os salva.
-      // Não reenviamos centenas de KB/MB ao finalizar a entrega.
-      const { error } = await (supabase as any).rpc("finalize_courier_delivery", {
-        _token: courierToken,
-        _proof_url: null,
-        _signature_url: null,
+      // Pagamento + tracking + status do pedido são gravados numa única transação.
+      // Assim a primeira entrega não interfere na segunda, mesmo em rede móvel instável.
+      const { data: result, error } = await (supabase as any).rpc("finalize_courier_delivery_v2", {
+        _token: tokenBeingFinalized,
+        _payments: parts,
       });
+
       if (error) throw error;
+      if (!result?.ok || result?.status !== "entregue") {
+        throw new Error("O servidor não confirmou a conclusão da entrega.");
+      }
+      if (String(result?.order_id || "") !== String(orderIdBeingFinalized)) {
+        throw new Error("A confirmação retornou outro pedido. Atualize a Central e tente novamente.");
+      }
 
       stopWatch();
-      await load();
+
+      const storeSlug = String(data.store?.slug || "").trim();
+      if (storeSlug) {
+        try {
+          const key = `zappfy-entregas-active-delivery:${storeSlug}`;
+          if (window.localStorage.getItem(key) === tokenBeingFinalized) {
+            window.localStorage.removeItem(key);
+          }
+        } catch {
+          // A finalização não depende do armazenamento local.
+        }
+      }
+
+      setData((current) =>
+        current && current.order.id === orderIdBeingFinalized
+          ? {
+              ...current,
+              status: "entregue",
+              completed_at: result?.completed_at || new Date().toISOString(),
+              received_payments: parts,
+              received_payment_total: total,
+              received_payment_updated_at: new Date().toISOString(),
+            }
+          : current,
+      );
+
       toast.success("Entrega finalizada e pedido marcado como entregue! 🎉");
+
+      // Volta para uma Central nova, sem estado do pedido anterior,
+      // para o motoboy já concluir a próxima entrega.
+      if (storeSlug) {
+        window.setTimeout(() => {
+          window.location.replace(`/entregas-zappfy/${encodeURIComponent(storeSlug)}`);
+        }, 450);
+      }
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível finalizar a entrega. Tente novamente.");
     } finally {
