@@ -53,6 +53,8 @@ import {
   UserRound,
   Users,
   WalletCards,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveStore } from "@/lib/active-store";
@@ -275,6 +277,7 @@ function MotoboysPage() {
   const [historyByCourier, setHistoryByCourier] = useState<Record<string, CourierHistory>>({});
   const [historyLoading, setHistoryLoading] = useState(false);
   const [motoboyFee, setMotoboyFee] = useState(0);
+  const [loadView, setLoadView] = useState<"operation" | "available" | "offline">("operation");
 
   const [inventoryRows, setInventoryRows] = useState<CourierInventoryItem[]>([]);
   const [inventoryCourier, setInventoryCourier] = useState<Courier | null>(null);
@@ -319,6 +322,61 @@ function MotoboysPage() {
     });
     return map;
   }, [inventoryRows]);
+
+  const categorizedLoads = useMemo(() => {
+    const operation: CourierLoad[] = [];
+    const available: CourierLoad[] = [];
+    const offline: CourierLoad[] = [];
+
+    loads.forEach((loadItem) => {
+      const courier = list.find((item) => item.id === loadItem.courier_id);
+      const hasCurrentWork =
+        Boolean(loadItem.in_route) ||
+        Number(loadItem.orders_in_possession || 0) > 0;
+
+      if (hasCurrentWork) {
+        // Nunca esconde uma entrega ativa só porque o celular do motoboy ficou offline.
+        operation.push(loadItem);
+        return;
+      }
+
+      if (courier?.active !== false && loadItem.is_online) {
+        available.push(loadItem);
+        return;
+      }
+
+      offline.push(loadItem);
+    });
+
+    operation.sort((a, b) => {
+      if (a.in_route !== b.in_route) return a.in_route ? -1 : 1;
+      const byOrders = Number(b.orders_in_possession || 0) - Number(a.orders_in_possession || 0);
+      if (byOrders !== 0) return byOrders;
+      if (a.is_online !== b.is_online) return a.is_online ? -1 : 1;
+      return a.name.localeCompare(b.name, "pt-BR");
+    });
+
+    available.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+    offline.sort((a, b) => {
+      const courierA = list.find((item) => item.id === a.courier_id);
+      const courierB = list.find((item) => item.id === b.courier_id);
+
+      // Offline ativo aparece antes de cadastro inativo.
+      if ((courierA?.active !== false) !== (courierB?.active !== false)) {
+        return courierA?.active !== false ? -1 : 1;
+      }
+
+      const aTime = a.online_updated_at ? new Date(a.online_updated_at).getTime() : 0;
+      const bTime = b.online_updated_at ? new Date(b.online_updated_at).getTime() : 0;
+      if (aTime !== bTime) return bTime - aTime;
+      return a.name.localeCompare(b.name, "pt-BR");
+    });
+
+    return { operation, available, offline };
+  }, [loads, list]);
+
+  const visibleLoads = categorizedLoads[loadView];
 
   const inventoryDialogRows = inventoryCourier ? inventoryByCourier[inventoryCourier.id] || [] : [];
   const inventoryDialogTotal = inventoryDialogRows.reduce(
@@ -912,8 +970,113 @@ function MotoboysPage() {
               <p className="text-sm text-muted-foreground">Nenhuma carga de motoboy disponível.</p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {loads.map((loadItem) => {
+            <>
+              <section className="rounded-2xl border bg-card p-2">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => setLoadView("operation")}
+                    className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
+                      loadView === "operation"
+                        ? "border-primary/50 bg-primary/10 text-foreground shadow-sm"
+                        : "border-transparent bg-background/30 text-muted-foreground hover:border-border hover:text-foreground"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span className={`grid h-9 w-9 place-items-center rounded-lg ${
+                        loadView === "operation" ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"
+                      }`}>
+                        <RouteIcon className="h-4 w-4" />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-bold">Em operação</span>
+                        <span className="block text-[10px] opacity-65">Com pedidos ou em rota</span>
+                      </span>
+                    </span>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                      {categorizedLoads.operation.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLoadView("available")}
+                    className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
+                      loadView === "available"
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-foreground shadow-sm"
+                        : "border-transparent bg-background/30 text-muted-foreground hover:border-border hover:text-foreground"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span className={`grid h-9 w-9 place-items-center rounded-lg ${
+                        loadView === "available" ? "bg-emerald-500/15 text-emerald-500" : "bg-secondary text-muted-foreground"
+                      }`}>
+                        <Wifi className="h-4 w-4" />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-bold">Disponíveis</span>
+                        <span className="block text-[10px] opacity-65">Online e sem entrega atual</span>
+                      </span>
+                    </span>
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-500">
+                      {categorizedLoads.available.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLoadView("offline")}
+                    className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
+                      loadView === "offline"
+                        ? "border-border bg-secondary/70 text-foreground shadow-sm"
+                        : "border-transparent bg-background/30 text-muted-foreground hover:border-border hover:text-foreground"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span className={`grid h-9 w-9 place-items-center rounded-lg ${
+                        loadView === "offline" ? "bg-background text-muted-foreground" : "bg-secondary text-muted-foreground"
+                      }`}>
+                        <WifiOff className="h-4 w-4" />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-bold">Offline</span>
+                        <span className="block text-[10px] opacity-65">Fora da operação agora</span>
+                      </span>
+                    </span>
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-muted-foreground">
+                      {categorizedLoads.offline.length}
+                    </span>
+                  </button>
+                </div>
+              </section>
+
+              {visibleLoads.length === 0 ? (
+                <div className="rounded-2xl border border-dashed bg-card/40 p-10 text-center">
+                  {loadView === "operation" ? (
+                    <RouteIcon className="mx-auto mb-3 h-9 w-9 text-muted-foreground/50" />
+                  ) : loadView === "available" ? (
+                    <Wifi className="mx-auto mb-3 h-9 w-9 text-muted-foreground/50" />
+                  ) : (
+                    <WifiOff className="mx-auto mb-3 h-9 w-9 text-muted-foreground/50" />
+                  )}
+                  <div className="font-semibold">
+                    {loadView === "operation"
+                      ? "Nenhum motoboy em operação"
+                      : loadView === "available"
+                        ? "Nenhum motoboy disponível"
+                        : "Nenhum motoboy offline"}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {loadView === "operation"
+                      ? "Quando um motoboy receber pedidos ou iniciar uma rota, ele aparecerá aqui."
+                      : loadView === "available"
+                        ? "Motoboys online e sem pedidos atuais aparecerão nesta aba."
+                        : "Motoboys desconectados ou com acesso inativo ficam separados aqui."}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {visibleLoads.map((loadItem) => {
                 const history = historyByCourier[loadItem.courier_id];
                 const courier = list.find((item) => item.id === loadItem.courier_id);
                 const mobileStock = inventoryByCourier[loadItem.courier_id] || [];
@@ -1234,7 +1397,10 @@ function MotoboysPage() {
                   </div>
                 );
               })}
-            </div>
+
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
 
