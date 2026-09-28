@@ -1107,20 +1107,30 @@ function MotoboysPage() {
                           <div className="mt-1 flex items-center gap-2 text-xs">
                             {courier?.active === false ? (
                               <span className="inline-flex items-center gap-1 rounded-full border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-destructive">
-                                <span className="h-1.5 w-1.5 rounded-full bg-current" /> Acesso
-                                inativo
+                                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                                {Number(loadItem.orders_in_possession || 0) > 0
+                                  ? "Acesso inativo · com pedidos"
+                                  : "Acesso inativo"}
                               </span>
                             ) : loadItem.in_route ? (
                               <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-amber-500">
                                 <RouteIcon className="h-3 w-3" /> Em rota agora
                               </span>
-                            ) : loadItem.is_online ? (
+                            ) : Number(loadItem.orders_in_possession || 0) > 0 && !loadItem.is_online ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/10 px-2 py-0.5 text-orange-500">
+                                <WifiOff className="h-3 w-3" /> Offline · com pedidos
+                              </span>
+                            ) : Number(loadItem.orders_in_possession || 0) > 0 ? (
                               <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">
-                                <span className="h-1.5 w-1.5 rounded-full bg-current" /> Ativo agora
+                                <PackageCheck className="h-3 w-3" /> Com pedidos
+                              </span>
+                            ) : loadItem.is_online ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-500">
+                                <Wifi className="h-3 w-3" /> Disponível agora
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary/50 px-2 py-0.5 text-muted-foreground">
-                                <span className="h-1.5 w-1.5 rounded-full bg-current" /> Offline
+                                <WifiOff className="h-3 w-3" /> Offline
                               </span>
                             )}
                           </div>
