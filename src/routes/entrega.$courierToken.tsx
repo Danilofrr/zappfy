@@ -696,15 +696,31 @@ function CourierPage() {
 
       // Pagamento + tracking + status do pedido são gravados numa única transação.
       // Assim a primeira entrega não interfere na segunda, mesmo em rede móvel instável.
-      const { data: result, error } = await (supabase as any).rpc("finalize_courier_delivery_v2", {
-        _token: tokenBeingFinalized,
-        _payments: parts,
-      });
+      let result: any = null;
+      let finalizeError: any = null;
 
-      if (error) throw error;
-      if (!result?.ok || result?.status !== "entregue") {
-        throw new Error("O servidor não confirmou a conclusão da entrega.");
+      // A operação é idempotente: se a resposta da primeira tentativa se perder
+      // depois de o banco confirmar, a segunda apenas confirma o MESMO pedido.
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const response = await (supabase as any).rpc("finalize_courier_delivery_v2", {
+          _token: tokenBeingFinalized,
+          _payments: parts,
+        });
+
+        if (!response.error && response.data?.ok && response.data?.status === "entregue") {
+          result = response.data;
+          finalizeError = null;
+          break;
+        }
+
+        finalizeError =
+          response.error ||
+          new Error("O servidor não confirmou a conclusão da entrega.");
+
+        if (attempt === 0) await wait(650);
       }
+
+      if (!result) throw finalizeError || new Error("Não foi possível confirmar a entrega.");
       if (String(result?.order_id || "") !== String(orderIdBeingFinalized)) {
         throw new Error("A confirmação retornou outro pedido. Atualize a Central e tente novamente.");
       }
