@@ -219,7 +219,7 @@ function Page() {
           <div>
             <div className="flex items-center gap-2 text-lg font-bold">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-destructive/10 text-destructive">
-                <ReceiptText className="h-4.5 w-4.5" />
+                <ReceiptText className="h-[18px] w-[18px]" />
               </span>
               Relatório de despesas
             </div>
