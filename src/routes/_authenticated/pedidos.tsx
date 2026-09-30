@@ -2050,6 +2050,85 @@ function NewOrderDialog({
     status: "aguardando" as OrderStatus,
     notes: "",
   });
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const existingCustomers = useMemo(() => {
+    type CustomerOption = {
+      key: string;
+      name: string;
+      phone: string;
+      address: string;
+      district: string;
+      city: string;
+      lastOrderDate: string;
+      purchases: number;
+    };
+
+    const byKey = new Map<string, CustomerOption>();
+    const sorted = [...state.orders].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    for (const order of sorted) {
+      const normalizedPhone = String(order.phone || "").replace(/\D/g, "");
+      const fallbackKey = [
+        String(order.customer || "").trim().toLowerCase(),
+        String(order.address || "").trim().toLowerCase(),
+      ].join("|");
+      const key = normalizedPhone || fallbackKey;
+      if (!key || key === "|") continue;
+
+      const current = byKey.get(key);
+      if (!current) {
+        byKey.set(key, {
+          key,
+          name: order.customer || "",
+          phone: order.phone || "",
+          address: order.address || "",
+          district: order.district || "",
+          city: order.city || "",
+          lastOrderDate: order.date,
+          purchases: 1,
+        });
+      } else {
+        current.purchases += 1;
+      }
+    }
+
+    return Array.from(byKey.values()).sort((a, b) => b.purchases - a.purchases);
+  }, [state.orders]);
+
+  const customerMatches = useMemo(() => {
+    const q = customerQuery.trim().toLowerCase();
+    if (!q) return existingCustomers.slice(0, 6);
+    const digits = q.replace(/\D/g, "");
+
+    return existingCustomers
+      .filter((customer) => {
+        if (customer.name.toLowerCase().includes(q)) return true;
+        if (customer.phone.toLowerCase().includes(q)) return true;
+        if (digits && customer.phone.replace(/\D/g, "").includes(digits)) return true;
+        if (customer.address.toLowerCase().includes(q)) return true;
+        if (customer.district.toLowerCase().includes(q)) return true;
+        return false;
+      })
+      .slice(0, 8);
+  }, [customerQuery, existingCustomers]);
+
+  function selectExistingCustomer(customer: (typeof existingCustomers)[number]) {
+    setForm((current) => ({
+      ...current,
+      customer: customer.name,
+      phone: customer.phone,
+      address: customer.address,
+      district: customer.district,
+      city: customer.city,
+    }));
+    setCustomerQuery(customer.name);
+    setCustomerSearchOpen(false);
+    toast.success(`Cliente ${customer.name} carregado`);
+  }
+
   const [orderDate, setOrderDate] = useState<string>(() => {
     const d = new Date();
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -2174,6 +2253,8 @@ function NewOrderDialog({
       status: "aguardando",
       notes: "",
     });
+    setCustomerQuery("");
+    setCustomerSearchOpen(false);
     setLines([]);
     setPicker("");
     setShippingOptionId("none");
@@ -2225,6 +2306,73 @@ function NewOrderDialog({
             {/* Cliente */}
             <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
               <SectionLabel icon={UserIcon}>Cliente</SectionLabel>
+
+              {existingCustomers.length > 0 && (
+                <div className="relative">
+                  <div className="text-[11px] font-medium text-muted-foreground mb-1.5">
+                    Cliente que já comprou
+                  </div>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={customerQuery}
+                      onFocus={() => setCustomerSearchOpen(true)}
+                      onChange={(event) => {
+                        setCustomerQuery(event.target.value);
+                        setCustomerSearchOpen(true);
+                      }}
+                      placeholder="Busque por nome, telefone ou endereço..."
+                      className="pl-9 pr-9"
+                    />
+                    {customerQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerQuery("");
+                          setCustomerSearchOpen(true);
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label="Limpar busca de cliente"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {customerSearchOpen && (
+                    <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-border bg-popover shadow-xl">
+                      {customerMatches.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-muted-foreground">
+                          Nenhum cliente anterior encontrado.
+                        </div>
+                      ) : (
+                        customerMatches.map((customer) => (
+                          <button
+                            key={customer.key}
+                            type="button"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => selectExistingCustomer(customer)}
+                            className="flex w-full items-start justify-between gap-3 border-b border-border/60 px-3 py-2.5 text-left last:border-b-0 hover:bg-secondary/60"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-semibold">{customer.name}</span>
+                              <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                                {customer.phone || "Sem telefone"}
+                                {customer.district ? ` · ${customer.district}` : ""}
+                                {customer.city ? ` · ${customer.city}` : ""}
+                              </span>
+                            </span>
+                            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
+                              {customer.purchases} {customer.purchases === 1 ? "pedido" : "pedidos"}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Nome" icon={UserIcon} iconTone="primary">
                   <Input
