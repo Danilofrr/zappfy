@@ -85,6 +85,9 @@ type PeriodKey = "today" | "yesterday" | "7d" | "30d" | "custom";
 type CourierHistory = {
   raw: any;
   deliveredOrders: any[];
+  deliveryOrders: any[];
+  exchangeOrders: any[];
+  returnOrders: any[];
   deliveredProducts: number;
   failed: number;
   failedOrders: any[];
@@ -523,17 +526,30 @@ function MotoboysPage() {
             };
           });
 
+        const deliveryOrders = orders.filter(
+          (delivery: any) => (delivery?.operation_type || "delivery") === "delivery",
+        );
+        const exchangeOrders = orders.filter(
+          (delivery: any) => delivery?.operation_type === "exchange",
+        );
+        const returnOrders = orders.filter(
+          (delivery: any) => delivery?.operation_type === "return",
+        );
+
         result[String(row.courier_id)] = {
           raw: row,
           deliveredOrders: orders,
-          deliveredProducts: orders.reduce(
+          deliveryOrders,
+          exchangeOrders,
+          returnOrders,
+          deliveredProducts: deliveryOrders.reduce(
             (sum: number, delivery: any) => sum + totalItems(delivery.order?.items),
             0,
           ),
           failed: failedOrders.length,
           failedOrders,
           returned: eventsInPeriod.filter((event: any) => event.event_type === "returned").length,
-          transportedValue: orders.reduce(
+          transportedValue: deliveryOrders.reduce(
             (sum: number, delivery: any) => sum + Number(delivery.order?.total || 0),
             0,
           ),
@@ -1086,12 +1102,15 @@ function MotoboysPage() {
                   0,
                 );
                 const paymentTotals = sumPaymentBreakdowns(
-                  (history?.deliveredOrders || []).map((delivery: any) =>
+                  (history?.deliveryOrders || []).map((delivery: any) =>
                     paymentRecordForDelivery(delivery),
                   ),
                 );
-                const deliveredCount = history?.deliveredOrders.length ?? 0;
-                const courierFeeDue = deliveredCount * motoboyFee;
+                const deliveredCount = history?.deliveryOrders.length ?? 0;
+                const exchangeCount = history?.exchangeOrders.length ?? 0;
+                const returnCount = history?.returnOrders.length ?? 0;
+                const completedServicesCount = deliveredCount + exchangeCount + returnCount;
+                const courierFeeDue = completedServicesCount * motoboyFee;
                 return (
                   <div
                     key={loadItem.courier_id}
@@ -1215,34 +1234,40 @@ function MotoboysPage() {
                       <div className="mt-4 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Resultado no período
                       </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-primary" />
-                          <span>
-                            <b>{history?.deliveredOrders.length ?? 0}</b> entregas
-                          </span>
+                      <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+                        <div className="rounded-lg border bg-background/40 p-2.5">
+                          <CheckCircle2 className="mb-1 h-4 w-4 text-primary" />
+                          <div className="text-lg font-black">{deliveredCount}</div>
+                          <div className="text-[10px] text-muted-foreground">entregas</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <PackageCheck className="h-4 w-4 text-primary" />
-                          <span>
-                            <b>{history?.deliveredProducts ?? 0}</b> produtos
-                          </span>
+                        <div className="rounded-lg border border-violet-500/25 bg-violet-500/5 p-2.5">
+                          <RefreshCw className="mb-1 h-4 w-4 text-violet-400" />
+                          <div className="text-lg font-black text-violet-400">{exchangeCount}</div>
+                          <div className="text-[10px] text-muted-foreground">trocas</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-destructive" />
-                          <span>
-                            <b>{history?.failed ?? 0}</b> não entregues
-                          </span>
+                        <div className="rounded-lg border border-orange-500/25 bg-orange-500/5 p-2.5">
+                          <Undo2 className="mb-1 h-4 w-4 text-orange-500" />
+                          <div className="text-lg font-black text-orange-500">{returnCount}</div>
+                          <div className="text-[10px] text-muted-foreground">devoluções</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <RotateCcw className="h-4 w-4 text-orange-500" />
-                          <span>
-                            <b>{history?.returned ?? 0}</b> devoluções
-                          </span>
+                        <div className="rounded-lg border bg-background/40 p-2.5">
+                          <PackageCheck className="mb-1 h-4 w-4 text-primary" />
+                          <div className="text-lg font-black">{history?.deliveredProducts ?? 0}</div>
+                          <div className="text-[10px] text-muted-foreground">produtos entregues</div>
+                        </div>
+                        <div className="rounded-lg border bg-background/40 p-2.5">
+                          <AlertTriangle className="mb-1 h-4 w-4 text-destructive" />
+                          <div className="text-lg font-black">{history?.failed ?? 0}</div>
+                          <div className="text-[10px] text-muted-foreground">não realizados</div>
+                        </div>
+                        <div className="rounded-lg border bg-background/40 p-2.5">
+                          <Bike className="mb-1 h-4 w-4 text-primary" />
+                          <div className="text-lg font-black">{completedServicesCount}</div>
+                          <div className="text-[10px] text-muted-foreground">atendimentos</div>
                         </div>
                       </div>
 
-                      {(history?.deliveredOrders.length ?? 0) > 0 && (
+                      {(history?.deliveryOrders.length ?? 0) > 0 && (
                         <div className="mt-4 rounded-xl border bg-background/30 p-3">
                           <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                             Valores recebidos nas entregas
@@ -1270,13 +1295,13 @@ function MotoboysPage() {
                         </div>
                       )}
 
-                      {(history?.deliveredOrders.length ?? 0) > 0 && (
+                      {(history?.deliveryOrders.length ?? 0) > 0 && (
                         <div className="mt-4 rounded-xl border border-primary/25 bg-primary/5 p-3">
                           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> Clientes entregues
                           </div>
                           <div className="space-y-2">
-                            {history?.deliveredOrders.slice(0, 3).map((delivery: any) => (
+                            {history?.deliveryOrders.slice(0, 3).map((delivery: any) => (
                               <div
                                 key={delivery.id}
                                 className="flex items-center justify-between gap-3 rounded-lg bg-background/60 px-2.5 py-2 text-xs"
@@ -1308,7 +1333,7 @@ function MotoboysPage() {
                             ))}
                             {(history?.deliveredOrders.length ?? 0) > 3 && (
                               <div className="text-[11px] text-muted-foreground">
-                                + {(history?.deliveredOrders.length ?? 0) - 3} outra(s) entrega(s).
+                                + {(history?.deliveryOrders.length ?? 0) - 3} outra(s) entrega(s).
                                 Veja todas em “Ver carga e histórico”.
                               </div>
                             )}
