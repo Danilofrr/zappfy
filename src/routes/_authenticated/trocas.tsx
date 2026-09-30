@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, AlertTriangle, Pencil, Search, User, Package, Loader2 } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Pencil, Search, User, Package, Loader2, Bike, CalendarDays, RefreshCcw, RotateCcw, Undo2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -36,6 +36,27 @@ type ReturnRow = {
   return_date: string; order_date: string | null;
   order_id: string | null;
   notes: string; restocked: boolean;
+  resolution_type: "return" | "exchange_same" | "exchange_other";
+  courier_status?: string | null;
+  courier_completed_at?: string | null;
+};
+
+type CourierOption = {
+  id: string;
+  name: string;
+  active: boolean;
+  is_online?: boolean;
+};
+
+type ReturnDeliveryAssignment = {
+  return_id: string;
+  tracking_id: string;
+  courier_id: string | null;
+  courier_name: string | null;
+  status: string;
+  scheduled_for: string | null;
+  operation_type: "exchange" | "return";
+  completed_at: string | null;
 };
 
 const statusList = [
@@ -46,6 +67,24 @@ const statusList = [
   { value: "resolvido", label: "Resolvido", color: "bg-primary/15 text-primary" },
 ] as const;
 
+const resolutionMeta = {
+  return: {
+    label: "Devolução",
+    description: "Recolher o produto do cliente, sem entregar outro.",
+    className: "bg-orange-500/10 text-orange-500 border-orange-500/25",
+  },
+  exchange_same: {
+    label: "Troca · mesmo produto",
+    description: "Recolher o produto com problema e entregar outro igual.",
+    className: "bg-blue-500/10 text-blue-500 border-blue-500/25",
+  },
+  exchange_other: {
+    label: "Troca · outro produto",
+    description: "Recolher o produto anterior e entregar um produto diferente.",
+    className: "bg-violet-500/10 text-violet-500 border-violet-500/25",
+  },
+} as const;
+
 function TrocasPage() {
   const { state, user, updateProduct, updateOrderStatus } = useStore();
   const { activeStoreId } = useActiveStore();
@@ -53,15 +92,36 @@ function TrocasPage() {
   const [tab, setTab] = useState<"cliente" | "fornecedor">("cliente");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ReturnRow | null>(null);
+  const [couriers, setCouriers] = useState<CourierOption[]>([]);
+  const [assignments, setAssignments] = useState<Record<string, ReturnDeliveryAssignment>>({});
+  const [dispatching, setDispatching] = useState<ReturnRow | null>(null);
+  const [dispatchCourierId, setDispatchCourierId] = useState("");
+  const [dispatchDate, setDispatchDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dispatchSaving, setDispatchSaving] = useState(false);
 
   async function load() {
     if (!user) return;
     const storeId = activeStoreId ?? user.id;
-    const { data } = await (supabase.from("returns" as any) as any)
-      .select("*")
-      .or(`store_id.eq.${storeId},and(store_id.is.null,user_id.eq.${user.id})`)
-      .order("return_date", { ascending: false });
-    if (data) setRows(data as ReturnRow[]);
+
+    const [returnsRes, couriersRes, assignmentsRes] = await Promise.all([
+      (supabase.from("returns" as any) as any)
+        .select("*")
+        .or(`store_id.eq.${storeId},and(store_id.is.null,user_id.eq.${user.id})`)
+        .order("return_date", { ascending: false }),
+      (supabase as any).rpc("list_couriers_for_store", { _store_id: storeId }),
+      (supabase as any).rpc("list_return_delivery_assignments", { _store_id: storeId }),
+    ]);
+
+    if (returnsRes.data) setRows(returnsRes.data as ReturnRow[]);
+    if (Array.isArray(couriersRes.data)) setCouriers((couriersRes.data as CourierOption[]).filter((x) => x.active !== false));
+
+    if (Array.isArray(assignmentsRes.data)) {
+      const next: Record<string, ReturnDeliveryAssignment> = {};
+      (assignmentsRes.data as ReturnDeliveryAssignment[]).forEach((assignment) => {
+        if (assignment.return_id) next[assignment.return_id] = assignment;
+      });
+      setAssignments(next);
+    }
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [user, activeStoreId]);
 
@@ -105,7 +165,7 @@ function TrocasPage() {
     if (row.status !== "devolvido_estoque") return;
     if (!row.order_id) return;
     const order = state.orders.find((o) => o.id === row.order_id);
-    if (!order || order.status === "cancelado") return;
+    if (!order || order.status === "cancelado" || order.status === "entregue") return;
     try {
       await updateOrderStatus(row.order_id, "cancelado" as any);
       toast.success("Pedido marcado como cancelado");
@@ -128,6 +188,46 @@ function TrocasPage() {
     if (error) return toast.error(error.message);
     setRows((p) => p.filter((x) => x.id !== id));
     toast.success("Registro excluído");
+  }
+
+  function openDispatch(row: ReturnRow) {
+    if (!row.order_id) {
+      toast.error("Esta troca/devolução precisa estar vinculada a um pedido para usar o endereço do cliente.");
+      return;
+    }
+    const current = assignments[row.id];
+    setDispatching(row);
+    setDispatchCourierId(current?.courier_id || "");
+    setDispatchDate(current?.scheduled_for || new Date().toISOString().slice(0, 10));
+  }
+
+  async function assignToCourier() {
+    if (!dispatching || !user) return;
+    if (!dispatchCourierId) return toast.error("Escolha o motoboy.");
+
+    setDispatchSaving(true);
+    try {
+      const storeId = activeStoreId ?? user.id;
+      const { data, error } = await (supabase as any).rpc("assign_return_to_courier", {
+        _store_id: storeId,
+        _return_id: dispatching.id,
+        _courier_id: dispatchCourierId,
+        _scheduled_for: dispatchDate,
+      });
+      if (error) throw error;
+
+      toast.success(
+        dispatching.resolution_type === "return"
+          ? "Devolução enviada para o motoboy."
+          : "Troca enviada para o motoboy.",
+      );
+      setDispatching(null);
+      await load();
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível enviar para o motoboy.");
+    } finally {
+      setDispatchSaving(false);
+    }
   }
 
   return (
@@ -168,7 +268,9 @@ function TrocasPage() {
                 <th className="text-left px-4 py-3">Data</th>
                 <th className="text-left px-4 py-3">{tab === "cliente" ? "Cliente" : "Fornecedor"}</th>
                 <th className="text-left px-4 py-3">Devolvido</th>
+                {tab === "cliente" && <th className="text-left px-4 py-3">Atendimento</th>}
                 {tab === "cliente" && <th className="text-left px-4 py-3">Novo</th>}
+                {tab === "cliente" && <th className="text-left px-4 py-3">Motoboy</th>}
                 <th className="text-left px-4 py-3">Motivo</th>
                 <th className="text-right px-4 py-3">Valor</th>
                 <th className="text-left px-4 py-3">Status</th>
@@ -177,16 +279,45 @@ function TrocasPage() {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={tab === "cliente" ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">Nenhum registro ainda.</td></tr>
+                <tr><td colSpan={tab === "cliente" ? 10 : 7} className="px-4 py-10 text-center text-muted-foreground">Nenhum registro ainda.</td></tr>
               )}
               {visibleRows.map((r) => {
                 const st = statusList.find((s) => s.value === r.status)!;
+                const resolution = resolutionMeta[r.resolution_type || "return"];
+                const assignment = assignments[r.id];
                 return (
                   <tr key={r.id} className="border-t border-border hover:bg-secondary/30">
                     <td className="px-4 py-3 text-muted-foreground">{fmtDate(r.return_date)}</td>
                     <td className="px-4 py-3">{r.party_name || "—"}</td>
                     <td className="px-4 py-3">{r.quantity}x {r.product_name}</td>
+                    {tab === "cliente" && (
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-bold whitespace-nowrap ${resolution.className}`}>
+                          {resolution.label}
+                        </span>
+                      </td>
+                    )}
                     {tab === "cliente" && <td className="px-4 py-3 text-muted-foreground">{r.new_product_name || "—"}</td>}
+                    {tab === "cliente" && (
+                      <td className="px-4 py-3">
+                        {assignment ? (
+                          <div className="min-w-[120px]">
+                            <div className="text-xs font-semibold">{assignment.courier_name || "Sem motoboy"}</div>
+                            <div className="mt-0.5 text-[10px] text-muted-foreground capitalize">
+                              {assignment.status === "entregue"
+                                ? "Concluído"
+                                : assignment.status === "saiu_para_entrega" || assignment.status === "chegando"
+                                  ? "Em rota"
+                                  : assignment.status === "aguardando_motoboy"
+                                    ? "Aguardando"
+                                    : assignment.status.replaceAll("_", " ")}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Não enviado</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3 truncate max-w-[220px]">{r.reason || "—"}</td>
                     <td className="px-4 py-3 text-right font-semibold">{brl(Number(r.value_at_risk))}</td>
                     <td className="px-4 py-3">
@@ -197,6 +328,15 @@ function TrocasPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-1">
+                        {tab === "cliente" && (
+                          <button
+                            onClick={() => openDispatch(r)}
+                            className="text-muted-foreground hover:text-primary p-1"
+                            title={assignments[r.id] ? "Alterar motoboy/data" : "Enviar para motoboy"}
+                          >
+                            <Bike className="h-4 w-4" />
+                          </button>
+                        )}
                         <button onClick={() => { setEditing(r); setOpen(true); }} className="text-muted-foreground hover:text-primary p-1" title="Editar">
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -223,6 +363,64 @@ function TrocasPage() {
           )}
         </div>
       </div>
+
+      <Dialog open={Boolean(dispatching)} onOpenChange={(value) => { if (!value) setDispatching(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enviar pós-venda para o motoboy</DialogTitle>
+            <DialogDescription>
+              O endereço e os dados do cliente serão puxados automaticamente do pedido original.
+            </DialogDescription>
+          </DialogHeader>
+
+          {dispatching && (
+            <div className="grid gap-4">
+              <div className="rounded-xl border border-border bg-secondary/25 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold">{dispatching.party_name}</div>
+                    <div className="text-xs text-muted-foreground">{dispatching.customer_phone || "Sem telefone"}</div>
+                  </div>
+                  <span className={`rounded-full border px-2 py-1 text-[10px] font-bold ${resolutionMeta[dispatching.resolution_type || "return"].className}`}>
+                    {resolutionMeta[dispatching.resolution_type || "return"].label}
+                  </span>
+                </div>
+                <div className="mt-3 text-xs">
+                  <div><b>Recolher:</b> {dispatching.quantity}x {dispatching.product_name}</div>
+                  {dispatching.resolution_type !== "return" && (
+                    <div className="mt-1"><b>Entregar:</b> {dispatching.quantity}x {dispatching.new_product_name || dispatching.product_name}</div>
+                  )}
+                </div>
+              </div>
+
+              <Field label="Motoboy">
+                <Select value={dispatchCourierId} onValueChange={setDispatchCourierId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o motoboy" /></SelectTrigger>
+                  <SelectContent>
+                    {couriers.map((courier) => (
+                      <SelectItem key={courier.id} value={courier.id}>
+                        {courier.name}{courier.is_online ? " · online" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Data">
+                <Input type="date" value={dispatchDate} onChange={(event) => setDispatchDate(event.target.value)} />
+              </Field>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDispatching(null)} disabled={dispatchSaving}>Cancelar</Button>
+            <Button onClick={() => void assignToCourier()} disabled={dispatchSaving}>
+              {dispatchSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bike className="mr-2 h-4 w-4" />}
+              Enviar para motoboy
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ReturnDialog
         open={open}
@@ -265,6 +463,7 @@ type FormState = {
   product_name: string;
   new_product_id: string;
   new_product_name: string;
+  resolution_type: "return" | "exchange_same" | "exchange_other";
   quantity: number;
   reason: string;
   status: ReturnStatus;
@@ -287,7 +486,7 @@ const toDateInput = (iso?: string | null) => {
 
 const emptyForm = (type: "cliente" | "fornecedor"): FormState => ({
   type, party_name: "", customer_phone: "", product_id: "", product_name: "",
-  new_product_id: "", new_product_name: "",
+  new_product_id: "", new_product_name: "", resolution_type: "return",
   quantity: 1, reason: "", status: "parado_loja", value_at_risk: 0, product_price: 0,
   order_id: null, order_date: null, return_date: toDateInput(), notes: "",
 });
@@ -319,6 +518,7 @@ function ReturnDialog({
         product_name: editing.product_name ?? "",
         new_product_id: editing.new_product_id ?? "",
         new_product_name: editing.new_product_name ?? "",
+        resolution_type: editing.resolution_type ?? (editing.new_product_name ? "exchange_other" : "return"),
         quantity: Number(editing.quantity) || 1,
         reason: editing.reason ?? "",
         status: editing.status,
@@ -342,6 +542,9 @@ function ReturnDialog({
     }
     if (!form.party_name.trim()) return toast.error("Informe o cliente/fornecedor");
     if (!form.product_name.trim()) return toast.error("Informe o produto devolvido");
+    if (form.type === "cliente" && form.resolution_type === "exchange_other" && !form.new_product_name.trim()) {
+      return toast.error("Escolha qual produto será entregue na troca.");
+    }
     if (!form.reason.trim()) return toast.error("Informe o motivo");
     if (!form.status) return toast.error("Selecione o status");
 
@@ -353,8 +556,14 @@ function ReturnDialog({
         customer_phone: form.customer_phone.trim() || null,
         product_id: form.product_id || null,
         product_name: form.product_name.trim(),
-        new_product_id: form.new_product_id || null,
-        new_product_name: form.new_product_name.trim() || null,
+        new_product_id: form.resolution_type === "return" ? null : (form.new_product_id || form.product_id || null),
+        new_product_name:
+          form.resolution_type === "return"
+            ? null
+            : form.resolution_type === "exchange_same"
+              ? form.product_name.trim()
+              : (form.new_product_name.trim() || null),
+        resolution_type: form.type === "cliente" ? form.resolution_type : "return",
         quantity: form.quantity,
         reason: form.reason.trim(),
         status: form.status,
@@ -419,6 +628,42 @@ function ReturnDialog({
             </Field>
           )}
         </div>
+
+        {form.type === "cliente" && (
+          <div className="mb-3 rounded-xl border border-border bg-secondary/20 p-3">
+            <Field label="O que será feito com o cliente?">
+              <Select
+                value={form.resolution_type}
+                onValueChange={(value: "return" | "exchange_same" | "exchange_other") => {
+                  if (value === "return") {
+                    setForm({ ...form, resolution_type: value, new_product_id: "", new_product_name: "" });
+                    return;
+                  }
+                  if (value === "exchange_same") {
+                    setForm({
+                      ...form,
+                      resolution_type: value,
+                      new_product_id: form.product_id,
+                      new_product_name: form.product_name,
+                    });
+                    return;
+                  }
+                  setForm({ ...form, resolution_type: value, new_product_id: "", new_product_name: "" });
+                }}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="exchange_same">Troca pelo mesmo produto</SelectItem>
+                  <SelectItem value="exchange_other">Troca por outro produto</SelectItem>
+                  <SelectItem value="return">Somente devolução</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <div className="mt-2 text-[11px] text-muted-foreground">
+              {resolutionMeta[form.resolution_type].description}
+            </div>
+          </div>
+        )}
 
         {form.type === "cliente" && mode === "search" ? (
           <OrderSearchSection
@@ -511,6 +756,8 @@ function OrderSearchSection({
       quantity: item.qty,
       product_price: item.price,
       value_at_risk: item.price * item.qty,
+      new_product_id: form.resolution_type === "exchange_same" ? (item.productId || "") : form.new_product_id,
+      new_product_name: form.resolution_type === "exchange_same" ? (item.name || prod?.name || "") : form.new_product_name,
       notes: form.notes || (o.address ? `Endereço: ${o.address}${o.district ? `, ${o.district}` : ""}${o.city ? ` - ${o.city}` : ""}\nPagamento: ${o.payment}` : ""),
     });
   }
@@ -624,23 +871,32 @@ function OrderSearchSection({
         </div>
       )}
 
-      {selectedOrder && form.type === "cliente" && (
-        <Field label="Produto novo (em troca — opcional)">
+      {selectedOrder && form.type === "cliente" && form.resolution_type === "exchange_other" && (
+        <Field label="Produto que será entregue ao cliente">
           <Select
             value={form.new_product_id || "__none__"}
             onValueChange={(v) => {
-              if (v === "__none__") { setForm({ ...form, new_product_id: "", new_product_name: "" }); return; }
+              if (v === "__none__") {
+                setForm({ ...form, new_product_id: "", new_product_name: "" });
+                return;
+              }
               const p = products.find((x) => x.id === v);
               setForm({ ...form, new_product_id: v, new_product_name: p?.name ?? "" });
             }}
           >
-            <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Escolha o novo produto" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">Nenhum</SelectItem>
+              <SelectItem value="__none__">Selecione...</SelectItem>
               {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </Field>
+      )}
+
+      {selectedOrder && form.type === "cliente" && form.resolution_type === "exchange_same" && (
+        <div className="rounded-lg border border-blue-500/25 bg-blue-500/10 px-3 py-2 text-xs text-blue-500">
+          <b>Entregar na troca:</b> {form.quantity}x {form.product_name}
+        </div>
       )}
     </div>
   );
@@ -687,10 +943,15 @@ function ManualSection({
       <Field label="Nome do produto">
         <Input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} />
       </Field>
-      {form.type === "cliente" && (
+      {form.type === "cliente" && form.resolution_type === "exchange_other" && (
         <Field label="Novo produto (em troca)">
-          <Input value={form.new_product_name} onChange={(e) => setForm({ ...form, new_product_name: e.target.value })} placeholder="Opcional" />
+          <Input value={form.new_product_name} onChange={(e) => setForm({ ...form, new_product_name: e.target.value })} placeholder="Produto que será entregue" />
         </Field>
+      )}
+      {form.type === "cliente" && form.resolution_type === "exchange_same" && (
+        <div className="rounded-lg border border-blue-500/25 bg-blue-500/10 px-3 py-2 text-xs text-blue-500">
+          O motoboy irá recolher e entregar o mesmo produto: <b>{form.product_name || "selecione o produto"}</b>.
+        </div>
       )}
       <div className="grid grid-cols-2 gap-3">
         <Field label="Quantidade">
