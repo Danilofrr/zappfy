@@ -1983,7 +1983,7 @@ function MotoboysPage() {
             <div className="rounded-xl border p-3">
               <CheckCircle2 className="mb-2 h-4 w-4 text-primary" />
               <div className="text-xl font-bold">{modalDeliveredOrders.length}</div>
-              <div className="text-xs text-muted-foreground">entregues no período</div>
+              <div className="text-xs text-muted-foreground">atendimentos concluídos</div>
             </div>
             <div className="rounded-xl border p-3">
               <WalletCards className="mb-2 h-4 w-4 text-primary" />
@@ -1995,7 +1995,7 @@ function MotoboysPage() {
                   ),
                 )}
               </div>
-              <div className="text-xs text-muted-foreground">valor entregue</div>
+              <div className="text-xs text-muted-foreground">valor das entregas</div>
             </div>
           </div>
 
@@ -2005,10 +2005,10 @@ function MotoboysPage() {
                 <Package className="h-4 w-4" /> Carga atual
               </TabsTrigger>
               <TabsTrigger value="deliveries" className="gap-1.5">
-                <CheckCircle2 className="h-4 w-4" /> Entregas
+                <CheckCircle2 className="h-4 w-4" /> Concluídos
               </TabsTrigger>
               <TabsTrigger value="failed" className="gap-1.5">
-                <AlertTriangle className="h-4 w-4" /> Pedidos não entregues
+                <AlertTriangle className="h-4 w-4" /> Não realizados
               </TabsTrigger>
               <TabsTrigger value="timeline" className="gap-1.5">
                 <History className="h-4 w-4" /> Histórico
