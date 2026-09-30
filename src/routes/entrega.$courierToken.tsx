@@ -768,7 +768,11 @@ function CourierPage() {
           : current,
       );
 
-      toast.success("Entrega finalizada e pedido marcado como entregue! 🎉");
+      toast.success(
+        isAfterSales
+          ? `${operationType === "exchange" ? "Troca" : "Devolução"} finalizada com sucesso! 🎉`
+          : "Entrega finalizada e pedido marcado como entregue! 🎉",
+      );
 
       // Volta para uma Central nova, sem estado do pedido anterior,
       // para o motoboy já concluir a próxima entrega.
@@ -804,10 +808,13 @@ function CourierPage() {
       setCancelOpen(false);
       setCancelReason("");
       await load();
+      const afterSales = (data.operation_type || "delivery") !== "delivery";
       toast.success(
-        result?.order_status === "cancelado"
-          ? "Entrega não realizada e pedido cancelado."
-          : "Entrega marcada como não entregue e disponível para nova atribuição.",
+        afterSales
+          ? `${data.operation_type === "exchange" ? "Troca" : "Devolução"} marcada como não realizada. A venda original foi preservada.`
+          : result?.order_status === "cancelado"
+            ? "Entrega não realizada e pedido cancelado."
+            : "Entrega marcada como não entregue e disponível para nova atribuição.",
       );
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível cancelar a entrega.");
@@ -1384,9 +1391,13 @@ function CourierPage() {
                 <XCircle className="h-6 w-6" />
               </div>
               <div>
-                <div className="text-lg font-bold">Cancelar entrega?</div>
+                <div className="text-lg font-bold">
+                  {isAfterSales ? "Marcar atendimento como não realizado?" : "Cancelar entrega?"}
+                </div>
                 <div className="mt-1 text-sm text-gray-600">
-                  Use esta opção quando a entrega já foi iniciada, mas não foi possível entregar ao cliente. Ela será registrada como não entregue no seu histórico.
+                  {isAfterSales
+                    ? "Use esta opção quando a troca/devolução já foi iniciada, mas não foi possível concluir com o cliente. A venda original não será alterada."
+                    : "Use esta opção quando a entrega já foi iniciada, mas não foi possível entregar ao cliente. Ela será registrada como não entregue no seu histórico."}
                 </div>
               </div>
             </div>
@@ -1423,7 +1434,9 @@ function CourierPage() {
             </div>
 
             <div className="rounded-xl bg-red-50 p-3 text-xs text-red-700">
-              Se o cliente cancelou o pedido, ele será marcado como cancelado. Nos demais motivos, o pedido voltará para aguardando e poderá ser atribuído novamente.
+              {isAfterSales
+                ? "A troca/devolução ficará registrada como não realizada e poderá ser reorganizada pela loja. A venda original será preservada."
+                : "Se o cliente cancelou o pedido, ele será marcado como cancelado. Nos demais motivos, o pedido voltará para aguardando e poderá ser atribuído novamente."}
             </div>
 
             <div className="grid grid-cols-2 gap-2">
