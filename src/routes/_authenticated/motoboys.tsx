@@ -1168,12 +1168,12 @@ function MotoboysPage() {
                         <div className="rounded-xl border bg-background/40 p-3">
                           <Package className="mb-1 h-4 w-4 text-primary" />
                           <div className="text-xl font-bold">{loadItem.orders_in_possession}</div>
-                          <div className="text-[11px] text-muted-foreground">pedidos</div>
+                          <div className="text-[11px] text-muted-foreground">atendimentos</div>
                         </div>
                         <div className="rounded-xl border bg-background/40 p-3">
                           <PackageCheck className="mb-1 h-4 w-4 text-primary" />
                           <div className="text-xl font-bold">{loadItem.products_in_possession}</div>
-                          <div className="text-[11px] text-muted-foreground">itens de pedidos</div>
+                          <div className="text-[11px] text-muted-foreground">itens em rota</div>
                         </div>
                         <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
                           <Boxes className="mb-1 h-4 w-4 text-primary" />
@@ -1397,7 +1397,7 @@ function MotoboysPage() {
 
                       <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
                         <div className="rounded-xl border p-3">
-                          <div className="text-[11px] text-muted-foreground">Pedidos em posse</div>
+                          <div className="text-[11px] text-muted-foreground">Valor dos pedidos</div>
                           <div className="mt-1 font-semibold text-primary">
                             {brl(Number(loadItem.value_in_possession))}
                           </div>
