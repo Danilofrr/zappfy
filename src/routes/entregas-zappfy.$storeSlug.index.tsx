@@ -743,7 +743,18 @@ function CentralPage() {
     const delivered = available.filter((d) => d.status === "entregue").length;
     const orderItemsInPossession = available
       .filter((d) => isMapPendingDelivery(d.status))
-      .reduce((n, d) => n + (d.order.items || []).reduce((s, i) => s + Number(i.qty), 0), 0);
+      .reduce((total, delivery) => {
+        const operation = delivery.operation_type || "delivery";
+        if (operation === "exchange") {
+          return total + Number(delivery.return_info?.quantity || 1);
+        }
+        if (operation === "return") {
+          // Na ida para buscar uma devolução, o motoboy ainda não está levando
+          // o produto do cliente em sua posse.
+          return total;
+        }
+        return total + (delivery.order.items || []).reduce((sum, item) => sum + Number(item.qty), 0);
+      }, 0);
     const possession = orderItemsInPossession + extraLoadQuantity;
     return { ready, scheduled, onRoute, delivered, possession, orderItemsInPossession };
   }, [available, extraLoadQuantity, todayKey]);
@@ -803,10 +814,10 @@ function CentralPage() {
   }
 
   const summaryCards = [
-    { label: "Para entregar", value: metrics.ready, icon: Package, tone: "#d99b00" },
+    { label: "Para atender", value: metrics.ready, icon: Package, tone: "#d99b00" },
     { label: "Agendadas", value: metrics.scheduled, icon: CalendarDays, tone: "#8b5cf6" },
     { label: "Em rota", value: metrics.onRoute, icon: RouteIcon, tone: "#3b82f6" },
-    { label: "Entregues", value: metrics.delivered, icon: CheckCircle2, tone: "#16a34a" },
+    { label: "Concluídos", value: metrics.delivered, icon: CheckCircle2, tone: "#16a34a" },
     { label: "Produtos em posse", value: metrics.possession, icon: Boxes, tone: theme.button_color },
   ];
 
