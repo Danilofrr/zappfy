@@ -108,7 +108,7 @@ function rangeFor(period: Period, customStart?: string, customEnd?: string): { s
 }
 
 function Dashboard() {
-  const { state, loading } = useStore();
+  const { state, loading, access } = useStore();
   const { on: privacy } = usePrivacy();
   const m = (v: string) => mask(v, privacy);
   const [period, setPeriod] = useState<Period>("today");
@@ -264,25 +264,69 @@ function Dashboard() {
   const adsTaxValue = adsInvested * (adsTaxPct / 100);
   const adsTotalCost = adsInvested + adsTaxValue;
 
-  // Perdas em trocas/devoluções (status = "perdido") dentro do período
-  const [returnsLost, setReturnsLost] = useState<Array<{ value_at_risk: number; return_date: string }>>([]);
+  // Pós-venda dentro do mesmo período selecionado na Dashboard.
+  // A venda original permanece separada; aqui contamos os atendimentos de garantia.
+  const [afterSalesRows, setAfterSalesRows] = useState<Array<{
+    value_at_risk: number;
+    return_date: string;
+    status: string;
+    type: string;
+    resolution_type: "return" | "exchange_same" | "exchange_other";
+  }>>([]);
+
   useEffect(() => {
     let cancel = false;
+    const storeId = access?.storeId;
+    if (!storeId) {
+      setAfterSalesRows([]);
+      return;
+    }
+
     (async () => {
-      const { data } = await (supabase.from("returns" as any) as any)
-        .select("value_at_risk, return_date, status")
-        .in("status", ["perdido", "devolvido_estoque"]);
-      if (!cancel && data) setReturnsLost(data as any);
+      const { data, error } = await (supabase.from("returns" as any) as any)
+        .select("value_at_risk,return_date,status,type,resolution_type")
+        .eq("store_id", storeId);
+
+      if (!cancel) {
+        if (error) {
+          console.error("Erro ao carregar pós-venda da Dashboard", error);
+          return;
+        }
+        setAfterSalesRows((data ?? []) as any);
+      }
     })();
-    return () => { cancel = true; };
-  }, []);
-  const returnsLossInRange = useMemo(() => {
-    return returnsLost.reduce((sum, r) => {
-      const d = new Date(r.return_date);
-      if (d >= range.start && d < range.end) return sum + Number(r.value_at_risk || 0);
-      return sum;
-    }, 0);
-  }, [returnsLost, range.start, range.end]);
+
+    return () => {
+      cancel = true;
+    };
+  }, [access?.storeId]);
+
+  const afterSalesInRange = useMemo(() => {
+    let exchanges = 0;
+    let returns = 0;
+    let loss = 0;
+
+    for (const row of afterSalesRows) {
+      const date = new Date(row.return_date);
+      if (date < range.start || date >= range.end) continue;
+
+      if (["perdido", "devolvido_estoque"].includes(row.status)) {
+        loss += Number(row.value_at_risk || 0);
+      }
+
+      if (row.type !== "cliente") continue;
+
+      if (row.resolution_type === "exchange_same" || row.resolution_type === "exchange_other") {
+        exchanges += 1;
+      } else {
+        returns += 1;
+      }
+    }
+
+    return { exchanges, returns, loss };
+  }, [afterSalesRows, range.start, range.end]);
+
+  const returnsLossInRange = afterSalesInRange.loss;
 
   // Descontos da taxa da maquininha (cartão) — apenas quando a loja ABSORVE a taxa.
   // Se a taxa é repassada ao cliente, ela não é custo da loja e não deve abater o lucro.
@@ -643,6 +687,44 @@ function Dashboard() {
         <KpiBlock id="kpi-cash"><StatCard label="Saldo em Caixa" value={m(brl(fin.cash))} hint="acumulado" icon={Wallet} /></KpiBlock>
         <KpiBlock id="kpi-orders"><StatCard label="Pedidos" value={String(fin.ordersCount)} hint={range.label} icon={ShoppingCart} /></KpiBlock>
         <KpiBlock id="kpi-goal"><StatCard label="Meta" value={pct(goalPct)} hint={m(brl(goalRev))} icon={Target} tone="warning" /></KpiBlock>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 lg:max-w-xl">
+        <Link
+          to="/trocas"
+          className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-4 transition hover:-translate-y-0.5 hover:border-violet-500/45"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground">Trocas</div>
+              <div className="mt-1 text-2xl font-black text-violet-400">
+                {afterSalesInRange.exchanges}
+              </div>
+              <div className="mt-1 text-[11px] text-muted-foreground">{range.label}</div>
+            </div>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-500/10 text-violet-400">
+              <RefreshCw className="h-4 w-4" />
+            </span>
+          </div>
+        </Link>
+
+        <Link
+          to="/trocas"
+          className="rounded-2xl border border-orange-500/25 bg-orange-500/[0.06] p-4 transition hover:-translate-y-0.5 hover:border-orange-500/45"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground">Devoluções</div>
+              <div className="mt-1 text-2xl font-black text-orange-400">
+                {afterSalesInRange.returns}
+              </div>
+              <div className="mt-1 text-[11px] text-muted-foreground">{range.label}</div>
+            </div>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-orange-500/10 text-orange-400">
+              <RotateCcw className="h-4 w-4" />
+            </span>
+          </div>
+        </Link>
       </div>
 
       {editMode && (
