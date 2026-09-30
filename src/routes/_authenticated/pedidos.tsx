@@ -2317,6 +2317,7 @@ function NewOrderDialog({
                     <Input
                       value={customerQuery}
                       onFocus={() => setCustomerSearchOpen(true)}
+                      onBlur={() => window.setTimeout(() => setCustomerSearchOpen(false), 120)}
                       onChange={(event) => {
                         setCustomerQuery(event.target.value);
                         setCustomerSearchOpen(true);
