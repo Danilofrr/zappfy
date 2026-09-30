@@ -19,6 +19,9 @@ export type CourierLoad = {
   products_in_possession: number;
   value_in_possession: number;
   delivered_today: number;
+  exchanges_today: number;
+  returns_today: number;
+  services_completed_today: number;
   products_delivered_today: number;
   failed: number;
   returned: number;
