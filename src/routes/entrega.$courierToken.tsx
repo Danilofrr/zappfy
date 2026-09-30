@@ -24,6 +24,7 @@ import {
   Phone,
   Power,
   QrCode,
+  RefreshCcw,
   Save,
   Signature,
   Trash2,
@@ -79,6 +80,17 @@ type CourierView = {
   received_payments?: PaymentBreakdownItem[] | null;
   received_payment_total?: number | null;
   received_payment_updated_at?: string | null;
+  operation_type?: "delivery" | "exchange" | "return";
+  return_id?: string | null;
+  return_info?: {
+    id: string;
+    resolution_type: "return" | "exchange_same" | "exchange_other";
+    product_name: string;
+    new_product_name?: string | null;
+    quantity: number;
+    reason?: string | null;
+    notes?: string | null;
+  } | null;
   order: {
     id: string;
     customer: string;
@@ -665,7 +677,8 @@ function CourierPage() {
 
   function requestFinalizeDelivery() {
     if (!data || finalizing) return;
-    if (!paymentMatches) {
+    const isAfterSales = (data.operation_type || "delivery") !== "delivery";
+    if (!isAfterSales && !paymentMatches) {
       toast.error("Confira os valores recebidos antes de finalizar a entrega.");
       return;
     }
@@ -681,11 +694,14 @@ function CourierPage() {
     const tokenBeingFinalized = courierToken;
 
     try {
-      const parts = buildReceivedPaymentParts();
-      const total = roundMoney(parts.reduce((sum, part) => sum + Number(part.amount || 0), 0));
-      const orderTotal = roundMoney(data.order.total);
+      const isAfterSales = (data.operation_type || "delivery") !== "delivery";
+      const parts = isAfterSales ? [] : buildReceivedPaymentParts();
+      const total = isAfterSales
+        ? 0
+        : roundMoney(parts.reduce((sum, part) => sum + Number(part.amount || 0), 0));
+      const orderTotal = isAfterSales ? 0 : roundMoney(data.order.total);
 
-      if (Math.abs(total - orderTotal) > 0.01) {
+      if (!isAfterSales && Math.abs(total - orderTotal) > 0.01) {
         toast.error(
           total < orderTotal
             ? `Falta informar ${brl(orderTotal - total)} do pagamento recebido.`
@@ -817,6 +833,17 @@ function CourierPage() {
   }
 
   const info = STATUS_INFO[data.status];
+  const operationType = data.operation_type || "delivery";
+  const isAfterSales = operationType !== "delivery";
+  const isExchange = operationType === "exchange";
+  const operationLabel =
+    operationType === "exchange"
+      ? data.return_info?.resolution_type === "exchange_same"
+        ? "Troca · mesmo produto"
+        : "Troca · outro produto"
+      : operationType === "return"
+        ? "Devolução"
+        : "Entrega";
   const isFailed = data.status === "nao_entregue";
   const isFinished = ["entregue", "cancelado", "devolvido", "nao_entregue"].includes(data.status);
   const fullAddress = [data.order.address, data.order.district, data.order.city]
@@ -837,9 +864,9 @@ function CourierPage() {
   const receivedTotal = roundMoney(
     buildReceivedPaymentParts().reduce((sum, part) => sum + Number(part.amount || 0), 0),
   );
-  const orderTotal = roundMoney(data.order.total);
+  const orderTotal = isAfterSales ? 0 : roundMoney(data.order.total);
   const paymentDifference = roundMoney(orderTotal - receivedTotal);
-  const paymentMatches = Math.abs(paymentDifference) <= 0.01;
+  const paymentMatches = isAfterSales || Math.abs(paymentDifference) <= 0.01;
   const signatureButtonStyle: React.CSSProperties = {
     background: t.primary_color,
     color: "#ffffff",
@@ -864,7 +891,17 @@ function CourierPage() {
           <div className="text-xl font-extrabold" style={{ color: t.title_color }}>
             {data.store.name}
           </div>
-          <div className="text-xs opacity-70">Pedido #{orderShortNumber(data.order.id)}</div>
+          <div className="text-xs opacity-70">
+            {isAfterSales ? "Pós-venda" : "Pedido"} #{orderShortNumber(data.order.id)}
+          </div>
+          {isAfterSales && (
+            <div
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
+              style={{ background: operationType === "exchange" ? "#8b5cf622" : "#f9731622", color: operationType === "exchange" ? "#a78bfa" : "#fb923c" }}
+            >
+              <RefreshCcw className="h-3.5 w-3.5" /> {operationLabel}
+            </div>
+          )}
           <div
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
             style={{ background: soft, color: t.primary_color }}
@@ -908,29 +945,54 @@ function CourierPage() {
               <Phone className="h-3.5 w-3.5" /> {data.order.phone}
             </a>
           )}
-          {data.order.items?.length ? (
+          {isAfterSales ? (
+            <div className="mt-3 grid gap-2 text-xs">
+              <div className="rounded-xl border p-3" style={{ borderColor: t.card_border_color, background: `${t.primary_color}08` }}>
+                <div className="opacity-60">Recolher do cliente</div>
+                <div className="mt-0.5 font-bold" style={{ color: t.title_color }}>
+                  {data.return_info?.quantity || 1}x {data.return_info?.product_name || "Produto"}
+                </div>
+              </div>
+              {isExchange && (
+                <div className="rounded-xl border p-3" style={{ borderColor: t.card_border_color, background: `${t.primary_color}08` }}>
+                  <div className="opacity-60">Entregar ao cliente</div>
+                  <div className="mt-0.5 font-bold" style={{ color: t.title_color }}>
+                    {data.return_info?.quantity || 1}x {data.return_info?.new_product_name || data.return_info?.product_name || "Produto"}
+                  </div>
+                </div>
+              )}
+              {data.return_info?.reason && (
+                <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-amber-300">
+                  <b>Motivo:</b> {data.return_info.reason}
+                </div>
+              )}
+            </div>
+          ) : data.order.items?.length ? (
             <div className="text-xs opacity-80 pt-2">
               {data.order.items.map((i) => `${i.qty}x ${i.name}`).join(" · ")}
             </div>
           ) : null}
         </section>
 
-        <section className="rounded-2xl p-4 space-y-2" style={cardStyle}>
-          <div className="text-xs uppercase tracking-wider opacity-60">Pagamento informado no pedido</div>
-          {paymentParts.map((part, index) => (
-            <div key={`${part.method}-${index}`} className="flex items-center justify-between gap-3 text-sm">
-              <span>{paymentMethodLabel(part.method)}</span>
-              <strong style={{ color: t.title_color }}>{brl(part.amount)}</strong>
-            </div>
-          ))}
-          <div
-            className="flex items-center justify-between gap-3 border-t pt-2 text-sm font-semibold"
-            style={{ borderColor: t.card_border_color }}
-          >
-            <span>Total do pedido</span>
-            <span style={{ color: t.primary_color }}>{brl(data.order.total)}</span>
-          </div>
-        </section>
+        {!isAfterSales && (
+                  <section className="rounded-2xl p-4 space-y-2" style={cardStyle}>
+                    <div className="text-xs uppercase tracking-wider opacity-60">Pagamento informado no pedido</div>
+                    {paymentParts.map((part, index) => (
+                      <div key={`${part.method}-${index}`} className="flex items-center justify-between gap-3 text-sm">
+                        <span>{paymentMethodLabel(part.method)}</span>
+                        <strong style={{ color: t.title_color }}>{brl(part.amount)}</strong>
+                      </div>
+                    ))}
+                    <div
+                      className="flex items-center justify-between gap-3 border-t pt-2 text-sm font-semibold"
+                      style={{ borderColor: t.card_border_color }}
+                    >
+                      <span>Total do pedido</span>
+                      <span style={{ color: t.primary_color }}>{brl(data.order.total)}</span>
+                    </div>
+                  </section>
+        )}
+
 
         {!isFinished && (
           <>
@@ -941,7 +1003,7 @@ function CourierPage() {
                   className="w-full h-12 text-base"
                   style={{ background: t.primary_color, color: "#fff" }}
                 >
-                  <Bike className="h-5 w-5 mr-2" /> Iniciar Entrega
+                  <Bike className="h-5 w-5 mr-2" /> {isAfterSales ? `Iniciar ${operationType === "exchange" ? "troca" : "devolução"}` : "Iniciar Entrega"}
                 </Button>
                 {permError && (
                   <div className="mt-3 text-xs text-red-400 flex gap-2">
@@ -951,7 +1013,7 @@ function CourierPage() {
               </section>
             ) : (
               <>
-        {!isFinished && (
+        {!isFinished && !isAfterSales && (
           <section className="rounded-2xl p-4 space-y-4" style={cardStyle}>
             <div>
               <div className="font-semibold" style={{ color: t.title_color }}>
@@ -1058,10 +1120,12 @@ function CourierPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <div className="font-semibold" style={{ color: t.title_color }}>
-                        Comprovante de pagamento
+                        {isAfterSales ? "Comprovante do atendimento" : "Comprovante de pagamento"}
                       </div>
                       <div className="text-xs opacity-65">
-                        Tire uma foto agora ou escolha uma imagem já salva no celular. O arquivo é salvo imediatamente.
+                        {isAfterSales
+                          ? "Registre uma foto da troca/devolução, do produto recolhido ou do atendimento concluído."
+                          : "Tire uma foto agora ou escolha uma imagem já salva no celular. O arquivo é salvo imediatamente."}
                       </div>
                     </div>
                     <FileImage className="h-5 w-5" style={{ color: t.icon_color }} />
@@ -1281,10 +1345,16 @@ function CourierPage() {
               <CheckCircle2 className="h-10 w-10 mx-auto" style={{ color: t.primary_color }} />
             )}
             <div className="text-lg font-semibold" style={{ color: t.title_color }}>
-              {data.status === "entregue" ? "Entrega finalizada" : isFailed ? "Entrega não realizada" : "Entrega cancelada"}
+              {data.status === "entregue"
+                ? isAfterSales
+                  ? `${operationType === "exchange" ? "Troca" : "Devolução"} finalizada`
+                  : "Entrega finalizada"
+                : isFailed
+                  ? isAfterSales ? "Atendimento não realizado" : "Entrega não realizada"
+                  : isAfterSales ? "Atendimento cancelado" : "Entrega cancelada"}
             </div>
 
-            {data.status === "entregue" && actualPaymentParts.length > 0 && (
+            {!isAfterSales && data.status === "entregue" && actualPaymentParts.length > 0 && (
               <div className="rounded-xl border p-3 text-left text-sm" style={{ borderColor: `${t.primary_color}55` }}>
                 <div className="text-xs uppercase tracking-wider opacity-60 mb-2">Pagamento recebido</div>
                 {actualPaymentParts.map((part, index) => (
@@ -1300,7 +1370,7 @@ function CourierPage() {
               </div>
             )}
 
-            {proofUrl && <div className="text-xs opacity-75">✓ Comprovante de pagamento anexado</div>}
+            {proofUrl && <div className="text-xs opacity-75">✓ {isAfterSales ? "Comprovante do atendimento" : "Comprovante de pagamento"} anexado</div>}
             {signatureUrl && <div className="text-xs opacity-75">✓ Assinatura do cliente registrada</div>}
           </section>
         )}
@@ -1391,9 +1461,13 @@ function CourierPage() {
                 <CheckCircle2 className="h-6 w-6" />
               </div>
               <div>
-                <div className="text-lg font-bold">Finalizar entrega?</div>
+                <div className="text-lg font-bold">
+                  {isAfterSales ? `Finalizar ${operationType === "exchange" ? "troca" : "devolução"}?` : "Finalizar entrega?"}
+                </div>
                 <div className="mt-1 text-sm text-gray-600">
-                  Confirme somente depois de entregar o pedido ao cliente. O pedido será marcado como entregue e o rastreamento será encerrado.
+                  {isAfterSales
+                    ? "Confirme somente depois de concluir o atendimento com o cliente. A venda original não será alterada."
+                    : "Confirme somente depois de entregar o pedido ao cliente. O pedido será marcado como entregue e o rastreamento será encerrado."}
                 </div>
               </div>
             </div>
