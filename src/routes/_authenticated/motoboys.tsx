@@ -1331,7 +1331,7 @@ function MotoboysPage() {
                                 </div>
                               </div>
                             ))}
-                            {(history?.deliveredOrders.length ?? 0) > 3 && (
+                            {(history?.deliveryOrders.length ?? 0) > 3 && (
                               <div className="text-[11px] text-muted-foreground">
                                 + {(history?.deliveryOrders.length ?? 0) - 3} outra(s) entrega(s).
                                 Veja todas em “Ver carga e histórico”.
