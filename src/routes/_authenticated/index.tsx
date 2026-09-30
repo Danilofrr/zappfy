@@ -696,7 +696,7 @@ function Dashboard() {
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-xs font-semibold text-muted-foreground">Trocas</div>
+              <div className="text-xs font-semibold text-muted-foreground">Trocas registradas</div>
               <div className="mt-1 text-2xl font-black text-violet-400">
                 {afterSalesInRange.exchanges}
               </div>
@@ -714,7 +714,7 @@ function Dashboard() {
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-xs font-semibold text-muted-foreground">Devoluções</div>
+              <div className="text-xs font-semibold text-muted-foreground">Devoluções registradas</div>
               <div className="mt-1 text-2xl font-black text-orange-400">
                 {afterSalesInRange.returns}
               </div>
