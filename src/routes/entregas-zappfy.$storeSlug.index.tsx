@@ -84,6 +84,19 @@ type Delivery = {
   delivery_longitude?: number | null;
   delivery_geocoded_address?: string | null;
   delivery_geocoding_status?: string | null;
+  operation_type?: "delivery" | "exchange" | "return";
+  return_id?: string | null;
+  return_info?: {
+    id: string;
+    resolution_type: "return" | "exchange_same" | "exchange_other";
+    product_id?: string | null;
+    product_name: string;
+    new_product_id?: string | null;
+    new_product_name?: string | null;
+    quantity: number;
+    reason?: string | null;
+    notes?: string | null;
+  } | null;
   order: {
     id: string;
     customer: string;
@@ -247,6 +260,33 @@ function statusMeta(status: string) {
   if (normalized === "cancelado") return { label: "Cancelado", fg: "#dc2626", bg: "#ef444418" };
   if (normalized === "preparando") return { label: "Preparando", fg: "#d97706", bg: "#f59e0b18" };
   return { label: "Aguardando", fg: "#ca8a04", bg: "#eab30818" };
+}
+
+function operationMeta(delivery: Delivery) {
+  const operation = delivery.operation_type || "delivery";
+  if (operation === "exchange") {
+    const same = delivery.return_info?.resolution_type === "exchange_same";
+    return {
+      label: same ? "Troca · mesmo produto" : "Troca · outro produto",
+      shortLabel: "Troca",
+      fg: "#7c3aed",
+      bg: "#8b5cf618",
+    };
+  }
+  if (operation === "return") {
+    return {
+      label: "Devolução",
+      shortLabel: "Devolução",
+      fg: "#ea580c",
+      bg: "#f9731618",
+    };
+  }
+  return {
+    label: "Entrega",
+    shortLabel: "Entrega",
+    fg: "#2563eb",
+    bg: "#3b82f618",
+  };
 }
 
 function CentralBrand({ color, accent, surface }: { color: string; accent: string; surface: string }) {
@@ -714,28 +754,29 @@ function CentralPage() {
       return brazilDateKey(new Date(delivery.completed_at)) === todayKey;
     });
 
-    const customerShippingTotal = completedToday.reduce(
-      (sum, delivery) => sum + deliveryFeeFromOrder(delivery.order),
-      0,
-    );
+    const deliveries = completedToday.filter(
+      (delivery) => (delivery.operation_type || "delivery") === "delivery",
+    ).length;
+    const exchanges = completedToday.filter(
+      (delivery) => delivery.operation_type === "exchange",
+    ).length;
+    const returns = completedToday.filter(
+      (delivery) => delivery.operation_type === "return",
+    ).length;
 
     const configuredMotoboyFee = Math.max(0, Number(me?.motoboy_fee || 0));
     const deliveryRevenue = completedToday.reduce((sum, delivery) => {
-      // Se a loja configurou uma taxa do motoboy, esse é o valor total devido
-      // por entrega (cliente + complemento da loja). Sem configuração, mantém
-      // compatibilidade usando o frete cobrado do cliente.
-      return sum + (configuredMotoboyFee > 0 ? configuredMotoboyFee : deliveryFeeFromOrder(delivery.order));
+      if (configuredMotoboyFee > 0) return sum + configuredMotoboyFee;
+      if ((delivery.operation_type || "delivery") !== "delivery") return sum;
+      return sum + deliveryFeeFromOrder(delivery.order);
     }, 0);
 
-    const storeComplement = Math.max(0, deliveryRevenue - customerShippingTotal);
-    const average = completedToday.length > 0 ? deliveryRevenue / completedToday.length : 0;
-
     return {
-      deliveries: completedToday.length,
+      deliveries,
+      exchanges,
+      returns,
+      completedServices: completedToday.length,
       deliveryRevenue,
-      customerShippingTotal,
-      storeComplement,
-      average,
       configuredMotoboyFee,
     };
   }, [available, me?.motoboy_fee, todayKey]);
@@ -1066,16 +1107,38 @@ function CentralPage() {
               </div>
             </div>
 
-            <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
               <div
                 className="rounded-xl border p-3 sm:p-4"
                 style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f8fbf9" : theme.background_color }}
               >
-                <div className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-50">Entregas concluídas</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-50">Entregas</div>
                 <div className="mt-1 text-2xl font-black tracking-[-0.04em]" style={{ color: theme.title_color }}>
                   {todayPerformance.deliveries}
                 </div>
-                <div className="mt-0.5 text-[10px] opacity-55">feitas hoje</div>
+                <div className="mt-0.5 text-[10px] opacity-55">concluídas hoje</div>
+              </div>
+
+              <div
+                className="rounded-xl border p-3 sm:p-4"
+                style={{ borderColor: "#8b5cf640", background: colorMode === "light" ? "#8b5cf608" : "#8b5cf612" }}
+              >
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-55">Trocas</div>
+                <div className="mt-1 text-2xl font-black tracking-[-0.04em]" style={{ color: colorMode === "light" ? "#7c3aed" : "#a78bfa" }}>
+                  {todayPerformance.exchanges}
+                </div>
+                <div className="mt-0.5 text-[10px] opacity-55">realizadas hoje</div>
+              </div>
+
+              <div
+                className="rounded-xl border p-3 sm:p-4"
+                style={{ borderColor: "#f9731640", background: colorMode === "light" ? "#f9731608" : "#f9731612" }}
+              >
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-55">Devoluções</div>
+                <div className="mt-1 text-2xl font-black tracking-[-0.04em]" style={{ color: colorMode === "light" ? "#c2410c" : "#fb923c" }}>
+                  {todayPerformance.returns}
+                </div>
+                <div className="mt-0.5 text-[10px] opacity-55">realizadas hoje</div>
               </div>
 
               <div
@@ -1086,18 +1149,7 @@ function CentralPage() {
                 <div className="mt-1 text-xl font-black tracking-[-0.04em] sm:text-2xl" style={{ color: colorMode === "light" ? "#087a3c" : theme.button_color }}>
                   {brl(todayPerformance.deliveryRevenue)}
                 </div>
-                <div className="mt-0.5 text-[10px] opacity-55">total apurado hoje</div>
-              </div>
-
-              <div
-                className="col-span-2 rounded-xl border p-3 sm:col-span-1 sm:p-4"
-                style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f8fbf9" : theme.background_color }}
-              >
-                <div className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-50">Média por entrega</div>
-                <div className="mt-1 text-xl font-black tracking-[-0.04em] sm:text-2xl" style={{ color: theme.title_color }}>
-                  {brl(todayPerformance.average)}
-                </div>
-                <div className="mt-0.5 text-[10px] opacity-55">média das concluídas</div>
+                <div className="mt-0.5 text-[10px] opacity-55">{todayPerformance.completedServices} atendimento(s)</div>
               </div>
             </div>
           </div>
@@ -1352,7 +1404,11 @@ function CentralPage() {
                   const awaitingDecision = !d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status);
                   const inProgress = isDeliveryInProgress(d.status);
                   const status = statusMeta(d.status);
-                  const itemCount = (d.order.items || []).reduce((n, i) => n + Number(i.qty), 0);
+                  const operation = operationMeta(d);
+                  const isAfterSales = (d.operation_type || "delivery") !== "delivery";
+                  const itemCount = isAfterSales
+                    ? Number(d.return_info?.quantity || 1)
+                    : (d.order.items || []).reduce((n, i) => n + Number(i.qty), 0);
 
                   return (
                     <article
@@ -1372,7 +1428,15 @@ function CentralPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="mb-1 flex flex-wrap items-center gap-2">
-                              <span className="text-[11px] font-bold uppercase tracking-[0.12em] opacity-45">Pedido #{orderShortNumber(d.order.id)}</span>
+                              <span className="text-[11px] font-bold uppercase tracking-[0.12em] opacity-45">
+                                {isAfterSales ? "Pós-venda" : "Pedido"} #{orderShortNumber(d.order.id)}
+                              </span>
+                              <span
+                                className="inline-flex items-center rounded-full px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em]"
+                                style={{ background: operation.bg, color: operation.fg }}
+                              >
+                                {operation.shortLabel}
+                              </span>
                               <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em]" style={{ background: status.bg, color: status.fg }}>
                                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: status.fg }} /> {status.label}
                               </span>
@@ -1413,37 +1477,81 @@ function CentralPage() {
                           </div>
 
                           <div className="rounded-2xl border px-3 py-2.5 sm:min-w-[135px]" style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f7faf8" : `${theme.background_color}66` }}>
-                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-45"><WalletCards className="h-3.5 w-3.5" /> Total</div>
-                            <div className="mt-1 text-lg font-black" style={{ color: theme.title_color }}>{brl(d.order.total)}</div>
-                            <div className="text-[11px] opacity-50">{itemCount} {itemCount === 1 ? "produto" : "produtos"}</div>
+                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-45">
+                              <WalletCards className="h-3.5 w-3.5" /> {isAfterSales ? "Serviço" : "Total"}
+                            </div>
+                            <div className="mt-1 text-lg font-black" style={{ color: isAfterSales ? operation.fg : theme.title_color }}>
+                              {isAfterSales ? operation.shortLabel : brl(d.order.total)}
+                            </div>
+                            <div className="text-[11px] opacity-50">{itemCount} {itemCount === 1 ? "unidade" : "unidades"}</div>
                           </div>
                         </div>
 
-                        <div className="mt-4 rounded-2xl border p-3" style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f8faf9" : `${theme.background_color}44` }}>
-                          <div className="mb-2 flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-45"><Boxes className="h-3.5 w-3.5" /> Produtos</div>
-                            <span className="text-[11px] opacity-45">{itemCount} un.</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {(d.order.items || []).map((i, index) => (
-                              <span key={`${i.name}-${index}`} className="rounded-lg border px-2 py-1 text-[11px] font-semibold" style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.title_color }}>
-                                {i.qty}x {i.name}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="mt-3 rounded-2xl border p-3" style={{ borderColor: `${theme.button_color}35`, background: `${theme.button_color}09` }}>
-                          <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-50">Pagamento do cliente</div>
-                          <div className="space-y-1.5 text-xs">
-                            {paymentParts.map((part, index) => (
-                              <div key={`${part.method}-${index}`} className="flex items-center justify-between gap-3">
-                                <span className="opacity-70">{paymentMethodLabel(part.method)}</span>
-                                <strong style={{ color: theme.title_color }}>{brl(part.amount)}</strong>
+                        {isAfterSales ? (
+                          <div
+                            className="mt-4 rounded-2xl border p-3"
+                            style={{ borderColor: `${operation.fg}45`, background: `${operation.fg}0b` }}
+                          >
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                              <div className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: operation.fg }}>
+                                {operation.label}
                               </div>
-                            ))}
+                              <span className="text-[10px] opacity-55">Garantia / pós-venda</span>
+                            </div>
+
+                            <div className="grid gap-2 text-xs">
+                              <div className="rounded-lg border px-3 py-2" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
+                                <span className="opacity-55">Recolher do cliente</span>
+                                <div className="mt-0.5 font-black" style={{ color: theme.title_color }}>
+                                  {d.return_info?.quantity || 1}x {d.return_info?.product_name || "Produto"}
+                                </div>
+                              </div>
+
+                              {d.operation_type === "exchange" && (
+                                <div className="rounded-lg border px-3 py-2" style={{ borderColor: theme.card_border_color, background: theme.card_color }}>
+                                  <span className="opacity-55">Entregar ao cliente</span>
+                                  <div className="mt-0.5 font-black" style={{ color: theme.title_color }}>
+                                    {d.return_info?.quantity || 1}x {d.return_info?.new_product_name || d.return_info?.product_name || "Produto"}
+                                  </div>
+                                </div>
+                              )}
+
+                              {d.return_info?.reason && (
+                                <div className="text-[11px] opacity-70">
+                                  <b>Motivo:</b> {d.return_info.reason}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <>
+                            <div className="mt-4 rounded-2xl border p-3" style={{ borderColor: theme.card_border_color, background: colorMode === "light" ? "#f8faf9" : `${theme.background_color}44` }}>
+                              <div className="mb-2 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-45"><Boxes className="h-3.5 w-3.5" /> Produtos</div>
+                                <span className="text-[11px] opacity-45">{itemCount} un.</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {(d.order.items || []).map((i, index) => (
+                                  <span key={`${i.name}-${index}`} className="rounded-lg border px-2 py-1 text-[11px] font-semibold" style={{ borderColor: theme.card_border_color, background: theme.card_color, color: theme.title_color }}>
+                                    {i.qty}x {i.name}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="mt-3 rounded-2xl border p-3" style={{ borderColor: `${theme.button_color}35`, background: `${theme.button_color}09` }}>
+                              <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-50">Pagamento do cliente</div>
+                              <div className="space-y-1.5 text-xs">
+                                {paymentParts.map((part, index) => (
+                                  <div key={`${part.method}-${index}`} className="flex items-center justify-between gap-3">
+                                    <span className="opacity-70">{paymentMethodLabel(part.method)}</span>
+                                    <strong style={{ color: theme.title_color }}>{brl(part.amount)}</strong>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
 
                         {(d.notes || d.order.notes) && (
                           <div
@@ -1502,7 +1610,9 @@ function CentralPage() {
 
                           {d.accepted_at && ["aguardando_motoboy", "preparando"].includes(d.status) && (
                             <Button disabled={busy} onClick={() => action(d, "start")} className="col-span-2 h-11 rounded-xl font-bold" style={{ background: theme.button_color, color: theme.button_text_color }}>
-                              {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Bike className="mr-1.5 h-4 w-4" />} Iniciar entrega <ChevronRight className="ml-1 h-4 w-4" />
+                              {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Bike className="mr-1.5 h-4 w-4" />}
+                              {isAfterSales ? `Iniciar ${operation.shortLabel.toLowerCase()}` : "Iniciar entrega"}
+                              <ChevronRight className="ml-1 h-4 w-4" />
                             </Button>
                           )}
 
@@ -1514,7 +1624,7 @@ function CentralPage() {
                               style={{ background: theme.button_color, color: theme.button_text_color }}
                             >
                               <Navigation className="mr-1.5 h-4 w-4" />
-                              Continuar entrega
+                              {isAfterSales ? `Continuar ${operation.shortLabel.toLowerCase()}` : "Continuar entrega"}
                               <ChevronRight className="ml-1 h-4 w-4" />
                             </Button>
                           )}
