@@ -230,12 +230,15 @@ function TrocasPage() {
     }
   }
 
+  const dispatchOrder =
+    dispatching?.order_id ? state.orders.find((order) => order.id === dispatching.order_id) : null;
+
   return (
     <AppShell
       title="Trocas e Devoluções"
       subtitle="Gestão de produtos devolvidos e trocas"
       actions={
-        <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Nova Troca</Button>
+        <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Nova troca/devolução</Button>
       }
     >
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -389,6 +392,21 @@ function TrocasPage() {
                   <div><b>Recolher:</b> {dispatching.quantity}x {dispatching.product_name}</div>
                   {dispatching.resolution_type !== "return" && (
                     <div className="mt-1"><b>Entregar:</b> {dispatching.quantity}x {dispatching.new_product_name || dispatching.product_name}</div>
+                  )}
+                  {dispatchOrder && (
+                    <div className="mt-3 rounded-lg border border-border bg-background/50 p-2.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                        Endereço puxado do pedido
+                      </div>
+                      <div className="mt-1 font-semibold">
+                        {[dispatchOrder.address, dispatchOrder.district, dispatchOrder.city]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-muted-foreground">
+                        Pedido #{dispatchOrder.id.slice(0, 8)}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
