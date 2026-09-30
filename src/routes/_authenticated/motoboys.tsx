@@ -2115,42 +2115,72 @@ function MotoboysPage() {
 
             <TabsContent value="deliveries" className="pt-3">
               <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
-                <CalendarDays className="h-4 w-4 text-primary" /> Entregas concluídas em{" "}
+                <CalendarDays className="h-4 w-4 text-primary" /> Atendimentos concluídos em{" "}
                 <b className="text-foreground">{periodLabel}</b>
               </div>
               {modalDeliveredOrders.length === 0 ? (
                 <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  Nenhuma entrega concluída neste período.
+                  Nenhum atendimento concluído neste período.
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {modalDeliveredOrders.map((delivery: any) => (
-                    <div key={delivery.id} className="rounded-xl border p-3 text-sm">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <b>Pedido #{String(delivery.order.id).slice(0, 8)}</b>
-                          <div className="mt-1 font-medium">{delivery.order.customer}</div>
-                          <div className="text-muted-foreground">
-                            {(delivery.order.items || [])
-                              .map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`)
-                              .join(", ")}
+                  {modalDeliveredOrders.map((delivery: any) => {
+                    const operation = delivery.operation_type || "delivery";
+                    const isExchange = operation === "exchange";
+                    const isReturn = operation === "return";
+                    const operationLabel = isExchange ? "Troca" : isReturn ? "Devolução" : "Entrega";
+
+                    return (
+                      <div key={delivery.id} className="rounded-xl border p-3 text-sm">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <b>{operation === "delivery" ? "Pedido" : "Pós-venda"} #{String(delivery.order.id).slice(0, 8)}</b>
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  isExchange
+                                    ? "bg-violet-500/10 text-violet-400"
+                                    : isReturn
+                                      ? "bg-orange-500/10 text-orange-500"
+                                      : "bg-primary/10 text-primary"
+                                }`}
+                              >
+                                {operationLabel}
+                              </span>
+                            </div>
+                            <div className="mt-1 font-medium">{delivery.order.customer}</div>
+                            <div className="text-muted-foreground">
+                              {(delivery.order.items || [])
+                                .map((item: any) => `${item.qty ?? item.quantity ?? 0}x ${item.name}`)
+                                .join(", ")}
+                            </div>
+                            <div className="mt-1">
+                              {delivery.order.district}
+                              {operation === "delivery" ? ` · ${brl(Number(delivery.order.total))}` : ""}
+                            </div>
+                            {operation === "delivery" && (
+                              <div className="mt-1 font-medium text-primary">
+                                Pagamento: {formatPaymentBreakdown(paymentRecordForDelivery(delivery))}
+                              </div>
+                            )}
+                            {isExchange && delivery.return_info?.new_product_name && (
+                              <div className="mt-1 text-xs text-violet-400">
+                                Entregou: {delivery.return_info.quantity || 1}x {delivery.return_info.new_product_name}
+                              </div>
+                            )}
                           </div>
-                          <div className="mt-1">
-                            {delivery.order.district} · {brl(Number(delivery.order.total))}
+                          <div className="text-xs text-muted-foreground sm:text-right">
+                            <div className={`font-medium ${isExchange ? "text-violet-400" : isReturn ? "text-orange-500" : "text-primary"}`}>
+                              {operationLabel} concluída
+                            </div>
+                            {delivery.completed_at
+                              ? new Date(delivery.completed_at).toLocaleString("pt-BR")
+                              : "Horário não informado"}
                           </div>
-                          <div className="mt-1 font-medium text-primary">
-                            Pagamento: {formatPaymentBreakdown(paymentRecordForDelivery(delivery))}
-                          </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground sm:text-right">
-                          <div className="font-medium text-primary">Entregue</div>
-                          {delivery.completed_at
-                            ? new Date(delivery.completed_at).toLocaleString("pt-BR")
-                            : "Horário não informado"}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
@@ -2159,15 +2189,15 @@ function MotoboysPage() {
               <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <AlertTriangle className="h-4 w-4 text-destructive" />
-                  Pedidos não entregues em <b className="text-foreground">{periodLabel}</b>
+                  Atendimentos não realizados em <b className="text-foreground">{periodLabel}</b>
                 </div>
                 <span className="text-xs font-medium text-destructive">
-                  {detailHistory?.failedOrders?.length ?? 0} pedido(s)
+                  {detailHistory?.failedOrders?.length ?? 0} atendimento(s)
                 </span>
               </div>
               {(detailHistory?.failedOrders?.length ?? 0) === 0 ? (
                 <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  Nenhum pedido não entregue neste período.
+                  Nenhum atendimento não realizado neste período.
                 </div>
               ) : (
                 <div className="space-y-3">
