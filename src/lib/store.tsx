@@ -590,7 +590,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           .order("date", { ascending: false }),
         supabase
           .from("expenses")
-          .select("id,description,category,amount,date")
+          .select("id,description,category,amount,date,profit_scope")
           .eq("store_id", sid)
           .order("date", { ascending: false }),
         supabase
@@ -1001,7 +1001,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     async addExpense(e) {
       if (!user) return;
       const sid = activeStoreId ?? user.id;
-      const { data, error } = await supabase.from("expenses").insert({ user_id: user.id, store_id: sid, ...fromExpense(e) }).select().single();
+      const { data, error } = await supabase
+        .from("expenses")
+        .insert({ user_id: user.id, store_id: sid, ...fromExpense(e) })
+        .select("id,description,category,amount,date,profit_scope")
+        .single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, expenses: [toExpense(data), ...s.expenses] }));
     },
@@ -1014,7 +1018,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .update(fromExpense(e))
         .eq("id", id)
         .eq("store_id", sid)
-        .select()
+        .select("id,description,category,amount,date,profit_scope")
         .single();
 
       if (error) {
@@ -1022,9 +1026,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      const savedExpense = toExpense(data);
+
+      if (savedExpense.profitScope !== e.profitScope) {
+        toast.error("A despesa foi salva, mas o tipo de impacto não foi confirmado. Atualize a página e tente novamente.");
+        return;
+      }
+
       setState((s) => ({
         ...s,
-        expenses: s.expenses.map((item) => item.id === id ? toExpense(data) : item),
+        expenses: s.expenses.map((item) => item.id === id ? savedExpense : item),
       }));
     },
     async deleteExpense(id) {
