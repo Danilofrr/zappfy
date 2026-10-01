@@ -420,6 +420,7 @@ type Ctx = {
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   addExpense: (e: Omit<Expense, "id">) => Promise<void>;
+  updateExpense: (id: string, e: Omit<Expense, "id">) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
   addAd: (a: Omit<AdEntry, "id">) => Promise<void>;
   deleteAd: (id: string) => Promise<void>;
@@ -1003,6 +1004,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.from("expenses").insert({ user_id: user.id, store_id: sid, ...fromExpense(e) }).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, expenses: [toExpense(data), ...s.expenses] }));
+    },
+    async updateExpense(id, e) {
+      const sid = activeStoreId ?? user?.id;
+      if (!sid) return;
+
+      const { data, error } = await supabase
+        .from("expenses")
+        .update(fromExpense(e))
+        .eq("id", id)
+        .eq("store_id", sid)
+        .select()
+        .single();
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      setState((s) => ({
+        ...s,
+        expenses: s.expenses.map((item) => item.id === id ? toExpense(data) : item),
+      }));
     },
     async deleteExpense(id) {
       const { error } = await supabase.from("expenses").delete().eq("id", id);
