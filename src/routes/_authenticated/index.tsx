@@ -115,7 +115,10 @@ function Dashboard() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const range = useMemo(() => rangeFor(period, customStart, customEnd), [period, customStart, customEnd]);
-  const fin = useFinance({ start: range.start, end: range.end });
+  const fin = useFinance(
+    { start: range.start, end: range.end },
+    period === "today" || period === "yesterday" ? "day" : "range",
+  );
   const goalRev = state.settings.monthlyRevenueGoal;
   const goalPct = goalRev ? Math.min(100, (fin.revenue / goalRev) * 100) : 0;
   const { layout, moveTo, setVisible, reset } = useDashboardLayout();
