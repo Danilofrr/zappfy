@@ -55,12 +55,15 @@ export type ExpenseCategory =
   | "retirada"
   | "outros";
 
+export type ExpenseProfitScope = "day" | "month";
+
 export type Expense = {
   id: string;
   description: string;
   category: ExpenseCategory;
   amount: number;
   date: string;
+  profitScope: ExpenseProfitScope;
 };
 
 export type AdEntry = {
@@ -272,15 +275,15 @@ const seedStatuses: OrderStatus[] = ["aguardando", "pago", "separando", "entrega
 const seedPayments: PaymentMethod[] = ["pix", "pix", "cartao", "dinheiro"];
 
 const seedExpensesData: Omit<Expense, "id">[] = [
-  { description: "Facebook Ads — Campanha Smartwatch", category: "ads", amount: 850, date: isoDaysAgo(3) },
-  { description: "Motoboy semana 1", category: "motoboy", amount: 420, date: isoDaysAgo(7) },
-  { description: "Embalagens e sacolas", category: "embalagens", amount: 180, date: isoDaysAgo(10) },
-  { description: "Internet fibra", category: "internet", amount: 120, date: isoDaysAgo(12) },
-  { description: "Energia elétrica", category: "energia", amount: 230, date: isoDaysAgo(15) },
-  { description: "Aluguel galpão", category: "aluguel", amount: 1800, date: isoDaysAgo(20) },
-  { description: "Salário ajudante", category: "funcionarios", amount: 1500, date: isoDaysAgo(22) },
-  { description: "Retirada pessoal", category: "retirada", amount: 1200, date: isoDaysAgo(25) },
-  { description: "Reposição estoque fones", category: "mercadorias", amount: 980, date: isoDaysAgo(28) },
+  { description: "Facebook Ads — Campanha Smartwatch", category: "ads", amount: 850, date: isoDaysAgo(3), profitScope: "day" },
+  { description: "Motoboy semana 1", category: "motoboy", amount: 420, date: isoDaysAgo(7), profitScope: "day" },
+  { description: "Embalagens e sacolas", category: "embalagens", amount: 180, date: isoDaysAgo(10), profitScope: "day" },
+  { description: "Internet fibra", category: "internet", amount: 120, date: isoDaysAgo(12), profitScope: "month" },
+  { description: "Energia elétrica", category: "energia", amount: 230, date: isoDaysAgo(15), profitScope: "month" },
+  { description: "Aluguel galpão", category: "aluguel", amount: 1800, date: isoDaysAgo(20), profitScope: "month" },
+  { description: "Salário ajudante", category: "funcionarios", amount: 1500, date: isoDaysAgo(22), profitScope: "month" },
+  { description: "Retirada pessoal", category: "retirada", amount: 1200, date: isoDaysAgo(25), profitScope: "month" },
+  { description: "Reposição estoque fones", category: "mercadorias", amount: 980, date: isoDaysAgo(28), profitScope: "day" },
 ];
 
 // ---------- Mappers ----------
@@ -306,11 +309,19 @@ const fromOrder = (o: Omit<Order, "id">) => ({
   notes: o.notes ?? null, date: o.date,
 });
 const toExpense = (r: any): Expense => ({
-  id: r.id, description: r.description, category: r.category as ExpenseCategory,
-  amount: Number(r.amount), date: r.date,
+  id: r.id,
+  description: r.description,
+  category: r.category as ExpenseCategory,
+  amount: Number(r.amount),
+  date: r.date,
+  profitScope: (r.profit_scope === "month" ? "month" : "day") as ExpenseProfitScope,
 });
 const fromExpense = (e: Omit<Expense, "id">) => ({
-  description: e.description, category: e.category, amount: e.amount, date: e.date,
+  description: e.description,
+  category: e.category,
+  amount: e.amount,
+  date: e.date,
+  profit_scope: e.profitScope,
 });
 const toAd = (r: any): AdEntry => ({
   id: r.id, date: r.date, invested: Number(r.invested), purchases: r.purchases, revenue: Number(r.revenue),
@@ -1291,18 +1302,28 @@ export function monthRange(date = new Date()) {
   return { start, end };
 }
 
-export function useFinance(range?: { start: Date; end: Date }) {
+export type FinanceExpenseMode = "range" | "day";
+
+export function useFinance(
+  range?: { start: Date; end: Date },
+  expenseMode: FinanceExpenseMode = "range",
+) {
   const { state } = useStore();
   const { start, end } = range ?? monthRange();
-  // Memoiza o cálculo: sem isso ele reprocessa todos os pedidos/despesas
-  // em cada render de qualquer componente que use este hook.
+  // "day" exclui despesas marcadas como mensais da visão diária.
+  // "range" inclui todas as despesas do intervalo (7/30 dias, mês e personalizado).
   return useMemo(
-    () => computeFinance(state, start, end),
-    [state, start.getTime(), end.getTime()],
+    () => computeFinance(state, start, end, expenseMode),
+    [state, start.getTime(), end.getTime(), expenseMode],
   );
 }
 
-function computeFinance(state: State, start: Date, end: Date) {
+function computeFinance(
+  state: State,
+  start: Date,
+  end: Date,
+  expenseMode: FinanceExpenseMode = "range",
+) {
   const motoboyFee = Number(state.settings.motoboyFee ?? 0);
 
   const monthOrders = state.orders.filter(
@@ -1312,7 +1333,13 @@ function computeFinance(state: State, start: Date, end: Date) {
   const cogs = monthOrders.reduce((a, o) => a + o.items.reduce((b, i) => b + i.cost * i.qty, 0), 0);
   const motoboyCost = motoboyFee * monthOrders.length;
 
-  const monthExpenses = state.expenses.filter((e) => dateOnlyToLocalDate(e.date) >= start && dateOnlyToLocalDate(e.date) < end);
+  const monthExpenses = state.expenses.filter((e) => {
+    const expenseDate = dateOnlyToLocalDate(e.date);
+    const insideRange = expenseDate >= start && expenseDate < end;
+    if (!insideRange) return false;
+    if (expenseMode === "day" && e.profitScope === "month") return false;
+    return true;
+  });
   const adsExpenseSpend = monthExpenses.filter((e) => e.category === "ads").reduce((a, e) => a + e.amount, 0);
   const monthAdsEntries = state.ads.filter((a) => {
     const d = dateOnlyToLocalDate(a.date);
