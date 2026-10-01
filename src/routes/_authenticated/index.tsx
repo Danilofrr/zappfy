@@ -510,7 +510,7 @@ function Dashboard() {
         onDragStart={(e) => handleDragStart(e, id)}
         onDragOver={(e) => handleDragOver(e, id)}
         onDrop={(e) => handleDrop(e, id)}
-        className={`relative ${editMode ? "cursor-move ring-2 ring-primary/40 ring-offset-2 ring-offset-background rounded-2xl transition" : ""} ${!cfg.visible ? "opacity-50" : ""}`}
+        className={`relative min-w-[170px] flex-[1_1_170px] [&>div]:h-full ${editMode ? "cursor-move ring-2 ring-primary/40 ring-offset-2 ring-offset-background rounded-2xl transition" : ""} ${!cfg.visible ? "opacity-50" : ""}`}
       >
         {children}
         {editMode && (
@@ -680,7 +680,7 @@ function Dashboard() {
 
       {/* Indicadores principais + pós-venda no mesmo grid.
           Quatro colunas no desktop evitam espaços vazios quando algum KPI é ocultado. */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
+      <div className="flex flex-wrap gap-3 lg:gap-4">
         <KpiBlock id="kpi-revenue">
           <StatCard label="Faturamento" value={m(brl(fin.revenue))} hint={range.label} icon={DollarSign} />
         </KpiBlock>
@@ -702,7 +702,8 @@ function Dashboard() {
 
         <Link
           to="/trocas"
-          className="min-h-[132px] rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-500/45 hover:bg-violet-500/[0.08]"
+          style={{ order: 100 }}
+          className="min-h-[132px] min-w-[170px] flex-[1_1_170px] rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-500/45 hover:bg-violet-500/[0.08]"
         >
           <div className="flex h-full items-start justify-between gap-3">
             <div className="flex h-full flex-col">
@@ -720,7 +721,8 @@ function Dashboard() {
 
         <Link
           to="/trocas"
-          className="min-h-[132px] rounded-2xl border border-orange-500/25 bg-orange-500/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-500/45 hover:bg-orange-500/[0.08]"
+          style={{ order: 101 }}
+          className="min-h-[132px] min-w-[170px] flex-[1_1_170px] rounded-2xl border border-orange-500/25 bg-orange-500/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-500/45 hover:bg-orange-500/[0.08]"
         >
           <div className="flex h-full items-start justify-between gap-3">
             <div className="flex h-full flex-col">
