@@ -678,31 +678,41 @@ function Dashboard() {
         );
       })()}
 
-      {/* KPI grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
+      {/* Indicadores principais + pós-venda no mesmo grid.
+          Quatro colunas no desktop evitam espaços vazios quando algum KPI é ocultado. */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
+        <KpiBlock id="kpi-revenue">
+          <StatCard label="Faturamento" value={m(brl(fin.revenue))} hint={range.label} icon={DollarSign} />
+        </KpiBlock>
+        <KpiBlock id="kpi-profit">
+          <StatCard label="Lucro Líquido" value={m(brl(adjustedProfit))} hint={range.label} icon={TrendingUp} tone="success" />
+        </KpiBlock>
+        <KpiBlock id="kpi-expenses">
+          <StatCard label="Total Gastos" value={m(brl(totalExpenses))} hint={range.label} icon={TrendingDown} tone="danger" />
+        </KpiBlock>
+        <KpiBlock id="kpi-cash">
+          <StatCard label="Saldo em Caixa" value={m(brl(fin.cash))} hint="acumulado" icon={Wallet} />
+        </KpiBlock>
+        <KpiBlock id="kpi-orders">
+          <StatCard label="Pedidos" value={String(fin.ordersCount)} hint={range.label} icon={ShoppingCart} />
+        </KpiBlock>
+        <KpiBlock id="kpi-goal">
+          <StatCard label="Meta" value={pct(goalPct)} hint={m(brl(goalRev))} icon={Target} tone="warning" />
+        </KpiBlock>
 
-        <KpiBlock id="kpi-revenue"><StatCard label="Faturamento" value={m(brl(fin.revenue))} hint={range.label} icon={DollarSign} /></KpiBlock>
-        <KpiBlock id="kpi-profit"><StatCard label="Lucro Líquido" value={m(brl(adjustedProfit))} hint={range.label} icon={TrendingUp} tone="success" /></KpiBlock>
-        <KpiBlock id="kpi-expenses"><StatCard label="Total Gastos" value={m(brl(totalExpenses))} hint={range.label} icon={TrendingDown} tone="danger" /></KpiBlock>
-        <KpiBlock id="kpi-cash"><StatCard label="Saldo em Caixa" value={m(brl(fin.cash))} hint="acumulado" icon={Wallet} /></KpiBlock>
-        <KpiBlock id="kpi-orders"><StatCard label="Pedidos" value={String(fin.ordersCount)} hint={range.label} icon={ShoppingCart} /></KpiBlock>
-        <KpiBlock id="kpi-goal"><StatCard label="Meta" value={pct(goalPct)} hint={m(brl(goalRev))} icon={Target} tone="warning" /></KpiBlock>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-3 lg:max-w-xl">
         <Link
           to="/trocas"
-          className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-4 transition hover:-translate-y-0.5 hover:border-violet-500/45"
+          className="min-h-[132px] rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-500/45 hover:bg-violet-500/[0.08]"
         >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground">Trocas registradas</div>
-              <div className="mt-1 text-2xl font-black text-violet-400">
+          <div className="flex h-full items-start justify-between gap-3">
+            <div className="flex h-full flex-col">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Trocas</div>
+              <div className="mt-3 text-3xl font-black tracking-tight text-violet-400">
                 {afterSalesInRange.exchanges}
               </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">{range.label}</div>
+              <div className="mt-auto pt-2 text-[11px] text-muted-foreground">{range.label}</div>
             </div>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-500/10 text-violet-400">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-500/10 text-violet-400 ring-1 ring-violet-500/20">
               <RefreshCw className="h-4 w-4" />
             </span>
           </div>
@@ -710,17 +720,17 @@ function Dashboard() {
 
         <Link
           to="/trocas"
-          className="rounded-2xl border border-orange-500/25 bg-orange-500/[0.06] p-4 transition hover:-translate-y-0.5 hover:border-orange-500/45"
+          className="min-h-[132px] rounded-2xl border border-orange-500/25 bg-orange-500/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-500/45 hover:bg-orange-500/[0.08]"
         >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground">Devoluções registradas</div>
-              <div className="mt-1 text-2xl font-black text-orange-400">
+          <div className="flex h-full items-start justify-between gap-3">
+            <div className="flex h-full flex-col">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Devoluções</div>
+              <div className="mt-3 text-3xl font-black tracking-tight text-orange-400">
                 {afterSalesInRange.returns}
               </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">{range.label}</div>
+              <div className="mt-auto pt-2 text-[11px] text-muted-foreground">{range.label}</div>
             </div>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-orange-500/10 text-orange-400">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-500/10 text-orange-400 ring-1 ring-orange-500/20">
               <RotateCcw className="h-4 w-4" />
             </span>
           </div>
