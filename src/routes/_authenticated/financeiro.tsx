@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
-import { useStore, useFinance, type ExpenseCategory } from "@/lib/store";
+import { useStore, useFinance, type ExpenseCategory, type ExpenseProfitScope } from "@/lib/store";
 import { brl, dateInputToLocalISO, fmtBusinessDate, fmtDate, todayDateInput } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { CalendarDays, DollarSign, Plus, ReceiptText, Tags, Trash2, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { CalendarDays, CalendarRange, DollarSign, Plus, ReceiptText, Tags, Trash2, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -371,10 +371,21 @@ function Page() {
                   >
                     <div className="min-w-0">
                       <div className="truncate text-sm font-semibold">{expense.description}</div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">
-                        {catList.find((category) => category.value === expense.category)?.label || expense.category}
-                        {" · "}
-                        {fmtBusinessDate(expense.date)}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <span>
+                          {catList.find((category) => category.value === expense.category)?.label || expense.category}
+                          {" · "}
+                          {fmtBusinessDate(expense.date)}
+                        </span>
+                        <span
+                          className={`rounded-full border px-1.5 py-0.5 text-[9px] font-bold ${
+                            expense.profitScope === "month"
+                              ? "border-violet-500/25 bg-violet-500/10 text-violet-400"
+                              : "border-primary/25 bg-primary/10 text-primary"
+                          }`}
+                        >
+                          {expense.profitScope === "month" ? "LUCRO DO MÊS" : "LUCRO DO DIA"}
+                        </span>
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
@@ -433,33 +444,151 @@ function Page() {
 }
 
 function NewExpense({ open, setOpen, onAdd }: { open: boolean; setOpen: (v: boolean) => void; onAdd: (e: any) => void }) {
-  const [f, setF] = useState({ description: "", category: "outros" as ExpenseCategory, amount: 0, date: todayDateInput() });
+  const emptyForm = () => ({
+    description: "",
+    category: "outros" as ExpenseCategory,
+    amount: 0,
+    date: todayDateInput(),
+    profitScope: "day" as ExpenseProfitScope,
+  });
+  const [f, setF] = useState(emptyForm);
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setF({ description: "", category: "outros", amount: 0, date: todayDateInput() }); }}>
-      <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4"/>Nova despesa</Button></DialogTrigger>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Nova despesa</DialogTitle></DialogHeader>
-        <div className="grid gap-3">
-          <Field label="Descrição"><Input value={f.description} onChange={(e) => setF({...f, description: e.target.value})}/></Field>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v) setF(emptyForm());
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button><Plus className="mr-2 h-4 w-4"/>Nova despesa</Button>
+      </DialogTrigger>
+
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Nova despesa</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid gap-4">
+          <Field label="Descrição">
+            <Input
+              value={f.description}
+              onChange={(e) => setF({...f, description: e.target.value})}
+              placeholder="Ex.: aluguel, embalagem, manutenção..."
+            />
+          </Field>
+
           <div className="grid grid-cols-2 gap-3">
             <Field label="Categoria">
-              <Select value={f.category} onValueChange={(v: any) => setF({...f, category: v})}>
+              <Select value={f.category} onValueChange={(v: ExpenseCategory) => setF({...f, category: v})}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
-                <SelectContent>{catList.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {catList.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </Field>
-            <Field label="Valor (R$)"><Input type="number" step="0.01" value={f.amount} onChange={(e) => setF({...f, amount: Number(e.target.value)})}/></Field>
+
+            <Field label="Valor (R$)">
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={f.amount}
+                onChange={(e) => setF({...f, amount: Number(e.target.value)})}
+              />
+            </Field>
           </div>
-          <Field label="Data"><Input type="date" value={f.date} onChange={(e) => setF({...f, date: e.target.value})}/></Field>
+
+          <Field label="Data">
+            <Input
+              type="date"
+              value={f.date}
+              onChange={(e) => setF({...f, date: e.target.value})}
+            />
+          </Field>
+
+          <div>
+            <Label className="text-xs">Onde descontar esta despesa?</Label>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setF({...f, profitScope: "day"})}
+                className={`rounded-xl border p-3 text-left transition ${
+                  f.profitScope === "day"
+                    ? "border-primary/50 bg-primary/10 ring-1 ring-primary/20"
+                    : "border-border bg-secondary/20 hover:bg-secondary/40"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`grid h-8 w-8 place-items-center rounded-lg ${
+                    f.profitScope === "day" ? "bg-primary/15 text-primary" : "bg-background text-muted-foreground"
+                  }`}>
+                    <CalendarDays className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="text-sm font-bold">Lucro do dia</div>
+                    <div className="text-[10px] text-muted-foreground">Desconta na data escolhida</div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setF({...f, profitScope: "month"})}
+                className={`rounded-xl border p-3 text-left transition ${
+                  f.profitScope === "month"
+                    ? "border-violet-500/50 bg-violet-500/10 ring-1 ring-violet-500/20"
+                    : "border-border bg-secondary/20 hover:bg-secondary/40"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`grid h-8 w-8 place-items-center rounded-lg ${
+                    f.profitScope === "month" ? "bg-violet-500/15 text-violet-400" : "bg-background text-muted-foreground"
+                  }`}>
+                    <CalendarRange className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="text-sm font-bold">Lucro do mês</div>
+                    <div className="text-[10px] text-muted-foreground">Não reduz o resultado diário</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <div className="mt-2 rounded-lg border border-border bg-background/40 px-3 py-2 text-[11px] leading-5 text-muted-foreground">
+              {f.profitScope === "day"
+                ? "Essa despesa aparece no lucro do dia escolhido e também entra normalmente nos acumulados de 7/30 dias, mês e personalizado."
+                : "Essa despesa não será descontada em Hoje/Ontem. Ela entra nos resultados acumulados, principalmente no relatório mensal."}
+            </div>
+          </div>
+
           {f.category === "mercadorias" && (
             <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs text-warning-foreground">
               <strong>Atenção:</strong> compra de estoque para revenda deve ser lançada em <strong>Compras &amp; Fornecedores</strong>. O custo é abatido do lucro automaticamente conforme os produtos são vendidos (COGS). Se lançar aqui também, o valor será descontado duas vezes — por isso essa categoria não entra no cálculo de lucro do Dashboard.
             </div>
           )}
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => { if (!f.description || !f.amount) { toast.error("Preencha os campos"); return; } onAdd({ ...f, date: dateInputToLocalISO(f.date) }); }}>Salvar</Button>
+          <Button
+            onClick={() => {
+              if (!f.description.trim() || !f.amount) {
+                toast.error("Preencha os campos");
+                return;
+              }
+              onAdd({
+                ...f,
+                description: f.description.trim(),
+                date: dateInputToLocalISO(f.date),
+              });
+            }}
+          >
+            Salvar despesa
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
