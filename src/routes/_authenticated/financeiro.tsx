@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, StatCard } from "@/components/AppShell";
-import { useStore, useFinance, type ExpenseCategory, type ExpenseProfitScope } from "@/lib/store";
+import { useStore, useFinance, type Expense, type ExpenseCategory, type ExpenseProfitScope } from "@/lib/store";
 import { brl, dateInputToLocalISO, fmtBusinessDate, fmtDate, todayDateInput } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { CalendarDays, CalendarRange, DollarSign, Plus, ReceiptText, Tags, Trash2, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { CalendarDays, CalendarRange, DollarSign, Pencil, Plus, ReceiptText, Tags, Trash2, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -117,9 +117,10 @@ const formatPeriodLabel = (period: ExpensePeriod, start: Date, end: Date) => {
 };
 
 function Page() {
-  const { state, addExpense, deleteExpense } = useStore();
+  const { state, addExpense, updateExpense, deleteExpense } = useStore();
   const fin = useFinance();
   const [open, setOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [expensePeriod, setExpensePeriod] = useState<ExpensePeriod>("month");
   const [customFrom, setCustomFrom] = useState(() =>
     toDateInputValue(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
@@ -199,8 +200,8 @@ function Page() {
         <NewExpense
           open={open}
           setOpen={setOpen}
-          onAdd={(expense) => {
-            addExpense(expense);
+          onAdd={async (expense) => {
+            await addExpense(expense);
             toast.success("Despesa lançada");
             setOpen(false);
           }}
@@ -394,6 +395,15 @@ function Page() {
                       </span>
                       <button
                         type="button"
+                        onClick={() => setEditingExpense(expense)}
+                        className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-primary/35 hover:bg-primary/10 hover:text-primary"
+                        title="Editar despesa"
+                        aria-label="Editar despesa"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => deleteExpense(expense.id)}
                         className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
                         title="Excluir despesa"
@@ -439,6 +449,16 @@ function Page() {
           )}
         </div>
       </section>
+
+      <EditExpense
+        expense={editingExpense}
+        onClose={() => setEditingExpense(null)}
+        onSave={async (id, expense) => {
+          await updateExpense(id, expense);
+          toast.success("Despesa atualizada");
+          setEditingExpense(null);
+        }}
+      />
     </AppShell>
   );
 }
@@ -588,6 +608,167 @@ function NewExpense({ open, setOpen, onAdd }: { open: boolean; setOpen: (v: bool
             }}
           >
             Salvar despesa
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditExpense({
+  expense,
+  onClose,
+  onSave,
+}: {
+  expense: Expense | null;
+  onClose: () => void;
+  onSave: (id: string, expense: Omit<Expense, "id">) => Promise<void>;
+}) {
+  const [f, setF] = useState({
+    description: "",
+    category: "outros" as ExpenseCategory,
+    amount: 0,
+    date: todayDateInput(),
+    profitScope: "day" as ExpenseProfitScope,
+  });
+
+  const open = Boolean(expense);
+
+  // Recarrega os dados sempre que outra despesa for escolhida para edição.
+  useMemo(() => {
+    if (!expense) return null;
+    setF({
+      description: expense.description,
+      category: expense.category,
+      amount: Number(expense.amount),
+      date: toDateInputValue(new Date(expense.date)),
+      profitScope: expense.profitScope,
+    });
+    return null;
+  }, [expense?.id]);
+
+  return (
+    <Dialog open={open} onOpenChange={(value) => { if (!value) onClose(); }}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Editar despesa</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid gap-4">
+          <Field label="Descrição">
+            <Input
+              value={f.description}
+              onChange={(event) => setF({ ...f, description: event.target.value })}
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Categoria">
+              <Select
+                value={f.category}
+                onValueChange={(value: ExpenseCategory) => setF({ ...f, category: value })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {catList.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field label="Valor (R$)">
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={f.amount}
+                onChange={(event) => setF({ ...f, amount: Number(event.target.value) })}
+              />
+            </Field>
+          </div>
+
+          <Field label="Data">
+            <Input
+              type="date"
+              value={f.date}
+              onChange={(event) => setF({ ...f, date: event.target.value })}
+            />
+          </Field>
+
+          <div>
+            <Label className="text-xs">Onde descontar esta despesa?</Label>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setF({ ...f, profitScope: "day" })}
+                className={`rounded-xl border p-3 text-left transition ${
+                  f.profitScope === "day"
+                    ? "border-primary/50 bg-primary/10 ring-1 ring-primary/20"
+                    : "border-border bg-secondary/20 hover:bg-secondary/40"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`grid h-8 w-8 place-items-center rounded-lg ${
+                    f.profitScope === "day"
+                      ? "bg-primary/15 text-primary"
+                      : "bg-background text-muted-foreground"
+                  }`}>
+                    <CalendarDays className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="text-sm font-bold">Lucro do dia</div>
+                    <div className="text-[10px] text-muted-foreground">Desconta na data escolhida</div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setF({ ...f, profitScope: "month" })}
+                className={`rounded-xl border p-3 text-left transition ${
+                  f.profitScope === "month"
+                    ? "border-violet-500/50 bg-violet-500/10 ring-1 ring-violet-500/20"
+                    : "border-border bg-secondary/20 hover:bg-secondary/40"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`grid h-8 w-8 place-items-center rounded-lg ${
+                    f.profitScope === "month"
+                      ? "bg-violet-500/15 text-violet-400"
+                      : "bg-background text-muted-foreground"
+                  }`}>
+                    <CalendarRange className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="text-sm font-bold">Lucro do mês</div>
+                    <div className="text-[10px] text-muted-foreground">Não reduz o resultado diário</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button
+            onClick={async () => {
+              if (!expense) return;
+              if (!f.description.trim() || !f.amount) {
+                toast.error("Preencha os campos");
+                return;
+              }
+              await onSave(expense.id, {
+                description: f.description.trim(),
+                category: f.category,
+                amount: f.amount,
+                date: dateInputToLocalISO(f.date),
+                profitScope: f.profitScope,
+              });
+            }}
+          >
+            Salvar alterações
           </Button>
         </DialogFooter>
       </DialogContent>
