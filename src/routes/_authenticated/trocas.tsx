@@ -264,49 +264,93 @@ function TrocasPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-elegant">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-secondary/40">
+        {/* Desktop: layout compacto, sem rolagem horizontal */}
+        <div className="hidden xl:block">
+          <table className="w-full table-fixed text-sm">
+            <colgroup>
+              {tab === "cliente" ? (
+                <>
+                  <col className="w-[15%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[8%]" />
+                </>
+              ) : (
+                <>
+                  <col className="w-[20%]" />
+                  <col className="w-[28%]" />
+                  <col className="w-[24%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[10%]" />
+                </>
+              )}
+            </colgroup>
+            <thead className="bg-secondary/40 text-[11px] uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="text-left px-4 py-3">Data</th>
-                <th className="text-left px-4 py-3">{tab === "cliente" ? "Cliente" : "Fornecedor"}</th>
-                <th className="text-left px-4 py-3">Devolvido</th>
-                {tab === "cliente" && <th className="text-left px-4 py-3">Atendimento</th>}
-                {tab === "cliente" && <th className="text-left px-4 py-3">Novo</th>}
-                {tab === "cliente" && <th className="text-left px-4 py-3">Motoboy</th>}
-                <th className="text-left px-4 py-3">Motivo</th>
-                <th className="text-right px-4 py-3">Valor</th>
-                <th className="text-left px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
+                <th className="px-4 py-3 text-left">{tab === "cliente" ? "Cliente" : "Fornecedor"}</th>
+                <th className="px-4 py-3 text-left">Produto</th>
+                {tab === "cliente" && <th className="px-3 py-3 text-left">Atendimento</th>}
+                {tab === "cliente" && <th className="px-3 py-3 text-left">Motoboy</th>}
+                <th className="px-3 py-3 text-left">Motivo</th>
+                <th className="px-3 py-3 text-left">Status</th>
+                <th className="px-2 py-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={tab === "cliente" ? 10 : 7} className="px-4 py-10 text-center text-muted-foreground">Nenhum registro ainda.</td></tr>
+                <tr>
+                  <td colSpan={tab === "cliente" ? 7 : 5} className="px-4 py-10 text-center text-muted-foreground">
+                    Nenhum registro ainda.
+                  </td>
+                </tr>
               )}
+
               {visibleRows.map((r) => {
                 const st = statusList.find((s) => s.value === r.status)!;
                 const resolution = resolutionMeta[r.resolution_type || "return"];
                 const assignment = assignments[r.id];
+
                 return (
-                  <tr key={r.id} className="border-t border-border hover:bg-secondary/30">
-                    <td className="px-4 py-3 text-muted-foreground">{fmtDate(r.return_date)}</td>
-                    <td className="px-4 py-3">{r.party_name || "—"}</td>
-                    <td className="px-4 py-3">{r.quantity}x {r.product_name}</td>
+                  <tr key={r.id} className="border-t border-border align-middle transition hover:bg-secondary/30">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold leading-5 break-words">{r.party_name || "—"}</div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">{fmtDate(r.return_date)}</div>
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <div className="font-medium leading-5">
+                        {r.quantity}x {r.product_name}
+                      </div>
+                      {tab === "cliente" && r.resolution_type !== "return" && (
+                        <div className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                          <span className="font-medium text-foreground/70">Novo:</span>{" "}
+                          {r.new_product_name || r.product_name}
+                        </div>
+                      )}
+                      <div className="mt-1 text-xs font-bold text-foreground">
+                        {brl(Number(r.value_at_risk))}
+                      </div>
+                    </td>
+
                     {tab === "cliente" && (
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-bold whitespace-nowrap ${resolution.className}`}>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex max-w-full rounded-full border px-2 py-1 text-[10px] font-bold leading-4 ${resolution.className}`}>
                           {resolution.label}
                         </span>
                       </td>
                     )}
-                    {tab === "cliente" && <td className="px-4 py-3 text-muted-foreground">{r.new_product_name || "—"}</td>}
+
                     {tab === "cliente" && (
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3">
                         {assignment ? (
-                          <div className="min-w-[120px]">
-                            <div className="text-xs font-semibold">{assignment.courier_name || "Sem motoboy"}</div>
-                            <div className="mt-0.5 text-[10px] text-muted-foreground capitalize">
+                          <div>
+                            <div className="truncate text-xs font-semibold" title={assignment.courier_name || ""}>
+                              {assignment.courier_name || "Sem motoboy"}
+                            </div>
+                            <div className="mt-0.5 text-[10px] capitalize text-muted-foreground">
                               {assignment.status === "entregue"
                                 ? "Concluído"
                                 : assignment.status === "saiu_para_entrega" || assignment.status === "chegando"
@@ -321,29 +365,52 @@ function TrocasPage() {
                         )}
                       </td>
                     )}
-                    <td className="px-4 py-3 truncate max-w-[220px]">{r.reason || "—"}</td>
-                    <td className="px-4 py-3 text-right font-semibold">{brl(Number(r.value_at_risk))}</td>
-                    <td className="px-4 py-3">
+
+                    <td className="px-3 py-3">
+                      <div className="line-clamp-2 break-words text-sm leading-5" title={r.reason || ""}>
+                        {r.reason || "—"}
+                      </div>
+                    </td>
+
+                    <td className="px-3 py-3">
                       <Select value={r.status} onValueChange={(v) => updateStatus(r.id, v as any)}>
-                        <SelectTrigger className={`h-8 w-[150px] border-0 ${st.color}`}><SelectValue /></SelectTrigger>
-                        <SelectContent>{statusList.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+                        <SelectTrigger className={`h-9 w-full min-w-0 border-0 px-3 text-xs ${st.color}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusList.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
                       </Select>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex items-center gap-1">
+
+                    <td className="px-2 py-3">
+                      <div className="flex items-center justify-center gap-1">
                         {tab === "cliente" && (
                           <button
                             onClick={() => openDispatch(r)}
-                            className="text-muted-foreground hover:text-primary p-1"
+                            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-primary/20 bg-primary/5 text-primary transition hover:border-primary/50 hover:bg-primary/10"
                             title={assignments[r.id] ? "Alterar motoboy/data" : "Enviar para motoboy"}
+                            aria-label={assignments[r.id] ? "Alterar motoboy e data" : "Enviar para motoboy"}
                           >
                             <Bike className="h-4 w-4" />
                           </button>
                         )}
-                        <button onClick={() => { setEditing(r); setOpen(true); }} className="text-muted-foreground hover:text-primary p-1" title="Editar">
+                        <button
+                          onClick={() => { setEditing(r); setOpen(true); }}
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-secondary/30 text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+                          title="Editar"
+                          aria-label="Editar"
+                        >
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button onClick={() => del(r.id)} className="text-muted-foreground hover:text-destructive p-1" title="Excluir">
+                        <button
+                          onClick={() => del(r.id)}
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-secondary/30 text-muted-foreground transition hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                          title="Excluir"
+                          aria-label="Excluir"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -353,18 +420,107 @@ function TrocasPage() {
               })}
             </tbody>
           </table>
-          {hasMoreRows && (
-            <div className="border-t border-border p-3 text-center">
-              <button
-                type="button"
-                onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
-                className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
-              >
-                Carregar mais ({filtered.length - visibleRows.length} restantes)
-              </button>
+        </div>
+
+        {/* Tablet/mobile: cards para nunca exigir barra horizontal */}
+        <div className="divide-y divide-border xl:hidden">
+          {filtered.length === 0 && (
+            <div className="px-4 py-10 text-center text-sm text-muted-foreground">
+              Nenhum registro ainda.
             </div>
           )}
+
+          {visibleRows.map((r) => {
+            const st = statusList.find((s) => s.value === r.status)!;
+            const resolution = resolutionMeta[r.resolution_type || "return"];
+            const assignment = assignments[r.id];
+
+            return (
+              <div key={r.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-bold leading-5">{r.party_name || "—"}</div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">{fmtDate(r.return_date)}</div>
+                  </div>
+                  <div className="shrink-0 text-sm font-black">{brl(Number(r.value_at_risk))}</div>
+                </div>
+
+                <div className="mt-3 rounded-xl border border-border bg-secondary/20 p-3">
+                  <div className="text-sm font-semibold">{r.quantity}x {r.product_name}</div>
+                  {tab === "cliente" && r.resolution_type !== "return" && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      <b className="text-foreground/70">Novo:</b> {r.new_product_name || r.product_name}
+                    </div>
+                  )}
+                </div>
+
+                {tab === "cliente" && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-bold ${resolution.className}`}>
+                      {resolution.label}
+                    </span>
+                    <span className="rounded-full border border-border bg-secondary/30 px-2 py-1 text-[10px] text-muted-foreground">
+                      Motoboy: {assignment?.courier_name || "Não enviado"}
+                    </span>
+                  </div>
+                )}
+
+                <div className="mt-3 text-xs leading-5 text-muted-foreground">
+                  <span className="font-semibold text-foreground">Motivo:</span> {r.reason || "—"}
+                </div>
+
+                <div className="mt-3 flex items-center gap-2">
+                  <Select value={r.status} onValueChange={(v) => updateStatus(r.id, v as any)}>
+                    <SelectTrigger className={`h-9 min-w-0 flex-1 border-0 px-3 text-xs ${st.color}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusList.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {tab === "cliente" && (
+                    <button
+                      onClick={() => openDispatch(r)}
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-primary/30 bg-primary/10 text-primary"
+                      title={assignments[r.id] ? "Alterar motoboy/data" : "Enviar para motoboy"}
+                    >
+                      <Bike className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setEditing(r); setOpen(true); }}
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-secondary/40 text-muted-foreground"
+                    title="Editar"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => del(r.id)}
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-secondary/40 text-muted-foreground hover:text-destructive"
+                    title="Excluir"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
+
+        {hasMoreRows && (
+          <div className="border-t border-border p-3 text-center">
+            <button
+              type="button"
+              onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+              className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
+            >
+              Carregar mais ({filtered.length - visibleRows.length} restantes)
+            </button>
+          </div>
+        )}
       </div>
 
       <Dialog open={Boolean(dispatching)} onOpenChange={(value) => { if (!value) setDispatching(null); }}>
