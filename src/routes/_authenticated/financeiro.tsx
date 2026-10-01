@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { CalendarDays, CalendarRange, DollarSign, Pencil, Plus, ReceiptText, Tags, Trash2, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/financeiro")({
@@ -635,8 +635,8 @@ function EditExpense({
   const open = Boolean(expense);
 
   // Recarrega os dados sempre que outra despesa for escolhida para edição.
-  useMemo(() => {
-    if (!expense) return null;
+  useEffect(() => {
+    if (!expense) return;
     setF({
       description: expense.description,
       category: expense.category,
@@ -644,8 +644,7 @@ function EditExpense({
       date: toDateInputValue(new Date(expense.date)),
       profitScope: expense.profitScope,
     });
-    return null;
-  }, [expense?.id]);
+  }, [expense]);
 
   return (
     <Dialog open={open} onOpenChange={(value) => { if (!value) onClose(); }}>
