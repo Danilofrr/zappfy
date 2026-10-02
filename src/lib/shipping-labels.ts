@@ -106,19 +106,61 @@ function fictitiousLogistics(order: ShippingLabelOrder) {
   };
 }
 
-function barcodeBars(value: string) {
-  let state = hashText(value);
-  const bars: string[] = [];
-  for (let i = 0; i < 62; i += 1) {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    const width = 1 + (state % 3);
-    const gap = 1 + ((state >>> 5) % 2);
-    const height = 16 + ((state >>> 8) % 9);
-    bars.push(
-      `<i style="width:${width}px;margin-right:${gap}px;height:${height}mm"></i>`,
-    );
+// Code 128B real, desenhado em SVG.
+ // SVG é usado de propósito: barras feitas com background-color podem desaparecer
+ // no preview/PDF quando o navegador está com "gráficos de fundo" desativado.
+const CODE128_PATTERNS = [
+  "212222","222122","222221","121223","121322","131222","122213","122312","132212","221213",
+  "221312","231212","112232","122132","122231","113222","123122","123221","223211","221132",
+  "221231","213212","223112","312131","311222","321122","321221","312212","322112","322211",
+  "212123","212321","232121","111323","131123","131321","112313","132113","132311","211313",
+  "231113","231311","112133","112331","132131","113123","113321","133121","313121","211331",
+  "231131","213113","213311","213131","311123","311321","331121","312113","312311","332111",
+  "314111","221411","431111","111224","111422","121124","121421","141122","141221","112214",
+  "112412","122114","122411","142112","142211","241211","221114","413111","241112","134111",
+  "111242","121142","121241","114212","124112","124211","411212","421112","421211","212141",
+  "214121","412121","111143","111341","131141","114113","114311","411113","411311","113141",
+  "114131","311141","411131","211412","211214","211232","2331112",
+] as const;
+
+function barcodeSvg(value: string) {
+  // Code 128B aceita ASCII imprimível. O código interno da etiqueta usa apenas
+  // letras, números e hífen, então permanece totalmente compatível.
+  const safe = String(value || "PEDIDO")
+    .toUpperCase()
+    .split("")
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code >= 32 && code <= 126;
+    })
+    .join("") || "PEDIDO";
+
+  const startCode = 104; // Code 128B
+  const values = Array.from(safe).map((char) => char.charCodeAt(0) - 32);
+  const checksum =
+    (startCode + values.reduce((sum, code, index) => sum + code * (index + 1), 0)) % 103;
+  const codes = [startCode, ...values, checksum, 106];
+
+  const quiet = 10;
+  let x = quiet;
+  const rects: string[] = [];
+
+  for (const code of codes) {
+    const pattern = CODE128_PATTERNS[code];
+    if (!pattern) continue;
+
+    for (let index = 0; index < pattern.length; index += 1) {
+      const width = Number(pattern[index]);
+      if (index % 2 === 0) {
+        rects.push(`<rect x="${x}" y="0" width="${width}" height="50" fill="#000000"/>`);
+      }
+      x += width;
+    }
   }
-  return bars.join("");
+
+  const totalWidth = x + quiet;
+
+  return `<svg class="barcode-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} 50" preserveAspectRatio="none" role="img" aria-label="Código de barras ${escapeHtml(safe)}"><rect width="${totalWidth}" height="50" fill="#ffffff"/>${rects.join("")}</svg>`;
 }
 
 function labelPage(order: ShippingLabelOrder, storeName: string, logoUrl?: string | null) {
@@ -166,7 +208,7 @@ function labelPage(order: ShippingLabelOrder, storeName: string, logoUrl?: strin
       </header>
 
       <section class="barcode-block" aria-label="Código de barras interno ${escapeHtml(barcodeCode)}">
-        <div class="barcode-bars">${barcodeBars(barcodeCode)}</div>
+        <div class="barcode-bars">${barcodeSvg(barcodeCode)}</div>
         <div class="barcode-code">${escapeHtml(barcodeCode)}</div>
       </section>
 
@@ -267,8 +309,8 @@ export function openShippingLabels({
     .order-code small { display: block; margin-top: .8mm; font-size: 7pt; }
 
     .barcode-block { padding: 2mm 0 1.5mm; border-bottom: .7mm solid #000; text-align: center; }
-    .barcode-bars { height: 17mm; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; white-space: nowrap; }
-    .barcode-bars i { display: block; background: #000; flex: 0 0 auto; }
+    .barcode-bars { height: 17mm; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .barcode-svg { display: block; width: 86mm; height: 15.5mm; max-width: 100%; shape-rendering: crispEdges; }
     .barcode-code { margin-top: .8mm; font: 800 8pt/1 'Courier New', monospace; letter-spacing: 1.5px; }
 
     .section-kicker, .mini-label { display: block; font-size: 7pt; line-height: 1; font-weight: 900; letter-spacing: .7px; color: #333; }
@@ -309,6 +351,7 @@ export function openShippingLabels({
 
     @page { size: 100mm 150mm; margin: 0; }
     @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       html, body { width: 100mm; margin: 0 !important; padding: 0 !important; background: #fff; }
       .print-toolbar, .print-help { display: none !important; }
       .label-page { width: 100mm; height: 150mm; margin: 0; border: 0; padding: 4mm; box-shadow: none; }
