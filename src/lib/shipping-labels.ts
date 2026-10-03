@@ -299,7 +299,7 @@ export function openShippingLabels({
 
     .label-page { width: 100mm; height: 150mm; margin: 0 auto 14px; padding: 4mm; background: #fff; border: 1px solid #bbb; overflow: hidden; display: flex; flex-direction: column; break-after: page; page-break-after: always; }
     .label-page:last-child { break-after: auto; page-break-after: auto; }
-    .label-header { min-height: 18mm; display: flex; align-items: center; justify-content: space-between; gap: 4mm; padding: 2mm; border: .55mm solid #000; }
+    .label-header { min-height: 18mm; display: flex; align-items: center; justify-content: space-between; gap: 4mm; padding-bottom: 2mm; border-bottom: 1mm solid #000; }
     .store-brand { flex: 1; min-width: 0; display: flex; align-items: center; }
     .store-brand img { max-width: 47mm; max-height: 15mm; object-fit: contain; object-position: left center; }
     .store-name { font-size: 18pt; font-weight: 900; line-height: 1; text-transform: uppercase; }
@@ -308,35 +308,34 @@ export function openShippingLabels({
     .order-code strong { display: block; font-size: 17pt; font-family: 'Courier New', monospace; letter-spacing: .4px; }
     .order-code small { display: block; margin-top: .8mm; font-size: 7pt; }
 
-    .barcode-block { padding: 2mm 2mm 1.5mm; border-left: .55mm solid #000; border-right: .55mm solid #000; border-bottom: .55mm solid #000; text-align: center; }
+    .barcode-block { padding: 2mm 0 1.5mm; border-bottom: .7mm solid #000; text-align: center; }
     .barcode-bars { height: 17mm; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .barcode-svg { display: block; width: 86mm; height: 15.5mm; max-width: 100%; shape-rendering: crispEdges; }
     .barcode-code { margin-top: .8mm; font: 800 8pt/1 'Courier New', monospace; letter-spacing: 1.5px; }
 
     .section-kicker, .mini-label { display: block; font-size: 7pt; line-height: 1; font-weight: 900; letter-spacing: .7px; color: #333; }
-    .sender-block { padding: 2mm; border-left: .55mm solid #000; border-right: .55mm solid #000; border-bottom: .55mm solid #000; font-size: 7.5pt; line-height: 1.25; }
+    .sender-block { padding: 2mm 0; border-bottom: .55mm solid #000; font-size: 7.5pt; line-height: 1.25; }
     .sender-name { margin-top: 1mm; font-size: 9pt; font-weight: 900; text-transform: uppercase; }
 
-    .destination { padding: 2.5mm 2mm; border-left: .55mm solid #000; border-right: .55mm solid #000; border-bottom: .55mm solid #000; }
+    .destination { padding: 2.5mm 0; border-bottom: .7mm solid #000; }
     .customer { margin-top: 1.2mm; font-size: 14pt; font-weight: 900; line-height: 1.05; text-transform: uppercase; }
     .phone { margin-top: .8mm; font-size: 8pt; font-weight: 700; }
     .address-main { margin-top: 1.5mm; font-size: 11pt; font-weight: 900; line-height: 1.12; }
     .address-secondary, .cep, .reference { margin-top: .8mm; font-size: 8pt; line-height: 1.2; }
     .reference { padding: .8mm 1.2mm; background: #f0f0f0; border-left: .8mm solid #000; }
 
-    .items-block { padding: 2mm; border-left: .55mm solid #000; border-right: .55mm solid #000; border-bottom: .55mm solid #000; }
+    .items-block { padding: 2mm 0; border-bottom: .7mm solid #000; }
     .section-title { display: flex; align-items: center; justify-content: space-between; gap: 2mm; font-size: 7pt; font-weight: 900; letter-spacing: .5px; }
     .section-title strong { font-size: 8pt; white-space: nowrap; }
-    .items-list { margin-top: 1.2mm; padding-top: 1mm; display: grid; gap: .7mm; border-top: .3mm solid #000; }
-    .item-row { display: grid; grid-template-columns: 9mm 1fr; gap: 1mm; align-items: start; padding-bottom: .7mm; border-bottom: .2mm solid #d6d6d6; font-size: 8.5pt; line-height: 1.12; }
-    .item-row:last-child { padding-bottom: 0; border-bottom: 0; }
+    .items-list { margin-top: 1.2mm; display: grid; gap: .7mm; }
+    .item-row { display: grid; grid-template-columns: 9mm 1fr; gap: 1mm; align-items: start; font-size: 8.5pt; line-height: 1.12; }
     .item-qty { font-weight: 900; }
     .item-name { font-weight: 700; }
     .many-items .item-row { font-size: 7pt; line-height: 1.02; }
     .many-items .items-list { gap: .4mm; }
     .empty { font-size: 8pt; color: #555; }
 
-    .logistics-block { padding: 2mm; border-left: .55mm solid #000; border-right: .55mm solid #000; border-bottom: .55mm solid #000; }
+    .logistics-block { padding: 2mm 0; border-bottom: .55mm solid #000; }
     .logistics-grid { margin-top: 1.3mm; display: grid; grid-template-columns: 1fr 1fr; border: .35mm solid #000; }
     .logistics-grid > div { min-height: 10mm; padding: 1.4mm; }
     .logistics-grid > div:nth-child(odd) { border-right: .35mm solid #000; }
@@ -344,9 +343,9 @@ export function openShippingLabels({
     .logistics-grid span { display: block; font-size: 6.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; }
     .logistics-grid strong { display: block; margin-top: .8mm; font-size: 9pt; font-family: 'Courier New', monospace; }
 
-    .notes { padding: 1.6mm 2mm; border-left: .55mm solid #000; border-right: .55mm solid #000; border-bottom: .55mm solid #000; font-size: 7pt; line-height: 1.15; }
+    .notes { padding: 1.6mm 0; border-bottom: .45mm solid #000; font-size: 7pt; line-height: 1.15; }
     .notes div { margin-top: .8mm; }
-    .receiver { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; padding: 2mm; margin-top: auto; border: .55mm solid #000; border-top: 0; min-height: 12mm; }
+    .receiver { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; padding: 2mm 0 1mm; margin-top: auto; }
     .receiver div { display: flex; align-items: flex-end; gap: 2mm; font-size: 7pt; font-weight: 800; }
     .receiver i { flex: 1; height: 5mm; border-bottom: .4mm solid #000; }
 
