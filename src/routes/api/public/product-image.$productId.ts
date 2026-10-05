@@ -38,17 +38,19 @@ export const Route = createFileRoute("/api/public/product-image/$productId")({
           auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
         });
 
-        const { data, error } = await (supabase as any)
-          .from("products_public")
-          .select("image_url")
-          .eq("id", params.productId)
-          .maybeSingle();
+        const { data, error } = await (supabase as any).rpc(
+          "get_public_product_image",
+          { _product_id: params.productId },
+        );
 
-        if (error || !data?.image_url) {
-          return new Response("Imagem não encontrada", { status: 404 });
+        if (error || !data) {
+          return new Response("Imagem não encontrada", {
+            status: 404,
+            headers: { "cache-control": "no-store" },
+          });
         }
 
-        const imageUrl = String(data.image_url);
+        const imageUrl = String(data);
 
         if (!imageUrl.startsWith("data:")) {
           return Response.redirect(imageUrl, 302);
@@ -63,7 +65,7 @@ export const Route = createFileRoute("/api/public/product-image/$productId")({
           status: 200,
           headers: {
             "content-type": parsed.contentType,
-            "cache-control": "public, max-age=3600, stale-while-revalidate=86400",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
             "x-content-type-options": "nosniff",
           },
         });
