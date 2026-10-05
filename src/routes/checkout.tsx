@@ -32,7 +32,11 @@ function toProduct(r: any): Product {
     stock: r.stock,
     minStock: r.min_stock,
     description: r.description ?? undefined,
-    imageUrl: r.image_url ?? undefined,
+    imageUrl: r.image_url
+      ? String(r.image_url).startsWith("/api/public/product-image/")
+        ? `${r.image_url}${String(r.image_url).includes("?") ? "&" : "?"}v=20261005`
+        : r.image_url
+      : undefined,
   };
 }
 
