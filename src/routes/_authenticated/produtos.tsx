@@ -12,7 +12,7 @@ import {
 import {
   Plus, Pencil, Trash2, AlertTriangle, Upload, X, Image as ImageIcon,
   Search, Wallet, DollarSign, BarChart3, Boxes, Package, Gift, LayoutGrid, List, Truck,
-  PackagePlus, History,
+  PackagePlus, History, Copy,
 } from "lucide-react";
 import { ComprasSection } from "@/components/ComprasSection";
 import { AddStockDialog } from "@/components/AddStockDialog";
@@ -33,6 +33,7 @@ function skuOf(id: string) {
 function EstoquePage() {
   const { state, addProduct, updateProduct, deleteProduct } = useStore();
   const [editing, setEditing] = useState<Product | null>(null);
+  const [duplicating, setDuplicating] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
   const [stockFor, setStockFor] = useState<Product | null>(null);
   const [historyFor, setHistoryFor] = useState<Product | null>(null);
@@ -122,7 +123,7 @@ function EstoquePage() {
               className="pl-9 w-[260px] bg-secondary/40"
             />
           </div>
-          <Button onClick={() => { setEditing(null); setOpen(true); }}>
+          <Button onClick={() => { setEditing(null); setDuplicating(null); setOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />Novo Produto
           </Button>
         </div>
@@ -337,7 +338,14 @@ function EstoquePage() {
                         <div className="flex justify-end gap-1">
                           <button title="Adicionar estoque" onClick={() => setStockFor(p)} className="p-1 text-muted-foreground hover:text-primary"><PackagePlus className="h-4 w-4" /></button>
                           <button title="Histórico" onClick={() => setHistoryFor(p)} className="p-1 text-muted-foreground hover:text-sky-400"><History className="h-4 w-4" /></button>
-                          <button onClick={() => { setEditing(p); setOpen(true); }} className="p-1 text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
+                          <button
+                            title="Duplicar produto"
+                            onClick={() => { setEditing(null); setDuplicating(p); setOpen(true); }}
+                            className="p-1 text-muted-foreground hover:text-violet-400"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => { setDuplicating(null); setEditing(p); setOpen(true); }} className="p-1 text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
                           <button onClick={() => { if (confirm("Excluir produto?")) deleteProduct(p.id); }} className="p-1 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </td>
@@ -377,7 +385,14 @@ function EstoquePage() {
                   <div className="flex gap-1 shrink-0">
                     <button title="Adicionar estoque" onClick={() => setStockFor(p)} className="p-1.5 text-muted-foreground hover:text-primary"><PackagePlus className="h-4 w-4" /></button>
                     <button title="Histórico" onClick={() => setHistoryFor(p)} className="p-1.5 text-muted-foreground hover:text-sky-400"><History className="h-4 w-4" /></button>
-                    <button onClick={() => { setEditing(p); setOpen(true); }} className="p-1.5 text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
+                    <button
+                      title="Duplicar produto"
+                      onClick={() => { setEditing(null); setDuplicating(p); setOpen(true); }}
+                      className="p-1.5 text-muted-foreground hover:text-violet-400"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => { setDuplicating(null); setEditing(p); setOpen(true); }} className="p-1.5 text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
                     <button onClick={() => { if (confirm("Excluir produto?")) deleteProduct(p.id); }} className="p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </div>
@@ -405,12 +420,29 @@ function EstoquePage() {
 
       <ProductDialog
         open={open}
-        setOpen={setOpen}
+        setOpen={(value) => {
+          setOpen(value);
+          if (!value) {
+            setEditing(null);
+            setDuplicating(null);
+          }
+        }}
         product={editing}
+        duplicateFrom={duplicating}
         onSave={(p) => {
-          if (editing) { updateProduct(editing.id, p); toast.success("Produto atualizado"); }
-          else { addProduct(p); toast.success("Produto criado"); }
+          if (editing) {
+            updateProduct(editing.id, p);
+            toast.success("Produto atualizado");
+          } else if (duplicating) {
+            addProduct(p);
+            toast.success("Produto duplicado com sucesso");
+          } else {
+            addProduct(p);
+            toast.success("Produto criado");
+          }
           setOpen(false);
+          setEditing(null);
+          setDuplicating(null);
         }}
       />
     </AppShell>
@@ -479,15 +511,60 @@ function CatChip({
 }
 
 function ProductDialog({
-  open, setOpen, product, onSave,
-}: { open: boolean; setOpen: (v: boolean) => void; product: Product | null; onSave: (p: Omit<Product, "id">) => void }) {
+  open, setOpen, product, duplicateFrom, onSave,
+}: {
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  product: Product | null;
+  duplicateFrom: Product | null;
+  onSave: (p: Omit<Product, "id">) => void;
+}) {
   const [f, setF] = useState<Omit<Product, "id">>({
     name: "", category: "", cost: 0, price: 0, stock: 0, minStock: 0, description: "", imageUrl: "",
   });
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (open) setF(product ?? { name: "", category: "", cost: 0, price: 0, stock: 0, minStock: 0, description: "", imageUrl: "" });
-  }, [open, product]);
+    if (!open) return;
+
+    if (product) {
+      setF({
+        name: product.name,
+        category: product.category,
+        cost: product.cost,
+        price: product.price,
+        stock: product.stock,
+        minStock: product.minStock,
+        description: product.description ?? "",
+        imageUrl: product.imageUrl ?? "",
+      });
+      return;
+    }
+
+    if (duplicateFrom) {
+      setF({
+        name: duplicateFrom.name,
+        category: duplicateFrom.category,
+        cost: duplicateFrom.cost,
+        price: duplicateFrom.price,
+        stock: 0,
+        minStock: duplicateFrom.minStock,
+        description: duplicateFrom.description ?? "",
+        imageUrl: duplicateFrom.imageUrl ?? "",
+      });
+      return;
+    }
+
+    setF({
+      name: "",
+      category: "",
+      cost: 0,
+      price: 0,
+      stock: 0,
+      minStock: 0,
+      description: "",
+      imageUrl: "",
+    });
+  }, [open, product, duplicateFrom]);
 
   function onImageFile(file: File) {
     if (!file.type.startsWith("image/")) { toast.error("Selecione um arquivo de imagem"); return; }
@@ -502,10 +579,27 @@ function ProductDialog({
       <DialogTrigger asChild><span /></DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{product ? "Editar produto" : "Novo produto"}</DialogTitle>
-          <DialogDescription>Os cálculos de lucro e margem são automáticos.</DialogDescription>
+          <DialogTitle>
+            {product ? "Editar produto" : duplicateFrom ? "Duplicar produto" : "Novo produto"}
+          </DialogTitle>
+          <DialogDescription>
+            {duplicateFrom
+              ? "Os dados do produto original foram copiados. Altere a cor/variante, imagem e informe o estoque correto da nova cópia."
+              : "Os cálculos de lucro e margem são automáticos."}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
+          {duplicateFrom && (
+            <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-3 text-xs text-violet-300">
+              <div className="flex items-center gap-2 font-bold">
+                <Copy className="h-4 w-4" />
+                Cópia de {duplicateFrom.name}
+              </div>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                O estoque foi zerado para evitar duplicar peças existentes. Troque o nome/cor e informe a quantidade real antes de salvar.
+              </div>
+            </div>
+          )}
           <Field label="Imagem do produto (aparece no resumo do checkout)">
             <input
               ref={fileRef}
@@ -560,7 +654,9 @@ function ProductDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => { if (!f.name) { toast.error("Informe o nome"); return; } onSave(f); }}>Salvar</Button>
+          <Button onClick={() => { if (!f.name) { toast.error("Informe o nome"); return; } onSave(f); }}>
+            {duplicateFrom ? "Criar cópia" : "Salvar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
