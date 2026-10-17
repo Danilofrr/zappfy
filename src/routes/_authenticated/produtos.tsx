@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, type Product } from "@/lib/store";
 import { brl, pct } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -370,12 +371,10 @@ function EstoquePage() {
               <thead className="text-[11px] uppercase tracking-wider text-muted-foreground bg-secondary/30">
                 <tr>
                   <th className="w-10 px-3 py-3 text-center">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={allVisibleSelected}
-                      onChange={toggleVisibleSelection}
+                      onCheckedChange={toggleVisibleSelection}
                       aria-label="Selecionar produtos visíveis"
-                      className="h-4 w-4 cursor-pointer accent-[hsl(var(--primary))]"
                     />
                   </th>
                   <th className="px-3 py-3 w-10"></th>
@@ -405,12 +404,10 @@ function EstoquePage() {
                       className={`border-t border-border hover:bg-secondary/30 ${selectedIds.has(p.id) ? "bg-primary/[0.045]" : ""}`}
                     >
                       <td className="px-3 py-3 text-center">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={selectedIds.has(p.id)}
-                          onChange={() => toggleProductSelection(p.id)}
+                          onCheckedChange={() => toggleProductSelection(p.id)}
                           aria-label={`Selecionar ${p.name}`}
-                          className="h-4 w-4 cursor-pointer accent-[hsl(var(--primary))]"
                         />
                       </td>
                       <td className="px-3 py-3">
@@ -476,15 +473,14 @@ function EstoquePage() {
                   selectedIds.has(p.id) ? "border-primary/60 ring-1 ring-primary/25" : "border-border hover:border-primary/30"
                 }`}
               >
-                <label className="absolute right-3 top-3 z-10 grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-border bg-background/90">
-                  <input
-                    type="checkbox"
+                <div className="mb-2 flex items-center gap-2">
+                  <Checkbox
                     checked={selectedIds.has(p.id)}
-                    onChange={() => toggleProductSelection(p.id)}
+                    onCheckedChange={() => toggleProductSelection(p.id)}
                     aria-label={`Selecionar ${p.name}`}
-                    className="h-4 w-4 cursor-pointer accent-[hsl(var(--primary))]"
                   />
-                </label>
+                  <span className="text-xs text-muted-foreground">Selecionar</span>
+                </div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     {p.imageUrl ? (
@@ -499,7 +495,7 @@ function EstoquePage() {
                       <div className="font-semibold truncate">{p.name}</div>
                     </div>
                   </div>
-                  <div className="mr-9 flex gap-1 shrink-0">
+                  <div className="flex gap-1 shrink-0">
                     <button title="Adicionar estoque" onClick={() => setStockFor(p)} className="p-1.5 text-muted-foreground hover:text-primary"><PackagePlus className="h-4 w-4" /></button>
                     <button title="Histórico" onClick={() => setHistoryFor(p)} className="p-1.5 text-muted-foreground hover:text-sky-400"><History className="h-4 w-4" /></button>
                     <button
