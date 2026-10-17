@@ -31,7 +31,7 @@ function skuOf(id: string) {
 }
 
 function EstoquePage() {
-  const { state, addProduct, updateProduct, deleteProduct } = useStore();
+  const { state, addProduct, updateProduct, bulkUpdateProducts, deleteProduct, hasPermission } = useStore();
   const [editing, setEditing] = useState<Product | null>(null);
   const [duplicating, setDuplicating] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
@@ -340,9 +340,11 @@ function EstoquePage() {
             <Button size="sm" variant="outline" onClick={() => openBulk("price")}>
               <DollarSign className="mr-1.5 h-4 w-4" />Preço de venda
             </Button>
-            <Button size="sm" variant="outline" onClick={() => openBulk("cost")}>
-              <Wallet className="mr-1.5 h-4 w-4" />Preço de custo
-            </Button>
+            {hasPermission("finance") && (
+              <Button size="sm" variant="outline" onClick={() => openBulk("cost")}>
+                <Wallet className="mr-1.5 h-4 w-4" />Preço de custo
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
               <X className="mr-1.5 h-4 w-4" />Limpar
             </Button>
@@ -538,17 +540,13 @@ function EstoquePage() {
         onApply={async (value) => {
           if (!selectedProducts.length) return;
 
-          for (const product of selectedProducts) {
-            if (bulkAction === "stock_add") {
-              await updateProduct(product.id, { stock: product.stock + value });
-            } else if (bulkAction === "stock_remove") {
-              await updateProduct(product.id, { stock: Math.max(0, product.stock - value) });
-            } else if (bulkAction === "price") {
-              await updateProduct(product.id, { price: value });
-            } else {
-              await updateProduct(product.id, { cost: value });
-            }
-          }
+          const ok = await bulkUpdateProducts(
+            selectedProducts.map((product) => product.id),
+            bulkAction,
+            value,
+          );
+
+          if (!ok) return;
 
           const label =
             bulkAction === "stock_add"
@@ -622,7 +620,7 @@ function BulkProductDialog({
     stock_add: {
       title: "Aumentar estoque em massa",
       label: "Quantidade para adicionar em cada produto",
-      description: "A mesma quantidade será somada ao estoque atual de cada variante selecionada.",
+      description: "A mesma quantidade será somada ao estoque atual de cada variante selecionada. É um ajuste manual e não altera o saldo em caixa.",
       button: "Aumentar estoque",
       min: 1,
       step: 1,
@@ -630,7 +628,7 @@ function BulkProductDialog({
     stock_remove: {
       title: "Diminuir estoque em massa",
       label: "Quantidade para retirar de cada produto",
-      description: "A mesma quantidade será retirada de cada variante. Nenhum estoque ficará abaixo de zero.",
+      description: "A mesma quantidade será retirada de cada variante. Nenhum estoque ficará abaixo de zero e o ajuste não altera o saldo em caixa.",
       button: "Diminuir estoque",
       min: 1,
       step: 1,
