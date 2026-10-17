@@ -12,7 +12,7 @@ import {
 import {
   Plus, Pencil, Trash2, AlertTriangle, Upload, X, Image as ImageIcon,
   Search, Wallet, DollarSign, BarChart3, Boxes, Package, Gift, LayoutGrid, List, Truck,
-  PackagePlus, History, Copy,
+  PackagePlus, History, Copy, Minus, CheckSquare,
 } from "lucide-react";
 import { ComprasSection } from "@/components/ComprasSection";
 import { AddStockDialog } from "@/components/AddStockDialog";
@@ -44,6 +44,9 @@ function EstoquePage() {
   const PAGE_SIZE = 40;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [cat, setCat] = useState<string>("todas");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkAction, setBulkAction] = useState<"stock_add" | "stock_remove" | "price" | "cost">("stock_add");
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -65,6 +68,10 @@ function EstoquePage() {
   }, [state.products, debouncedQuery, cat]);
 
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [debouncedQuery, cat]);
+  useEffect(() => {
+    const valid = new Set(state.products.map((product) => product.id));
+    setSelectedIds((current) => new Set([...current].filter((id) => valid.has(id))));
+  }, [state.products]);
   const visibleProducts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const hasMoreProducts = filtered.length > visibleProducts.length;
   const loadMoreButton = hasMoreProducts ? (
@@ -76,6 +83,43 @@ function EstoquePage() {
       Carregar mais ({filtered.length - visibleProducts.length} restantes)
     </button>
   ) : null;
+
+  const selectedProducts = useMemo(
+    () => state.products.filter((product) => selectedIds.has(product.id)),
+    [state.products, selectedIds],
+  );
+  const allVisibleSelected =
+    visibleProducts.length > 0 && visibleProducts.every((product) => selectedIds.has(product.id));
+
+  function toggleProductSelection(id: string) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleVisibleSelection() {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) {
+        visibleProducts.forEach((product) => next.delete(product.id));
+      } else {
+        visibleProducts.forEach((product) => next.add(product.id));
+      }
+      return next;
+    });
+  }
+
+  function openBulk(action: "stock_add" | "stock_remove" | "price" | "cost") {
+    if (!selectedIds.size) {
+      toast.error("Selecione pelo menos um produto");
+      return;
+    }
+    setBulkAction(action);
+    setBulkOpen(true);
+  }
 
   const scope = useMemo(
     () => (cat === "todas" ? state.products : state.products.filter((p) => p.category === cat)),
@@ -270,6 +314,42 @@ function EstoquePage() {
         </div>
       )}
 
+      {tab === "produtos" && selectedIds.size > 0 && (
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-primary/35 bg-primary/[0.07] p-3 shadow-[0_0_24px_hsl(var(--primary)/0.08)] lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+              <CheckSquare className="h-5 w-5" />
+            </span>
+            <div>
+              <div className="font-bold">
+                {selectedIds.size} produto{selectedIds.size === 1 ? "" : "s"} selecionado{selectedIds.size === 1 ? "" : "s"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Aplique a mesma alteração nas variantes selecionadas.
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => openBulk("stock_add")}>
+              <PackagePlus className="mr-1.5 h-4 w-4" />Aumentar estoque
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => openBulk("stock_remove")}>
+              <Minus className="mr-1.5 h-4 w-4" />Diminuir estoque
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => openBulk("price")}>
+              <DollarSign className="mr-1.5 h-4 w-4" />Preço de venda
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => openBulk("cost")}>
+              <Wallet className="mr-1.5 h-4 w-4" />Preço de custo
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+              <X className="mr-1.5 h-4 w-4" />Limpar
+            </Button>
+          </div>
+        </div>
+      )}
+
       {tab === "compras" ? (
         <ComprasSection />
       ) : tab === "kits" ? (
@@ -287,7 +367,16 @@ function EstoquePage() {
             <table className="w-full text-sm">
               <thead className="text-[11px] uppercase tracking-wider text-muted-foreground bg-secondary/30">
                 <tr>
-                  <th className="px-4 py-3 w-10"></th>
+                  <th className="w-10 px-3 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={toggleVisibleSelection}
+                      aria-label="Selecionar produtos visíveis"
+                      className="h-4 w-4 cursor-pointer accent-[hsl(var(--primary))]"
+                    />
+                  </th>
+                  <th className="px-3 py-3 w-10"></th>
                   <th className="text-left px-4 py-3 font-medium">Produto</th>
                   <th className="text-left px-4 py-3 font-medium">SKU</th>
                   <th className="text-left px-4 py-3 font-medium">Categoria</th>
@@ -302,15 +391,27 @@ function EstoquePage() {
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>
+                  <tr><td colSpan={12} className="px-4 py-10 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>
                 )}
                 {visibleProducts.map((p) => {
                   const margin = p.price ? ((p.price - p.cost) / p.price) * 100 : 0;
                   const low = p.stock <= p.minStock;
                   const out = p.stock <= 0;
                   return (
-                    <tr key={p.id} className="border-t border-border hover:bg-secondary/30">
-                      <td className="px-4 py-3">
+                    <tr
+                      key={p.id}
+                      className={`border-t border-border hover:bg-secondary/30 ${selectedIds.has(p.id) ? "bg-primary/[0.045]" : ""}`}
+                    >
+                      <td className="px-3 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(p.id)}
+                          onChange={() => toggleProductSelection(p.id)}
+                          aria-label={`Selecionar ${p.name}`}
+                          className="h-4 w-4 cursor-pointer accent-[hsl(var(--primary))]"
+                        />
+                      </td>
+                      <td className="px-3 py-3">
                         {p.imageUrl ? (
                           <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" className="h-9 w-9 rounded-md object-cover border border-border" />
                         ) : (
@@ -367,7 +468,21 @@ function EstoquePage() {
             const profit = p.price - p.cost;
             const low = p.stock <= p.minStock;
             return (
-              <div key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-elegant hover:border-primary/30 transition-colors">
+              <div
+                key={p.id}
+                className={`relative rounded-2xl border bg-card p-5 shadow-elegant transition-colors ${
+                  selectedIds.has(p.id) ? "border-primary/60 ring-1 ring-primary/25" : "border-border hover:border-primary/30"
+                }`}
+              >
+                <label className="absolute right-3 top-3 z-10 grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-border bg-background/90">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(p.id)}
+                    onChange={() => toggleProductSelection(p.id)}
+                    aria-label={`Selecionar ${p.name}`}
+                    className="h-4 w-4 cursor-pointer accent-[hsl(var(--primary))]"
+                  />
+                </label>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     {p.imageUrl ? (
@@ -382,7 +497,7 @@ function EstoquePage() {
                       <div className="font-semibold truncate">{p.name}</div>
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
+                  <div className="mr-9 flex gap-1 shrink-0">
                     <button title="Adicionar estoque" onClick={() => setStockFor(p)} className="p-1.5 text-muted-foreground hover:text-primary"><PackagePlus className="h-4 w-4" /></button>
                     <button title="Histórico" onClick={() => setHistoryFor(p)} className="p-1.5 text-muted-foreground hover:text-sky-400"><History className="h-4 w-4" /></button>
                     <button
@@ -415,6 +530,40 @@ function EstoquePage() {
         </div>
       )}
 
+      <BulkProductDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        action={bulkAction}
+        products={selectedProducts}
+        onApply={async (value) => {
+          if (!selectedProducts.length) return;
+
+          for (const product of selectedProducts) {
+            if (bulkAction === "stock_add") {
+              await updateProduct(product.id, { stock: product.stock + value });
+            } else if (bulkAction === "stock_remove") {
+              await updateProduct(product.id, { stock: Math.max(0, product.stock - value) });
+            } else if (bulkAction === "price") {
+              await updateProduct(product.id, { price: value });
+            } else {
+              await updateProduct(product.id, { cost: value });
+            }
+          }
+
+          const label =
+            bulkAction === "stock_add"
+              ? "Estoque aumentado"
+              : bulkAction === "stock_remove"
+                ? "Estoque reduzido"
+                : bulkAction === "price"
+                  ? "Preço de venda atualizado"
+                  : "Preço de custo atualizado";
+
+          toast.success(`${label} em ${selectedProducts.length} produto${selectedProducts.length === 1 ? "" : "s"}`);
+          setBulkOpen(false);
+        }}
+      />
+
       <AddStockDialog open={!!stockFor} onOpenChange={(v) => { if (!v) setStockFor(null); }} product={stockFor} />
       <ProductHistoryDialog open={!!historyFor} onOpenChange={(v) => { if (!v) setHistoryFor(null); }} product={historyFor} />
 
@@ -446,6 +595,151 @@ function EstoquePage() {
         }}
       />
     </AppShell>
+  );
+}
+
+function BulkProductDialog({
+  open,
+  onOpenChange,
+  action,
+  products,
+  onApply,
+}: {
+  open: boolean;
+  onOpenChange: (value: boolean) => void;
+  action: "stock_add" | "stock_remove" | "price" | "cost";
+  products: Product[];
+  onApply: (value: number) => Promise<void>;
+}) {
+  const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) setValue("");
+  }, [open, action]);
+
+  const config = {
+    stock_add: {
+      title: "Aumentar estoque em massa",
+      label: "Quantidade para adicionar em cada produto",
+      description: "A mesma quantidade será somada ao estoque atual de cada variante selecionada.",
+      button: "Aumentar estoque",
+      min: 1,
+      step: 1,
+    },
+    stock_remove: {
+      title: "Diminuir estoque em massa",
+      label: "Quantidade para retirar de cada produto",
+      description: "A mesma quantidade será retirada de cada variante. Nenhum estoque ficará abaixo de zero.",
+      button: "Diminuir estoque",
+      min: 1,
+      step: 1,
+    },
+    price: {
+      title: "Alterar preço de venda",
+      label: "Novo preço de venda para todos",
+      description: "Todos os produtos selecionados receberão exatamente o mesmo preço de venda.",
+      button: "Atualizar preço",
+      min: 0,
+      step: 0.01,
+    },
+    cost: {
+      title: "Alterar preço de custo",
+      label: "Novo preço de custo para todos",
+      description: "Todos os produtos selecionados receberão exatamente o mesmo preço de custo.",
+      button: "Atualizar custo",
+      min: 0,
+      step: 0.01,
+    },
+  }[action];
+
+  const numericValue = Number(String(value).replace(",", "."));
+  const valid = Number.isFinite(numericValue) && numericValue >= config.min;
+
+  async function apply() {
+    if (!valid) {
+      toast.error(action.startsWith("stock") ? "Informe uma quantidade válida" : "Informe um valor válido");
+      return;
+    }
+    setSaving(true);
+    try {
+      await onApply(action.startsWith("stock") ? Math.trunc(numericValue) : Math.round(numericValue * 100) / 100);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{config.title}</DialogTitle>
+          <DialogDescription>{config.description}</DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4">
+          <div className="rounded-xl border border-primary/25 bg-primary/[0.06] p-3">
+            <div className="text-xs font-semibold text-primary">
+              {products.length} produto{products.length === 1 ? "" : "s"} selecionado{products.length === 1 ? "" : "s"}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {products.slice(0, 8).map((product) => (
+                <span key={product.id} className="rounded-full border border-border bg-background px-2 py-1 text-[10px]">
+                  {product.name}
+                </span>
+              ))}
+              {products.length > 8 && (
+                <span className="rounded-full border border-border bg-background px-2 py-1 text-[10px] text-muted-foreground">
+                  +{products.length - 8}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <Field label={config.label}>
+            <Input
+              autoFocus
+              type="number"
+              min={config.min}
+              step={config.step}
+              inputMode={action.startsWith("stock") ? "numeric" : "decimal"}
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              placeholder={action.startsWith("stock") ? "Ex.: 5" : "Ex.: 199,90"}
+            />
+          </Field>
+
+          {action.startsWith("stock") && (
+            <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-border bg-secondary/20 p-3 text-xs">
+              {products.map((product) => {
+                const delta = Math.max(0, Math.trunc(Number(value) || 0));
+                const nextStock =
+                  action === "stock_add"
+                    ? product.stock + delta
+                    : Math.max(0, product.stock - delta);
+                return (
+                  <div key={product.id} className="flex items-center justify-between gap-3 py-1">
+                    <span className="truncate text-muted-foreground">{product.name}</span>
+                    <span className="shrink-0 font-semibold">
+                      {product.stock} → <span className="text-primary">{nextStock}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button onClick={apply} disabled={saving || !valid}>
+            {saving ? "Aplicando..." : config.button}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
