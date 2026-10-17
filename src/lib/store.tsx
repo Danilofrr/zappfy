@@ -414,6 +414,11 @@ type Ctx = {
   hasPermission: (permission: string) => boolean;
   addProduct: (p: Omit<Product, "id">) => Promise<void>;
   updateProduct: (id: string, p: Partial<Product>) => Promise<void>;
+  bulkUpdateProducts: (
+    ids: string[],
+    action: "stock_add" | "stock_remove" | "price" | "cost",
+    value: number,
+  ) => Promise<boolean>;
   deleteProduct: (id: string) => Promise<void>;
   addOrder: (o: Omit<Order, "id">) => Promise<void>;
   updateOrder: (id: string, patch: Partial<Omit<Order, "id">>) => Promise<void>;
@@ -812,6 +817,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.from("products").update(patch).eq("id", id).select().single();
       if (error) { toast.error(error.message); return; }
       setState((s) => ({ ...s, products: s.products.map((x) => x.id === id ? toProduct(data) : x) }));
+    },
+    async bulkUpdateProducts(ids, action, amount) {
+      if (!user) return false;
+      const sid = activeStoreId ?? user.id;
+
+      const { data, error } = await (supabase as any).rpc("bulk_update_products", {
+        _store_id: sid,
+        _product_ids: ids,
+        _action: action,
+        _value: amount,
+      });
+
+      if (error) {
+        toast.error(error.message || "Não foi possível atualizar os produtos");
+        return false;
+      }
+
+      if (!data?.ok) {
+        toast.error("Não foi possível atualizar os produtos");
+        return false;
+      }
+
+      await loadAll(user.id, sid);
+      return true;
     },
     async deleteProduct(id) {
       const { error } = await supabase.from("products").delete().eq("id", id);
