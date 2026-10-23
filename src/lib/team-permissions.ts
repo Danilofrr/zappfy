@@ -23,7 +23,7 @@ export const TEAM_PERMISSION_OPTIONS: Array<{
   { key: "couriers", label: "Motoboys", description: "Central de motoboys, carga, entregas e agendamentos.", path: "/motoboys" },
   { key: "tracking", label: "Rastreamento", description: "Acompanhar o rastreamento das entregas.", path: "/rastreamento" },
   { key: "checkout", label: "Checkout", description: "Acessar a personalização e o link público do checkout.", path: "/personalizar-checkout" },
-  { key: "inventory", label: "Estoque", description: "Acessar produtos e controle de estoque.", path: "/produtos" },
+  { key: "inventory", label: "Estoque", description: "Consultar quantidades disponíveis, sem preços e sem edição.", path: "/produtos" },
   { key: "returns", label: "Trocas e devoluções", description: "Acompanhar trocas e devoluções.", path: "/trocas" },
   { key: "ads", label: "Meta Ads", description: "Acompanhar investimento, CPA e ROAS.", path: "/ads", sensitive: true },
   { key: "reports", label: "Relatórios", description: "Acessar relatórios e indicadores.", path: "/relatorios", sensitive: true },
