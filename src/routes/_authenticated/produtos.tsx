@@ -32,7 +32,7 @@ function skuOf(id: string) {
 }
 
 function EstoquePage() {
-  const { state, addProduct, updateProduct, bulkUpdateProducts, deleteProduct, hasPermission } = useStore();
+  const { state, access, addProduct, updateProduct, bulkUpdateProducts, deleteProduct, hasPermission } = useStore();
   const [editing, setEditing] = useState<Product | null>(null);
   const [duplicating, setDuplicating] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
@@ -152,6 +152,173 @@ function EstoquePage() {
     () => state.products.reduce((s, p) => s + p.cost * p.stock, 0),
     [state.products]
   );
+
+  // Funcionários com acesso ao estoque visualizam somente a disponibilidade.
+  // O proprietário mantém a tela completa, incluindo valores e ferramentas de gestão.
+  if (!access?.isOwner) {
+    const availableUnits = scope.reduce((sum, product) => sum + Math.max(0, product.stock), 0);
+    const outOfStock = scope.filter((product) => product.stock <= 0).length;
+
+    return (
+      <AppShell
+        title="Consulta de Estoque"
+        subtitle="QUANTIDADES DISPONÍVEIS POR PRODUTO"
+        actions={
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar produto..."
+              className="w-[260px] bg-secondary/40 pl-9"
+            />
+          </div>
+        }
+      >
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <KpiCard
+            icon={<Boxes className="h-5 w-5" />}
+            iconBg="bg-emerald-500/15 text-emerald-300"
+            glow="from-emerald-500/15"
+            neon="52 211 153"
+            label="UNIDADES DISPONÍVEIS"
+            value={String(availableUnits)}
+            valueClass="text-emerald-300"
+          />
+          <KpiCard
+            icon={<Package className="h-5 w-5" />}
+            iconBg="bg-sky-500/15 text-sky-300"
+            glow="from-sky-500/15"
+            neon="56 189 248"
+            label="PRODUTOS CADASTRADOS"
+            value={String(scope.length)}
+            valueClass="text-sky-300"
+          />
+          <KpiCard
+            icon={<AlertTriangle className="h-5 w-5" />}
+            iconBg="bg-orange-500/15 text-orange-300"
+            glow="from-orange-500/15"
+            neon="251 146 60"
+            label="PRODUTOS ESGOTADOS"
+            value={String(outOfStock)}
+            valueClass="text-orange-300"
+          />
+        </div>
+
+        <div className="relative mb-4 md:hidden">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar produto..."
+            className="bg-secondary/40 pl-9"
+          />
+        </div>
+
+        <div className="mb-4 flex flex-wrap gap-2">
+          <CatChip
+            active={cat === "todas"}
+            onClick={() => setCat("todas")}
+            color="primary"
+            amount={`${state.products.reduce((sum, p) => sum + Math.max(0, p.stock), 0)} un`}
+            count={state.products.length}
+          >
+            Todas
+          </CatChip>
+          {categories.map((category) => {
+            const categoryProducts = state.products.filter((product) => product.category === category);
+            return (
+              <CatChip
+                key={category}
+                active={cat === category}
+                onClick={() => setCat(category)}
+                color="pink"
+                amount={`${categoryProducts.reduce((sum, p) => sum + Math.max(0, p.stock), 0)} un`}
+                count={categoryProducts.length}
+              >
+                {category}
+              </CatChip>
+            );
+          })}
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-elegant">
+          <div className="border-b border-border px-5 py-4">
+            <h3 className="font-semibold">Disponibilidade por produto</h3>
+            <p className="mt-1 text-xs text-muted-foreground">Consulta de quantidades em estoque.</p>
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary/30 text-[11px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium">Produto</th>
+                  <th className="px-4 py-3 text-left font-medium">Categoria</th>
+                  <th className="px-4 py-3 text-right font-medium">Quantidade disponível</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 && (
+                  <tr><td colSpan={3} className="px-4 py-10 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>
+                )}
+                {visibleProducts.map((product) => (
+                  <tr key={product.id} className="border-t border-border hover:bg-secondary/30">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        {product.imageUrl ? (
+                          <img src={product.imageUrl} alt="" loading="lazy" decoding="async" className="h-10 w-10 shrink-0 rounded-lg border border-border object-cover" />
+                        ) : (
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary/50"><ImageIcon className="h-4 w-4 text-muted-foreground" /></span>
+                        )}
+                        <span className="font-medium">{product.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{product.category || "—"}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`inline-flex min-w-14 justify-center rounded-lg px-3 py-1.5 font-bold ${product.stock > 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                        {Math.max(0, product.stock)} un
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="divide-y divide-border md:hidden">
+            {filtered.length === 0 && (
+              <p className="px-4 py-10 text-center text-sm text-muted-foreground">Nenhum produto encontrado.</p>
+            )}
+            {visibleProducts.map((product) => (
+              <div key={product.id} className="flex items-center justify-between gap-3 p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt="" loading="lazy" decoding="async" className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover" />
+                  ) : (
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-secondary/50"><ImageIcon className="h-5 w-5 text-muted-foreground" /></span>
+                  )}
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">{product.name}</div>
+                    <div className="text-xs text-muted-foreground">{product.category || "Sem categoria"}</div>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className={`text-xl font-extrabold ${product.stock > 0 ? "text-emerald-400" : "text-destructive"}`}>
+                    {Math.max(0, product.stock)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">disponíveis</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {loadMoreButton && (
+          <div className="mt-4 text-center">{loadMoreButton}</div>
+        )}
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell
