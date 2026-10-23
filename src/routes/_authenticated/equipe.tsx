@@ -444,6 +444,7 @@ function EquipePage() {
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
             <ShieldCheck className="mr-1.5 inline h-4 w-4 text-primary" />
             Se “Financeiro e lucro” não estiver liberado, custos dos produtos, despesas e lucro ficam fora dos dados enviados ao funcionário.
+            Na permissão “Estoque”, o funcionário consulta apenas os produtos e as quantidades disponíveis, sem preços ou ferramentas de edição.
           </div>
 
           <DialogFooter>
