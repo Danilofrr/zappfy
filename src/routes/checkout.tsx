@@ -113,9 +113,18 @@ function Checkout() {
     (async () => {
       setLoading(true);
       setError(null);
+      setSettings(null);
+      setProducts([]);
+
+      const requestedSlug = loja?.trim().toLowerCase();
+      if (!requestedSlug) {
+        setError("Link da loja não informado. Copie o endereço em Personalizar Checkout no painel.");
+        setLoading(false);
+        return;
+      }
 
       const { data: payload, error: loadError } = await (supabase as any).rpc("get_public_checkout_payload", {
-        _slug: loja || null,
+        _slug: requestedSlug,
       });
 
       if (cancelled) return;
