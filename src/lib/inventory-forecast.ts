@@ -37,6 +37,7 @@ export type ProductForecast = {
   expected30: number;
   stock: number;
   incoming: number;
+  overdueIncoming: number;
   bufferStock: number;
   reorderPoint: number;
   targetStock: number;
@@ -48,6 +49,7 @@ export type ProductForecast = {
   estimatedArrival: Date;
   earliestArrival: Date;
   projectedStockAtArrival: number;
+  riskDuringLead: boolean;
   priority: InventoryPriority;
   confidence: "alta" | "media" | "baixa" | "sem_dados";
   trend: "subindo" | "caindo" | "estavel" | "sem_dados";
@@ -182,13 +184,18 @@ export function buildInventoryForecast(
     salesByProduct.set(sale.product_id, row);
   }
 
-  const incomingByProduct = new Map<string, number>();
+  const incomingByProduct = new Map<string, Array<{ quantity: number; daysUntilArrival: number }>>();
   for (const purchase of pendingPurchases) {
     const id = purchase.product_id && productIds.has(purchase.product_id)
       ? purchase.product_id
       : resolveUniqueName(purchase.product_name || "", productIdsByName);
     if (!id) continue;
-    incomingByProduct.set(id, (incomingByProduct.get(id) || 0) + nonNegative(purchase.quantity));
+    const date = new Date(purchase.order_date);
+    const orderDate = Number.isNaN(date.getTime()) ? today : date;
+    const daysUntilArrival = calendarDaysBetween(today, addCalendarDays(orderDate, leadDays));
+    const incoming = incomingByProduct.get(id) ?? [];
+    incoming.push({ quantity: Math.floor(nonNegative(purchase.quantity)), daysUntilArrival });
+    incomingByProduct.set(id, incoming);
   }
 
   const rows: ProductForecast[] = products.map((product) => {
@@ -201,7 +208,11 @@ export function buildInventoryForecast(
       ? rate30 * 0.55 + rate7 * 0.30 + ratePrevious * 0.15
       : rate30 * 0.65 + rate7 * 0.35);
     const stock = Math.max(0, Math.floor(nonNegative(product.stock)));
-    const incoming = Math.floor(incomingByProduct.get(product.id) || 0);
+    const pendingRows = incomingByProduct.get(product.id) ?? [];
+    const incoming = pendingRows.reduce((sum, row) => sum + row.quantity, 0);
+    const overdueIncoming = pendingRows
+      .filter((row) => row.daysUntilArrival < 0)
+      .reduce((sum, row) => sum + row.quantity, 0);
     const bufferStock = Math.max(Math.max(0, Math.floor(nonNegative(product.minStock))), Math.ceil(dailySales * safetyDays));
     const reorderPoint = Math.ceil(dailySales * leadDays) + bufferStock;
     const targetStock = Math.ceil(dailySales * (leadDays + reviewDays)) + bufferStock;
@@ -211,7 +222,19 @@ export function buildInventoryForecast(
       Math.ceil(dailySales * cycle.daysToClose) + bufferStock - stock - incoming,
     );
     const coverageDays = dailySales > 0 ? stock / dailySales : null;
-    const projectedStockAtArrival = Math.floor(stock - dailySales * leadDays);
+    // Simulacao diaria ate a chegada de uma compra feita hoje.
+    // Pedidos em transito que devem chegar antes podem impedir a ruptura.
+    // Pedidos atrasados nao sao considerados recebidos sem confirmacao.
+    let balance = stock;
+    let riskDuringLead = stock === 0 && dailySales > 0;
+    for (let day = 1; day <= leadDays; day++) {
+      balance -= dailySales;
+      for (const pending of pendingRows) {
+        if (pending.daysUntilArrival === day) balance += pending.quantity;
+      }
+      if (balance < 0) riskDuringLead = true;
+    }
+    const projectedStockAtArrival = Math.floor(balance);
     const daysUntilOrder = dailySales > 0
       ? Math.max(0, Math.floor((stock + incoming - reorderPoint) / dailySales))
       : null;
@@ -228,7 +251,7 @@ export function buildInventoryForecast(
 
     let priority: InventoryPriority;
     if (!hasHistory) priority = product.minStock > 0 && stock < product.minStock ? "comprar" : "sem_historico";
-    else if (stock === 0 || coverageDays !== null && coverageDays < leadDays) priority = "urgente";
+    else if (riskDuringLead) priority = "urgente";
     else if (buyQuantity > 0 && stock + incoming <= reorderPoint) priority = "comprar";
     else if (buyQuantity > 0) priority = "programar";
     else priority = "estavel";
@@ -243,6 +266,7 @@ export function buildInventoryForecast(
       expected30: Math.ceil(dailySales * 30),
       stock,
       incoming,
+      overdueIncoming,
       bufferStock,
       reorderPoint,
       targetStock,
@@ -254,6 +278,7 @@ export function buildInventoryForecast(
       estimatedArrival: addCalendarDays(today, leadDays),
       earliestArrival: addCalendarDays(today, Math.max(1, leadDays - 3)),
       projectedStockAtArrival,
+      riskDuringLead,
       priority,
       confidence,
       trend,
