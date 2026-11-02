@@ -117,6 +117,43 @@ describe("reposição baseada em vendas reais", () => {
     expect(analysis.pendingUnits).toBe(0);
   });
 
+  test("lucro bruto projetado usa o preço e o custo das unidades sugeridas", () => {
+    const cheaper = {
+      ...product, id: "produto-b", name: "Game Stick GD10",
+      cost: 50, price: 100, stock: 0, minStock: 10,
+    };
+    const forecast = buildInventoryForecast(
+      [product, cheaper],
+      [...dailySales(today, 4, 30), ...Array.from({ length: 30 }, (_, i) => ({
+        product_id: cheaper.id, sale_day: localDayKey(addCalendarDays(today, -i)), quantity: 2,
+      }))],
+      [], DEFAULT_INVENTORY_PLANNING, today,
+    );
+    const expectedCost = forecast.rows.reduce((sum, row) => sum + row.buyQuantity * row.product.cost, 0);
+    const expectedRevenue = forecast.rows.reduce((sum, row) => sum + row.buyQuantity * row.product.price, 0);
+    expect(forecast.recommendedCost).toBeCloseTo(expectedCost, 2);
+    expect(forecast.recommendedRevenue).toBeCloseTo(expectedRevenue, 2);
+    expect(forecast.recommendedGrossProfit).toBeCloseTo(expectedRevenue - expectedCost, 2);
+    expect(forecast.productsWithoutPricing).toBe(0);
+  });
+
+  test("lucro bruto pode ser negativo e avisa sobre preços de custo zerados", () => {
+    const lossProduct = { ...product, price: 50, cost: 90, stock: 0 };
+    const advice = buildInventoryForecast(
+      [lossProduct],
+      dailySales(today, 2, 30),
+      [], DEFAULT_INVENTORY_PLANNING, today,
+    );
+    expect(advice.recommendedGrossProfit).toBeLessThan(0);
+    expect(advice.productsWithoutPricing).toBe(0);
+    const missingCost = buildInventoryForecast(
+      [{ ...lossProduct, price: 100, cost: 0 }],
+      dailySales(today, 2, 30),
+      [], DEFAULT_INVENTORY_PLANNING, today,
+    );
+    expect(missingCost.productsWithoutPricing).toBe(1);
+  });
+
   test("uma compra pendente maior que a necessidade não gera pedido duplicado", () => {
     const row = buildInventoryForecast(
       [product], dailySales(today, 1, 30),
