@@ -56,6 +56,7 @@ export function InventoryStockAlert() {
               <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1"><PackageCheck className="h-3 w-3" />{row.stock} un em estoque</span>
                 {row.incoming > 0 && <span className="inline-flex items-center gap-1"><Truck className="h-3 w-3" />{row.incoming} un a caminho</span>}
+                {row.overdueIncoming > 0 && <span className="font-bold text-orange-400">{row.overdueIncoming} un atrasadas</span>}
               </div>
             </div>
             <div className="shrink-0 text-right">
