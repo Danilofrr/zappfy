@@ -1,12 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, PackageCheck, ShoppingCart, Truck } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, ArrowRight, PackageCheck, ShoppingCart, Truck, X } from "lucide-react";
 import { useInventoryAdvisor } from "@/hooks/use-inventory-advisor";
 import { useStore } from "@/lib/store";
 
 export function InventoryStockAlert() {
+  // Fechar vale apenas para a tela atual: ao atualizar ou reabrir a página o alerta reaparece.
+  const [dismissed, setDismissed] = useState(false);
   const { access } = useStore();
   const { forecast, loading, error } = useInventoryAdvisor();
-  if (!access?.isOwner || loading || error || !forecast) return null;
+  if (dismissed || !access?.isOwner || loading || error || !forecast) return null;
 
   const priorities = forecast.rows.filter(
     (row) => row.priority === "urgente" || row.priority === "comprar",
@@ -39,13 +42,24 @@ export function InventoryStockAlert() {
             </p>
           </div>
         </div>
-        <Link
-          to="/produtos"
-          hash="assistente"
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-        >
-          <ShoppingCart className="h-4 w-4" /> Planejar compras <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            to="/produtos"
+            hash="assistente"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+          >
+            <ShoppingCart className="h-4 w-4" /> Planejar compras <ArrowRight className="h-4 w-4" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setDismissed(true)}
+            aria-label="Fechar alerta de compras"
+            title="Fechar por enquanto (o alerta reaparece ao atualizar)"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-border/70 text-muted-foreground transition hover:border-foreground/30 hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
