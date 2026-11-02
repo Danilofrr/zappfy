@@ -7,7 +7,7 @@ import {
   type InventoryPriority,
 } from "@/lib/inventory-forecast";
 import {
-  AlertTriangle, ArrowDown, ArrowRight, ArrowUp, CalendarClock, Check, ChevronDown,
+  AlertTriangle, CalendarClock, Check, ChevronDown,
   ChevronUp, ClipboardCopy, Clock3, Info, Loader2, Package, Search, Settings2,
   ShieldCheck, ShoppingCart, Sparkles, TrendingUp, Truck, Boxes,
 } from "lucide-react";
