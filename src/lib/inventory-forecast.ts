@@ -63,6 +63,9 @@ export type InventoryForecast = {
   daysToClose: number;
   recommendedUnits: number;
   recommendedCost: number;
+  recommendedRevenue: number;
+  recommendedGrossProfit: number;
+  productsWithoutPricing: number;
   urgentCount: number;
   buyNowCount: number;
   plannedCount: number;
@@ -291,6 +294,10 @@ export function buildInventoryForecast(
     || a.product.name.localeCompare(b.product.name, "pt-BR"),
   );
 
+  const recommendedCost = rows.reduce((sum, row) => sum + row.buyQuantity * nonNegative(row.product.cost), 0);
+  const recommendedRevenue = rows.reduce((sum, row) => sum + row.buyQuantity * nonNegative(row.product.price), 0);
+  const roundMoney = (amount: number) => Math.round((amount + Number.EPSILON) * 100) / 100;
+
   return {
     rows,
     cycleStart: cycle.cycleStart,
@@ -298,7 +305,14 @@ export function buildInventoryForecast(
     previousCycleStart: cycle.previousCycleStart,
     daysToClose: cycle.daysToClose,
     recommendedUnits: rows.reduce((sum, row) => sum + row.buyQuantity, 0),
-    recommendedCost: rows.reduce((sum, row) => sum + row.buyQuantity * nonNegative(row.product.cost), 0),
+    recommendedCost: roundMoney(recommendedCost),
+    recommendedRevenue: roundMoney(recommendedRevenue),
+    // Lucro bruto potencial se TODAS as unidades recomendadas forem vendidas
+    // pelo preco cadastrado. Nao inclui taxas, anuncios, frete ou despesas.
+    recommendedGrossProfit: roundMoney(recommendedRevenue - recommendedCost),
+    productsWithoutPricing: rows.filter((row) =>
+      row.buyQuantity > 0 && (nonNegative(row.product.cost) === 0 || nonNegative(row.product.price) === 0),
+    ).length,
     urgentCount: rows.filter((row) => row.priority === "urgente").length,
     buyNowCount: rows.filter((row) => row.priority === "urgente" || row.priority === "comprar").length,
     plannedCount: rows.filter((row) => row.priority === "programar").length,
