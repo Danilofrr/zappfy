@@ -139,7 +139,7 @@ const PRIORITY_RANK: Record<InventoryPriority, number> = {
 /**
  * Previsao operacional, nao uma promessa de vendas futuras.
  * - Vendas reais de pedidos nao cancelados chegam agregadas do banco.
- * - Media ponderada: 55% ultimos 30 dias, 30% ultimos 7 e 15% ultimo ciclo fechado.
+ * - Media ponderada dos ultimos 30, 7 dias e ultimo ciclo fechado (quando houver vendas).
  * - Cobertura desejada: prazo de entrega + intervalo entre compras + estoque de seguranca.
  * - Pedidos pendentes sao descontados para nao recomendar compra em duplicidade.
  * - Fechamento comercial: dia 15 (inclusivo) ate o dia 15 seguinte (exclusivo).
@@ -196,7 +196,10 @@ export function buildInventoryForecast(
     const rate7 = sold.seven / 7;
     const rate30 = sold.thirty / 30;
     const ratePrevious = sold.previous / cycle.previousCycleDays;
-    const dailySales = Math.max(0, rate30 * 0.55 + rate7 * 0.30 + ratePrevious * 0.15);
+    // Sem movimento no ultimo ciclo fechado, nao penalizar produtos novos com peso zero.
+    const dailySales = Math.max(0, sold.previous > 0
+      ? rate30 * 0.55 + rate7 * 0.30 + ratePrevious * 0.15
+      : rate30 * 0.65 + rate7 * 0.35);
     const stock = Math.max(0, Math.floor(nonNegative(product.stock)));
     const incoming = Math.floor(incomingByProduct.get(product.id) || 0);
     const bufferStock = Math.max(Math.max(0, Math.floor(nonNegative(product.minStock))), Math.ceil(dailySales * safetyDays));
@@ -224,7 +227,7 @@ export function buildInventoryForecast(
         : rate7 < rate30 * 0.8 ? "caindo" : "estavel";
 
     let priority: InventoryPriority;
-    if (!hasHistory) priority = "sem_historico";
+    if (!hasHistory) priority = product.minStock > 0 && stock < product.minStock ? "comprar" : "sem_historico";
     else if (stock === 0 || coverageDays !== null && coverageDays < leadDays) priority = "urgente";
     else if (buyQuantity > 0 && stock + incoming <= reorderPoint) priority = "comprar";
     else if (buyQuantity > 0) priority = "programar";
