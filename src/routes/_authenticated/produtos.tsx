@@ -13,9 +13,10 @@ import {
 import {
   Plus, Pencil, Trash2, AlertTriangle, Upload, X, Image as ImageIcon,
   Search, Wallet, DollarSign, BarChart3, Boxes, Package, Gift, LayoutGrid, List, Truck,
-  PackagePlus, History, Copy, Minus, CheckSquare,
+  PackagePlus, History, Copy, Minus, CheckSquare, Sparkles,
 } from "lucide-react";
 import { ComprasSection } from "@/components/ComprasSection";
+import { InventoryAdvisor, type PurchaseSuggestion } from "@/components/InventoryAdvisor";
 import { AddStockDialog } from "@/components/AddStockDialog";
 import { ProductHistoryDialog } from "@/components/ProductHistoryDialog";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -38,7 +39,10 @@ function EstoquePage() {
   const [open, setOpen] = useState(false);
   const [stockFor, setStockFor] = useState<Product | null>(null);
   const [historyFor, setHistoryFor] = useState<Product | null>(null);
-  const [tab, setTab] = useState<"produtos" | "kits" | "compras">("produtos");
+  const [tab, setTab] = useState<"produtos" | "kits" | "compras" | "assistente">(() =>
+    typeof window !== "undefined" && window.location.hash === "#assistente" ? "assistente" : "produtos",
+  );
+  const [purchaseSuggestions, setPurchaseSuggestions] = useState<PurchaseSuggestion[]>([]);
   const [view, setView] = useState<"tabela" | "cards">("tabela");
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 350);
@@ -342,7 +346,7 @@ function EstoquePage() {
       }
     >
       {/* Tabs Produtos / Kits */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex flex-wrap gap-2 mb-5">
         <button
           onClick={() => setTab("produtos")}
           className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
@@ -372,6 +376,16 @@ function EstoquePage() {
           }`}
         >
           <Truck className="h-4 w-4" /> Compras & Fornecedores
+        </button>
+        <button
+          onClick={() => setTab("assistente")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+            tab === "assistente"
+              ? "bg-primary text-primary-foreground shadow-elegant"
+              : "border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+          }`}
+        >
+          <Sparkles className="h-4 w-4" /> Assistente IA de Compras
         </button>
       </div>
 
@@ -520,8 +534,16 @@ function EstoquePage() {
         </div>
       )}
 
-      {tab === "compras" ? (
-        <ComprasSection />
+      {tab === "assistente" ? (
+        <InventoryAdvisor onCreatePurchase={(items) => {
+          setPurchaseSuggestions(items);
+          setTab("compras");
+        }} />
+      ) : tab === "compras" ? (
+        <ComprasSection
+          suggestedItems={purchaseSuggestions}
+          onSuggestionsApplied={() => setPurchaseSuggestions([])}
+        />
       ) : tab === "kits" ? (
         <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-elegant">
           <Gift className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
