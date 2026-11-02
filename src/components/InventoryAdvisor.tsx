@@ -337,12 +337,13 @@ export function InventoryAdvisor({ onCreatePurchase }: {
                           Se pedir hoje, chegada estimada: <strong className="text-foreground">{businessDate(row.earliestArrival)} a {businessDate(row.estimatedArrival)}</strong>
                         </p>
                         <p>
-                          Risco ao aguardar {settings.leadDays} dias: <strong className={row.projectedStockAtArrival < 0 ? "text-red-400" : "text-foreground"}>
-                            {row.projectedStockAtArrival < 0 ? "Pode faltar antes da chegada" : String(row.projectedStockAtArrival) + " un restantes"}
+                          Risco ao aguardar {settings.leadDays} dias: <strong className={row.riskDuringLead ? "text-red-400" : "text-foreground"}>
+                            {row.riskDuringLead ? "Pode faltar antes da chegada" : String(row.projectedStockAtArrival) + " un restantes"}
                           </strong>
                           {" · "}Confiabilidade do histórico: <strong className="text-foreground">{row.confidence === "sem_dados" ? "Sem dados" : row.confidence}</strong>
                           {" · "}Tendência: <strong className="text-foreground">{row.trend === "subindo" ? "em alta" : row.trend === "caindo" ? "em queda" : "estável/indefinida"}</strong>
                         </p>
+                        {row.overdueIncoming > 0 && <p className="font-semibold text-orange-400">{row.overdueIncoming} unidade(s) de pedidos pendentes passaram do prazo estimado de chegada. Confirme o recebimento com o fornecedor.</p>}
                       </div>
                       <Button size="sm" disabled={!shouldBuy} onClick={() => onCreatePurchase([{ productId: row.product.id, quantity: row.buyQuantity }])}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
