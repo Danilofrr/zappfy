@@ -71,21 +71,20 @@ export function InventoryAdvisor({ onCreatePurchase }: {
     });
   }, [forecast, filter, search]);
 
-  const buyNow = forecast?.rows.filter(
-    (row) => row.buyQuantity > 0 && (row.priority === "urgente" || row.priority === "comprar"),
-  ) ?? [];
+  const monthBuy = forecast?.rows.filter((row) => row.buyQuantity > 0) ?? [];
 
   async function copyPurchaseList() {
-    if (!buyNow.length) {
-      toast.message("Nenhuma compra urgente indicada no momento.");
+    if (!monthBuy.length) {
+      toast.message("Nenhuma compra mensal indicada no momento.");
       return;
     }
     const lines = [
-      "LISTA DE REPOSIÇÃO — ZAPPFY",
+      "COMPRA PARA O MÊS COMERCIAL — ZAPPFY",
       "Data: " + businessDate(new Date()),
-      "Prazo de entrega considerado: até " + settings.leadDays + " dias",
+      "Fechamento: " + businessDate(forecast?.cycleStart ?? new Date()) + " a " + businessDate(forecast?.cycleEnd ?? new Date()),
+      "Planejamento: " + (forecast?.cycleDays ?? 30) + " dias do ciclo completo + até " + settings.leadDays + " dias de entrega + reserva",
       "",
-      ...buyNow.map((row) =>
+      ...monthBuy.map((row) =>
         "• " + row.product.name + ": " + row.buyQuantity + " un (estoque " + row.stock + ", a caminho " + row.incoming + ")",
       ),
       "",
@@ -102,9 +101,8 @@ export function InventoryAdvisor({ onCreatePurchase }: {
   async function persistSettings() {
     if (saving) return;
     if (!Number.isInteger(localSettings.leadDays) || localSettings.leadDays < 1 || localSettings.leadDays > 30
-      || !Number.isInteger(localSettings.reviewDays) || localSettings.reviewDays < 1 || localSettings.reviewDays > 60
       || !Number.isInteger(localSettings.safetyDays) || localSettings.safetyDays < 0 || localSettings.safetyDays > 30) {
-      toast.error("Revise os prazos: entrega de 1–30, compras de 1–60 e segurança de 0–30 dias.");
+      toast.error("Revise os prazos: entrega de 1–30 e segurança de 0–30 dias.");
       return;
     }
     setSaving(true);
@@ -148,10 +146,11 @@ export function InventoryAdvisor({ onCreatePurchase }: {
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
               <Sparkles className="h-3.5 w-3.5" /> Assistente inteligente de compras
             </div>
-            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">Saiba quanto comprar e quando pedir</h2>
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">Compre uma vez para vender o mês inteiro</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Análise das vendas registradas de cada produto, estoque disponível, pedidos já feitos e prazo de chegada do fornecedor.
-              O cálculo é uma projeção estatística, não uma garantia de vendas futuras.
+              Planeje uma única compra para sustentar as vendas durante o mês comercial inteiro,
+              de um dia 15 ao próximo dia 15, incluindo o prazo de chegada do fornecedor e uma reserva.
+              A previsão utiliza o histórico registrado, sem garantir as vendas futuras.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -167,8 +166,8 @@ export function InventoryAdvisor({ onCreatePurchase }: {
         <div className="relative mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-border/60 pt-4 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5"><CalendarClock className="h-3.5 w-3.5 text-primary" /> Ciclo: <strong className="text-foreground">{businessDate(forecast.cycleStart)} a {businessDate(forecast.cycleEnd)}</strong></span>
           <span>Fechamento em <strong className="text-foreground">{forecast.daysToClose} dias</strong> (todo dia 15)</span>
+          <span>Compra: <strong className="text-foreground">1 vez por mês comercial ({forecast.cycleDays} dias)</strong></span>
           <span>Transporte: <strong className="text-foreground">até {settings.leadDays} dias</strong></span>
-          <span>Compras: <strong className="text-foreground">a cada {settings.reviewDays} dias</strong></span>
           <span>Segurança: <strong className="text-foreground">{settings.safetyDays} dias</strong></span>
         </div>
       </div>
@@ -176,11 +175,13 @@ export function InventoryAdvisor({ onCreatePurchase }: {
       {showSettings && (
         <div className="rounded-2xl border border-border bg-card p-5">
           <h3 className="mb-1 flex items-center gap-2 font-semibold"><Settings2 className="h-4 w-4 text-primary" /> Configurações por loja</h3>
-          <p className="mb-4 text-xs text-muted-foreground">Use o prazo mais demorado que seu fornecedor costuma levar. Assim, o alerta considera o pior cenário.</p>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <p className="mb-4 text-xs text-muted-foreground">
+            As compras são planejadas para o mês completo de 15 a 15. Configure o prazo mais demorado
+            do fornecedor e a reserva de segurança; a duração do mês é calculada automaticamente.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
             {([
               ["leadDays", "Prazo máximo de chegada", "dias (padrão: 7)", 1, 30],
-              ["reviewDays", "Intervalo entre compras", "dias (padrão: 15)", 1, 60],
               ["safetyDays", "Reserva de segurança", "dias (padrão: 3)", 0, 30],
             ] as const).map(([key, label, hint, min, max]) => (
               <label className="block" key={key}>
@@ -243,19 +244,21 @@ export function InventoryAdvisor({ onCreatePurchase }: {
             <h3 className="flex items-center gap-2 font-bold"><ShieldCheck className="h-4 w-4 text-primary" /> Planejamento para não faltar mercadoria</h3>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               Comprando hoje, a previsão de chegada é entre <strong className="text-foreground">{businessDate(forecast.rows[0]?.earliestArrival ?? new Date())}</strong> e <strong className="text-foreground">{businessDate(forecast.rows[0]?.estimatedArrival ?? new Date())}</strong>.
-              O cálculo protege {settings.leadDays} dias de entrega + {settings.reviewDays} dias até a próxima compra + reserva.
+              O cálculo cobre o mês comercial inteiro ({forecast.cycleDays} dias, do dia 15 ao dia 15 seguinte)
+              + {settings.leadDays} dias de transporte até a próxima entrega + {settings.safetyDays} dias de reserva.
+              Assim você não precisa fazer reposições a cada 15 dias.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => void copyPurchaseList()} disabled={buyNow.length === 0}>
+            <Button size="sm" variant="outline" onClick={() => void copyPurchaseList()} disabled={monthBuy.length === 0}>
               <ClipboardCopy className="mr-2 h-4 w-4" /> Copiar lista ao fornecedor
             </Button>
             <Button
               size="sm"
-              onClick={() => onCreatePurchase(buyNow.map((row) => ({ productId: row.product.id, quantity: row.buyQuantity })))}
-              disabled={buyNow.length === 0}
+              onClick={() => onCreatePurchase(monthBuy.map((row) => ({ productId: row.product.id, quantity: row.buyQuantity })))}
+              disabled={monthBuy.length === 0}
             >
-              <ShoppingCart className="mr-2 h-4 w-4" /> Gerar pedido prioritário
+              <ShoppingCart className="mr-2 h-4 w-4" /> Gerar pedido para o mês
             </Button>
           </div>
         </div>
@@ -344,7 +347,7 @@ export function InventoryAdvisor({ onCreatePurchase }: {
                       <Detail label="Último ciclo fechado (15 a 15)" value={row.unitsPreviousCycle + " unidades"} />
                       <Detail label="Média estimada por dia" value={roundedRate(row.dailySales) + " un/dia"} />
                       <Detail label="Demanda projetada em 30 dias" value={row.expected30 + " unidades"} />
-                      <Detail label="Comprar para atender até o próximo dia 15" value={row.buyUntilClosing + " unidades"} />
+                      <Detail label={`Comprar para um ciclo inteiro de ${forecast.cycleDays} dias (sem prazo extra)`} value={row.buyForFullCycle + " unidades"} />
                       <Detail label="Estoque de proteção" value={row.bufferStock + " unidades"} />
                       <Detail label="Ponto de pedir novamente" value={row.reorderPoint + " unidades"} />
                       <Detail label="Estoque necessário para reposição" value={row.targetStock + " unidades"} />
@@ -380,7 +383,7 @@ export function InventoryAdvisor({ onCreatePurchase }: {
 
                     <p className="flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
                       <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      Fórmula: consumo médio diário × (prazo de entrega + intervalo até a próxima reposição) + reserva − estoque físico − unidades em pedidos pendentes.
+                      Fórmula da compra mensal: consumo médio diário × ({forecast.cycleDays} dias do ciclo de 15 a 15 + {settings.leadDays} dias de transporte) + reserva − estoque físico − unidades em pedidos pendentes.
                       A sugestão pode variar em períodos promocionais, rupturas anteriores ou vendas ainda não registradas. Revise antes de enviar ao fornecedor.
                     </p>
                   </div>
