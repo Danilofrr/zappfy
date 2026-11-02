@@ -1,4 +1,5 @@
 import { useStore } from "@/lib/store";
+import { notifyInventoryPurchasesChanged } from "@/hooks/use-inventory-advisor";
 import { supabase } from "@/integrations/supabase/client";
 import { brl, fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,13 @@ const statusList = [
   { value: "cancelado", label: "Cancelado", color: "bg-destructive/15 text-destructive" },
 ] as const;
 
-export function ComprasSection() {
-  const { state, user, receivePurchaseOrder, reversePurchaseOrder } = useStore();
+type SuggestedPurchase = { productId: string; quantity: number };
+
+export function ComprasSection({ suggestedItems = [], onSuggestionsApplied }: {
+  suggestedItems?: SuggestedPurchase[];
+  onSuggestionsApplied?: () => void;
+}) {
+  const { state, user, access, receivePurchaseOrder, reversePurchaseOrder } = useStore();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [sub, setSub] = useState<"pedidos" | "fornecedores">("pedidos");
@@ -47,13 +53,17 @@ export function ComprasSection() {
   async function load() {
     if (!user) return;
     const [s, o] = await Promise.all([
-      (supabase.from("suppliers" as any) as any).select("*").order("name"),
-      (supabase.from("purchase_orders" as any) as any).select("*").order("order_date", { ascending: false }),
+      (supabase.from("suppliers" as any) as any).select("*").eq("user_id", access?.ownerId ?? user.id).order("name"),
+      (supabase.from("purchase_orders" as any) as any)
+        .select("*").eq("store_id", access?.storeId ?? user.id).order("order_date", { ascending: false }),
     ]);
     if (s.data) setSuppliers(s.data as Supplier[]);
     if (o.data) setOrders(o.data as PurchaseOrder[]);
   }
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => { void load(); }, [user?.id, access?.storeId]);
+  useEffect(() => {
+    if (suggestedItems.length > 0) setOpenOrder(true);
+  }, [suggestedItems]);
 
   const totals = useMemo(() => {
     const pend = orders.filter((o) => o.status === "pendente").reduce((s, o) => s + Number(o.total), 0);
@@ -64,19 +74,22 @@ export function ComprasSection() {
   async function deleteOrder(id: string) {
     if (!confirm("Excluir este pedido de reposição?")) return;
     const target = orders.find((x) => x.id === id);
-    const { error } = await (supabase.from("purchase_orders" as any) as any).delete().eq("id", id);
+    const { error } = await (supabase.from("purchase_orders" as any) as any)
+      .delete().eq("id", id).eq("store_id", access?.storeId ?? user?.id);
     if (error) return toast.error(error.message);
     if (target && target.status === "recebido") {
       await reversePurchaseOrder(target.id);
     }
     setOrders((p) => p.filter((x) => x.id !== id));
+    notifyInventoryPurchasesChanged();
     toast.success("Pedido excluído");
   }
   async function updateStatus(id: string, status: PurchaseOrder["status"]) {
     const current = orders.find((x) => x.id === id);
     const patch: any = { status };
     if (status === "recebido") patch.received_date = new Date().toISOString();
-    const { data, error } = await (supabase.from("purchase_orders" as any) as any).update(patch).eq("id", id).select().single();
+    const { data, error } = await (supabase.from("purchase_orders" as any) as any)
+      .update(patch).eq("id", id).eq("store_id", access?.storeId ?? user?.id).select().single();
     if (error) return toast.error(error.message);
     const updated = data as PurchaseOrder;
     if (current && current.status !== "recebido" && status === "recebido") {
@@ -96,6 +109,7 @@ export function ComprasSection() {
       toast.success(`Estoque revertido (-${updated.quantity}) e valor devolvido ao caixa`);
     }
     setOrders((p) => p.map((x) => x.id === id ? updated : x));
+    notifyInventoryPurchasesChanged();
   }
   async function deleteSupplier(id: string) {
     if (!confirm("Excluir este fornecedor?")) return;
@@ -237,7 +251,10 @@ export function ComprasSection() {
       <NewOrderDialog
         open={openOrder} setOpen={setOpenOrder}
         suppliers={suppliers} products={state.products}
+        suggestedItems={suggestedItems}
+        onSuggestionsApplied={onSuggestionsApplied}
         onSaved={(o) => {
+          notifyInventoryPurchasesChanged();
           setOrders((p) => [o, ...p]);
           if (o.status === "recebido") {
             receivePurchaseOrder({
@@ -315,18 +332,40 @@ type OrderItem = {
 };
 
 function NewOrderDialog({
-  open, setOpen, suppliers, products, onSaved,
+  open, setOpen, suppliers, products, suggestedItems, onSuggestionsApplied, onSaved,
 }: {
   open: boolean; setOpen: (v: boolean) => void;
   suppliers: Supplier[]; products: any[];
+  suggestedItems?: SuggestedPurchase[];
+  onSuggestionsApplied?: () => void;
   onSaved: (o: PurchaseOrder) => void;
 }) {
-  const { user } = useStore();
+  const { user, access } = useStore();
   const [supplierId, setSupplierId] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<"pendente" | "recebido" | "cancelado">("pendente");
   const emptyItem = (): OrderItem => ({ product_id: "", product_name: "", quantity: 1, unit_cost: 0 });
   const [items, setItems] = useState<OrderItem[]>([emptyItem()]);
+
+  useEffect(() => {
+    if (!open || !suggestedItems?.length) return;
+    const recommended = suggestedItems.flatMap((suggestion) => {
+      const product = products.find((p) => p.id === suggestion.productId);
+      if (!product || suggestion.quantity <= 0) return [];
+      return [{
+        product_id: product.id,
+        product_name: product.name,
+        quantity: Math.floor(suggestion.quantity),
+        unit_cost: Number(product.cost) || 0,
+      }];
+    });
+    if (recommended.length) {
+      setItems(recommended);
+      setStatus("pendente");
+      setNotes("Reposição sugerida pelo Assistente Inteligente de Compras.");
+    }
+    onSuggestionsApplied?.();
+  }, [open, suggestedItems, products, onSuggestionsApplied]);
 
   const grandTotal = items.reduce((s, it) => s + it.quantity * it.unit_cost, 0);
 
@@ -349,7 +388,8 @@ function NewOrderDialog({
     const sup = suppliers.find((s) => s.id === supplierId);
     const rows = valid.map((it) => {
       const payload: any = {
-        user_id: user.id,
+        user_id: access?.ownerId ?? user.id,
+        store_id: access?.storeId ?? user.id,
         supplier_id: supplierId || null,
         supplier_name: sup?.name || "",
         product_id: it.product_id || null,
