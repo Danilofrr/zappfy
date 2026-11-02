@@ -21,7 +21,7 @@ export type InventoryPlanningSettings = {
 
 export const DEFAULT_INVENTORY_PLANNING: InventoryPlanningSettings = {
   leadDays: 7,
-  reviewDays: 15,
+  reviewDays: 30,
   safetyDays: 3,
 };
 
@@ -42,7 +42,7 @@ export type ProductForecast = {
   reorderPoint: number;
   targetStock: number;
   buyQuantity: number;
-  buyUntilClosing: number;
+  buyForFullCycle: number;
   coverageDays: number | null;
   daysUntilOrder: number | null;
   orderBy: Date | null;
@@ -61,6 +61,8 @@ export type InventoryForecast = {
   cycleEnd: Date;
   previousCycleStart: Date;
   daysToClose: number;
+  cycleDays: number;
+  coverageDaysPlanned: number;
   recommendedUnits: number;
   recommendedCost: number;
   recommendedRevenue: number;
@@ -110,6 +112,7 @@ export function cycleFrom15th(at: Date) {
     cycleEnd,
     previousCycleStart,
     daysToClose: calendarDaysBetween(today, cycleEnd),
+    cycleDays: calendarDaysBetween(cycleStart, cycleEnd),
     previousCycleDays: calendarDaysBetween(previousCycleStart, cycleStart),
   };
 }
@@ -145,7 +148,9 @@ const PRIORITY_RANK: Record<InventoryPriority, number> = {
  * Previsao operacional, nao uma promessa de vendas futuras.
  * - Vendas reais de pedidos nao cancelados chegam agregadas do banco.
  * - Media ponderada dos ultimos 30, 7 dias e ultimo ciclo fechado (quando houver vendas).
- * - Cobertura desejada: prazo de entrega + intervalo entre compras + estoque de seguranca.
+ * - Compra mensal, calculada para um ciclo comercial inteiro de 15 a 15.
+ * - Protecao: ciclo de 28 a 31 dias + prazo de entrega + reserva de seguranca.
+ * - O fechamento do dia 15 nao representa uma compra quinzenal.
  * - Pedidos pendentes sao descontados para nao recomendar compra em duplicidade.
  * - Fechamento comercial: dia 15 (inclusivo) ate o dia 15 seguinte (exclusivo).
  */
@@ -158,9 +163,12 @@ export function buildInventoryForecast(
 ): InventoryForecast {
   const today = startOfLocalDay(at);
   const leadDays = clampPlanningNumber(config.leadDays, 7, 1, 30);
-  const reviewDays = clampPlanningNumber(config.reviewDays, 15, 1, 60);
   const safetyDays = clampPlanningNumber(config.safetyDays, 3, 0, 30);
   const cycle = cycleFrom15th(today);
+  // Um pedido por mes comercial. O tamanho exato de cada ciclo varia (28 a 31 dias).
+  // A configuracao antiga "reviewDays" e mantida apenas para compatibilidade;
+  // compras a cada 15 dias nao sao mais utilizadas neste planejamento.
+  const monthlyCoverageDays = cycle.cycleDays;
   const sevenStart = localDayKey(addCalendarDays(today, -6));
   const thirtyStart = localDayKey(addCalendarDays(today, -29));
   const nowKey = localDayKey(today);
@@ -218,11 +226,13 @@ export function buildInventoryForecast(
       .reduce((sum, row) => sum + row.quantity, 0);
     const bufferStock = Math.max(Math.max(0, Math.floor(nonNegative(product.minStock))), Math.ceil(dailySales * safetyDays));
     const reorderPoint = Math.ceil(dailySales * leadDays) + bufferStock;
-    const targetStock = Math.ceil(dailySales * (leadDays + reviewDays)) + bufferStock;
+    // Cobrir um ciclo INTEIRO e a espera por reposicao do fornecedor.
+    // A compra deve sustentar a loja ate a entrega mensal seguinte.
+    const targetStock = Math.ceil(dailySales * (leadDays + monthlyCoverageDays)) + bufferStock;
     const buyQuantity = Math.max(0, targetStock - stock - incoming);
-    const buyUntilClosing = Math.max(
+    const buyForFullCycle = Math.max(
       0,
-      Math.ceil(dailySales * cycle.daysToClose) + bufferStock - stock - incoming,
+      Math.ceil(dailySales * monthlyCoverageDays) + bufferStock - stock - incoming,
     );
     const coverageDays = dailySales > 0 ? stock / dailySales : null;
     // Simulacao diaria ate a chegada de uma compra feita hoje.
@@ -274,7 +284,7 @@ export function buildInventoryForecast(
       reorderPoint,
       targetStock,
       buyQuantity,
-      buyUntilClosing,
+      buyForFullCycle,
       coverageDays,
       daysUntilOrder,
       orderBy: daysUntilOrder !== null ? addCalendarDays(today, daysUntilOrder) : null,
@@ -304,6 +314,8 @@ export function buildInventoryForecast(
     cycleEnd: cycle.cycleEnd,
     previousCycleStart: cycle.previousCycleStart,
     daysToClose: cycle.daysToClose,
+    cycleDays: monthlyCoverageDays,
+    coverageDaysPlanned: leadDays + monthlyCoverageDays + safetyDays,
     recommendedUnits: rows.reduce((sum, row) => sum + row.buyQuantity, 0),
     recommendedCost: roundMoney(recommendedCost),
     recommendedRevenue: roundMoney(recommendedRevenue),
