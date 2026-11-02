@@ -69,7 +69,8 @@ export function useInventoryAdvisor() {
         pending: Array.isArray(pending.data) ? pending.data as PendingPurchase[] : [],
         settings: {
           leadDays: clampPlanningNumber(saved.data?.lead_days, DEFAULT_INVENTORY_PLANNING.leadDays, 1, 30),
-          reviewDays: clampPlanningNumber(saved.data?.review_days, DEFAULT_INVENTORY_PLANNING.reviewDays, 1, 60),
+          // Compra sempre mensal (ciclo de 15 a 15): valor legado de 15 dias nao deve voltar.
+          reviewDays: DEFAULT_INVENTORY_PLANNING.reviewDays,
           safetyDays: clampPlanningNumber(saved.data?.safety_days, DEFAULT_INVENTORY_PLANNING.safetyDays, 0, 30),
         },
       };
@@ -99,7 +100,7 @@ export function useInventoryAdvisor() {
     if (!storeId || !access?.isOwner) throw new Error("Apenas o proprietario pode configurar o planejamento.");
     const settings = {
       lead_days: clampPlanningNumber(values.leadDays, 7, 1, 30),
-      review_days: clampPlanningNumber(values.reviewDays, 15, 1, 60),
+      review_days: DEFAULT_INVENTORY_PLANNING.reviewDays,
       safety_days: clampPlanningNumber(values.safetyDays, 3, 0, 30),
     };
     const { error } = await (supabase.from("inventory_planning_settings" as any) as any)
