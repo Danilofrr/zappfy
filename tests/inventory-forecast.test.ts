@@ -68,6 +68,30 @@ describe("reposição baseada em vendas reais", () => {
     expect(advice.rows[0].coverageDays).toBeLessThan(7);
   });
 
+  test("pedido que chega cedo evita alerta falso de ruptura", () => {
+    const stockTwo = { ...product, stock: 2 };
+    const row = buildInventoryForecast(
+      [stockTwo], dailySales(today, 4, 30),
+      [{ product_id: product.id, product_name: product.name, quantity: 80, order_date: "2026-10-25T12:00:00-03:00" }],
+      DEFAULT_INVENTORY_PLANNING, today,
+    ).rows[0];
+    expect(row.riskDuringLead).toBe(false);
+    expect(row.priority).not.toBe("urgente");
+    expect(row.overdueIncoming).toBe(0);
+  });
+
+  test("pedido atrasado não é tratado como estoque já recebido", () => {
+    const stockTwo = { ...product, stock: 2 };
+    const row = buildInventoryForecast(
+      [stockTwo], dailySales(today, 4, 30),
+      [{ product_id: product.id, product_name: product.name, quantity: 80, order_date: "2026-10-01T12:00:00-03:00" }],
+      DEFAULT_INVENTORY_PLANNING, today,
+    ).rows[0];
+    expect(row.overdueIncoming).toBe(80);
+    expect(row.riskDuringLead).toBe(true);
+    expect(row.priority).toBe("urgente");
+  });
+
   test("sem vendas não inventa giro, mas respeita o mínimo manual", () => {
     const noSales = buildInventoryForecast([{ ...product, stock: 2 }], [], [], DEFAULT_INVENTORY_PLANNING, today).rows[0];
     expect(noSales.dailySales).toBe(0);
