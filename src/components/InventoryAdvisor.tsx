@@ -210,7 +210,31 @@ export function InventoryAdvisor({ onCreatePurchase }: {
         <SummaryCard icon={<AlertTriangle className="h-4 w-4" />} label="Risco de faltar" value={String(forecast.urgentCount)} hint="Antes de chegar reposição" tone="text-red-400" />
         <SummaryCard icon={<ShoppingCart className="h-4 w-4" />} label="Comprar agora" value={String(forecast.buyNowCount)} hint="Produtos prioritários" tone="text-orange-400" />
         <SummaryCard icon={<Truck className="h-4 w-4" />} label="Já encomendadas" value={String(forecast.pendingUnits) + " un"} hint="Descontadas da sugestão" tone="text-sky-400" />
-        <SummaryCard icon={<Boxes className="h-4 w-4" />} label="Compra planejada" value={brl(forecast.recommendedCost)} hint={forecast.recommendedUnits + " unidades sugeridas no total"} tone="text-emerald-400" />
+        <div className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-elegant">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="text-emerald-400"><Boxes className="h-4 w-4" /></span> Compra planejada
+          </div>
+          <p className="mt-3 text-[10px] uppercase tracking-wide text-muted-foreground">Valor previsto para comprar</p>
+          <p className="mt-1 break-words text-2xl font-extrabold text-emerald-400">{brl(forecast.recommendedCost)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{forecast.recommendedUnits} unidades sugeridas no total</p>
+          <div className="mt-3 border-t border-border pt-3">
+            <p className="text-[11px] font-semibold text-muted-foreground">Lucro bruto estimado</p>
+            <p className={`mt-1 break-words text-xl font-extrabold ${forecast.recommendedGrossProfit < 0 ? "text-red-400" : "text-primary"}`}>
+              {brl(forecast.recommendedGrossProfit)}
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Faturamento potencial: {brl(forecast.recommendedRevenue)}
+            </p>
+            <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+              Se vender todas as unidades sugeridas pelos preços cadastrados; antes de taxas, frete, anúncios e outras despesas.
+            </p>
+            {forecast.productsWithoutPricing > 0 && (
+              <p className="mt-2 text-[11px] font-semibold text-amber-400">
+                Revise custos e preços zerados de {forecast.productsWithoutPricing} produto(s) antes de considerar esse lucro.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
@@ -324,6 +348,9 @@ export function InventoryAdvisor({ onCreatePurchase }: {
                       <Detail label="Estoque de proteção" value={row.bufferStock + " unidades"} />
                       <Detail label="Ponto de pedir novamente" value={row.reorderPoint + " unidades"} />
                       <Detail label="Estoque necessário para reposição" value={row.targetStock + " unidades"} />
+                      <Detail label="Investimento da compra sugerida" value={brl(row.buyQuantity * Math.max(0, Number(row.product.cost) || 0))} />
+                      <Detail label="Faturamento potencial da compra" value={brl(row.buyQuantity * Math.max(0, Number(row.product.price) || 0))} />
+                      <Detail label="Lucro bruto potencial da compra" value={brl(row.buyQuantity * (Math.max(0, Number(row.product.price) || 0) - Math.max(0, Number(row.product.cost) || 0)))} />
                     </div>
 
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3">
