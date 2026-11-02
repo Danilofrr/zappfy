@@ -60,6 +60,43 @@ describe("reposição baseada em vendas reais", () => {
     expect(withPending.estimatedArrival.getDate()).toBe(7);
   });
 
+  test("um pedido mensal cobre todos os dias de 15 a 15 mais entrega e reserva", () => {
+    const monthly = buildInventoryForecast(
+      [product], dailySales(today, 5, 30),
+      [], DEFAULT_INVENTORY_PLANNING, today,
+    );
+    const row = monthly.rows[0];
+    expect(monthly.cycleDays).toBe(31); // 15/out a 15/nov
+    expect(monthly.coverageDaysPlanned).toBe(41); // 31 + 7 dias entrega + 3 reserva
+    expect(row.targetStock).toBe(Math.ceil(row.dailySales * (7 + 31)) + row.bufferStock);
+    expect(row.buyQuantity).toBe(Math.max(0, row.targetStock - product.stock));
+    expect(row.buyForFullCycle).toBe(
+      Math.max(0, Math.ceil(row.dailySales * 31) + row.bufferStock - product.stock),
+    );
+  });
+
+  test("dias do mes comercial variam de 28 a 31 dias sem comprar quinzenalmente", () => {
+    const feb = buildInventoryForecast([product], [], [], DEFAULT_INVENTORY_PLANNING, new Date(2027, 1, 16));
+    const apr = buildInventoryForecast([product], [], [], DEFAULT_INVENTORY_PLANNING, new Date(2027, 3, 16));
+    const jan = buildInventoryForecast([product], [], [], DEFAULT_INVENTORY_PLANNING, new Date(2027, 0, 16));
+    expect(feb.cycleDays).toBe(28);
+    expect(apr.cycleDays).toBe(30);
+    expect(jan.cycleDays).toBe(31);
+    expect(feb.coverageDaysPlanned).toBe(38);
+    expect(apr.coverageDaysPlanned).toBe(40);
+    expect(jan.coverageDaysPlanned).toBe(41);
+  });
+
+  test("configuracao antiga de compras quinzenais nao reduz a cobertura mensal", () => {
+    const history = dailySales(today, 4, 30);
+    const previousConfig = buildInventoryForecast(
+      [product], history, [], { ...DEFAULT_INVENTORY_PLANNING, reviewDays: 15 }, today,
+    );
+    const newConfig = buildInventoryForecast([product], history, [], DEFAULT_INVENTORY_PLANNING, today);
+    expect(previousConfig.rows[0].buyQuantity).toBe(newConfig.rows[0].buyQuantity);
+    expect(previousConfig.rows[0].targetStock).toBe(newConfig.rows[0].targetStock);
+  });
+
   test("poucas peças disparam risco de acabar antes do prazo de entrega", () => {
     const stockTwo = { ...product, stock: 2 };
     const advice = buildInventoryForecast([stockTwo], dailySales(today, 4, 30), [], DEFAULT_INVENTORY_PLANNING, today);
